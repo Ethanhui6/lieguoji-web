@@ -174,7 +174,11 @@ struct TitleView: View {
     @State private var hubTab = "profile"
     @State private var updateSheetOpen = false
     @State private var hotUpdateSheetOpen = false
+    @State private var createDetent: PresentationDetent = .fraction(0.89)
     @State private var pendingLaunchTask: Task<Void, Never>?
+    private var anySheetOpen: Bool {
+        creating || archive || settings || notes || importing || authOpen || hubOpen || updateSheetOpen || hotUpdateSheetOpen
+    }
     /// A line of the classics under the title, changing each launch (merges hot-updated mottos).
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
     @State private var motto = (TitleView.mottos + HotPackManager.shared.extraMottos).randomElement() ?? "天下大势，分久必合，合久必分"
@@ -307,17 +311,20 @@ struct TitleView: View {
         }
         .statusBarHidden()
         .onAppear {
-            model.controller.sheetOpen = (creating || archive || settings || notes || importing || authOpen || hubOpen || updateSheetOpen || hotUpdateSheetOpen)
+            model.controller.sheetOpen = anySheetOpen
+            model.controller.sheetBottomFraction = anySheetOpen ? 0.89 : 0
             shown = false
             withAnimation(Motion.drift.delay(model.controller.reveal < 1 ? 0.9 : 0.1)) { shown = true }
         }
         .onDisappear {
             model.controller.sheetOpen = false
+            model.controller.sheetBottomFraction = 0
             pendingLaunchTask?.cancel()
             pendingLaunchTask = nil
         }
-        .onChange(of: creating || archive || settings || notes || importing || authOpen || hubOpen || updateSheetOpen || hotUpdateSheetOpen) { _, open in
+        .onChange(of: anySheetOpen) { _, open in
             model.controller.sheetOpen = open
+            model.controller.sheetBottomFraction = open ? 0.89 : 0
         }
         .onChange(of: model.tourTitle) { _, name in
             settings = name == "settings"
@@ -349,10 +356,34 @@ struct TitleView: View {
                         model.openEditor(options)
                     }
                 },
+                startScenario: { scenario in
+                    creating = false
+                    pendingLaunchTask?.cancel()
+                    pendingLaunchTask = Task { @MainActor in
+                        if !ShotTour.on {
+                            try? await Task.sleep(nanoseconds: 230_000_000)
+                        }
+                        guard !Task.isCancelled else { return }
+                        await model.generateHistorical(scenario)
+                    }
+                },
+                drawScenario: { scenario in
+                    creating = false
+                    pendingLaunchTask?.cancel()
+                    pendingLaunchTask = Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 210_000_000)
+                        guard !Task.isCancelled else { return }
+                        var opts = GameModel.NewWorld()
+                        opts.historicalScenario = scenario
+                        opts.nations = max(2, min(24, scenario.nations.count))
+                        opts.provinces = String(max(opts.nations, min(480, scenario.provinceCount)))
+                        model.openEditor(opts)
+                        model.editor?.applyHistoricalScenario(scenario)
+                    }
+                },
                 inputs: model.previewInputs
             )
-            .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)], selection: $createDetent).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model, open: { world in
@@ -364,7 +395,6 @@ struct TitleView: View {
                     await model.openArchived(world)
                 }
             }, onCloudOpened: { archive = false })
-            .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $settings) {
@@ -393,10 +423,9 @@ struct TitleView: View {
                 }
                 .padding(.bottom, 24)
             }
-            .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().background(MemorialPaper().ignoresSafeArea()).presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
         .sheet(isPresented: $authOpen) {
             AuthPortalSheet(platform: platform, onAuthenticated: {
                 hubTab = "profile"
@@ -500,12 +529,38 @@ struct TileAction: View {
 
 /// 生成地图: the original's terrain templates and the number of states.
 struct NewWorldSheet: View {
+    enum LaunchMode: String, CaseIterable, Identifiable {
+        case standard = "标准架空"
+        case historical = "历史剧本"
+        case workshop = "玩家工坊"
+        var id: String { rawValue }
+        var seal: String {
+            switch self {
+            case .standard: return "新"
+            case .historical: return "史"
+            case .workshop: return "坊"
+            }
+        }
+        var subtitle: String {
+            switch self {
+            case .standard: return "择一方山河 · 启一卷史诗"
+            case .historical: return "真实世界地理底图 · 史实名君格局"
+            case .workshop: return "本机自绘典藏 · 云端玩家舆图工坊"
+            }
+        }
+    }
+
     let start: (GameModel.NewWorld) -> Void
     /// 自绘地图 with these options.
     var draw: ((GameModel.NewWorld) -> Void)? = nil
+    /// 直接开启官方或工坊历史剧本。
+    var startScenario: ((HistoricalScenario) -> Void)? = nil
+    /// 将历史剧本载入自绘地图编辑器微调。
+    var drawScenario: ((HistoricalScenario) -> Void)? = nil
     /// The original grid, for the picture of the land this seed makes.
     var inputs: PreviewWorld.Inputs? = nil
     @Environment(\.verticalSizeClass) private var verticalClass
+    @State private var launchMode: LaunchMode = .standard
     @State private var options = GameModel.NewWorld()
     /// The seed used while the field is left blank, so the land shown is the land founded.
     @State private var rolled = String(UInt32.random(in: 0...UInt32.max))
@@ -575,8 +630,70 @@ struct NewWorldSheet: View {
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-            SheetHeader(title: "新世界", subtitle: "择一方山河 · 启一卷史诗", seal: "新")
+            SheetHeader(title: "新世界", subtitle: launchMode.subtitle, seal: launchMode.seal)
 
+            // 三段式宋韵开世模式切换（标准架空 | 历史剧本 | 玩家工坊）
+            HStack(spacing: 4) {
+                ForEach(LaunchMode.allCases) { m in
+                    let on = launchMode == m
+                    Button {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.panel) { launchMode = m }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(m.rawValue)
+                                .font(Theme.serif(14.5))
+                                .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.84)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(on ? Theme.seal : Color.clear, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(3.5)
+            .background(Theme.wash.opacity(0.62), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+            .padding(.horizontal, Theme.Layout.pageInset)
+
+            switch launchMode {
+            case .standard:
+                standardBuilderContent
+            case .historical:
+                HistoricalAtlasBrowserView(
+                    inputs: inputs,
+                    onPlayScenario: { sc in startScenario?(sc) },
+                    onEditScenario: drawScenario
+                )
+            case .workshop:
+                PlayerWorkshopBrowserView(
+                    inputs: inputs,
+                    onPlayScenario: { sc in startScenario?(sc) },
+                    onOpenEditor: { draw?(chosen) },
+                    onEditScenario: drawScenario
+                )
+            }
+        }
+        .padding(.vertical, 18)
+        }
+        .scrollIndicators(.hidden)
+        .task(id: "\(launchMode.rawValue)|\(seed)|\(options.template)|\(previewShowNations ? options.nations : 0)") {
+            guard launchMode == .standard else { return }
+            await drawTerrain()
+        }
+        .task(id: seedCopySerial) {
+            guard seedCopySerial > 0 else { return }
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(Motion.fade) { seedCopied = false }
+        }
+    }
+
+    @ViewBuilder
+    private var standardBuilderContent: some View {
             // 1. 顶部实时高清山河预览卡（支持「地形地貌 / 势力分布」即时切换 + 陆海山地实测数据 + 换图按钮）
             if inputs != nil { terrainCard.padding(.horizontal, Theme.Layout.pageInset) }
 
@@ -772,17 +889,6 @@ struct NewWorldSheet: View {
                 }
             }
             .padding(.horizontal, Theme.Layout.pageInset).padding(.top, 4)
-        }
-        .padding(.vertical, 18)
-        }
-        .scrollIndicators(.hidden)
-        .task(id: "\(seed)|\(options.template)|\(previewShowNations ? options.nations : 0)") { await drawTerrain() }
-        .task(id: seedCopySerial) {
-            guard seedCopySerial > 0 else { return }
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
-            guard !Task.isCancelled else { return }
-            withAnimation(Motion.fade) { seedCopied = false }
-        }
     }
     /// 高清山河预览卡：双缓冲水墨溶叠过渡（彻底移除丑陋的全宽横线进度条）、宣纸胶囊浮标、战略地势评语与顺滑换图旋钮。
     private var terrainCard: some View {

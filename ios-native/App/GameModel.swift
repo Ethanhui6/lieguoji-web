@@ -41,7 +41,7 @@ import LieguojiCore
     }
     private var lastPublish = 0.0, publishPending = false
     private func publishState() {
-        let now = Date().timeIntervalSinceReferenceDate, gap = pageOpen ? 0.5 : (playing ? 0.28 : 0.08)
+        let now = Date().timeIntervalSinceReferenceDate, gap = pageOpen ? 1.85 : (playing ? 0.28 : 0.08)
         if now - lastPublish >= gap || state == nil { lastPublish = now; objectWillChange.send(); return }
         guard !publishPending else { return }
         publishPending = true
@@ -50,6 +50,12 @@ import LieguojiCore
             publishPending = false; lastPublish = Date().timeIntervalSinceReferenceDate
             objectWillChange.send()
         }
+    }
+    /// 二级弹窗内玩家明确触发操作时立即刷新视图，兼顾平时 1.85s 低开销节流与交互 0ms 反馈。
+    func forcePublishForAction() {
+        publishPending = false
+        lastPublish = Date().timeIntervalSinceReferenceDate
+        objectWillChange.send()
     }
     @Published private(set) var playing = false
     @Published var speed = 1
@@ -75,6 +81,9 @@ import LieguojiCore
     private var wasRemoteBeforeBackground = false
     private var pendingResumePlayAfterReconnect = false
     private var appInBackground = false
+    private var resignedActive = false
+    private var foregroundRecovering = false
+    private var lastForegroundHandledAt: CFTimeInterval = 0
     /// A one-line notice for the game screen (e.g. the computer's link broke).
     @Published var notice: String?
 
@@ -238,32 +247,55 @@ import LieguojiCore
     }
     private func streamParams() -> (days: Int, intervalMs: Int) {
         let farRelay = remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
+        let base: (days: Int, intervalMs: Int)
         if farRelay {
             let wanted = [1: 2, 2: 4, 4: 8, 8: 14, 16: 22][speed] ?? 2
             let intervalMs = [1: 150, 2: 160, 4: 180, 8: 210, 16: 240][speed] ?? 150
-            return (wanted, intervalMs)
+            base = (wanted, intervalMs)
+        } else {
+            // v11 专属云服务器 / 局域网非阻塞全双工差量推流（配合滑动窗口背压 maxInFlight=2 + 3Mbps 带宽整形）：
+            // 1×=1日/95ms · 2×=1日/50ms · 4×=2日/58ms · 8×=3日/58ms · 16×=5日/66ms，逐日丝滑推进、绝不跳月！
+            switch speed {
+            case 1: base = (1, 95)
+            case 2: base = (1, 50)
+            case 4: base = (2, 58)
+            case 8: base = (3, 58)
+            default: base = (5, 66)
+            }
         }
-        // v10 专属云服务器 / 局域网非阻塞全双工高帧微步推流（配合滑动窗口背压 maxInFlight=2 + 3Mbps 带宽整形）：
-        // 1×=1日/95ms · 2×=1日/50ms · 4×=2日/58ms · 8×=3日/58ms · 16×=5日/66ms，逐日丝滑推进、绝不跳月！
-        switch speed {
-        case 1: return (1, 95)
-        case 2: return (1, 50)
-        case 4: return (2, 58)
-        case 8: return (3, 58)
-        default: return (5, 66)
+        if let rtt = remoteRTTMs, rtt > 300 {
+            let factor = rtt > 600 ? 1.50 : 1.28
+            let adapted = min(850, Int((Double(base.intervalMs) * factor).rounded()))
+            return (base.days, adapted)
         }
+        return base
     }
     private func syncRemoteStream(resetEpoch: Bool = true) async {
         guard remoteAddress != nil else { return }
         let p = streamParams()
         await native.configureRemoteStream(playing: playing && phase == .playing && !replayActive, days: p.days, intervalMs: p.intervalMs, resetEpoch: resetEpoch)
     }
-    /// 退入后台：仅发送 ~30 字节轻量 park 通知云端热备（30ms 完成），并暂停自动重连任务，返回前台即刻秒连。
+    /// 即将失活（锁屏/切换器/下拉控制中心）：先记录在线与推演态，防 iOS 直接挂起漏掉 `.background` 通知。
+    func handleAppWillResignActive() async {
+        guard phase == .playing else { return }
+        resignedActive = true
+        if !appInBackground {
+            if playing || pendingResumePlayAfterReconnect {
+                wasPlayingBeforeBackground = true
+            }
+            if !remoteOfflineManual && (remoteAddress != nil || reconnecting || remoteReconnecting) {
+                wasRemoteBeforeBackground = true
+            }
+        }
+    }
+    /// 退入后台（幂等）：仅发送 ~30 字节轻量 park 通知云端热备（30ms 完成），并暂停自动重连任务，返回前台即刻秒连。
     func handleAppBackground() async {
+        if appInBackground { return }
         appInBackground = true
-        wasPlayingBeforeBackground = playing || pendingResumePlayAfterReconnect
+        resignedActive = true
+        wasPlayingBeforeBackground = wasPlayingBeforeBackground || playing || pendingResumePlayAfterReconnect
         let nativeActive = await native.isRemoteActiveOrParked
-        wasRemoteBeforeBackground = !remoteOfflineManual && (remoteAddress != nil || reconnecting || remoteReconnecting || nativeActive)
+        wasRemoteBeforeBackground = !remoteOfflineManual && (wasRemoteBeforeBackground || remoteAddress != nil || reconnecting || remoteReconnecting || nativeActive)
         reconnectTask?.cancel()
         reconnectTask = nil
         reconnecting = false
@@ -277,20 +309,47 @@ import LieguojiCore
             save()
         }
     }
-    /// 回到前台：极速探活或 `resumeWorld` 秒级续连；若网络尚未就绪则直接转入持久化自动重连（绝不静默切本地）。
+    /// 回到前台（幂等）：只要处于战局且未手动切离线，且已启用云服或曾在线，一律立刻 1.2s 极速探活并在僵尸断链时秒切 `resumeWorld` 重连！
     func handleAppForeground() async {
+        let now = CACurrentMediaTime()
+        if foregroundRecovering { return }
+        let cameFromBackground = appInBackground
+        let hadResigned = resignedActive
+        if !cameFromBackground && !hadResigned && (now - lastForegroundHandledAt) < 1.2 {
+            return
+        }
+        guard phase == .playing, state != nil else {
+            appInBackground = false
+            resignedActive = false
+            return
+        }
+        foregroundRecovering = true
+        lastForegroundHandledAt = now
+        defer {
+            foregroundRecovering = false
+            lastForegroundHandledAt = CACurrentMediaTime()
+        }
+
         let shouldResumePlay = wasPlayingBeforeBackground
         let nativeActive = await native.isRemoteActiveOrParked
-        let shouldReconnect = !remoteOfflineManual && (wasRemoteBeforeBackground || reconnecting || nativeActive)
+        let defaultsAuto = UserDefaults.standard.bool(forKey: "remote.auto")
+            || UserDefaults.standard.bool(forKey: "remote.autoAll")
+            || autoRemote
+        let shouldReconnect = phase == .playing && !remoteOfflineManual && (
+            defaultsAuto || wasRemoteBeforeBackground || remoteAddress != nil || reconnecting || nativeActive
+        )
         appInBackground = false
+        resignedActive = false
         wasPlayingBeforeBackground = false
-        guard phase == .playing, state != nil else { return }
 
         if shouldReconnect {
-            remoteReconnecting = true
-            remoteReconnectAttempt = 1
-            remoteConnectionDetail = "返回前台秒速续连"
-            notice = "正在无缝续连云服…"
+            let showReconnectBanner = cameFromBackground || remoteAddress == nil
+            if showReconnectBanner {
+                remoteReconnecting = true
+                remoteReconnectAttempt = 1
+                remoteConnectionDetail = "返回前台秒速续连"
+                notice = "正在无缝续连云服…"
+            }
             let res = await native.resumeFromForeground()
             if res.connected, let label = res.label {
                 let pushCapable = await native.serverSupportsPush
@@ -307,14 +366,16 @@ import LieguojiCore
                 if let data = res.state, let fresh = await Self.decode(GameState.self, from: data) {
                     apply(fresh)
                 }
-                let msText = res.rttMs.map { " \($0)ms" } ?? ""
-                notice = "已无缝续连云服（\(res.transport.isEmpty ? "在线" : res.transport)\(msText)）"
+                if showReconnectBanner {
+                    let msText = res.rttMs.map { " \($0)ms" } ?? ""
+                    notice = "已无缝续连云服（\(res.transport.isEmpty ? "在线" : res.transport)\(msText)）"
+                }
                 if shouldResumePlay && !playing { play() }
                 return
             }
             // 首次探活未命中（如解锁瞬间蜂窝/Wi-Fi 仍在唤醒）：直接转入持久化抖动退避重连，绝不自动切本地！
             remoteReconnecting = false
-            remoteLost(resumePlay: shouldResumePlay)
+            remoteLost(resumePlay: shouldResumePlay || playing)
             return
         }
 
@@ -921,8 +982,19 @@ import LieguojiCore
         var relations = "peace"; var naming = "historical-names"
         var climate = ClimateSettings()
         var cultures: Set<String> = Set(Names.cultureIds)
+        /// 真实历史剧本或创意工坊自定义地图（非空时跳过随机模板并直接按剧本山河/列国开局）。
+        var historicalScenario: HistoricalScenario? = nil
         /// One city per province; the web engine (native-bridge generate) clamps to nations…480.
         var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
+    }
+
+    /// 一键开局历史剧本或创意工坊地图。
+    func generateHistorical(_ scenario: HistoricalScenario) async {
+        var nw = NewWorld()
+        nw.historicalScenario = scenario
+        nw.nations = max(2, min(24, scenario.nations.count))
+        nw.provinces = String(max(nw.nations, min(480, scenario.provinceCount)))
+        await generate(nw)
     }
 
     /// 等待新挂载的 MapView 完成首帧布局与相机初始化，确保开卷动画与镜头推拉 100% 落在新地图上不跳帧、不闪屏。
@@ -960,7 +1032,7 @@ import LieguojiCore
                 throw EngineError.message("建世参数编码失败")
             }
             let made = Self.nativeOptions(seed: seed, template: options.template, nations: options.nations, provinces: options.provinceCount, relations: options.relations,
-                                          naming: options.naming, cultures: options.cultures, climate: options.climate)
+                                          naming: options.naming, cultures: options.cultures, climate: options.climate, historicalScenario: options.historicalScenario)
             let world: WorldMap
             let mountBefore: Int
             do {
@@ -1548,15 +1620,34 @@ import LieguojiCore
         // 严格单调日序守卫：推演中绝不允许任何迟到的 ahead / state() / syncRemoteStream / handoff 旧帧把世界和军队拉回！
         // 仅在暂停态（读档/继续/回溯）或首帧（previous == nil）允许日期回退。
         if playing, let previous, rawNext.day < previous.day { return }
-        // v10 精简流增量合并：服务端在未变化时将静态低频数组置 nil 省流，客户端沿用上一帧；若真实清空服务端会显式发 []。
+        // v11 精简流增量合并：服务端在未变化时将静态低频数组置 nil、重复事件置 []、疆域发 ownersDelta，客户端自动平滑还原。
         var next = rawNext
         if let previous, fromSlimStream || (remotePushActive && playing) {
+            if next.owners.isEmpty {
+                if let delta = next.ownersDelta, !previous.owners.isEmpty {
+                    var rebuilt = previous.owners
+                    var i = 0
+                    while i + 1 < delta.count {
+                        let idx = delta[i]
+                        let owner = delta[i + 1]
+                        if idx >= 0 && idx < rebuilt.count { rebuilt[idx] = owner }
+                        i += 2
+                    }
+                    next.owners = rebuilt
+                } else if !previous.owners.isEmpty {
+                    next.owners = previous.owners
+                }
+            }
             if next.ports == nil { next.ports = previous.ports }
             if next.forts == nil { next.forts = previous.forts }
             if next.holy == nil { next.holy = previous.holy }
             if next.wonders == nil { next.wonders = previous.wonders }
             if next.ruins == nil { next.ruins = previous.ruins }
             if next.yards == nil { next.yards = previous.yards }
+            if next.events.isEmpty && !previous.events.isEmpty { next.events = previous.events }
+        }
+        if !next.owners.isEmpty {
+            native.streamBuffer.seedBaselineOwners(next.owners)
         }
         state = next
         let dayOfYear = ((max(1, min(12, next.date.month)) - 1) * 30 + max(1, min(30, next.date.day)) - 1) % 360
@@ -1775,9 +1866,11 @@ import LieguojiCore
         return true
     }
 
-    private static func formatHeraldDate(_ date: GameState.Date) -> String {
+    private static func formatHeraldDate(_ date: GameState.Date, displayYear: Int? = nil) -> String {
         let season = WorldSeason.of(month: date.month).name
-        return "\(date.year)年\(date.month)月·\(season)"
+        let y = displayYear ?? date.year
+        let yearStr = y <= 0 ? "前\(y < 0 ? -y : 1)年" : "\(y)年"
+        return "\(yearStr)\(date.month)月·\(season)"
     }
 
     /// Wars declared or ended and provinces taken since the last state, as banners.
@@ -1787,7 +1880,7 @@ import LieguojiCore
         guard let map else { return }
         let curDay = next.day
         let curMonth = next.date.month
-        let curDateText = Self.formatHeraldDate(next.date)
+        let curDateText = Self.formatHeraldDate(next.date, displayYear: next.displayYear)
         func makeHerald(_ kind: Herald.Kind, _ text: String, _ nations: [Int]) -> Herald {
             Herald(kind: kind, text: text, nations: nations, day: curDay, month: curMonth, dateText: curDateText)
         }
@@ -2492,7 +2585,10 @@ import LieguojiCore
     /// Returns nil on success, or the engine's reason.
     private func finish(_ result: (ok: Bool, reason: String, state: Data?)) -> String? {
         nationInfoCache.removeAll(keepingCapacity: true)
-        if let data = result.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
+        if let data = result.state, let next = try? JSONDecoder().decode(GameState.self, from: data) {
+            apply(next)
+            if pageOpen { forcePublishForAction() }
+        }
         return result.ok ? nil : result.reason
     }
 
@@ -2883,6 +2979,7 @@ extension GameModel {
             return .native(made)
         } catch {
             guard epoch == worldEpoch else { throw error }
+            if options.historicalScenario != nil { throw error }
             let reason = error.localizedDescription
             let webHost = ensureLegacyEngine()
             await Task.yield()
@@ -2901,13 +2998,14 @@ extension GameModel {
         o[path] = ["seconds": (seconds * 1000).rounded() / 1000, "cityCount": cityCount.map { $0 as Any } ?? NSNull(), "error": error.map { $0 as Any } ?? NSNull()]
         if let data = try? JSONSerialization.data(withJSONObject: o, options: [.sortedKeys, .prettyPrinted]) { try? data.write(to: url) }
     }
-    /// NewWorld / 自绘地图选项 → NativeCreation.Options（与给网页引擎的 JSON 同义）。
-    static func nativeOptions(seed: String, template: String, nations: Int, provinces: Int, relations: String, naming: String, cultures: Set<String>, climate: ClimateSettings) -> NativeCreation.Options {
+    /// NewWorld / 自绘地图 / 历史剧本选项 → NativeCreation.Options（与给网页引擎的 JSON 同义）。
+    static func nativeOptions(seed: String, template: String, nations: Int, provinces: Int, relations: String, naming: String, cultures: Set<String>, climate: ClimateSettings, historicalScenario: HistoricalScenario? = nil) -> NativeCreation.Options {
         var o = NativeCreation.Options(seed: seed, template: template, count: nations, cityCount: provinces, relations: relations == "war" ? "war" : "peace",
                                        naming: naming == "culture-generated" ? "culture-generated" : "historical-names", cultures: Names.cultureIds.filter { cultures.contains($0) })
         o.precipitation = Double(climate.rain); o.temperatureOffset = Double(climate.temperature)
         o.north = Double(climate.north) / 100; o.south = Double(min(climate.south, climate.north - 10)) / 100
         o.organicBorders = true
+        o.historicalScenario = historicalScenario
         return o
     }
 }

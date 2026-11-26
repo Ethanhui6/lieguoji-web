@@ -984,8 +984,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var legLead: [String: SIMD2<Float>] = [:]
     private var lastLegVelocity: [String: (vel: SIMD2<Float>, time: CFTimeInterval)] = [:]
     private(set) var spread: [String: SIMD2<Float>] = [:]
-    private func advanceChase() -> Float {
-        let t = progress(pinnedFrameTime ?? CACurrentMediaTime())
+    private func advanceChase(at time: CFTimeInterval) -> Float {
+        let t = progress(time)
         chasing = t < 1
         return t
     }
@@ -1325,7 +1325,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     func draw(in view: MTKView) {
-        guard !released, let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
+        guard !released else { return }
+        let size = view.bounds.size
+        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return }
+        guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
         let now = CACurrentMediaTime()
         if let pinned = pinnedFrameTime, pinned.isFinite, abs(now - pinned) < 0.05 {
             frameTime = pinned
@@ -1334,9 +1337,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         pinnedFrameTime = nil
         let probe = Self.frameProbe
-        var spriteProgress: Float = advanceChase()
-        let size = view.bounds.size
-        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return }
+        var spriteProgress: Float = advanceChase(at: frameTime)
         if !camera.isValid {
             camera = MapCamera.cover(map: (Double(map.width), Double(map.height)), viewport: (Double(size.width), Double(size.height)))
         }

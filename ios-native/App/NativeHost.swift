@@ -122,6 +122,7 @@ final class StreamFrameBuffer: @unchecked Sendable {
     private var lastRawBytes: Int = 0
     private var framesReceived: Int = 0
     private var latestDecodedDay: Int = 0
+    private var baselineOwners: [Int] = []
     private let maxBuffered = 3
     var onFrameConsumed: (@Sendable (UInt32) -> Void)?
 
@@ -134,7 +135,45 @@ final class StreamFrameBuffer: @unchecked Sendable {
     func resetDay() {
         lock.lock()
         latestDecodedDay = 0
+        baselineOwners.removeAll(keepingCapacity: true)
         lock.unlock()
+    }
+
+    func resetBaseline() {
+        lock.lock()
+        baselineOwners.removeAll(keepingCapacity: true)
+        lock.unlock()
+    }
+
+    func seedBaselineOwners(_ owners: [Int]) {
+        guard !owners.isEmpty else { return }
+        lock.lock()
+        baselineOwners = owners
+        lock.unlock()
+    }
+
+    /// 将服务端 v11 下发的 `ownersDelta` 差量帧安全还原为完整 `owners` 数组，并在收到全量帧时刷新基线。
+    func reconstructOwnersIfNeeded(_ state: inout GameState) {
+        lock.lock()
+        defer { lock.unlock() }
+        if !state.owners.isEmpty {
+            baselineOwners = state.owners
+            return
+        }
+        if let delta = state.ownersDelta, !baselineOwners.isEmpty {
+            var rebuilt = baselineOwners
+            var i = 0
+            while i + 1 < delta.count {
+                let idx = delta[i]
+                let owner = delta[i + 1]
+                if idx >= 0 && idx < rebuilt.count {
+                    rebuilt[idx] = owner
+                }
+                i += 2
+            }
+            state.owners = rebuilt
+            baselineOwners = rebuilt
+        }
     }
 
     func reset(epoch: UInt8) {
@@ -162,11 +201,27 @@ final class StreamFrameBuffer: @unchecked Sendable {
         decodeQueue.async { [weak self] in
             guard let self else { return }
             let raw = WireCodec.decompressIfNeeded(compressedPayload)
-            guard !raw.isEmpty, let decoded = try? JSONDecoder().decode(GameState.self, from: raw) else { return }
+            guard !raw.isEmpty, var decoded = try? JSONDecoder().decode(GameState.self, from: raw) else { return }
             self.lock.lock()
             guard frameEpoch == self.epoch else {
                 self.lock.unlock()
                 return
+            }
+            if !decoded.owners.isEmpty {
+                self.baselineOwners = decoded.owners
+            } else if let delta = decoded.ownersDelta, !self.baselineOwners.isEmpty {
+                var rebuilt = self.baselineOwners
+                var i = 0
+                while i + 1 < delta.count {
+                    let idx = delta[i]
+                    let owner = delta[i + 1]
+                    if idx >= 0 && idx < rebuilt.count {
+                        rebuilt[idx] = owner
+                    }
+                    i += 2
+                }
+                decoded.owners = rebuilt
+                self.baselineOwners = rebuilt
             }
             self.lastCompressedBytes = compSize
             self.lastRawBytes = raw.count
@@ -319,6 +374,7 @@ actor NativeHost {
     private(set) var lastResumedState: Data?
     private var currentWorldId: String = ""
     private var currentKnownDay: Int = 0
+    private var baselineOwners: [Int] = []
     private var reattaching = false
     private var onLinkLost: (@Sendable () -> Void)?
     private var streamEpoch: UInt8 = 1
@@ -435,7 +491,7 @@ actor NativeHost {
     /// The world the computer last returned (a save), so a broken link or PC restart can recover seamlessly.
     private var lastWorld: Data?
 
-    /// 实时纯网络延迟存储（由 4 秒一次零锁 `MUX_PING` 独立更新，绝不混入推演算力耗时误报 1000ms）。
+    /// 实时纯网络延迟存储（EWMA 平滑，由零锁 `MUX_PING` 独立更新，抵抗弱网单包尖峰抖动）。
     private final class RTTBox: @unchecked Sendable {
         private let lock = NSLock()
         private var ms: Int?
@@ -444,7 +500,7 @@ actor NativeHost {
             set {
                 lock.lock()
                 if let nv = newValue {
-                    ms = ms.map { Int(Double($0) * 0.60 + Double(nv) * 0.40) } ?? nv
+                    ms = ms.map { Int((Double($0) * 0.70 + Double(nv) * 0.30).rounded()) } ?? nv
                 } else {
                     ms = nil
                 }
@@ -809,21 +865,50 @@ actor NativeHost {
         return true
     }
 
-    /// 回到前台：极速探活现有长连接；若 iOS 系统回收了 socket，毫秒级直连 `resumeWorld` 或云端 WebSocket 无感重挂并同步最新权威状态。
+    /// 回到前台：1.2s 硬超时极速探活（绝不卡死在 12s 默认 RPC 超时上）；一旦识别 iOS 僵尸套接字立即 0ms 销毁并直连 `reattachBest()`（`resumeWorld` ~40ms 无上传秒续）。
     func resumeFromForeground() async -> (connected: Bool, label: String?, transport: String, rttMs: Int?, state: Data?) {
+        // 先清空后台滞留的推流缓冲与暂停标记，避免切回瞬间旧帧积压跳格
+        streamEpoch &+= 1
+        streamBuffer.reset(epoch: streamEpoch)
+        lastResumedState = nil
+
         if let link = remote {
-            let t0 = Date().timeIntervalSinceReferenceDate
-            if let pong = try? await link.call("ping", ["v": 6], payload: nil), pong.ok {
-                let rtt = max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
-                rttBox.reset(rtt); lastRTTMs = rtt; parked = false; lost = false
+            let probeRTT: Int?
+            if let direct = link as? RemoteLink {
+                probeRTT = await direct.fastProbeRTT(timeoutSeconds: 1.2)
+            } else if let ws = link as? RelayWSLink {
+                probeRTT = await ws.fastProbeRTT(timeoutSeconds: 1.2)
+            } else {
+                probeRTT = await Self.fastGenericPing(link, timeoutSeconds: 1.2)
+            }
+
+            if let rtt = probeRTT {
+                rttBox.reset(rtt)
+                lastRTTMs = rtt
+                parked = false
+                lost = false
                 let resumed = (try? await link.call(serverSupportsStream ? "resume" : "state", [:], payload: nil))?.data
                 return (true, remoteAddress, remoteTransport, rtt, resumed)
             }
-            link.cancel(); remote = nil; remoteAddress = nil
-            serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
+
+            // iOS 后台回收/僵死的半开套接字：0ms 立即切断并销毁，绝不等待 12s 超时！
+            link.cancel()
+            remote = nil
+            remoteAddress = nil
+            serverSupportsStream = false
+            serverSupportsPush = false
+            serverSupportsLZ4 = false
+            streamBuffer.onFrameConsumed = nil
+            streamEpoch &+= 1
+            streamBuffer.reset(epoch: streamEpoch)
         }
-        guard parked || lost || remote == nil else { return (false, nil, "", nil, nil) }
+
+        let hasConfiguredTarget = !Self.savedDirectAddress.isEmpty || lastAddress != nil || parked || lost
+        guard hasConfiguredTarget else { return (false, nil, "", nil, nil) }
+
         if let label = await reattachBest() {
+            streamEpoch &+= 1
+            streamBuffer.reset(epoch: streamEpoch)
             let cached = consumeResumedState()
             let resumed: Data?
             if let cached {
@@ -834,6 +919,25 @@ actor NativeHost {
             return (true, label, remoteTransport, liveRTTMs ?? lastRTTMs, resumed)
         }
         return (false, nil, "", nil, nil)
+    }
+
+    private nonisolated static func fastGenericPing(_ link: EngineLink, timeoutSeconds: Double) async -> Int? {
+        let t0 = Date().timeIntervalSinceReferenceDate
+        return await withTaskGroup(of: Int?.self) { group in
+            group.addTask {
+                if let pong = try? await link.call("ping", ["v": 6], payload: nil), pong.ok {
+                    return max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
+                }
+                return nil
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(max(0.2, timeoutSeconds) * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
     }
 
     private(set) var lost = false
@@ -906,7 +1010,7 @@ actor NativeHost {
         return ms
     }
 
-    /// 配置服务器端推流（v9 启用微步滑动窗口背压 + 3Mbps 整形 + epoch 防乱序；经由 call() 感知断链并瞬时触发重连）。
+    /// 配置服务器端推流（v11 启用差量疆域 + 滑动窗口背压 + 弱网 RTT > 300ms 自适应节流 + epoch 防乱序）。
     func configureRemoteStream(playing: Bool, days: Int, intervalMs: Int = 80, resetEpoch: Bool = true) async {
         if resetEpoch || !playing {
             streamEpoch &+= 1
@@ -914,10 +1018,19 @@ actor NativeHost {
         }
         guard let link = remote, serverSupportsStream else { return }
         let useWindow = (link is RemoteLink) && serverSupportsPush
+        let rtt = liveRTTMs ?? lastRTTMs ?? 0
+        let adaptedIntervalMs: Int
+        if rtt > 600 {
+            adaptedIntervalMs = min(850, max(intervalMs, Int((Double(intervalMs) * 1.55).rounded())))
+        } else if rtt > 300 {
+            adaptedIntervalMs = min(650, max(intervalMs, Int((Double(intervalMs) * 1.30).rounded())))
+        } else {
+            adaptedIntervalMs = intervalMs
+        }
         _ = await call("streamConfig", [
             "playing": playing,
             "days": max(1, min(32, days)),
-            "intervalMs": max(35, min(600, intervalMs)),
+            "intervalMs": max(35, min(900, adaptedIntervalMs)),
             "epoch": Int(streamEpoch),
             "push": serverSupportsPush && playing,
             "window": useWindow
@@ -959,6 +1072,7 @@ actor NativeHost {
         guard let revision = advances.replaceWorld(world: world) else { throw EngineError.message("世界已经切换，忽略旧的载入请求") }
         try Self.loadCatalogs()
         lastResumedState = nil
+        baselineOwners.removeAll(keepingCapacity: true)
         streamBuffer.resetDay()
         if remote != nil { lastWorld = data }
         streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
@@ -1017,6 +1131,7 @@ actor NativeHost {
         }
         guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的建世界结果") }
         lastResumedState = nil
+        baselineOwners.removeAll(keepingCapacity: true)
         streamBuffer.resetDay()
         streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         let r: EngineService.Reply
@@ -1065,7 +1180,29 @@ actor NativeHost {
         let op = serverSupportsStream ? "pullLatest" : "step"
         let data = await call(op, ["days": days, "slim": serverSupportsLZ4]).data ?? Data()
         guard !data.isEmpty else { return .failure(EngineError.message("推演没有返回有效世界状态")) }
-        let res = Result { try JSONDecoder().decode(GameState.self, from: data) }
+        let res: Result<GameState, Error> = Result {
+            var decoded = try JSONDecoder().decode(GameState.self, from: data)
+            if !decoded.owners.isEmpty {
+                baselineOwners = decoded.owners
+                streamBuffer.seedBaselineOwners(decoded.owners)
+            } else if let delta = decoded.ownersDelta, !baselineOwners.isEmpty {
+                var rebuilt = baselineOwners
+                var i = 0
+                while i + 1 < delta.count {
+                    let idx = delta[i]
+                    let owner = delta[i + 1]
+                    if idx >= 0 && idx < rebuilt.count { rebuilt[idx] = owner }
+                    i += 2
+                }
+                decoded.owners = rebuilt
+                baselineOwners = rebuilt
+                streamBuffer.seedBaselineOwners(rebuilt)
+            } else {
+                streamBuffer.reconstructOwnersIfNeeded(&decoded)
+                if !decoded.owners.isEmpty { baselineOwners = decoded.owners }
+            }
+            return decoded
+        }
         if case .success(let decoded) = res { currentKnownDay = max(currentKnownDay, decoded.day) }
         return res
     }
@@ -1342,6 +1479,28 @@ final class RelayWSLink: EngineLink, @unchecked Sendable {
         }
     }
 
+    func fastProbeRTT(timeoutSeconds: Double = 1.2) async -> Int? {
+        let isClosed: Bool = { lock.lock(); defer { lock.unlock() }; return closed }()
+        guard !isClosed else { return nil }
+        let t0 = Date().timeIntervalSinceReferenceDate
+        return await withTaskGroup(of: Int?.self) { group in
+            group.addTask { [weak self] in
+                guard let self else { return nil }
+                if let pong = try? await self.call("ping", ["v": 6], payload: nil), pong.ok {
+                    return max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
+                }
+                return nil
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(max(0.2, timeoutSeconds) * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+    }
+
     func cancel() {
         lock.lock()
         userCancelled = true
@@ -1508,6 +1667,11 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         return mux && !closed
     }
 
+    var isClosed: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return closed
+    }
+
     /// 非阻塞回传 9 字节 `MUX_ACK` 滑动窗口确认帧，告诉服务器已消费一帧，准许推下一帧。
     func sendMuxAck(tag: UInt32) {
         guard isMuxActive else { return }
@@ -1519,9 +1683,10 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         let tcp = NWProtocolTCP.Options()
         tcp.noDelay = true
         tcp.enableKeepalive = true
-        tcp.keepaliveIdle = 12
+        tcp.keepaliveIdle = 15
         tcp.keepaliveInterval = 5
-        tcp.keepaliveCount = 3
+        tcp.keepaliveCount = 4
+        tcp.connectionTimeout = 6
         connection = NWConnection(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port) ?? 8765, using: NWParameters(tls: nil, tcp: tcp))
     }
 
@@ -1558,16 +1723,41 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         return true
     }
 
-    func muxPingRTT() async -> Int? {
+    func muxPingRTT(timeoutSeconds: Double = 3.5) async -> Int? {
         guard isMuxActive else { return nil }
         let t0 = Date().timeIntervalSinceReferenceDate
         let reqId = allocId()
         let frame = EngineWire.muxFrame(type: EngineWire.muxPing, id: reqId, body: Data())
         do {
-            _ = try await sendMuxAndWait(id: reqId, frame: frame, timeoutSeconds: 2.5)
+            _ = try await sendMuxAndWait(id: reqId, frame: frame, timeoutSeconds: timeoutSeconds)
             return max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
         } catch {
             return nil
+        }
+    }
+
+    /// 极速链路探活（严格 `timeoutSeconds` 硬截止，绝不等待 12s 默认 RPC 超时）：切回前台瞬间判别 iOS 僵尸套接字。
+    func fastProbeRTT(timeoutSeconds: Double = 1.2) async -> Int? {
+        if isMuxActive {
+            return await muxPingRTT(timeoutSeconds: timeoutSeconds)
+        }
+        guard !isClosed else { return nil }
+        let t0 = Date().timeIntervalSinceReferenceDate
+        return await withTaskGroup(of: Int?.self) { group in
+            group.addTask { [weak self] in
+                guard let self else { return nil }
+                if let pong = try? await self.call("ping", ["v": 6], payload: nil), pong.ok {
+                    return max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
+                }
+                return nil
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(max(0.2, timeoutSeconds) * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
         }
     }
 
@@ -1599,14 +1789,15 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         heartbeatTask = Task.detached(priority: .utility) { [weak self] in
             var missedPings = 0
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 2_500_000_000)
+                try? await Task.sleep(nanoseconds: 2_800_000_000)
                 guard let self, self.isMuxActive else { return }
-                if let ms = await self.muxPingRTT() {
+                if let ms = await self.muxPingRTT(timeoutSeconds: 3.5) {
                     missedPings = 0
                     self.onRTTMeasured?(ms)
                 } else {
                     missedPings += 1
-                    if missedPings >= 3 {
+                    // 容忍蜂窝弱网 1–3 秒瞬时丢包，连续 4 次失答才判定真实断链
+                    if missedPings >= 4 {
                         self.failAll(EngineError.message("心跳超时，直连链路已断开"))
                         self.connection.cancel()
                         return

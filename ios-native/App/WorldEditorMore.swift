@@ -22,12 +22,45 @@ struct EditorLandTab: View {
         districts = await model.districtList(); families = await model.familyList(); extras = await model.mapExtras()
     }
     var body: some View {
-        VStack(spacing: 12) {
+        let provinceCount = model.map?.meta.provinces.count ?? 0
+        let aliveCount = model.state?.nations.filter(\.alive).count ?? 0
+        let selectedProvName: String? = {
+            guard let p = model.controller.selectedProvince, let map = model.map, map.meta.provinces.indices.contains(p) else { return nil }
+            return map.meta.provinces[p].name
+        }()
+        let selectedNationName: String? = {
+            guard let p = model.controller.selectedProvince, let map = model.map,
+                  let o = model.state?.owners, o.indices.contains(p),
+                  o[p] >= 0, o[p] < map.meta.nations.count else { return nil }
+            return map.meta.nations[o[p]].name
+        }()
+
+        LazyVStack(spacing: 14) {
+            SectionLabel("政区与世界概览")
+            Group2 {
+                if let pname = selectedProvName {
+                    AlignedMetaRow(label: "当前选中州郡", value: pname, icon: .locate, valueColor: Theme.seal)
+                    Divider2()
+                    AlignedMetaRow(label: "当前归属政权", value: selectedNationName ?? "无主之地", icon: .nation)
+                    Divider2()
+                }
+                AlignedMetaRow(label: "天下总州郡", value: "\(provinceCount) 州", icon: .region)
+                Divider2()
+                AlignedMetaRow(label: "现存国家", value: "\(aliveCount) 国", icon: .nation)
+                Divider2()
+                AlignedMetaRow(label: "行政区划", value: "\(districts.count) 区", icon: .polity)
+                Divider2()
+                AlignedMetaRow(label: "在世世家", value: "\(families.count) 族", icon: .house)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+
             quickSection("无主之地") {
                 TextField("名称", text: $blankName).paperField()
-                PaperSwitch(title: "不可征服（无人能入）", on: $unconquerable)
-                quickGrid {
-                    quickTile("点选一州划定", "square.dashed") {
+                Group2 {
+                    PaperSwitch(title: "不可征服（无人能入）", on: $unconquerable)
+                }
+                editorToolGrid(columns: 1) {
+                    editorToolButton("点选一州划定无主之地", glyph: .region) {
                         let name = blankName, un = unconquerable, c = model.controller
                         c.pickPrompt = "点选要划为无主之地的州郡"
                         c.onPick = { p in
@@ -41,8 +74,8 @@ struct EditorLandTab: View {
             }
             quickSection("行政区") {
                 TextField("新行政区名称", text: $districtName).paperField()
-                quickGrid {
-                    quickTile("新建并绘制", "plus.square.dashed") {
+                editorToolGrid(columns: 2) {
+                    editorToolButton("新建并绘制", glyph: .plus) {
                         let name = districtName, c = model.controller
                         c.pickPrompt = "点选新行政区的中心州郡"
                         c.onPick = { p in
@@ -55,30 +88,33 @@ struct EditorLandTab: View {
                         }
                         close()
                     }
-                    quickTile("绘制已有", "paintbrush") {
+                    editorToolButton("绘制已有区", glyph: .brush) {
                         choice = Choice(title: "绘制哪个行政区", items: districts.map { d in ("\(d.name) · \(d.provinces)州", { begin("绘制行政区：\(d.name)") { q in await model.edit("setDistrict", ["province": q, "region": d.id, "name": NSNull()]) } }) })
                     }
-                    quickTile("删除", "trash", destructive: true) {
+                    editorToolButton("重新生成", glyph: .refresh) { Task { say(await model.edit("regenerateDistricts", [:]), "行政区已重新生成"); await reload() } }
+                    editorToolButton("删除行政区", glyph: .trash, destructive: true) {
                         choice = Choice(title: "删除哪个行政区", items: districts.map { d in ("\(d.name) · \(d.provinces)州", later { say(await model.edit("deleteDistrict", ["region": d.id]), "行政区已删除"); await reload() }) })
                     }
-                    quickTile("重新生成", "arrow.triangle.2.circlepath") { Task { say(await model.edit("regenerateDistricts", [:]), "行政区已重新生成"); await reload() } }
                 }
             }
             quickSection("家族封地") {
-                quickGrid {
-                    quickTile("绘制封地", "paintbrush.pointed") {
+                editorToolGrid(columns: 3) {
+                    editorToolButton("绘制封地", glyph: .brush) {
                         choice = Choice(title: "绘制哪个家族", items: families.map { f in ("\(f.name) · \(f.provinces)州", { begin("绘制封地：\(f.name)") { q in await model.edit("setFamilyLand", ["province": q, "family": f.id]) } }) })
                     }
-                    quickTile("擦除封地", "eraser") { begin("擦除封地") { q in await model.edit("setFamilyLand", ["province": q, "family": NSNull()]) } }
-                    quickTile("除爵", "person.fill.xmark", destructive: true) {
+                    editorToolButton("擦除封地", glyph: .close) { begin("擦除封地") { q in await model.edit("setFamilyLand", ["province": q, "family": NSNull()]) } }
+                    editorToolButton("除爵夺地", glyph: .trash, destructive: true) {
                         choice = Choice(title: "剥夺哪个家族的爵位与封地", items: families.map { f in (f.name, later { say(await model.edit("editFamily", ["family": f.id, "surname": NSNull(), "influence": NSNull(), "strip": 1]), "已除爵"); await reload() }) })
                     }
                 }
             }
-            quickSection("世界开关") {
+            SectionLabel("世界开关")
+            Group2 {
                 PaperSwitch(title: "自动放弃孤立行省", on: Binding(get: { extras.abandon ?? false }, set: { v in extras.abandon = v; Task { say(await model.setWorld("abandon", v ? 1 : 0), v ? "已开启" : "已关闭") } }))
+                Divider2()
                 PaperSwitch(title: "协助盟友占领土地", on: Binding(get: { !(extras.noAssist ?? false) }, set: { v in extras.noAssist = !v; Task { say(await model.setWorld("noAssist", v ? 0 : 1), v ? "已开启" : "已关闭") } }))
             }
+            .padding(.horizontal, Theme.Layout.pageInset)
         }
         .task { await reload() }
         .sheet(item: $choice) { c in EditorChoiceList(title: c.title, items: c.items) { choice = nil } }
@@ -92,22 +128,22 @@ struct EditorChoiceList: View {
     let dismiss: () -> Void
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            LazyVStack(spacing: 0) {
                 SheetHeader(title: title, seal: "择")
                 Group2 {
                     ForEach(Array(items.enumerated()), id: \.offset) { i, item in
                         if i > 0 { Divider2() }
                         Button { dismiss(); item.1() } label: {
-                            HStack { Text(item.0).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1); Spacer() }.padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                            HStack { Text(item.0).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1); Spacer() }.padding(.horizontal, 14).frame(minHeight: 42).contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Theme.Layout.pageInset)
             }
             .padding(.bottom, 20)
         }
-        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
 }
 
@@ -123,36 +159,41 @@ struct EditorAllianceTab: View {
     @State private var target = -1
     private func reload() async { list = await model.allianceList() }
     var body: some View {
-        VStack(spacing: 12) {
+        LazyVStack(spacing: 14) {
             if list.isEmpty { Text("天下暂无同盟").font(Theme.body).foregroundStyle(Theme.ink2).padding(30) }
             ForEach(list) { a in
                 quickSection(a.name) {
                     if open == a.id, let map = model.map {
                         TextField("同盟名称", text: $name).paperField()
                         ColorPicker("同盟颜色", selection: $color, supportsOpacity: false).font(Theme.body).foregroundStyle(Theme.ink2)
-                        ForEach(a.members, id: \.self) { n in
-                            HStack {
-                                Text(n < map.meta.nations.count ? map.meta.nations[n].name : "—").font(Theme.body).foregroundStyle(Theme.ink)
-                                Spacer()
-                                Button("逐出") { Task { say(await model.edit("allianceMember", ["i": a.id, "n": n, "join": 0]), "已逐出"); await reload() } }.font(Theme.label).foregroundStyle(Theme.seal)
+                        Group2 {
+                            ForEach(Array(a.members.enumerated()), id: \.element) { idx, n in
+                                HStack {
+                                    Text(n < map.meta.nations.count ? map.meta.nations[n].name : "—").font(Theme.body).foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    Button("逐出") { Task { say(await model.edit("allianceMember", ["i": a.id, "n": n, "join": 0]), "已逐出"); await reload() } }.font(Theme.label).foregroundStyle(Theme.seal)
+                                }
+                                .padding(.horizontal, 14).frame(minHeight: 40)
+                                if idx < a.members.count - 1 { Divider2() }
                             }
                         }
-                        quickGrid {
-                            quickTile("保存", "checkmark.seal") {
+                        editorToolGrid(columns: 2) {
+                            editorToolButton("保存修改", glyph: .edict) {
                                 let hex = NationSheet.hex(color), t = name
                                 Task { say(await model.edit("editAlliance", ["i": a.id, "name": t, "color": hex, "unbreakable": NSNull()]), "同盟已修改"); await reload() }
                             }
-                            quickTile("拉入成员", "person.badge.plus") { target = -1; picking = true }
-                            quickTile(a.unbreakable ? "解除铁盟" : "设为铁盟", "lock") { Task { say(await model.edit("editAlliance", ["i": a.id, "name": NSNull(), "color": NSNull(), "unbreakable": a.unbreakable ? 0 : 1]), "同盟已修改"); await reload() } }
-                            quickTile("解散", "xmark.octagon", destructive: true) { Task { say(await model.edit("disbandAlliance", ["i": a.id]), "同盟已解散"); open = nil; await reload() } }
+                            editorToolButton("拉入成员", glyph: .plus) { target = -1; picking = true }
+                            editorToolButton(a.unbreakable ? "解除铁盟" : "设为铁盟", glyph: .alliance) { Task { say(await model.edit("editAlliance", ["i": a.id, "name": NSNull(), "color": NSNull(), "unbreakable": a.unbreakable ? 0 : 1]), "同盟已修改"); await reload() } }
+                            editorToolButton("解散同盟", glyph: .trash, destructive: true) { Task { say(await model.edit("disbandAlliance", ["i": a.id]), "同盟已解散"); open = nil; await reload() } }
                         }
                     } else {
                         Button { open = a.id; name = a.name; color = a.color.isEmpty ? .gray : Names.color(a.color) } label: {
                             HStack {
-                                Text("\(a.members.count) 国\(a.unbreakable ? " · 铁盟" : "")").font(Theme.body).foregroundStyle(Theme.ink2)
+                                Text("\(a.members.count) 国\(a.unbreakable ? " · 铁盟" : "")").font(Theme.body).foregroundStyle(Theme.ink2).monospacedDigit()
                                 Spacer()
                                 InkIcon(glyph: .chevronDown, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
                             }
+                            .frame(minHeight: 36)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -164,19 +205,19 @@ struct EditorAllianceTab: View {
         .sheet(isPresented: $picking) {
             if let map = model.map, let state = model.state, let id = open, let a = list.first(where: { $0.id == id }) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
+                    LazyVStack(alignment: .leading, spacing: 14) {
                         SheetHeader(title: "拉入哪国", seal: "盟")
-                        Group2 { NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive && $0 < map.meta.nations.count && !a.members.contains($0) }, selection: $target) }.padding(.horizontal, 16)
+                        Group2 { NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive && $0 < map.meta.nations.count && !a.members.contains($0) }, selection: $target).padding(12) }.padding(.horizontal, Theme.Layout.pageInset)
                         SealButton(title: "加入同盟", disabled: target < 0) {
                             let t = target
                             picking = false
                             Task { say(await model.edit("allianceMember", ["i": id, "n": t, "join": 1]), "已加入"); await reload() }
                         }
-                        .padding(.horizontal, 22)
+                        .padding(.horizontal, Theme.Layout.pageInset)
                     }
                     .padding(.bottom, 20)
                 }
-                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
         }
     }
@@ -233,7 +274,7 @@ struct EditorMapTab: View {
         close()
     }
     var body: some View {
-        VStack(spacing: 12) {
+        LazyVStack(spacing: 14) {
             quickSection("气候与河流") {
                 PaperStepper(title: "降水", value: $climate.rain, range: 10...200, unit: "%")
                 PaperStepper(title: "气温修正", value: $climate.temperature, range: -30...30, unit: "°")
@@ -246,15 +287,15 @@ struct EditorMapTab: View {
                 }
             }
             quickSection("河流") {
-                quickGrid {
-                    quickTile("手绘河流", "scribble") { drawRiver() }
-                    quickTile("清除手绘", "eraser", destructive: true) { Task { let e = await model.edit("clearMapRivers", [:]); await model.refreshCustom(); say(e, "手绘河流已清除") } }
+                editorToolGrid(columns: 2) {
+                    editorToolButton("手绘河流", glyph: .lake) { drawRiver() }
+                    editorToolButton("清除手绘", glyph: .trash, destructive: true) { Task { let e = await model.edit("clearMapRivers", [:]); await model.refreshCustom(); say(e, "手绘河流已清除") } }
                 }
             }
             quickSection("地名") {
-                quickGrid {
-                    quickTile("按文化重命名", "character.book.closed") { Task { let e = await model.edit("renameAllByCulture", [:]); await model.refreshCustom(); say(e, "全部城市已按文化重命名") } }
-                    quickTile("随机一州", "dice") {
+                editorToolGrid(columns: 2) {
+                    editorToolButton("按文化重命名", glyph: .culture) { Task { let e = await model.edit("renameAllByCulture", [:]); await model.refreshCustom(); say(e, "全部城市已按文化重命名") } }
+                    editorToolButton("随机一州改名", glyph: .refresh) {
                         let c = model.controller
                         c.pickPrompt = "点选要随机改名的州郡"
                         c.onPick = { p in

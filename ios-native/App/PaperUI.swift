@@ -509,7 +509,7 @@ struct StatisticsSheet: View {
                 }
                 .padding(.bottom, 28)
             }
-            .task(id: "\(category)-\(model.state?.day ?? 0)") {
+            .task(id: "\(category)-\((model.state?.day ?? 0) / 30)") {
             let next = category == "wars" ? Self.currentWars(model.state, model.map) : await model.statistics(category)
             withAnimation(reduceMotion ? nil : Motion.panel) {
                 rows = next
@@ -777,7 +777,7 @@ struct PaperMenu<T: Hashable>: View {
         .buttonStyle(.plain)
         .sheet(isPresented: $open) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 12) {
                     SheetHeader(title: title, subtitle: "点一行选定", seal: "选")
                     Group2 {
                         if items.isEmpty { Row(label: title, value: "没有可选项") }
@@ -802,13 +802,76 @@ struct PaperMenu<T: Hashable>: View {
                 }
                 .padding(.bottom, 24)
             }
-            .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.medium, .fraction(0.89)])
             .presentationCornerRadius(Theme.Control.cornerSheet)
             .presentationBackground { MemorialPaper() }
             .presentationDragIndicator(.hidden)
             .font(Theme.section)
         }
+    }
+}
+
+/// 严格像素对齐的宣纸信息行：固定 22pt 左图标槽、左对齐标签、monospacedDigit 右对齐数值、统一 16pt 尾槽，编辑行与只读行基线完全齐平。
+struct AlignedMetaRow: View {
+    let label: String
+    let value: String
+    var icon: InkGlyph? = nil
+    var valueColor: Color = Theme.ink
+    var trailingGlyph: InkGlyph = .brush
+    var action: (() -> Void)? = nil
+
+    private var resolvedGlyph: InkGlyph {
+        if let icon { return icon }
+        if let sym = Glyph.of(label), let g = GameActionLabel.glyph(for: sym) { return g }
+        return .edict
+    }
+
+    var body: some View {
+        if let action {
+            Button {
+                GameFeel.shared.tap()
+                action()
+            } label: {
+                rowContent(editable: true)
+            }
+            .buttonStyle(.plain)
+        } else {
+            rowContent(editable: false)
+        }
+    }
+
+    private func rowContent(editable: Bool) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            InkIcon(glyph: resolvedGlyph, size: 15, weight: 1.65)
+                .foregroundStyle(editable ? Theme.seal.opacity(0.82) : Theme.ink.opacity(0.72))
+                .frame(width: 22, height: 22, alignment: .center)
+            Text(label)
+                .font(Theme.body)
+                .foregroundStyle(Theme.ink2)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+            Spacer(minLength: 10)
+            Text(value)
+                .font(Theme.body)
+                .foregroundStyle(valueColor)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .multilineTextAlignment(.trailing)
+            Group {
+                if editable {
+                    InkIcon(glyph: trailingGlyph, size: 12, weight: 1.75)
+                        .foregroundStyle(Theme.seal.opacity(0.78))
+                } else {
+                    Color.clear
+                }
+            }
+            .frame(width: 16, height: 16, alignment: .center)
+        }
+        .frame(minHeight: 42)
+        .padding(.horizontal, 14)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 

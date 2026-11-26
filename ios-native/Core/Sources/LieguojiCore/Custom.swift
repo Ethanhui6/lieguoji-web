@@ -355,6 +355,8 @@ public enum Regimes {
         // 性能优化：每月一次预索引全图州郡、存粮、军团、战态与世家，消除逐国循环内的数十次全图遍历。
         beginMonthIndex(r, key: key)
         defer { endMonthIndex() }
+        SovereignAI.beginMonth(r, key: key)
+        defer { SovereignAI.endMonth() }
         for n in r.world.nations.asArray {
             let id = n.id.asString
             guard monthLandCount(r, id) > 0, !isBlank(r, id) else { continue }
@@ -557,7 +559,11 @@ public enum Regimes {
         realisticPoliticsMonth(r, n, id, key)
         // v5.2.0 真实君主与执政更迭（战时亲征阵亡、战败兵变废立、共和定期换届、自然染疾）
         rulerTurnoverMonth(r, n, id, key)
-        // AI 季度自主施政与自动国策统筹引擎（仅在 App 规则开启时运行，绝不影响网页黄金逐字节重放）
+        // v5.8.0 最高执政全系统自主治理管线（按皇帝/总统/首相等真实执政者属性自动运行抉择、基建、科技、方略、政令、奇观、霸业、盛世与远征）
+        if UnitKinds.enabled {
+            SovereignAI.month(r, nation: n, id: id, key: key, addGold: addGold, addDestiny: addDestiny)
+        }
+        // 季度权力失衡危机与议会定期换届大选（仅在 App 规则开启时运行，绝不影响网页黄金逐字节重放）
         if UnitKinds.enabled && key % 3 == 0 {
             aiAutonomousGovernanceQuarter(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         }
@@ -955,6 +961,9 @@ extension NativeEngine {
         Regimes.enable(run)
         let r = run
         UnitKinds.enabled = true
+        // 默认开启全图列国统一自动治理（未显式关闭时默认 true，保证治国方略、大工程、基建与抉择开箱即自动运行）
+        if r.regimes.world.isNull { r.regimes.world = JS.object() }
+        if r.regimes.world.globalAutoGovern.isNull { r.regimes.world.globalAutoGovern = JS(true) }
         Regimes.registerCustomCultures(r)
         NameVariety.apply(r)
         NationColors.apply(r)

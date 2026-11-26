@@ -377,20 +377,9 @@ public enum WorldDepth {
                 }
             }
 
-            // 自动裁决机制：待决国家因果抉择若开启自动裁决满 2 个月（或搁置满 6 个月），由中枢依国库与君主治政自动决断，绝不长期悬停卡死。
-            if !r.regimes.eventChains[id].isNull, let cid = r.regimes.eventChains[id].id.optionalString {
-                let spawnedM = r.regimes.eventChains[id].month.optionalNumber.map(Int.init) ?? key
-                let elapsed = max(0, key - spawnedM)
-                let nb = Regimes.book(r, id)
-                let autoDecide = nb.autoDecideSet.isTruthy ? nb.autoDecide.isTruthy : Regimes.isAutoGoverned(r, id)
-                if (autoDecide && elapsed >= 2) || elapsed >= 6 {
-                    let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-                    let ldr = Regimes.governor(r, id) ?? Regimes.ruler(r, id)
-                    let adm = ldr.map { People.skills($0).administrative } ?? 50
-                    let needA = chainOptACost(cid)
-                    let pickChoice = (gold >= max(needA + 140, 320) && adm >= 46) ? "a" : "b"
-                    _ = applyEventChain(r, nationId: id, chainId: cid, choice: pickChoice, autoResolved: true)
-                }
+            // 自动裁决机制：交由 SovereignAI 按最高执政者四维属性、性格特质、政体与实时局势为全候选项打分并记录朝政奏录。
+            if !r.regimes.eventChains[id].isNull {
+                SovereignAI.resolveEventChainIfDue(r, nationId: id, key: key)
             }
 
             // 每 6 个月为尚无待处理事件链的国家刷新一条贴合当前局势的因果事件链
@@ -405,24 +394,8 @@ public enum WorldDepth {
                 }
             }
 
-            // 富裕 AI 国家自动温和投资基建（每年一次，防止爆库）
-            if key > 0 && key % 12 == 0 && !fin.isNull {
-                let gold = fin.gold.optionalNumber ?? 0
-                if gold >= 900, let p = Regimes.monthLand(r, id).first {
-                    let pid = p.id.asString
-                    let slot = InfraSlot.allCases[abs(key + id.count) % InfraSlot.allCases.count]
-                    let lvl = infraLevel(r, provinceId: pid, slot: slot)
-                    if lvl < 3 && (slot != .shipyard || (Naval.sea?.ports.contains(where: { $0.provinceId == pid }) ?? false)) {
-                        let cost = slot.cost(nextLevel: lvl + 1)
-                        if gold >= cost + 500 {
-                            fin.gold = JS(gold - cost)
-                            if r.regimes.infra.isNull { r.regimes.infra = .object() }
-                            if r.regimes.infra[pid].isNull { r.regimes.infra[pid] = .object() }
-                            r.regimes.infra[pid][slot.rawValue] = JS(lvl + 1)
-                        }
-                    }
-                }
-            }
+            // 州郡五类基建（水利/商埠/要塞/船坞/学院）统一交由 SovereignAI 自主评估兴修（月内去重，取代旧版每年1州随机占位）
+            SovereignAI.developProvincesIfNeeded(r, nationId: id, key: key)
         }
     }
 
@@ -471,9 +444,13 @@ public enum WorldDepth {
         case "famineRelief": return 220
         case "plagueContainment": return 180
         case "enlightenmentReform": return 200
+        case "artisanGuild": return 180
         case "grandVoyage": return 240
         case "arsenalTrial": return 220
-        case "maritimeBoom", "saltIronMonopoly", "fiscalCrisis": return 0
+        case "harborBoom": return 200
+        case "maritimeBoom", "mightyGeneral", "antiHegemonLeague", "frontierTrade",
+             "saltIronMonopoly", "academyDebate", "fiscalCrisis", "bumperAmnesty", "polityCrossroad":
+            return 0
         default: return 140
         }
     }
@@ -567,7 +544,7 @@ public enum WorldDepth {
         case "arsenalTrial":
             if optA {
                 addGold(-220); addTechProgress(r, nation: id, branch: .military, points: 38)
-                for a in r.world.armies.asArray where a.nationId.optionalString == id && a.troops.asNumber > 0 {
+                for a in Regimes.monthArmies(r, id) {
                     a.morale = JS(min(100, (a.morale.optionalNumber ?? 70) + 18))
                 }
                 scheduleEcho(title: "新式火炮列装成军", reason: "兵工厂量产火器，前线破城与野战火力更胜往昔（军备 +24、国运 +4）。", kind: "war", destiny: 4, branch: .military, pts: 24)
@@ -576,10 +553,126 @@ public enum WorldDepth {
                 addTechProgress(r, nation: id, branch: .military, points: 18)
                 summary = "已小批试装稳健控费：军备科技 +18。"
             }
+        case "mightyGeneral":
+            if optA {
+                for a in Regimes.monthArmies(r, id) { a.morale = JS(100) }
+                addTechProgress(r, nation: id, branch: .military, points: 25)
+                scheduleEcho(title: "百战精锐成军", reason: "名将感念知遇之恩、严加操练，三军锐不可当（军备 +20、国运 +4）。", kind: "war", destiny: 4, branch: .military, pts: 20)
+                summary = "已加恩重赏委以重任：全军士气满额、军备科技 +25，半年后触发「百战精锐成军」。"
+            } else {
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 8))
+                addDest(4)
+                scheduleEcho(title: "军政分治定型", reason: "兵权收归中枢节制、纲纪肃然（治政 +20、国运 +3）。", kind: "politics", destiny: 3, branch: .statecraft, pts: 20)
+                summary = "已温和轮调收拢兵权：腐化 −8、国运 +4，半年后触发「军政分治定型」。"
+            }
+        case "antiHegemonLeague":
+            if optA {
+                adjustReputation(r, nation: id, delta: 10)
+                for other in r.world.nations.asArray where other.id.asString != id && Vassals.alive(r, other.id.asString) && !Regimes.atWar(r, id, other.id.asString) {
+                    DiplomacyDeep.adjustOpinionMod(r, id, other.id.asString, delta: 10)
+                }
+                scheduleEcho(title: "合纵联防互助红利", reason: "诸邻感佩信义，商旅互通、协防互助（国库 +240 金、信誉 +5、国运 +3）。", kind: "diplomacy", gold: 240, destiny: 3, rep: 5)
+                summary = "已响应合纵广结盟好：国际信誉 +10、诸邻好感 +10，半年后收获联防红利。"
+            } else {
+                addTechProgress(r, nation: id, branch: .military, points: 28)
+                addGold(120); adjustReputation(r, nation: id, delta: -4)
+                summary = "已独善其身暗蓄军备：军备科技 +28、国库 +120 金、国际信誉 −4。"
+            }
+        case "frontierTrade":
+            if optA {
+                addGold(210); adjustReputation(r, nation: id, delta: 5)
+                scheduleEcho(title: "良马充盈骑兵精锐", reason: "边镇茶马互市源源不断输入良驹与税银（国库 +220 金、军备 +20）。", kind: "reform", gold: 220, branch: .military, pts: 20)
+                summary = "已开设边镇官办互市：国库 +210 金、国际信誉 +5，半年后良马充盈。"
+            } else {
+                addTechProgress(r, nation: id, branch: .military, points: 20); addDest(3)
+                summary = "已严守关隘加固边墙：军备科技 +20、国运 +3。"
+            }
+        case "saltIronMonopoly":
+            if optA {
+                addGold(340); addTechProgress(r, nation: id, branch: .economy, points: 12)
+                Finance.setCorruption(r, id, min(100, Finance.corruption(r, id) + 4))
+                summary = "已实行盐铁官营专卖：国库 +340 金、农商科技 +12、腐化 +4。"
+            } else {
+                addTechProgress(r, nation: id, branch: .economy, points: 32)
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 6))
+                addDest(4)
+                summary = "已藏富于民放宽工商：农商科技 +32、腐化 −6、国运 +4。"
+            }
+        case "artisanGuild":
+            if optA {
+                addGold(-180)
+                addTechProgress(r, nation: id, branch: .military, points: 24)
+                addTechProgress(r, nation: id, branch: .economy, points: 24)
+                scheduleEcho(title: "精械量产红利", reason: "官营示范工坊推广全国，军农工械齐升（国库 +280 金、农商 +20）。", kind: "reform", gold: 280, branch: .economy, pts: 20)
+                summary = "已重赏百工设官营工坊：耗 180 金，军备 +24、农商 +24，半年后迎来精械量产红利。"
+            } else {
+                addTechProgress(r, nation: id, branch: .economy, points: 20); addGold(110)
+                summary = "已颁布专利令民间自兴：农商 +20、国库 +110 金。"
+            }
+        case "academyDebate":
+            if optA {
+                addTechProgress(r, nation: id, branch: .statecraft, points: 25)
+                addTechProgress(r, nation: id, branch: .economy, points: 20)
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 5))
+                summary = "已倡导格物实学与考课：治政 +25、农商 +20、腐化 −5。"
+            } else {
+                addDest(6); adjustReputation(r, nation: id, delta: 5)
+                summary = "已尊崇文教凝聚民心：国运 +6、国际信誉 +5。"
+            }
+        case "fiscalCrisis":
+            if optA {
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 12))
+                addTechProgress(r, nation: id, branch: .statecraft, points: 22)
+                addGold(160)
+                summary = "已清查冗费裁撤浮员：腐化 −12、治政 +22、国库 +160 金。"
+            } else {
+                addGold(360); adjustReputation(r, nation: id, delta: 3); addDest(-2)
+                summary = "已募集公债以济急需：国库 +360 金、信誉 +3、国运 −2。"
+            }
+        case "bumperAmnesty":
+            if optA {
+                for p in Regimes.monthLand(r, id) {
+                    if let s = Regimes.monthStock(r, p.id.asString) {
+                        s.population = JS(((s.population.optionalNumber ?? 0) * 1.025).rounded())
+                    }
+                }
+                addDest(6)
+                scheduleEcho(title: "丁口繁盛商税自增", reason: "普免秋粮令百姓休养生息、丁口兴旺（国库 +260 金、国运 +3）。", kind: "relief", gold: 260, destiny: 3)
+                summary = "已普免田赋与民休息：全国人口增长、国运 +6，半年后商税自增。"
+            } else {
+                for p in Regimes.monthLand(r, id) {
+                    if let s = Regimes.monthStock(r, p.id.asString) {
+                        s.grain = JS(min(50_000_000, ((s.grain.optionalNumber ?? 0) * 1.25).rounded()))
+                    }
+                }
+                addGold(140)
+                summary = "已购储义仓以备荒年：全国存粮 +25%、国库 +140 金。"
+            }
+        case "polityCrossroad":
+            if optA {
+                addTechProgress(r, nation: id, branch: .statecraft, points: 30)
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 10))
+                adjustReputation(r, nation: id, delta: 6)
+                summary = "已扩大代表制与法度公开：治政 +30、腐化 −10、国际信誉 +6。"
+            } else {
+                addTechProgress(r, nation: id, branch: .military, points: 24)
+                addGold(200); addDest(3)
+                summary = "已强化行政集权与战备：军备 +24、国库 +200 金、国运 +3。"
+            }
+        case "harborBoom":
+            if optA {
+                addGold(-200); addTechProgress(r, nation: id, branch: .naval, points: 30)
+                let nb = Regimes.book(r, id)
+                nb.seaTransportBonus = JS(min(14, (nb.seaTransportBonus.optionalNumber.map(Int.init) ?? 0) + 1))
+                scheduleEcho(title: "深水巨港吞吐翻番", reason: "官督扩建深水船坞落成，远洋商舶蜂拥而至（国库 +340 金、航海 +20）。", kind: "voyage", gold: 340, branch: .naval, pts: 20)
+                summary = "已官督修建深水船坞：耗 200 金，航海 +30、海运 +1，半年后港口吞吐翻番。"
+            } else {
+                addGold(220); addTechProgress(r, nation: id, branch: .economy, points: 22)
+                summary = "已商民合股共兴港口：国库 +220 金、农商科技 +22。"
+            }
         default:
             if optA {
-                addGold(tmpl.id == "saltIronMonopoly" || tmpl.id == "fiscalCrisis" ? 260 : -140)
-                addDest(4); adjustReputation(r, nation: id, delta: 5)
+                addGold(-140); addDest(4); adjustReputation(r, nation: id, delta: 5)
                 addTechProgress(r, nation: id, branch: .economy, points: 24)
                 scheduleEcho(title: "\(tmpl.title)后续成效落地", reason: "前期果断施策见效，国库与政局同步受益（国库 +260 金、国运 +3）。", kind: tmpl.category, gold: 260, destiny: 3)
                 summary = "已裁决「\(tmpl.choices.first?.label ?? "甲案")」：国运 +4、农商 +24，半年后将触发后续因果回响。"

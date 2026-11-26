@@ -33,20 +33,31 @@ struct FinanceSection: View {
                 HStack(alignment: .center, spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("国库").font(Theme.label).foregroundStyle(Theme.ink2)
-                        Text(Names.wan(Int(f.gold))).font(Theme.title).foregroundStyle(f.gold < 0 ? Theme.seal : Theme.ink)
+                        Text(Names.wan(Int(f.gold))).font(Theme.title).foregroundStyle(f.gold < 0 ? Theme.seal : Theme.ink).monospacedDigit()
                     }
                     Spacer()
                     Sparkline(values: f.record).frame(width: 120, height: 34)
                 }
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                .padding(.horizontal, 14).padding(.vertical, 10)
                 Divider2()
-                line("土地税收", "+\(Int(f.taxes))")
-                if f.hoard < 0.999 { line("国库过盈（收入递减）", "×\(String(format: "%.2f", f.hoard))", warn: true) }
-                line("贸易增收", "+\(Int(f.trade))")
-                line("军费", "−\(Int(f.army))", warn: f.army > f.taxes)
+                AlignedMetaRow(label: "土地税收", value: "+\(Int(f.taxes).formatted()) 金", icon: .economy)
+                if f.hoard < 0.999 {
+                    Divider2()
+                    AlignedMetaRow(label: "国库过盈（递减）", value: "×\(String(format: "%.2f", f.hoard))", icon: .economy, valueColor: Theme.seal)
+                }
                 Divider2()
-                line("每月净入", (f.net - f.army >= 0 ? "+" : "") + "\(Int(f.net - f.army))", strong: true)
-                line("国库对战力", "×\(String(format: "%.2f", f.battle))", warn: f.battle < 1)
+                AlignedMetaRow(label: "贸易增收", value: "+\(Int(f.trade).formatted()) 金", icon: .goods)
+                Divider2()
+                AlignedMetaRow(label: "军费开支", value: "−\(Int(f.army).formatted()) 金", icon: .military, valueColor: f.army > f.taxes ? Theme.seal : Theme.ink)
+                Divider2()
+                AlignedMetaRow(
+                    label: "每月净入",
+                    value: (f.net - f.army >= 0 ? "+" : "") + "\(Int(f.net - f.army).formatted()) 金",
+                    icon: .economy,
+                    valueColor: (f.net - f.army) < 0 ? Theme.seal : Theme.jade
+                )
+                Divider2()
+                AlignedMetaRow(label: "国库对战力", value: "×\(String(format: "%.2f", f.battle))", icon: .war, valueColor: f.battle < 1 ? Theme.seal : Theme.ink)
                 Divider2()
                 if let c = f.corruption {
                     // 腐化度: the original's four levels, its cost to the income, and the two orders.
@@ -98,7 +109,7 @@ struct FinanceSection: View {
             }
         }
         .padding(.horizontal, 16)
-        .task(id: "\(nation)-\(day)-\(attempt)") { info = await model.financeInfo(nation); failed = info == nil }
+        .task(id: "\(nation)-\(day / 30)-\(attempt)") { info = await model.financeInfo(nation); failed = info == nil }
     }
     @State private var note: String?
     private func corruption(lower: Bool) async {
@@ -191,12 +202,12 @@ struct TradeSection: View {
     var body: some View {
         Group2 {
             if let info {
-                HStack {
-                    Text("贸易增收").font(Theme.body).foregroundStyle(Theme.ink2)
-                    Spacer()
-                    Text("每月 +\(Int(info.income)) 金（+\(String(format: "%.1f", info.rate))%）").font(Theme.body).foregroundStyle(Theme.seal).monospacedDigit()
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                AlignedMetaRow(
+                    label: "贸易增收",
+                    value: "每月 +\(Int(info.income).formatted()) 金（+\(String(format: "%.1f", info.rate))%）",
+                    icon: .goods,
+                    valueColor: Theme.seal
+                )
                 if let summary = info.bonusSummary, !summary.isEmpty {
                     Divider2()
                     HStack(spacing: 8) {
@@ -204,7 +215,7 @@ struct TradeSection: View {
                         Text(summary).font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
                 }
                 if let monos = info.monopolies, !monos.isEmpty {
                     Divider2()
@@ -214,31 +225,35 @@ struct TradeSection: View {
                             .font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
                 }
                 Divider2()
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("本国物产（\(info.goods.count) 类）").font(Theme.label).foregroundStyle(Theme.ink2)
+                    HStack {
+                        Text("本国物产（\(info.goods.count) 类）").font(Theme.label).foregroundStyle(Theme.ink2)
+                        Spacer()
+                        Text("产区").font(Theme.caption).foregroundStyle(Theme.ink2).frame(width: 44, alignment: .trailing)
+                    }
                     ForEach(info.goods.prefix(10).indices, id: \.self) { i in
                         let g = info.goods[i]
                         let tone = tierColor(g.tier)
                         HStack(spacing: 8) {
-                            Text(g.name).font(Theme.body).foregroundStyle(Theme.ink)
+                            Text(g.name).font(Theme.body).foregroundStyle(Theme.ink).frame(minWidth: 44, alignment: .leading)
                             if let tier = g.tier { PaperTag(text: tier, color: tone, size: 10) }
                             if g.monopoly == true { PaperTag(text: "垄断", color: Theme.seal, size: 10) }
                             Spacer(minLength: 4)
                             if let eff = g.effect, !eff.isEmpty {
-                                Text(eff).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                Text(eff).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
                             }
-                            Text("\(g.provinces)州").font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit()
+                            Text("\(g.provinces)州").font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 44, alignment: .trailing)
                         }
                     }
                 }
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                .padding(.horizontal, 14).padding(.vertical, 10)
                 if !info.partners.isEmpty {
                     Divider2()
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("通商邻邦与商约伙伴").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.top, 8)
+                        Text("通商邻邦与商约伙伴").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 14).padding(.top, 8)
                         ForEach(info.partners.indices, id: \.self) { i in
                             let p = info.partners[i]
                             HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -247,7 +262,7 @@ struct TradeSection: View {
                                 Spacer()
                                 Text(p.goods.isEmpty ? "互通有无" : p.goods.joined(separator: "、")).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 6)
+                            .padding(.horizontal, 14).padding(.vertical, 6)
                         }
                     }
                     .padding(.bottom, 6)
@@ -257,7 +272,7 @@ struct TradeSection: View {
             }
         }
         .padding(.horizontal, 16)
-        .task(id: "\(nation)-\(day)-\(attempt)") { info = await model.tradeInfo(nation); failed = info == nil }
+        .task(id: "\(nation)-\(day / 30)-\(attempt)") { info = await model.tradeInfo(nation); failed = info == nil }
     }
 }
 
@@ -396,7 +411,7 @@ struct FamilyTreeSheet: View {
                     return (e == nil ? await model.editPerson(p.key, skills: skills, traits: traits) : e, "\(p.name)已修改")
                 }
             }
-            .presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
         .sheet(item: $ageEdit) { m in
             NumberEditSheet(title: m.name + "的年龄", unit: "岁", value: m.age, range: 0...110) { v in
@@ -404,7 +419,7 @@ struct FamilyTreeSheet: View {
                 let age = Int(v.rounded())
                 perform { (await model.renamePerson(m.id, first: nil, last: nil, age: age), "\(m.name)已改为\(age)岁") }
             }
-            .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
         .sheet(isPresented: $renamingHouse) {
             VStack(alignment: .leading, spacing: 14) {
@@ -418,7 +433,7 @@ struct FamilyTreeSheet: View {
                 .padding(.horizontal, 22)
             }
             .padding(.bottom, 20)
-            .presentationDetents([.height(270)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.height(270)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
     }
     private func switchFamily(to id: String, name: String) {

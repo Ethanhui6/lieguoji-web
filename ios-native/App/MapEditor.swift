@@ -161,6 +161,9 @@ import LieguojiCore
     @Published private(set) var hillShare = 0.0
     @Published private(set) var mountainShare = 0.0
     @Published var message = ""
+    /// 当前画布关联的真实历史底图分区与官方/工坊剧本（默认 `.custom`）。
+    @Published var historicalRegion: HistoricalRegion = .custom
+    @Published var activeHistoricalScenario: HistoricalScenario? = nil
 
     let inputs: PreviewWorld.Inputs
     let seed: String
@@ -469,10 +472,47 @@ import LieguojiCore
 
     func reset(template: String?, seed: String) {
         pushTerrainUndo(heights)
+        historicalRegion = .custom
+        activeHistoricalScenario = nil
         if let template { heights = TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: template) }
         else { heights = Self.island(inputs: inputs, map: map) }
         customProvinceCells = nil; message = ""
         GameFeel.shared.tap()
+        measureLand(); recompute()
+    }
+
+    /// 套用真实历史地理底图（中国 / 欧洲 / 东亚日本 / 世界）。
+    func applyHistoricalBasemap(_ region: HistoricalRegion) {
+        pushTerrainUndo(heights)
+        historicalRegion = region
+        activeHistoricalScenario = nil
+        heights = HistoricalBasemaps.generateHeights(region: region, graph: inputs.grid)
+        customProvinceCells = nil
+        message = "已铺展真实历史底图：\(region.title)"
+        GameFeel.shared.notify(.success)
+        measureLand(); recompute()
+    }
+
+    /// 载入官方或工坊历史剧本的地形、州郡规模与国家配置进编辑器微调。
+    func applyHistoricalScenario(_ scenario: HistoricalScenario) {
+        pushTerrainUndo(heights)
+        historicalRegion = scenario.region
+        activeHistoricalScenario = scenario
+        if let b64 = scenario.customHeightsBase64,
+           let decoded = HistoricalScenarios.decodeHeights(b64, expectedCount: inputs.grid.points.count) {
+            heights = decoded
+        } else {
+            heights = HistoricalBasemaps.generateHeights(region: scenario.region, graph: inputs.grid)
+        }
+        nations = max(2, min(24, scenario.nations.count))
+        provinces = max(nations, min(480, scenario.provinceCount))
+        if let cells = scenario.customProvinceCells, cells.count == heights.count {
+            customProvinceCells = cells
+        } else {
+            customProvinceCells = nil
+        }
+        message = "已载入剧本「\(scenario.title)」（\(scenario.region.title) · \(scenario.yearDisplayText)）"
+        GameFeel.shared.notify(.success)
         measureLand(); recompute()
     }
 
@@ -980,6 +1020,8 @@ struct EditorView: View {
     private var landscape: Bool { verticalClass == .compact }
     @State private var leaving = false
     @State private var pickingBase = false
+    @State private var pickingHistorical = false
+    @State private var publishingWorkshop = false
     enum DeckDetent: Int, CaseIterable { case collapsed = 0, compact = 1, standard = 2, expanded = 3 }
     @State private var deckDetent: DeckDetent = .standard
     @State private var showBrushDetail = false
@@ -1025,6 +1067,8 @@ struct EditorView: View {
                 editor: editor,
                 collapsed: collapsed,
                 onLeave: { leaving = true },
+                onPickHistorical: { pickingHistorical = true },
+                onPublishWorkshop: { publishingWorkshop = true },
                 onToggleCollapse: {
                     GameFeel.shared.tap()
                     withAnimation(Motion.sheetSwap) { deckDetent = collapsed ? .standard : .collapsed }
@@ -1113,6 +1157,10 @@ struct EditorView: View {
         .animation(Motion.sheetSwap, value: editor.step)
         .animation(Motion.sheetSwap, value: deckDetent)
         .animation(Motion.sheetSwap, value: showBrushDetail)
+        .onChange(of: leaving || pickingBase || pickingHistorical || publishingWorkshop) { _, open in
+            model.controller.sheetOpen = open
+            model.controller.sheetBottomFraction = open ? 0.89 : 0
+        }
         .sheet(isPresented: $leaving) {
             VStack(alignment: .leading, spacing: 14) {
                 SheetHeader(title: "放弃这幅地图？", subtitle: "尚未开辟的画稿不会保存", seal: "弃")
@@ -1120,7 +1168,6 @@ struct EditorView: View {
                 Button { leaving = false } label: { SecondaryLabel(title: "继续绘制", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle()).padding(.horizontal, 22)
             }
             .padding(.bottom, 24)
-            .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.height(300)])
             .presentationCornerRadius(Theme.Control.cornerSheet)
             .presentationBackground { MemorialPaper() }
@@ -1129,6 +1176,25 @@ struct EditorView: View {
         }
         .sheet(isPresented: $pickingBase) {
             EditorBasePickerSheet(editor: editor, isPresented: $pickingBase)
+        }
+        .sheet(isPresented: $pickingHistorical) {
+            EditorHistoricalPickerSheet(editor: editor, isPresented: $pickingHistorical)
+        }
+        .sheet(isPresented: $publishingWorkshop) {
+            HistoricalScenarioPublishSheet(
+                editor: editor,
+                onPlayScenario: { scenario in
+                    publishingWorkshop = false
+                    model.closeEditor()
+                    Task { await model.generateHistorical(scenario) }
+                },
+                onDismiss: { publishingWorkshop = false }
+            )
+            .presentationDetents([.fraction(0.92)])
+            .presentationCornerRadius(Theme.Control.cornerSheet)
+            .presentationBackground { MemorialPaper() }
+            .presentationDragIndicator(.hidden)
+            .font(Theme.section)
         }
     }
 
@@ -1163,6 +1229,8 @@ private struct EditorTopBar: View {
     @ObservedObject var editor: MapEditor
     let collapsed: Bool
     let onLeave: () -> Void
+    let onPickHistorical: () -> Void
+    let onPublishWorkshop: () -> Void
     let onToggleCollapse: () -> Void
 
     private var showUndoRedo: Bool {
@@ -1184,58 +1252,103 @@ private struct EditorTopBar: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
-            Button(action: onLeave) { CircleIcon(glyph: .close) }.buttonStyle(PressStyle())
-
+        VStack(spacing: 6) {
             HStack(spacing: 6) {
-                stepPill("1 山川", active: editor.step == .terrain) {
-                    if editor.step != .terrain { editor.toTerrain() }
-                }
-                Text("›").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(0.45))
-                stepPill("2 州郡", active: editor.step == .provinces) {
-                    if editor.step != .provinces && editor.landShare >= 0.03 {
-                        if editor.step == .nations { editor.backToProvinces() } else { editor.toProvinces() }
+                Button(action: onLeave) { CircleIcon(glyph: .close) }.buttonStyle(PressStyle())
+
+                HStack(spacing: 6) {
+                    stepPill("1 山川", active: editor.step == .terrain) {
+                        if editor.step != .terrain { editor.toTerrain() }
+                    }
+                    Text("›").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(0.45))
+                    stepPill("2 州郡", active: editor.step == .provinces) {
+                        if editor.step != .provinces && editor.landShare >= 0.03 {
+                            if editor.step == .nations { editor.backToProvinces() } else { editor.toProvinces() }
+                        }
+                    }
+                    Text("›").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(0.45))
+                    stepPill("3 列国", active: editor.step == .nations) {
+                        if editor.step == .provinces && !editor.busy && !editor.map.meta.provinces.isEmpty { editor.toNations() }
                     }
                 }
-                Text("›").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(0.45))
-                stepPill("3 列国", active: editor.step == .nations) {
-                    if editor.step == .provinces && !editor.busy && !editor.map.meta.provinces.isEmpty { editor.toNations() }
+                .padding(.horizontal, 12).frame(height: Theme.Control.topHeight).glass(Capsule())
+                .fixedSize(horizontal: true, vertical: false)
+
+                Spacer(minLength: 2)
+
+                if editor.busy { InkBusy().frame(width: 34) }
+
+                if showUndoRedo {
+                    Button {
+                        switch editor.step {
+                        case .terrain: editor.undoStroke()
+                        case .provinces: editor.undoProvince()
+                        case .nations: editor.undoNation()
+                        }
+                    } label: { CircleIcon(glyph: .retreat) }
+                    .buttonStyle(PressStyle())
+                    .disabled(!canUndoNow).opacity(canUndoNow ? 1 : 0.36)
+                    .accessibilityLabel("撤销")
+
+                    Button {
+                        switch editor.step {
+                        case .terrain: editor.redoStroke()
+                        case .provinces: editor.redoProvince()
+                        case .nations: editor.redoNation()
+                        }
+                    } label: { CircleIcon(glyph: .stepForward) }
+                    .buttonStyle(PressStyle())
+                    .disabled(!canRedoNow).opacity(canRedoNow ? 1 : 0.36)
+                    .accessibilityLabel("重做")
                 }
+
+                Button(action: onToggleCollapse) { CircleIcon(glyph: collapsed ? .brush : .eye, active: collapsed) }
+                    .buttonStyle(PressStyle())
+                    .accessibilityLabel(collapsed ? "展开画板" : "全屏画图")
             }
-            .padding(.horizontal, 12).frame(height: Theme.Control.topHeight).glass(Capsule())
-            .fixedSize(horizontal: true, vertical: false)
 
-            Spacer(minLength: 2)
-
-            if editor.busy { InkBusy().frame(width: 34) }
-
-            if showUndoRedo {
-                Button {
-                    switch editor.step {
-                    case .terrain: editor.undoStroke()
-                    case .provinces: editor.undoProvince()
-                    case .nations: editor.undoNation()
+            // 第二排轻盈浮条：历史底图切换 & 上传玩家工坊
+            HStack(spacing: 8) {
+                Button(action: onPickHistorical) {
+                    HStack(spacing: 5) {
+                        InkIcon(glyph: .region, size: 13, weight: 1.7).foregroundStyle(Theme.seal)
+                        Text(editor.historicalRegion == .custom ? "历史底图" : "底图 · \(editor.historicalRegion.badge)")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(1)
                     }
-                } label: { CircleIcon(glyph: .retreat) }
+                    .padding(.horizontal, 11)
+                    .frame(height: 30)
+                    .glass(Capsule())
+                }
                 .buttonStyle(PressStyle())
-                .disabled(!canUndoNow).opacity(canUndoNow ? 1 : 0.36)
-                .accessibilityLabel("撤销")
 
-                Button {
-                    switch editor.step {
-                    case .terrain: editor.redoStroke()
-                    case .provinces: editor.redoProvince()
-                    case .nations: editor.redoNation()
+                if let active = editor.activeHistoricalScenario {
+                    Text(active.title)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .lineLimit(1)
+                        .padding(.horizontal, 9)
+                        .frame(height: 28)
+                        .glass(Capsule())
+                }
+
+                Spacer(minLength: 4)
+
+                Button(action: onPublishWorkshop) {
+                    HStack(spacing: 5) {
+                        InkIcon(glyph: .export, size: 13, weight: 1.7).foregroundStyle(Theme.paperLight)
+                        Text("上传工坊")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.paperLight)
+                            .lineLimit(1)
                     }
-                } label: { CircleIcon(glyph: .stepForward) }
+                    .padding(.horizontal, 12)
+                    .frame(height: 30)
+                    .background(Theme.seal, in: Capsule())
+                }
                 .buttonStyle(PressStyle())
-                .disabled(!canRedoNow).opacity(canRedoNow ? 1 : 0.36)
-                .accessibilityLabel("重做")
             }
-
-            Button(action: onToggleCollapse) { CircleIcon(glyph: collapsed ? .brush : .eye, active: collapsed) }
-                .buttonStyle(PressStyle())
-                .accessibilityLabel(collapsed ? "展开画板" : "全屏画图")
         }
     }
 
@@ -1287,8 +1400,66 @@ private struct EditorBasePickerSheet: View {
             }
             .padding(.bottom, 24)
         }
-        .background(MemorialPaper().ignoresSafeArea())
         .presentationDetents([.medium, .large])
+        .presentationCornerRadius(Theme.Control.cornerSheet)
+        .presentationBackground { MemorialPaper() }
+        .presentationDragIndicator(.hidden)
+        .font(Theme.section)
+    }
+}
+
+/// 历史底图与官方剧本地形套用弹窗（四大真实世界底图 + 八大官方剧本起稿）。
+private struct EditorHistoricalPickerSheet: View {
+    @ObservedObject var editor: MapEditor
+    @Binding var isPresented: Bool
+
+    private static let realRegions: [HistoricalRegion] = [.china, .europe, .eastAsiaJapan, .world]
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                SheetHeader(title: "历史底图", subtitle: "一键铺展真实世界地理轮廓，或载入八大官方剧本起稿", seal: "舆")
+
+                SectionLabel("四大真实地理底图")
+                Group2 {
+                    ForEach(Array(Self.realRegions.enumerated()), id: \.element.id) { idx, reg in
+                        AlignedMetaRow(
+                            label: reg.title,
+                            value: reg.badge,
+                            icon: .region,
+                            valueColor: editor.historicalRegion == reg ? Theme.seal : Theme.ink,
+                            trailingGlyph: .chevronRight
+                        ) {
+                            isPresented = false
+                            editor.applyHistoricalBasemap(reg)
+                        }
+                        if idx < Self.realRegions.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                SectionLabel("官方历史剧本起稿（\(HistoricalScenarios.officialScenarios.count) 套）")
+                Group2 {
+                    ForEach(Array(HistoricalScenarios.officialScenarios.enumerated()), id: \.element.id) { idx, sc in
+                        AlignedMetaRow(
+                            label: sc.title,
+                            value: "\(sc.yearDisplayText) · \(sc.nations.count)国",
+                            icon: .chronicle,
+                            valueColor: editor.activeHistoricalScenario?.id == sc.id ? Theme.seal : Theme.ink2,
+                            trailingGlyph: .chevronRight
+                        ) {
+                            isPresented = false
+                            editor.applyHistoricalScenario(sc)
+                        }
+                        if idx < HistoricalScenarios.officialScenarios.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+            .padding(.bottom, 24)
+        }
+        .scrollIndicators(.hidden)
+        .presentationDetents([.medium, .fraction(0.89)])
         .presentationCornerRadius(Theme.Control.cornerSheet)
         .presentationBackground { MemorialPaper() }
         .presentationDragIndicator(.hidden)

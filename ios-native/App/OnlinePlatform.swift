@@ -2,6 +2,7 @@ import Foundation
 import Security
 import SwiftUI
 import UIKit
+import LieguojiCore
 
 // MARK: - 数据模型（严格与列国纪云端行宫服务器 /api/v1 协议一致）
 
@@ -266,6 +267,23 @@ struct LeaderboardEntry: Codable, Identifiable, Equatable {
     let provincesHeld: Int
     let yearsElapsed: Int
     let wondersCount: Int
+}
+
+struct WorkshopMapSummary: Codable, Identifiable, Equatable, Sendable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let authorName: String
+    let region: String
+    let eraYear: Int
+    let eraName: String
+    let description: String
+    let nationCount: Int
+    let provinceCount: Int
+    var downloads: Int
+    var likes: Int
+    let tags: [String]
+    let createdAt: Int
 }
 
 // MARK: - 轻量安全令牌存储（iOS Keychain + UserDefaults 兜底）
@@ -776,6 +794,11 @@ private final class TokenBox: @unchecked Sendable {
     @Published private(set) var leaderboard: [LeaderboardEntry] = []
     @Published private(set) var leaderboardCategory = "provinces"
 
+    // 创意工坊云端舆图库状态（Platform v6）
+    @Published var workshopMaps: [WorkshopMapSummary] = []
+    @Published var workshopLoading = false
+    @Published var workshopError: String? = nil
+
     // IPA 站内 8 路多源并发分块下载与真实吞吐测速状态
     @Published private(set) var downloadingIPA = false
     @Published private(set) var downloadProgress: Double = 0
@@ -805,10 +828,10 @@ private final class TokenBox: @unchecked Sendable {
     }()
 
     static var currentVersionString: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "5.7.0"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "5.8.0"
     }
     static var currentBuildNumber: Int {
-        Int((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "187") ?? 187
+        Int((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "188") ?? 188
     }
     private static var deviceUUID: String {
         let k = "online.deviceId.v1"
@@ -1942,5 +1965,208 @@ private final class TokenBox: @unchecked Sendable {
         } catch {
             return "连接服务器失败"
         }
+    }
+
+    // MARK: - 平台 v6 创意工坊云端舆图 API（浏览 / 下载 / 上传 / 点赞）
+
+    private enum WorkshopError: LocalizedError {
+        case message(String)
+        var errorDescription: String? {
+            if case .message(let m) = self { return m }
+            return nil
+        }
+    }
+
+    func fetchWorkshopMaps(region: String = "all", query: String = "") async -> [WorkshopMapSummary] {
+        struct ListResp: Decodable {
+            let ok: Bool
+            let maps: [WorkshopMapSummary]?
+            let error: String?
+        }
+        workshopLoading = true
+        workshopError = nil
+        defer { workshopLoading = false }
+
+        var items: [URLQueryItem] = []
+        let cleanRegion = region.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !cleanRegion.isEmpty && cleanRegion.lowercased() != "all" {
+            items.append(URLQueryItem(name: "region", value: cleanRegion))
+        }
+        let cleanQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !cleanQuery.isEmpty {
+            items.append(URLQueryItem(name: "q", value: cleanQuery))
+        }
+        var comps = URLComponents(string: Self.apiBase + "/api/v1/maps")
+        if !items.isEmpty { comps?.queryItems = items }
+        guard let url = comps?.url else {
+            workshopError = "无效的工坊接口地址"
+            return []
+        }
+        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 12)
+        req.httpMethod = "GET"
+        if let token, !token.isEmpty {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        do {
+            let (data, resp) = try await session.data(for: req)
+            guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                workshopError = "获取工坊舆图列表失败"
+                return []
+            }
+            let decoded = try JSONDecoder().decode(ListResp.self, from: data)
+            if decoded.ok {
+                let list = decoded.maps ?? []
+                self.workshopMaps = list
+                return list
+            }
+            workshopError = decoded.error ?? "获取工坊舆图列表失败"
+            return []
+        } catch {
+            workshopError = "连接工坊服务器失败：\(error.localizedDescription)"
+            return []
+        }
+    }
+
+    func downloadWorkshopScenario(id: String) async throws -> HistoricalScenario {
+        struct DetailResp: Decodable {
+            let ok: Bool
+            let map: WorkshopMapSummary?
+            let scenario: HistoricalScenario?
+            let error: String?
+        }
+        let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        guard let req = makeRequest("/api/v1/maps/\(encodedId)", method: "GET", timeout: 20) else {
+            throw WorkshopError.message("无效的舆图下载地址")
+        }
+        let (data, resp) = try await session.data(for: req)
+        let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        let decoded = try JSONDecoder().decode(DetailResp.self, from: data)
+        guard (200..<300).contains(status), decoded.ok, let scenario = decoded.scenario else {
+            throw WorkshopError.message(decoded.error ?? "下载舆图失败（HTTP \(status)）")
+        }
+        if let updatedMap = decoded.map, let idx = workshopMaps.firstIndex(where: { $0.id == updatedMap.id }) {
+            workshopMaps[idx] = updatedMap
+        }
+        return scenario
+    }
+
+    func uploadWorkshopScenario(_ scenario: HistoricalScenario, authorName: String? = nil) async throws -> WorkshopMapSummary {
+        struct UploadBody: Encodable {
+            let scenario: HistoricalScenario
+            let authorName: String?
+        }
+        struct UploadResp: Decodable {
+            let ok: Bool
+            let id: String?
+            let map: WorkshopMapSummary?
+            let error: String?
+        }
+        guard let url = URL(string: Self.apiBase + "/api/v1/maps/upload") else {
+            throw WorkshopError.message("无效的工坊上传地址")
+        }
+        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 25)
+        req.httpMethod = "POST"
+        req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        if let token, !token.isEmpty {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let trimmedAuthor = authorName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let payload = UploadBody(scenario: scenario, authorName: (trimmedAuthor?.isEmpty == false) ? trimmedAuthor : nil)
+        req.httpBody = try JSONEncoder().encode(payload)
+
+        let (data, resp) = try await session.data(for: req)
+        let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        let decoded = try JSONDecoder().decode(UploadResp.self, from: data)
+        guard (200..<300).contains(status), decoded.ok, let summary = decoded.map else {
+            throw WorkshopError.message(decoded.error ?? "上传舆图失败（HTTP \(status)）")
+        }
+        if let idx = workshopMaps.firstIndex(where: { $0.id == summary.id }) {
+            workshopMaps[idx] = summary
+        } else {
+            workshopMaps.insert(summary, at: 0)
+        }
+        return summary
+    }
+
+    func likeWorkshopMap(id: String) async -> Int? {
+        struct LikeResp: Decodable {
+            let ok: Bool
+            let likes: Int?
+        }
+        let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        guard let req = makeRequest("/api/v1/maps/\(encodedId)/like", method: "POST", jsonBody: [:], timeout: 10) else {
+            return nil
+        }
+        guard let (data, resp) = try? await session.data(for: req),
+              let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode),
+              let decoded = try? JSONDecoder().decode(LikeResp.self, from: data),
+              decoded.ok, let newLikes = decoded.likes else {
+            return nil
+        }
+        if let idx = workshopMaps.firstIndex(where: { $0.id == id }) {
+            workshopMaps[idx].likes = newLikes
+        }
+        return newLikes
+    }
+}
+
+// MARK: - 本地创意工坊舆图仓库（Documents/列国纪/工坊舆图/）
+
+enum LocalWorkshopStore {
+    private static var directoryURL: URL {
+        let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        let dir = base.appendingPathComponent("列国纪/工坊舆图", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    private static func safeFileName(for id: String) -> String {
+        let filtered = id.unicodeScalars.filter {
+            ($0.value >= 48 && $0.value <= 57) ||
+            ($0.value >= 65 && $0.value <= 90) ||
+            ($0.value >= 97 && $0.value <= 122) ||
+            $0.value == 45 || $0.value == 95
+        }
+        let clean = String(String(String.UnicodeScalarView(filtered)).prefix(64))
+        if !clean.isEmpty { return "\(clean).json" }
+        var h: UInt64 = 14695981039346656037
+        for b in id.utf8 { h = (h ^ UInt64(b)) &* 1099511628211 }
+        return "map_\(String(h, radix: 16)).json"
+    }
+
+    static func list() -> [HistoricalScenario] {
+        let dir = directoryURL
+        let fm = FileManager.default
+        guard let urls = try? fm.contentsOfDirectory(
+            at: dir,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) else { return [] }
+        let jsonFiles = urls.filter { $0.pathExtension.lowercased() == "json" }.sorted { a, b in
+            let da = (try? a.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let db = (try? b.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return da > db
+        }
+        let decoder = JSONDecoder()
+        return jsonFiles.compactMap { url in
+            guard let data = try? Data(contentsOf: url) else { return nil }
+            return try? decoder.decode(HistoricalScenario.self, from: data)
+        }
+    }
+
+    static func save(_ scenario: HistoricalScenario) throws {
+        let dir = directoryURL
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let target = dir.appendingPathComponent(safeFileName(for: scenario.id))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(scenario)
+        try data.write(to: target, options: .atomic)
+    }
+
+    static func delete(id: String) {
+        let target = directoryURL.appendingPathComponent(safeFileName(for: id))
+        try? FileManager.default.removeItem(at: target)
     }
 }

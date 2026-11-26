@@ -56,7 +56,7 @@ struct ArmyServiceView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .task(id: "\(army.id)-\(model.state?.day ?? 0)") { record = await model.armyRecord(army.id) }
+            .task(id: "\(army.id)-\((model.state?.day ?? 0) / 15)") { record = await model.armyRecord(army.id) }
         }
     }
 }

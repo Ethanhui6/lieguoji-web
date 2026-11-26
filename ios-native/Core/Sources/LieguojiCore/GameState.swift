@@ -89,7 +89,9 @@ public struct GameState: Codable, Equatable, Sendable {
     public struct Event: Codable, Equatable, Sendable { public let day: Int; public let text: String; public let kind: String; public var province: Int? = nil }
     public let day: Int
     public let date: Date
-    public let owners: [Int]
+    public var owners: [Int]
+    /// v11 疆域差量对 `[provinceIdx, ownerIdx, ...]`：推流精简帧仅在变化州郡数较少时下发，`owners` 留空以省 65%–80% 流量。
+    public var ownersDelta: [Int]? = nil
     public let labels: [WorldMeta.LabelBox]?
     public let nations: [Nation]
     public let armies: [Army]
@@ -121,7 +123,7 @@ public struct GameState: Codable, Equatable, Sendable {
     public var arrows: [[Double]]? = nil
     /// Contacts involving a fleet: the midpoint of the two forces.
     public var seaBattles: [[Double]]? = nil
-    public let events: [Event]
+    public var events: [Event]
 
     /// 纪年 (custom): an era name and a shift of the year, display only.
     public var era: String? = nil
@@ -129,9 +131,24 @@ public struct GameState: Codable, Equatable, Sendable {
     public var displayYear: Int { date.year + (yearOffset ?? 0) }
     public var dateText: String {
         let y = displayYear
-        if let era, !era.isEmpty { return "\(era)\(y > 0 ? "\(y)" : "前\(1 - y)")年\(date.month)月\(date.day)日" }
-        return y > 0 ? "公元\(y)年\(date.month)月\(date.day)日" : "公元前\(1 - y)年\(date.month)月\(date.day)日"
+        if y <= 0 {
+            let bce = y < 0 ? -y : 1
+            if let era, !era.isEmpty { return "\(era)（前\(bce)年）\(date.month)月\(date.day)日" }
+            return "公元前\(bce)年\(date.month)月\(date.day)日"
+        }
+        if let era, !era.isEmpty {
+            if era.hasSuffix("年") || era.hasSuffix("载") { return "\(era)（\(y)年）\(date.month)月\(date.day)日" }
+            return "\(era)\(y)年\(date.month)月\(date.day)日"
+        }
+        return "公元\(y)年\(date.month)月\(date.day)日"
     }
-    public var shortDate: String { "\(date.year)年\(date.month)月" }
+    public var shortDate: String {
+        let y = displayYear
+        if y <= 0 {
+            let bce = y < 0 ? -y : 1
+            return "前\(bce)年\(date.month)月"
+        }
+        return "\(y)年\(date.month)月"
+    }
     public func atWar(_ a: Int, _ b: Int) -> Bool { nations.indices.contains(a) && nations[a].enemies.contains(b) }
 }

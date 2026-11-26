@@ -17,6 +17,9 @@ public final class EngineService {
     private var lastNationSig: [String] = []
     private var slimStaticInitialized = false
     private var slimFramesSinceFullStatic = 0
+    private var lastSlimOwners: [Int] = []
+    private var lastSlimEventDay: Int = -1
+    private var lastSlimEventText: String = ""
     private var lastSlimPorts: [GameState.Port] = []
     private var lastSlimForts: [Int] = []
     private var lastSlimHoly: [GameState.Holy] = []
@@ -40,13 +43,24 @@ public final class EngineService {
         engine?.run.world.day.asInt ?? 0
     }
 
-    /// 重置精简推流帧的静态数组增量缓存（开新流、读档或前台恢复后确保首帧发送完整基线）。
+    /// 重置精简推流帧的静态数组与疆域/事件增量缓存（开新流、读档或前台恢复后确保首帧发送完整基线）。
     public func resetSlimStaticCache() {
         slimStaticInitialized = false
         slimFramesSinceFullStatic = 0
+        lastSlimOwners = []
+        lastSlimEventDay = -1
+        lastSlimEventText = ""
     }
 
     private func recordSlimStaticBaseline(from gs: GameState) {
+        lastSlimOwners = gs.owners
+        if let lastEv = gs.events.last {
+            lastSlimEventDay = lastEv.day
+            lastSlimEventText = lastEv.text
+        } else {
+            lastSlimEventDay = -1
+            lastSlimEventText = ""
+        }
         lastSlimPorts = gs.ports ?? []
         lastSlimForts = gs.forts ?? []
         lastSlimHoly = gs.holy ?? []
@@ -99,7 +113,8 @@ public final class EngineService {
             return Profile.measure("s.json") { (try? JSONEncoder().encode(gs)) ?? Data() }
         }
         var gs = e.gameState(includeLabels: includeLabels, slim: true)
-        if !slimStaticInitialized || slimFramesSinceFullStatic >= 30 {
+        if !slimStaticInitialized || slimFramesSinceFullStatic >= 24 {
+            gs.ownersDelta = nil
             gs.ports = gs.ports ?? []
             gs.forts = gs.forts ?? []
             gs.holy = gs.holy ?? []
@@ -109,6 +124,37 @@ public final class EngineService {
             recordSlimStaticBaseline(from: gs)
         } else {
             slimFramesSinceFullStatic += 1
+            if gs.owners.count == lastSlimOwners.count && !lastSlimOwners.isEmpty {
+                var diff: [Int] = []
+                for idx in gs.owners.indices where gs.owners[idx] != lastSlimOwners[idx] {
+                    diff.append(idx)
+                    diff.append(gs.owners[idx])
+                }
+                if diff.count <= max(24, gs.owners.count / 4) {
+                    lastSlimOwners = gs.owners
+                    gs.owners = []
+                    gs.ownersDelta = diff
+                } else {
+                    lastSlimOwners = gs.owners
+                    gs.ownersDelta = nil
+                }
+            } else {
+                lastSlimOwners = gs.owners
+                gs.ownersDelta = nil
+            }
+
+            if let lastEv = gs.events.last {
+                if lastEv.day == lastSlimEventDay && lastEv.text == lastSlimEventText && lastSlimEventDay >= 0 {
+                    gs.events = []
+                } else {
+                    lastSlimEventDay = lastEv.day
+                    lastSlimEventText = lastEv.text
+                }
+            } else {
+                lastSlimEventDay = -1
+                lastSlimEventText = ""
+            }
+
             let curPorts = gs.ports ?? []
             if curPorts == lastSlimPorts { gs.ports = nil } else { lastSlimPorts = curPorts; gs.ports = curPorts }
 

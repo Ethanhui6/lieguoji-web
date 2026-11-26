@@ -141,8 +141,32 @@ struct NationInfo: Decodable {
         var history: [Double]? = nil; var fiefCooldown: Int? = nil
     }
     struct Court: Decodable {
+        struct AIProfile: Decodable {
+            let rulerName: String
+            let rulerTitle: String
+            let archetype: String
+            let summary: String
+            let military: Int
+            let administrative: Int
+            let diplomatic: Int
+            let charisma: Int
+            let traits: [String]
+            let priorities: [String]
+        }
+        struct AICourtLogEntry: Decodable, Identifiable {
+            var id: String { "\(day)|\(category)|\(title)|\(decisionMaker)" }
+            let day: Int
+            let yearText: String
+            let category: String
+            let decisionMaker: String
+            let title: String
+            let detail: String
+        }
         let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?; let manual: Bool?
         var fiefRule: String? = nil; var allowsFiefs: Bool? = nil; var actualRuler: ActualRuler? = nil
+        var aiAutoGovern: Bool? = nil
+        var aiProfile: AIProfile? = nil
+        var aiCourtLog: [AICourtLogEntry]? = nil
         struct Trait: Decodable { let name: String; let text: String }
         let traits: [Trait]?
         /// 叛乱形势: whether provinces can rise now and the likeliest ones.
@@ -315,6 +339,8 @@ struct NationSheet: View {
     @State private var covertKind = "fundRebels"
     @State private var bodyReady = false
     @State private var showingBreakdown = false
+    @State private var refreshNonce = 0
+    @State private var showAllCourtLogs = false
     enum Pick: String, Identifiable {
         case war = "宣战", alliance = "缔结盟约", vassal = "收为附庸", annex = "吞并"
         case pact = "互不侵犯条约", marriage = "王室联姻", trade = "通商协定", defense = "共同防御条约"
@@ -385,7 +411,7 @@ struct NationSheet: View {
             .ignoresSafeArea(.container, edges: .bottom)
             .pressMenuHost($pressMenu)
             .paperToast($flash)
-            .task(id: state.day / 30) {
+            .task(id: "\(nation)-\(state.day / 30)-\(refreshNonce)") {
                 await reload()
                 if Self.tourFamily, tree == nil, let h = info?.court?.houses.first(where: { $0.id != nil }), let id = h.id { tree = TreePick(id: id, name: h.name) }
             }
@@ -427,7 +453,6 @@ struct NationSheet: View {
                         Task { await run(success: "已任命\(name)为\((target.office.hasPrefix("WarCommander") ? "征伐主将" : Self.title(String(target.office.split(separator: ":").first ?? ""), info)))") { await model.appointOffice(nation, office: target.office, person: person) } }
                     }
                 }
-                .background(MemorialPaper().ignoresSafeArea())
                 .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $editing) { p in
@@ -440,13 +465,11 @@ struct NationSheet: View {
                         }
                     }
                 }
-                .background(MemorialPaper().ignoresSafeArea())
                 .presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
-            .sheet(item: $picking) { pick in ViewBoundary { pickSheet(pick, map, state) }.background(MemorialPaper().ignoresSafeArea()).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
+            .sheet(item: $picking) { pick in ViewBoundary { pickSheet(pick, map, state) }.presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
             .sheet(item: $tree, onDismiss: { Task { await reload() } }) { t in
                 FamilyTreeSheet(model: model, family: t.id, name: t.name)
-                    .background(MemorialPaper().ignoresSafeArea())
                     .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
             .sheet(item: $numberEdit) { e in
@@ -454,7 +477,6 @@ struct NationSheet: View {
                     numberEdit = nil
                     Task { await run(success: "\(e.title)已改为 \(Int(v))\(e.unit)") { await e.apply(v) } }
                 }
-                .background(MemorialPaper().ignoresSafeArea())
                 .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $partyEdit) { p in
@@ -462,7 +484,6 @@ struct NationSheet: View {
                     partyEdit = nil
                     Task { await run(success: "\(name)已修改") { await model.editParty(nation, party: p.id, name: name, seats: seats) } }
                 }
-                .background(MemorialPaper().ignoresSafeArea())
                 .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $creatingHouse) {
@@ -491,7 +512,6 @@ struct NationSheet: View {
                     }
                     .padding(.bottom, 22)
                 }
-                .background(MemorialPaper().ignoresSafeArea())
                 .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $enthroning) {
@@ -499,12 +519,10 @@ struct NationSheet: View {
                     enthroning = false
                     Task { await run(success: "已推举\(name)就任执政") { await model.enthronePerson(nation, person: personId) } }
                 }
-                .background(MemorialPaper().ignoresSafeArea())
                 .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $showingBreakdown) {
                 NationBreakdownSheet(model: model, nation: nation, nationName: meta?.name ?? info?.name ?? "")
-                    .background(MemorialPaper().ignoresSafeArea())
                     .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
@@ -534,7 +552,7 @@ struct NationSheet: View {
             (Self.title("Steward", polity), list.filter { $0.role == "财政主管" }),
             (Self.title("Marshal", polity), list.filter { $0.role == "常备军统帅" }),
         ]
-        VStack(alignment: .leading, spacing: 14) {
+        LazyVStack(alignment: .leading, spacing: 14) {
             ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
                 FoldSection(section.0, expanded: true) { peopleList(section.1, empty: "无") }
             }
@@ -587,7 +605,7 @@ struct NationSheet: View {
             return "四境承平 · 拥兵 \(Names.wan(sNat.troops))\(navy)"
         }()
 
-        VStack(alignment: .leading, spacing: 18) {
+        LazyVStack(alignment: .leading, spacing: 18) {
             if let sub = overviewSub {
                 EditorialSubPageBar(parentTitle: "概览", title: sub.title) {
                     withAnimation(Motion.tap) { overviewSub = nil }
@@ -987,11 +1005,11 @@ struct NationSheet: View {
                 }
             }
         case .financeTrade:
-            VStack(alignment: .leading, spacing: 18) {
+            LazyVStack(alignment: .leading, spacing: 18) {
                 SectionLabel("财政收支与国债")
-                FinanceSection(model: model, nation: nation, day: state.day / 30, say: { flash = $0 })
+                FinanceSection(model: model, nation: nation, day: state.day, say: { flash = $0 })
                 SectionLabel("特产与对外商贸")
-                TradeSection(model: model, map: map, nation: nation, day: state.day / 30)
+                TradeSection(model: model, map: map, nation: nation, day: state.day)
             }
         case .profile:
             VStack(alignment: .leading, spacing: 18) {
@@ -1168,8 +1186,12 @@ struct NationSheet: View {
     }
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
-        VStack(alignment: .leading, spacing: 20) {
+        LazyVStack(alignment: .leading, spacing: 20) {
                 if info.alive {
+                    // 0. 最高抉择与 AI 施政总览 + 御批朝政实录
+                    if let court = info.court {
+                        aiGovernanceSection(info: info, court: court, lex: lex)
+                    }
                     // 1. 页顶单一核心待办：当期大政议案（紧凑上提，首屏直见深墨主按钮与后果，零套娃）
                     if let ag = info.agenda {
                         let cd = ag.cooldownDays ?? 0
@@ -2608,7 +2630,7 @@ struct NationSheet: View {
                         model: model,
                         nation: nation,
                         alive: info.alive,
-                        day: state.day / 30,
+                        day: state.day,
                         culture: info.culture,
                         polity: info.polity,
                         style: info.style,
@@ -3166,9 +3188,201 @@ struct NationSheet: View {
     }
     /// Runs a command; a refusal shows its reason, a success the chronicle line.
     /// Runs a state-level order; a failure says why, a success says `success` (or the newest chronicle line).
+    /// 最高抉择与 AI 施政总览 + 御批朝政实录（宋版宣纸美学）。
+    @ViewBuilder private func aiGovernanceSection(info: NationInfo, court: NationInfo.Court, lex: LocalizationEngine.Lexicon) -> some View {
+        let autoOn = court.aiAutoGovern ?? info.autoStrategy ?? (info.globalAutoGovern ?? true)
+        let profile = court.aiProfile
+        let logs = court.aiCourtLog ?? []
+
+        VStack(alignment: .leading, spacing: 12) {
+            SectionLabel("最高抉择与 AI 施政")
+            Group2 {
+                VStack(alignment: .leading, spacing: 12) {
+                    if let profile {
+                        // 1. 最高决策者抬头 + 朱砂印章性格徽标
+                        HStack(alignment: .center, spacing: 10) {
+                            SealFace(text: String(profile.archetype.prefix(2)), size: 34, color: Theme.seal)
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 6) {
+                                    Text(profile.rulerTitle)
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.seal)
+                                    Text(profile.rulerName)
+                                        .font(Theme.serif(17))
+                                        .foregroundStyle(Theme.ink)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.78)
+                                }
+                                HStack(spacing: 6) {
+                                    PaperTag(text: profile.archetype, color: Theme.seal, size: 10.5)
+                                    Text(autoOn ? "AI 自主施政中" : "已切换为人工亲理")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(autoOn ? Theme.jade : Theme.ink2)
+                                }
+                            }
+                            Spacer(minLength: 4)
+                        }
+
+                        // 2. 四维能力对齐条（武略 / 政务 / 外交 / 威望）
+                        HStack(spacing: 0) {
+                            aiAttrCell(label: "武略", value: profile.military)
+                            Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 28)
+                            aiAttrCell(label: "政务", value: profile.administrative)
+                            Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 28)
+                            aiAttrCell(label: "外交", value: profile.diplomatic)
+                            Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 28)
+                            aiAttrCell(label: "威望", value: profile.charisma)
+                        }
+                        .padding(.vertical, 8)
+                        .background(Theme.paper.opacity(0.75), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+
+                        // 3. 执政性格评语
+                        if !profile.summary.isEmpty {
+                            Text(profile.summary)
+                                .font(Theme.label)
+                                .foregroundStyle(Theme.ink)
+                                .lineSpacing(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        // 4. 性格天赋标签 + 当前 AI 施政重心
+                        if !profile.traits.isEmpty {
+                            WrapLayout(spacing: 6) {
+                                ForEach(profile.traits, id: \.self) { tr in
+                                    PaperTag(text: tr, color: Theme.ink2, size: 10.5)
+                                }
+                            }
+                        }
+                        if !profile.priorities.isEmpty {
+                            HStack(alignment: .top, spacing: 6) {
+                                Text("当前重心").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.top, 2)
+                                WrapLayout(spacing: 6) {
+                                    ForEach(profile.priorities, id: \.self) { pr in
+                                        Text(pr)
+                                            .font(Theme.caption)
+                                            .foregroundStyle(Theme.seal)
+                                            .padding(.horizontal, 7).padding(.vertical, 2)
+                                            .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                                            .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(Theme.seal.opacity(0.28), lineWidth: 0.65))
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        HStack(spacing: 8) {
+                            InkIcon(glyph: .crown, size: 16, weight: 1.7).foregroundStyle(Theme.seal)
+                            Text("中枢由\(info.ruler?.title ?? lex.leaderTitle)\(info.ruler?.styledName ?? info.ruler?.name ?? "")统摄大政")
+                                .font(Theme.body)
+                                .foregroundStyle(Theme.ink)
+                            Spacer(minLength: 4)
+                        }
+                    }
+
+                    Divider2()
+
+                    // 5. AI 全权理政一键切换
+                    PaperSwitch(
+                        title: "AI 全权理政（自主决断朝议、国策、基建与军备）",
+                        on: Binding(
+                            get: { autoOn },
+                            set: { on in
+                                Task {
+                                    await run(success: on ? "已开启本国 AI 全权理政" : "已切为人工亲理朝政") {
+                                        await model.nationDecree(nation, kind: on ? "strategyAuto:on" : "strategyAuto:off")
+                                    }
+                                }
+                            }
+                        )
+                    )
+                    .padding(.horizontal, -14)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+
+            // 6. 御批朝政实录
+            if !logs.isEmpty {
+                let shownLogs = showAllCourtLogs ? logs : Array(logs.prefix(6))
+                HStack(alignment: .firstTextBaseline) {
+                    SectionLabel("御批朝政实录（\(logs.count) 条）", inset: false)
+                    Spacer()
+                    if logs.count > 6 {
+                        Button {
+                            GameFeel.shared.tap()
+                            withAnimation(Motion.panel) { showAllCourtLogs.toggle() }
+                        } label: {
+                            Text(showAllCourtLogs ? "收起实录" : "查看全部 \(logs.count) 条")
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.seal)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.sectionInset)
+
+                Group2 {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(shownLogs.enumerated()), id: \.element.id) { idx, entry in
+                            let tone = Self.courtLogCategoryColor(entry.category)
+                            VStack(alignment: .leading, spacing: 5) {
+                                HStack(alignment: .center, spacing: 7) {
+                                    PaperTag(text: entry.category, color: tone, size: 10.5)
+                                    Text(entry.title)
+                                        .font(Theme.body)
+                                        .foregroundStyle(Theme.ink)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.82)
+                                    Spacer(minLength: 4)
+                                    Text(entry.yearText)
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.ink2)
+                                        .monospacedDigit()
+                                }
+                                Text(entry.detail)
+                                    .font(Theme.caption)
+                                    .foregroundStyle(Theme.ink2)
+                                    .lineSpacing(2.5)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                if !entry.decisionMaker.isEmpty {
+                                    Text("裁断 · \(entry.decisionMaker)")
+                                        .font(Theme.sans(11))
+                                        .foregroundStyle(Theme.ink2.opacity(0.82))
+                                }
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            if idx < shownLogs.count - 1 { Divider2() }
+                        }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+        }
+    }
+
+    private func aiAttrCell(label: String, value: Int) -> some View {
+        VStack(spacing: 2) {
+            Text(label).font(Theme.caption).foregroundStyle(Theme.ink2)
+            Text("\(value)")
+                .font(Theme.serif(16.5))
+                .foregroundStyle(value >= 75 ? Theme.seal : value >= 55 ? Theme.ink : Theme.ink2)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private static func courtLogCategoryColor(_ category: String) -> Color {
+        switch category {
+        case "抉择", "诏令", "军备": return Theme.seal
+        case "工程", "基建", "科技": return Theme.jade
+        default: return Theme.ink2
+        }
+    }
+
     private func run(success: String? = nil, _ command: () async -> String?) async {
         if let reason = await command() { flash = reason; GameFeel.shared.notify(.error) }
         else { flash = success ?? model.state?.events.last?.text ?? "已执行"; GameFeel.shared.notify(.success) }
+        refreshNonce &+= 1
         await reload()
     }
 }

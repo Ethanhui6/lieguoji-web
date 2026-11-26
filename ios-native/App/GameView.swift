@@ -307,6 +307,9 @@ struct GameView: View {
         trail = []
         sheetDetent = Self.midDetent
         if panel == nil {
+            controller.sheetOpen = false
+            controller.sheetBottomFraction = 0
+            controller.sheetTrailingFraction = 0
             controller.selectedProvince = nil
             controller.selectedFleet = nil
             controller.selectedFleetId = nil
@@ -328,18 +331,38 @@ struct GameView: View {
         }
     }
 
+    /// 底部主标签模态页（打开时占满高抽屉并立即置 `sheetBottomFraction = 0.89`，触发 Metal 0fps 零发热冻结）。
+    private static func isModalFullTab(_ p: Panel) -> Bool {
+        switch p {
+        case .editor, .edicts, .statistics, .nations, .military, .diplomacy, .chronicle, .menu:
+            return true
+        case .quick, .province, .nation, .army, .fleet, .people, .nationWars, .nationTalks:
+            return false
+        }
+    }
+
     private func syncSheetFocusInsets(for p: Panel?) {
-        guard p != nil else {
+        guard let p else {
+            controller.sheetOpen = false
             controller.sheetBottomFraction = 0
             controller.sheetTrailingFraction = 0
             return
         }
+        controller.sheetOpen = true
         if landscape {
             controller.sheetBottomFraction = 0
             controller.sheetTrailingFraction = 0.44
         } else {
             controller.sheetTrailingFraction = 0
-            controller.sheetBottomFraction = (sheetDetent == Self.lowDetent) ? 0.38 : 0.50
+            if Self.isModalFullTab(p) {
+                controller.sheetBottomFraction = (sheetDetent == Self.lowDetent) ? 0.38 : 0.89
+            } else if sheetDetent == Self.highDetent {
+                controller.sheetBottomFraction = 0.89
+            } else if sheetDetent == Self.lowDetent {
+                controller.sheetBottomFraction = 0.38
+            } else {
+                controller.sheetBottomFraction = 0.48
+            }
         }
     }
 
@@ -350,6 +373,7 @@ struct GameView: View {
         backward = false
         withAnimation(Motion.sheetSwap) {
             if let panel { trail.append(panel); if trail.count > 8 { trail.removeFirst() } }
+            if Self.isModalFullTab(next) { sheetDetent = Self.highDetent }
             panel = next
         }
     }
@@ -370,6 +394,7 @@ struct GameView: View {
         GameFeel.shared.scrollOpen()
         backward = false
         let wantHigh: Bool = {
+            if Self.isModalFullTab(next) { return true }
             if case .nation = next, NationSheet.tourTab != nil { return true }
             if case .menu = next, MenuSheet.tourWarRules { return true }
             if case .people = next, ShotTour.on { return true }
@@ -1967,7 +1992,6 @@ private struct GamePortraitSheetHost: View {
                 }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(MemorialPaper().ignoresSafeArea())
         .presentationDetents([GameView.lowDetent, GameView.midDetent, GameView.highDetent], selection: $sheetDetent)
         .presentationBackgroundInteraction(.enabled(upThrough: GameView.midDetent))
         .presentationBackground { MemorialPaper() }
@@ -2197,6 +2221,9 @@ private struct GameLifecycleModifier: ViewModifier {
     private func teardownMapHandlers() {
         rippleTask?.cancel()
         rippleTask = nil
+        controller.sheetOpen = false
+        controller.sheetBottomFraction = 0
+        controller.sheetTrailingFraction = 0
         controller.onMapTap = nil
         controller.onGroupTarget = nil
         controller.onLongPress = nil

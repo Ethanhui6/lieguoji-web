@@ -180,10 +180,22 @@ struct RootView: View {
             if model.phase == .splash { SplashView { finishSplash() }.transition(.opacity).zIndex(10) }
         }
         .animation(Motion.reveal, value: model.phase)
-        // 退入后台时优雅暂驻服务器并落盘本地；切回前台自动秒级无感续连并恢复推演。
+        // 退入后台时优雅暂驻服务器并落盘本地；切回前台自动秒级无感续连并恢复推演（同时监听 scenePhase 与 UIApplication 全套生命周期通知，防 iOS 挂起漏触发）。
         .onChange(of: scenePhase) { _, phase in
             if phase == .background, model.phase == .playing { Task { await model.handleAppBackground() } }
             if phase == .active, model.phase == .playing { Task { await model.handleAppForeground() } }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            if model.phase == .playing { Task { await model.handleAppWillResignActive() } }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            if model.phase == .playing { Task { await model.handleAppBackground() } }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            if model.phase == .playing { Task { await model.handleAppForeground() } }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            if model.phase == .playing { Task { await model.handleAppForeground() } }
         }
         .task { GameFeel.shared.start() }
         // 启动自动检测云端版本、免换包 28MB+ 游戏内热更资源清单、续签账号会话与腾讯云专属服。
@@ -606,6 +618,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("5.8.0", [
+            "【切后台秒级无感重连 × 告别 12 秒僵尸连接卡死】全量接入 `UIApplication` 四大生命周期通知与 1.2 秒极速探活（`fastProbeRTT`），切回前台若检测到底层套接字已被 iOS 回收立即 0ms 销毁并直走 `resumeWorld` 零上传秒连；同时大幅降低二级详情页后台刷新频次（0.5s → 1.85s）并保留操作点击瞬时刷新，二级菜单滑动与点选彻底丝滑。",
+            "【极致流畅计算服 v11 × 差量疆域帧 × 弱网自适应推流】升级至 `lieguoji-server/v11`：新增 65%–80% 省流疆域差量帧（`ownersDelta`）、事件去重、服务端启动目录预热（跳过 2MB 目录上传）与 Linux TCP 防缓冲膨胀调优（64KB 缓冲 + 低延迟保活），配合弱网（RTT > 300ms）自适应推流节拍与 4 错容忍心跳，4G/弱网下依然稳定顺滑。",
+            "【真实历史剧本 × 玩家创意工坊云端平台 v6】云端平台升级至 v6 创意工坊 API，支持玩家上传自制剧本舆图至云端、按地区检索浏览、点赞与一键下载开局，并内置本地工坊舆图仓库与公元前（BCE）纪年精准展示。"
+        ]),
         ("5.7.0", [
             "【60/120fps 地图拖动零掉帧重构 × 全仓深度代码审计修复】彻底消除拖拽与惯性滑行期的 Metal 同步阻塞（presentsWithTransaction / waitUntilScheduled）与覆盖层冗余重排，大幅降低 280 州大图平移抖动；同步完成全仓渲染、网络、服务端与界面层深度审计，清零强制解包、未取消任务、URLSession/句柄/限流表泄漏与锁序死锁隐患。",
             "【国内满速多源并发下载引擎 × 加速线路测速矩阵】客户端安装包与免换包典藏热更升级为 256 KB 真实吞吐测速择优（彻底解决 1 字节 Ping 误选限速源站问题），Top 3 国内高速镜像 8 路动态工作窃取并发拉取（5+ MB/s）；更新卷轴与行宫更新中心新增「加速线路测速矩阵」，直显各源真实 MB/s 速率徽章、延迟与多源并发下载进度丝带。",

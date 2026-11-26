@@ -118,6 +118,59 @@ final class EffectsView: UIView {
     private var iconPoints: CGFloat { CGFloat(MapRenderer.iconPoints(camera?.scale ?? 1, iconScale: 1)) }
     private var viewport: CGSize = .zero
     private var reduceMotion = false
+    private var isPaused = false
+    private var pausedEmitters: [(emitter: CAEmitterLayer, birthRate: Float)] = []
+
+    /// 二级菜单完全遮盖主画面时立即冻结战争特效层与粒子时钟，关闭后原相位恢复。
+    func setPaused(_ paused: Bool) {
+        if paused { stopWaves() }
+        guard isPaused != paused else { return }
+        isPaused = paused
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        if paused {
+            pausedEmitters.removeAll(keepingCapacity: true)
+            pauseActiveEmitters(in: layer)
+        } else {
+            for entry in pausedEmitters where entry.emitter.superlayer != nil {
+                entry.emitter.birthRate = entry.birthRate
+            }
+            pausedEmitters.removeAll(keepingCapacity: false)
+        }
+        applyClockPaused(layer, paused: paused)
+        if let floatHost {
+            applyClockPaused(floatHost, paused: paused)
+        }
+    }
+
+    private func applyClockPaused(_ target: CALayer, paused: Bool) {
+        if paused {
+            if target.speed != 0 {
+                let t = target.convertTime(CACurrentMediaTime(), from: nil)
+                target.speed = 0
+                target.timeOffset = t
+            }
+        } else if target.speed == 0 {
+            let t = target.timeOffset
+            target.speed = 1
+            target.timeOffset = 0
+            target.beginTime = 0
+            target.beginTime = target.convertTime(CACurrentMediaTime(), from: nil) - t
+        }
+    }
+
+    private func pauseActiveEmitters(in root: CALayer) {
+        if let emitter = root as? CAEmitterLayer, emitter.birthRate > 0 {
+            pausedEmitters.append((emitter, emitter.birthRate))
+            emitter.birthRate = 0
+        }
+        if let subs = root.sublayers {
+            for sub in subs {
+                pauseActiveEmitters(in: sub)
+            }
+        }
+    }
 
     private var hasActiveLayers: Bool {
         !activeFloats.isEmpty || !waves.isEmpty || !battleLayers.isEmpty || !clashLayers.isEmpty
@@ -196,7 +249,7 @@ final class EffectsView: UIView {
         }
     }
     func startWaves() {
-        guard waveTimer == nil else { return }
+        guard waveTimer == nil, !isPaused else { return }
         waveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
             guard let self else { timer.invalidate(); return }
             self.spawnWave()

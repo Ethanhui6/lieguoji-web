@@ -118,7 +118,7 @@ struct DiplomacyBoard: View {
 
     var body: some View {
         let warmGold = Color(red: 0.66, green: 0.46, blue: 0.14)
-        VStack(alignment: .leading, spacing: 14) {
+        LazyVStack(alignment: .leading, spacing: 14) {
             // 1. 集成「切换观察国」的鸿胪邦交态势卡（统一 Group2 卡片语言与手绘图标）
             Group2 {
                 VStack(alignment: .leading, spacing: 11) {
@@ -311,7 +311,7 @@ struct DiplomacyBoard: View {
                         warConfirmTarget = nil
                     }
                 )
-                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
         .task(id: "\(nation)-\(state.day / 30)-\(attempt)") {

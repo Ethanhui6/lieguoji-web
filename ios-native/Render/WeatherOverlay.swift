@@ -25,6 +25,9 @@ final class WeatherOverlayView: UIView {
     private let emitter = CAEmitterLayer()
     private var rippleLayers: [SpriteSheetLayer] = []
     private var currentMode: Mode = .off
+    private var activeEmitterBirthRate: Float = 0
+    private var activeCloudBirthRate: Float = 0
+    private var isPaused = false
     private var zoneLayers: [Int: (layer: CALayer, zone: Zone)] = [:]
     private var wasZonesEmpty = true
     private var lastAppliedZones: [Zone] = []
@@ -33,6 +36,57 @@ final class WeatherOverlayView: UIView {
 
     /// Fast-path check for pure-pan callers: true when no local weather zone layers exist or were active.
     var isZonesEmpty: Bool { zoneLayers.isEmpty && wasZonesEmpty }
+
+    /// 立即暂停/恢复全部天气粒子发射器与水波序列帧动画（二级菜单弹出时零后台开销、防发烫）。
+    func setPaused(_ paused: Bool) {
+        guard isPaused != paused else { return }
+        isPaused = paused
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        applyEmitterPaused(emitter, activeRate: currentMode == .off ? 0 : activeEmitterBirthRate, paused: paused)
+        applyEmitterPaused(cloudEmitter, activeRate: currentMode == .off ? 0 : activeCloudBirthRate, paused: paused)
+        for rl in rippleLayers {
+            applyLayerClockPaused(rl, paused: paused)
+        }
+        for (_, entry) in zoneLayers {
+            applyZoneLayerPaused(entry.layer, paused: paused)
+        }
+    }
+
+    private func applyEmitterPaused(_ target: CAEmitterLayer, activeRate: Float, paused: Bool) {
+        target.birthRate = paused ? 0 : activeRate
+        applyLayerClockPaused(target, paused: paused)
+    }
+
+    private func applyLayerClockPaused(_ target: CALayer, paused: Bool) {
+        if paused {
+            if target.speed != 0 {
+                let pausedTime = target.convertTime(CACurrentMediaTime(), from: nil)
+                target.speed = 0
+                target.timeOffset = pausedTime
+            }
+        } else if target.speed == 0 {
+            let pausedTime = target.timeOffset
+            target.speed = 1
+            target.timeOffset = 0
+            target.beginTime = 0
+            target.beginTime = target.convertTime(CACurrentMediaTime(), from: nil) - pausedTime
+        }
+    }
+
+    private func applyZoneLayerPaused(_ root: CALayer, paused: Bool) {
+        if let subs = root.sublayers {
+            for sub in subs {
+                if let localEmitter = sub as? CAEmitterLayer {
+                    applyEmitterPaused(localEmitter, activeRate: 1, paused: paused)
+                } else {
+                    applyLayerClockPaused(sub, paused: paused)
+                }
+            }
+        }
+        applyLayerClockPaused(root, paused: paused)
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -113,6 +167,7 @@ final class WeatherOverlayView: UIView {
     }
 
     func update(seasonPhase: Float, zones: [Zone], camera: MapCamera, viewport: CGSize, active: Bool, purePan: Bool = false) {
+        guard !isPaused else { return }
         guard viewport.width.isFinite, viewport.height.isFinite, camera.isValid else { return }
         if purePan {
             // Pure-pan fast path: never touch emitter configs or allocate collections;
@@ -182,6 +237,8 @@ final class WeatherOverlayView: UIView {
         defer { CATransaction.commit() }
 
         guard mode != .off else {
+            activeEmitterBirthRate = 0
+            activeCloudBirthRate = 0
             emitter.birthRate = 0
             emitter.emitterCells = nil
             cloudEmitter.birthRate = 0
@@ -332,6 +389,13 @@ final class WeatherOverlayView: UIView {
             configureClouds(tint: UIColor(red: 0.58, green: 0.66, blue: 0.76, alpha: 0.28), rate: 0.26, speed: 24)
             edgeTint.colors = [UIColor(red: 0.24, green: 0.36, blue: 0.52, alpha: 0.20).cgColor, UIColor.clear.cgColor]
             edgeTint.opacity = 1
+        }
+        activeEmitterBirthRate = 1
+        activeCloudBirthRate = 0
+        if isPaused {
+            applyEmitterPaused(emitter, activeRate: activeEmitterBirthRate, paused: true)
+            applyEmitterPaused(cloudEmitter, activeRate: activeCloudBirthRate, paused: true)
+            for rl in rippleLayers { applyLayerClockPaused(rl, paused: true) }
         }
     }
 
@@ -498,6 +562,7 @@ final class WeatherOverlayView: UIView {
         }
         localEmitter.emitterCells = [c]
         root.addSublayer(localEmitter)
+        if isPaused { applyZoneLayerPaused(root, paused: true) }
         return root
     }
 }

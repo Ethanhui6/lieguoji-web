@@ -14,21 +14,44 @@ import Glibc
 import Darwin
 #endif
 
-// 列国纪在线计算服务器 v10（真·非阻塞全双工多路复用推流 + worldId 秒级热续连 + 3Mbps 带宽整形 + LZ4 高速压缩 + 专属云服/家用电脑双模）：
-// 1. v10 非阻塞全双工多路复用直连 TCP（端口 8765，支持 `enableMux` 升级）：TCP 读线程 100% 永不阻塞，
+// 列国纪在线计算服务器 v11（lieguoji-server/v11 · 差量疆域帧 + 弱网自适应 + 启动目录预热 + Linux 低延迟 TCP 调优 + worldId 秒级热续连）：
+// 1. v11 非阻塞全双工多路复用直连 TCP（端口 8765，支持 `enableMux` 升级）：TCP 读线程 100% 永不阻塞，
 //    <1ms 瞬回 `MUX_PING`、0ms 消化 `MUX_ACK` 滑动窗口确认，所有业务 `MUX_REQ` 派发至独立串行 RPC 队列；
-//    同时内置 3 Mbps 带宽整形器，彻底杜绝打满链路触发 1000ms TCP Bufferbloat。
-// 2. worldId 感知秒级热续连（`resumeWorld`）：内存命中 0ms / 磁盘 `world-<id>.lgj` 秒载 50ms，0 MB 上传瞬连；
-//    配合 `ping` 携带 `wid` 与 `cat:1` 标志，免除重复上传 2MB 目录与 15MB 存档，彻底消灭切后台重进断联。
+//    配合疆域差量帧（ownersDelta）+ 事件去重 + 3 Mbps 出向带宽整形 + 64KB 适度缓冲防移动网 Bufferbloat。
+// 2. worldId 感知秒级热续连（`resumeWorld`）+ 启动目录预热（`/app/catalogs.json` / `--catalog-dir` / 磁盘缓存）：
+//    内存命中 0ms / 磁盘 `world-<id>.lgj` 秒载 50ms，0 MB 上传瞬连，彻底消灭切后台重进断联与重复传目录。
 // 3. 云端中转单向推流管道（Cloudflare Pages / Durable Object `/push` -> 手机 WebSocket `MSG_PUSH`）：
 //    外出 4G/5G 省去整趟「手机→中转→PC」请求来回，消除停顿问答感；同时双路长轮询即时处理控制指令。
 // 4. 局域网 UDP 自动发现信标（端口 8766）：同一 Wi-Fi 下无需经过外网中转，10ms 内秒连家用电脑。
-// 5. 专属 24h 云服务器就绪：支持环境变量 `LGJ_PORT` / `LGJ_PAIRING_CODE` / `LGJ_DATA_DIR` / `LGJ_DISABLE_RELAY`，
+// 5. 专属 24h 云服务器就绪：支持环境变量 `LGJ_PORT` / `LGJ_PAIRING_CODE` / `LGJ_DATA_DIR` / `LGJ_CATALOG_DIR` / `LGJ_DISABLE_RELAY`，
 //    以及服务端每 60 秒自动双写热备（`autosave.lgj` + 最多 10 份 `world-<id>.lgj`）与 SIGTERM/SIGINT 优雅落盘退出。
 
 setvbuf(stdout, nil, _IONBF, 0)
+let serverVersionTag = "lieguoji-server/v11"
 let env = ProcessInfo.processInfo.environment
-let port = UInt16(CommandLine.arguments.dropFirst().first ?? env["LGJ_PORT"] ?? "") ?? 8765
+let cliArgs = Array(CommandLine.arguments.dropFirst())
+let catalogDirArg: String? = {
+    for (idx, arg) in cliArgs.enumerated() {
+        if arg == "--catalog-dir", idx + 1 < cliArgs.count {
+            return cliArgs[idx + 1]
+        }
+        if arg.hasPrefix("--catalog-dir=") {
+            return String(arg.dropFirst("--catalog-dir=".count))
+        }
+    }
+    return env["LGJ_CATALOG_DIR"]
+}()
+let cliPortArg: String? = {
+    var i = 0
+    while i < cliArgs.count {
+        let a = cliArgs[i]
+        if a == "--catalog-dir" { i += 2; continue }
+        if a.hasPrefix("--") { i += 1; continue }
+        return a
+    }
+    return nil
+}()
+let port = UInt16(cliPortArg ?? env["LGJ_PORT"] ?? "") ?? 8765
 let disableRelay = (env["LGJ_DISABLE_RELAY"] == "1" || env["LGJ_DISABLE_RELAY"]?.lowercased() == "true")
 let disableStartup = (env["LGJ_NO_STARTUP"] == "1" || env["LGJ_DATA_DIR"] != nil)
 let service = EngineService()
@@ -400,13 +423,14 @@ final class SimStreamer {
         self.pushEnabled = push
         self.windowEnabled = window
         self.daysPerStep = max(1, min(32, days))
-        self.intervalSec = Double(max(35, min(600, intervalMs))) / 1000.0
+        self.intervalSec = Double(max(35, min(900, intervalMs))) / 1000.0
         if let e = epoch, e >= 0 {
             let nextEpoch = UInt32(e & 0xFF)
             if nextEpoch != self.streamEpoch {
                 self.streamEpoch = nextEpoch
                 self.streamSeq = 0
                 self.ackedSeq = 0
+                if playing { self.firstFramePending = true }
             }
         } else if !wasPlaying || !playing {
             self.streamEpoch = (self.streamEpoch + 1) & 0xFF
@@ -599,7 +623,7 @@ final class SimStreamer {
                             self.pushedBytes += compressed.count
                             if tickStart.timeIntervalSince(self.statStarted) >= 30 {
                                 let avgKB = Double(self.pushedBytes) / Double(max(1, self.pushedCount)) / 1024.0
-                                print(String(format: "（v10 非阻塞全双工推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
+                                print(String(format: "（v11 差量全双工推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
                                 self.pushedCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
                             }
                         }
@@ -640,16 +664,57 @@ final class SimStreamer {
 }
 
 let streamer = SimStreamer()
-// 启动预热：若磁盘留有目录缓存则预先载入，令重启后的首条 resumeWorld 也可 0 MB 磁盘秒连！
-if let cachedCatalogs = try? Data(contentsOf: catalogsCacheURL), !cachedCatalogs.isEmpty {
-    engineLock.lock()
-    let catReply = service.handle("catalogs", [:], payload: cachedCatalogs)
-    engineLock.unlock()
-    if catReply.ok {
-        streamer.setCatalogsLoaded(true)
-        print("（v10 启动预热）已从本地磁盘加载目录缓存，客户端重连免重复上传目录")
+
+/// 启动目录预热：优先从 `--catalog-dir`、`/app/catalogs.json` 或磁盘 `catalogs.json` 缓存预加载全套目录，
+/// 令重连客户端立即跳过 2 MB 目录上传直接秒连开推！
+func preloadBootCatalogs() {
+    var candidatePayloads: [(label: String, data: Data)] = []
+
+    if let dir = catalogDirArg, !dir.isEmpty {
+        let base = URL(fileURLWithPath: dir, isDirectory: true)
+        let bundled = base.appendingPathComponent("catalogs.json")
+        if let raw = try? Data(contentsOf: bundled), !raw.isEmpty {
+            candidatePayloads.append((bundled.path, raw))
+        }
+        let tURL = base.appendingPathComponent("traits.json")
+        let nURL = base.appendingPathComponent("noble-cultures.json")
+        let cURL = base.appendingPathComponent("cultures.json")
+        let tAlt = base.appendingPathComponent("Catalog/traits.json")
+        let nAlt = base.appendingPathComponent("Catalog/noble-cultures.json")
+        let cAlt = base.appendingPathComponent("World/cultures.json")
+        if let t = (try? Data(contentsOf: tURL)) ?? (try? Data(contentsOf: tAlt)),
+           let n = (try? Data(contentsOf: nURL)) ?? (try? Data(contentsOf: nAlt)),
+           let c = (try? Data(contentsOf: cURL)) ?? (try? Data(contentsOf: cAlt)),
+           let packed = try? JSONSerialization.data(withJSONObject: [
+               "traits": t.base64EncodedString(),
+               "nobleCultures": n.base64EncodedString(),
+               "cultures": c.base64EncodedString()
+           ]) {
+            candidatePayloads.append((dir, packed))
+        }
+    }
+
+    let appCatalogs = URL(fileURLWithPath: "/app/catalogs.json")
+    if let raw = try? Data(contentsOf: appCatalogs), !raw.isEmpty {
+        candidatePayloads.append(("/app/catalogs.json", raw))
+    }
+
+    if let cached = try? Data(contentsOf: catalogsCacheURL), !cached.isEmpty {
+        candidatePayloads.append((catalogsCacheURL.path, cached))
+    }
+
+    for item in candidatePayloads {
+        engineLock.lock()
+        let catReply = service.handle("catalogs", [:], payload: item.data)
+        engineLock.unlock()
+        if catReply.ok {
+            streamer.setCatalogsLoaded(true)
+            print("（\(serverVersionTag) 启动预热）已从 \(item.label) 预载目录，客户端重连免传 2MB 目录")
+            return
+        }
     }
 }
+preloadBootCatalogs()
 streamer.start()
 if !disableRelay {
     relayPusher.start { streamer.stopForIdle() }
@@ -710,7 +775,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         return service.handle("park", args, payload: nil)
     }
     if call == "enableMux" {
-        return EngineService.Reply(ok: true, reason: "mux-v10")
+        return EngineService.Reply(ok: true, reason: "mux-v11")
     }
     if call == "resumeWorld" {
         let reqWorldId = (args["worldId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -725,7 +790,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
             let pCount = service.engine?.run.world.provinces.length ?? 0
             let curDay = service.currentDay
             streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: reqWorldId)
-            print("（v10 秒级热续连）命中内存世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
+            print("（v11 秒级热续连）命中内存世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
             return reply
         }
         // 2) 本地 SSD 磁盘秒载（~50ms，0 MB 上传恢复）
@@ -751,7 +816,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
                     let pCount = candidate.run.world.provinces.length
                     let curDay = service.currentDay
                     streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: reqWorldId)
-                    print("（v10 秒级热续连）从本地磁盘秒载世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
+                    print("（v11 秒级热续连）从本地磁盘秒载世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
                     return reply
                 }
             }
@@ -1034,7 +1099,7 @@ func startUDPDiscovery(tcpPort: UInt16, roomCode: String) {
 
 func tuneClientSocket(_ s: Socket) {
     var one: Int32 = 1
-    var sndBuf: Int32 = 98_304
+    var sockBuf: Int32 = 65_536
     #if os(Windows)
     withUnsafePointer(to: &one) {
         $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
@@ -1042,9 +1107,10 @@ func tuneClientSocket(_ s: Socket) {
             _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_KEEPALIVE), ptr, 4)
         }
     }
-    withUnsafePointer(to: &sndBuf) {
+    withUnsafePointer(to: &sockBuf) {
         $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
             _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_SNDBUF), ptr, 4)
+            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_RCVBUF), ptr, 4)
         }
     }
     var timeoutMs: DWORD = 180_000
@@ -1055,16 +1121,24 @@ func tuneClientSocket(_ s: Socket) {
         }
     }
     #elseif canImport(Glibc)
+    var keepIdle: Int32 = 15
+    var keepIntvl: Int32 = 5
+    var keepCnt: Int32 = 3
     setsockopt(s, Int32(IPPROTO_TCP), TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))
-    setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndBuf, socklen_t(MemoryLayout<Int32>.size))
+    setsockopt(s, Int32(IPPROTO_TCP), TCP_KEEPIDLE, &keepIdle, socklen_t(MemoryLayout<Int32>.size))
+    setsockopt(s, Int32(IPPROTO_TCP), TCP_KEEPINTVL, &keepIntvl, socklen_t(MemoryLayout<Int32>.size))
+    setsockopt(s, Int32(IPPROTO_TCP), TCP_KEEPCNT, &keepCnt, socklen_t(MemoryLayout<Int32>.size))
+    setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sockBuf, socklen_t(MemoryLayout<Int32>.size))
+    setsockopt(s, SOL_SOCKET, SO_RCVBUF, &sockBuf, socklen_t(MemoryLayout<Int32>.size))
     var tv = timeval(tv_sec: 180, tv_usec: 0)
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     #else
     setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))
-    setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndBuf, socklen_t(MemoryLayout<Int32>.size))
+    setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sockBuf, socklen_t(MemoryLayout<Int32>.size))
+    setsockopt(s, SOL_SOCKET, SO_RCVBUF, &sockBuf, socklen_t(MemoryLayout<Int32>.size))
     var tv = timeval(tv_sec: 180, tv_usec: 0)
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
@@ -1185,7 +1259,7 @@ func installShutdownSignals() {
 installShutdownSignals()
 #endif
 
-print("列国纪在线计算服务器 v10（v10 非阻塞全双工推流 + worldId 秒级热续连 + 3Mbps 带宽整形 + LZ4 压缩 + 局域网自动发现 + 自动热备）已启动")
+print("列国纪在线计算服务器 v11（\(serverVersionTag) · 差量疆域帧 + 弱网自适应 + 启动目录预热 + worldId 秒级热续连 + 3Mbps 整形 + LZ4 压缩）已启动")
 print("配对码：\(code)\(disableRelay ? "（纯直连专属云服模式）" : "")")
 print("手机打开游戏即自动接入；同一 Wi-Fi 自动毫秒级直连推流，切后台再返回秒级无感重连。")
 installStartup()
@@ -1264,7 +1338,7 @@ func handleLANClient(_ conn: DirectClient) {
         if isMuxUpgrade {
             conn.mux = true
             conn.compress = true
-            print("（直连 TCP [#\(conn.gen)]）已升级至 v10 非阻塞全双工推流 + 滑动窗口背压 + 3Mbps 带宽整形模式")
+            print("（直连 TCP [#\(conn.gen)]）已升级至 v11 差量非阻塞全双工推流 + 滑动窗口背压 + 3Mbps 整形模式")
             break
         }
         if call == "health" { break }
@@ -1303,12 +1377,12 @@ func handleLANClient(_ conn: DirectClient) {
                     }
                     let reply = serve(req.call, req.args, req.payload)
                     if req.call == "open" {
-                        print(reply.ok ? "（v10 非阻塞全双工推流）世界已载入，随时高速开推" : "（v10 非阻塞全双工推流）世界载入失败：\(reply.reason)")
+                        print(reply.ok ? "（v11 差量全双工推流）世界已载入，随时高速开推" : "（v11 差量全双工推流）世界载入失败：\(reply.reason)")
                     }
-                    if req.call == "park" { print("（v10 非阻塞全双工推流）手机已切入后台，世界热保留并已落盘") }
+                    if req.call == "park" { print("（v11 差量全双工推流）手机已切入后台，世界热保留并已落盘") }
                     rpcStats.calls += 1
                     if Date().timeIntervalSince(rpcStats.started) > 30 {
-                        print("（v10 非阻塞全双工推流）近 30 秒处理 \(rpcStats.calls) 次指令/查询")
+                        print("（v11 差量全双工推流）近 30 秒处理 \(rpcStats.calls) 次指令/查询")
                         rpcStats.calls = 0; rpcStats.started = Date()
                     }
                     if !conn.sendMux(type: EngineWire.muxReply, id: reqFrameId, body: EngineWire.reply(reply, compress: true)) {

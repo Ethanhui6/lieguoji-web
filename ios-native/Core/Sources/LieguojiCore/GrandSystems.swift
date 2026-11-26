@@ -225,8 +225,14 @@ public enum GrandSystems {
     /// 列出当前由指定国家实际控制（按奇观所在州郡的实时 controller 判定，攻陷敌州即可夺取奇观！）的已竣工奇观。
     public static func controlledWonders(_ r: JS, nationId: String) -> [WonderSpec] {
         guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, !r.regimes.wonders.isNull else { return [] }
-        var controllerByPid = [String: String]()
-        for p in r.world.provinces.asArray { controllerByPid[p.id.asString] = p.controller.optionalString ?? "" }
+        let controllerByPid: [String: String]
+        if let idx = Regimes.currentMonthIndex, idx.world == ObjectIdentifier(r) {
+            controllerByPid = idx.ownerByPid
+        } else {
+            var map = [String: String]()
+            for p in r.world.provinces.asArray { map[p.id.asString] = p.controller.optionalString ?? "" }
+            controllerByPid = map
+        }
         var out = [WonderSpec]()
         for (wid, row) in r.regimes.wonders.objectEntries {
             guard row.status.optionalString == "done",
@@ -305,26 +311,49 @@ public enum GrandSystems {
     }
 
     public static func evaluateMissions(_ r: JS, nationId: String) -> [MissionProgress] {
-        let provinces = r.world.provinces.asArray
-        var provCountByNation = [String: Int]()
-        for p in provinces {
-            if let c = p.controller.optionalString, !c.isEmpty { provCountByNation[c, default: 0] += 1 }
-        }
-        let myProvs = provCountByNation[nationId] ?? 0
-        let sortedCounts = provCountByNation.values.sorted(by: >)
-        let top2Threshold = sortedCounts.count >= 2 ? sortedCounts[1] : (sortedCounts.first ?? 1)
+        let myProvs: Int
+        let top2Threshold: Int
+        let myArmyCount: Int
+        let totalTroops: Int
+        let ships: Int
+        let ports: Int
+        let hasAllyOrVassal: Bool
+        let myWonders: Int
 
-        let myArmies = r.world.armies.asArray.filter { $0.nationId.optionalString == nationId && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
-        let totalTroops = myArmies.reduce(0) { $0 + $1.troops.asInt }
+        if let cache = SovereignAI.activeCache(r) {
+            myProvs = cache.provinceCountByNation[nationId] ?? 0
+            top2Threshold = cache.top2ProvinceThreshold
+            let myArmies = Regimes.monthArmies(r, nationId)
+            myArmyCount = myArmies.count
+            totalTroops = cache.troopsByNation[nationId] ?? myArmies.reduce(0) { $0 + $1.troops.asInt }
+            ships = cache.shipsByNation[nationId] ?? 0
+            ports = cache.portsByNation[nationId]?.count ?? 0
+            hasAllyOrVassal = cache.hasAllianceOrVassal.contains(nationId)
+            myWonders = cache.wondersOwnedByNation[nationId] ?? 0
+        } else {
+            let provinces = r.world.provinces.asArray
+            var provCountByNation = [String: Int]()
+            for p in provinces {
+                if let c = p.controller.optionalString, !c.isEmpty { provCountByNation[c, default: 0] += 1 }
+            }
+            myProvs = provCountByNation[nationId] ?? 0
+            let sortedCounts = provCountByNation.values.sorted(by: >)
+            top2Threshold = sortedCounts.count >= 2 ? sortedCounts[1] : (sortedCounts.first ?? 1)
+
+            let myArmies = r.world.armies.asArray.filter { $0.nationId.optionalString == nationId && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+            myArmyCount = myArmies.count
+            totalTroops = myArmies.reduce(0) { $0 + $1.troops.asInt }
+            ships = Naval.fleets(r).filter { $0.nationId.optionalString == nationId && $0.status.asString != "lost" }.reduce(0) { $0 + max(0, $1.ships.asInt) }
+            ports = MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: nationId).count
+            let hasVassal = r.vassals.records.asArray.contains { $0.endedTick.isNull && $0.overlordId.optionalString == nationId }
+            hasAllyOrVassal = (Vassals.allianceOf(r, nationId) != nil) || hasVassal
+            myWonders = controlledWonders(r, nationId: nationId).count
+        }
+
         let gold = Int((r.finance.nations[nationId].gold.optionalNumber ?? 0).rounded())
-        let ships = Naval.fleets(r).filter { $0.nationId.optionalString == nationId && $0.status.asString != "lost" }.reduce(0) { $0 + max(0, $1.ships.asInt) }
-        let ports = MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: nationId).count
         let corrupt = Int(Finance.corruption(r, nationId).rounded())
         let destiny = Int((r.destiny.nations[nationId].destiny.optionalNumber ?? 50).rounded())
-        let hasVassal = r.vassals.records.asArray.contains { $0.endedTick.isNull && $0.overlordId.optionalString == nationId }
-        let hasAllyOrVassal = (Vassals.allianceOf(r, nationId) != nil) || hasVassal
         let rep = WorldDepth.reputation(r, nation: nationId)
-        let myWonders = controlledWonders(r, nationId: nationId).count
 
         let claimedObj = (!r.regimes.isNull && !r.regimes.missions.isNull) ? r.regimes.missions[nationId] : .null
 
@@ -335,9 +364,9 @@ public enum GrandSystems {
                 let ok = myProvs >= 10
                 return MissionProgress(spec: m, current: min(10, myProvs), target: 10, done: ok, claimed: isClaimed, statusLine: "实控 \(myProvs) / 10 州")
             case "mightyArmy":
-                let ok = totalTroops >= 30_000 || myArmies.count >= 5
-                let cur = ok ? 100 : max(min(99, totalTroops * 100 / 30_000), min(99, myArmies.count * 20))
-                return MissionProgress(spec: m, current: cur, target: 100, done: ok, claimed: isClaimed, statusLine: "兵力 \(totalTroops) · \(myArmies.count) 支")
+                let ok = totalTroops >= 30_000 || myArmyCount >= 5
+                let cur = ok ? 100 : max(min(99, totalTroops * 100 / 30_000), min(99, myArmyCount * 20))
+                return MissionProgress(spec: m, current: cur, target: 100, done: ok, claimed: isClaimed, statusLine: "兵力 \(totalTroops) · \(myArmyCount) 支")
             case "richTreasury":
                 let ok = gold >= 2500
                 return MissionProgress(spec: m, current: min(2500, max(0, gold)), target: 2500, done: ok, claimed: isClaimed, statusLine: "国库 \(gold) / 2,500 金")
@@ -407,20 +436,24 @@ public enum GrandSystems {
         return o
     }
 
-    // MARK: - 月度推进（奇观建造进度、奇观被动特效、AI 竞建奇观）
+    // MARK: - 月度推进（奇观建造进度、奇观被动特效、远征进度；AI 竞建与远征统一交由 SovereignAI 自主决策）
 
     public static func month(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
         guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
         ensureStore(r)
         let provinces = r.world.provinces.asArray
-        var provById = [String: JS]()
-        for p in provinces { provById[p.id.asString] = p }
+        let ownerByPid = (Regimes.currentMonthIndex?.world == ObjectIdentifier(r)) ? Regimes.currentMonthIndex?.ownerByPid : nil
+        func findProvince(_ pid: String) -> JS? {
+            if let list = Regimes.currentMonthIndex?.provincesByNation[ownerByPid?[pid] ?? ""] {
+                if let hit = list.first(where: { $0.id.asString == pid }) { return hit }
+            }
+            return provinces.first(where: { $0.id.asString == pid })
+        }
 
         // 1. 推进该国正在兴建的奇观工程
-        var currentlyBuilding = false
         for (wid, row) in r.regimes.wonders.objectEntries {
             guard row.status.optionalString == "building", row.builderId.optionalString == id else { continue }
-            guard let pid = row.provinceId.optionalString, let p = provById[pid] else { continue }
+            guard let pid = row.provinceId.optionalString, let p = findProvince(pid) else { continue }
             // 若施工所在州郡被敌方占领，则停工并返还未完成奇观名额
             if p.controller.optionalString != id {
                 r.regimes.wonders.delete(wid)
@@ -431,7 +464,6 @@ public enum GrandSystems {
                 }
                 continue
             }
-            currentlyBuilding = true
             let prog = (row.progress.optionalNumber.map(Int.init) ?? 0) + 1
             let total = row.totalMonths.optionalNumber.map(Int.init) ?? (wonderById[wid]?.months ?? 12)
             row.progress = JS(prog)
@@ -461,36 +493,12 @@ public enum GrandSystems {
             }
         }
 
-        // 3. 富庶 AI 列强自动参与天下奇观竞建（增强世界活态史诗感）
-        let isAuto = Regimes.isAutoGoverned(r, id)
-        let gold = r.finance.nations[id].gold.optionalNumber ?? 0
-        if isAuto && !currentlyBuilding && gold >= 1400 && Regimes.chance("\(id)|\(key)|aiwonder") < 0.045 {
-            let taken = Set(r.regimes.wonders.objectKeys)
-            let portPids = Set((Naval.sea?.ports ?? []).map(\.provinceId))
-            let myProvs = Regimes.monthLand(r, id)
-            let myPorts = myProvs.filter { portPids.contains($0.id.asString) }
-            let avail = wonders.filter { !taken.contains($0.id) && (!$0.coastalOnly || !myPorts.isEmpty) && gold >= $0.cost + 450 }
-            if !avail.isEmpty {
-                let spec = avail[Int(Regimes.draw("\(id)|\(key)|aiwpick")) % avail.count]
-                let sitePool = spec.coastalOnly ? myPorts : myProvs
-                if let site = sitePool.first {
-                    r.finance.nations[id].gold = JS(max(0, gold - spec.cost))
-                    let row = JS.object()
-                    row.status = JS("building"); row.builderId = JS(id); row.provinceId = JS(site.id.asString)
-                    row.progress = JS(0); row.totalMonths = JS(spec.months); row.startedDay = r.world.day.clone()
-                    r.regimes.wonders[spec.id] = row
-                    _ = People.announce(r, kind: "event", text: "\(n.name.asString)动工兴建奇观「\(spec.name)」",
-                                        reason: "于\(site.name.asString)大兴土木，预计 \(spec.months) 个月竣工（\(spec.effectLine)）。",
-                                        nations: [id], province: site.id.asString)
-                }
-            }
-        }
+        // 3. 天下奇观自动竞建交由 SovereignAI 按执政人格、政体与收入择优拍板（移除旧版 4.5% 极低概率占位，月内自动去重）
+        SovereignAI.considerGrandWonderIfNeeded(r, nation: n, id: id, key: key)
 
-        // 4. 推进该国正在进行的「四海探索与古迹远征」
-        var currentlyExploring = false
+        // 4. 推进该国正在进行的「四海探索与古迹远征」（AI 新派远征统一由 SovereignAI.month 驱动）
         for (sid, row) in r.regimes.expeditions.objectEntries {
             guard row.status.optionalString == "exploring", row.explorerId.optionalString == id else { continue }
-            currentlyExploring = true
             let prog = (row.progress.optionalNumber.map(Int.init) ?? 0) + 1
             let total = row.totalMonths.optionalNumber.map(Int.init) ?? (expeditionById[sid]?.months ?? 4)
             row.progress = JS(prog)
@@ -521,20 +529,199 @@ public enum GrandSystems {
                                     nations: [id], province: pId)
             }
         }
+    }
 
-        // 5. AI 列国偶发派出远征队探索四海古迹（丰富沙盒探索感）
-        if isAuto && !currentlyExploring && gold >= 680 && Regimes.chance("\(id)|\(key)|aiexp") < 0.032 {
-            let taken = Set(r.regimes.expeditions.objectKeys)
-            let avail = expeditions.filter { !taken.contains($0.id) }
-            if !avail.isEmpty {
-                let spec = avail[Int(Regimes.draw("\(id)|\(key)|aiepick")) % avail.count]
-                r.finance.nations[id].gold = JS(max(0, gold - spec.cost))
-                let row = JS.object()
-                row.status = JS("exploring"); row.explorerId = JS(id)
-                row.progress = JS(0); row.totalMonths = JS(spec.months); row.startedDay = r.world.day.clone()
-                r.regimes.expeditions[spec.id] = row
+    // MARK: - 供玩家接口与 SovereignAI 共用的静态核心执行器（零重复逻辑、真实扣费与冷却）
+
+    /// 领取已达成的国家霸业使命奖赏（静态核心实现，玩家点击与 AI 自动领赏共用）。
+    @discardableResult
+    public static func claimMission(_ r: JS, nationId id: String, missionId: String) -> (ok: Bool, reason: String) {
+        guard let n = r.world.nations.asArray.first(where: { $0.id.asString == id }) else { return (false, "国家不存在。") }
+        let stateName = n.name.asString
+        guard Vassals.alive(r, id) else { return (false, "该国已亡。") }
+        Regimes.enable(r)
+        if r.regimes.missions.isNull { r.regimes.missions = JS.object() }
+        if r.regimes.missions[id].isNull { r.regimes.missions[id] = JS.object() }
+        guard let mp = evaluateMissions(r, nationId: id).first(where: { $0.spec.id == missionId }) else {
+            return (false, "未知的霸业使命。")
+        }
+        guard !mp.claimed else { return (false, "「\(mp.spec.title)」已完成领赏。") }
+        guard mp.done else { return (false, "尚未达成条件（\(mp.statusLine)）。") }
+
+        let fin = r.finance.nations[id]
+        let destinyRow = r.destiny.nations[id]
+        func giveGold(_ v: Double) { if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + v) } }
+        func giveDestiny(_ v: Double) { if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + v)) } }
+
+        switch missionId {
+        case "expandRealm":
+            giveGold(900); giveDestiny(10)
+            if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
+            for a in Regimes.monthArmies(r, id) {
+                let aid = a.id.asString
+                r.regimes.armyXP[aid] = JS(min(100, (r.regimes.armyXP[aid].optionalNumber ?? 0) + 18))
+            }
+        case "mightyArmy":
+            giveGold(600)
+            for a in Regimes.monthArmies(r, id) { a.morale = JS(100) }
+            if let cmd = Regimes.activeCommander(r, nation: id, enemy: nil), let cp = People.person(r, cmd.personId) {
+                cp.base.military = JS(min(100, (cp.base.military.optionalNumber ?? 50) + 6))
+            }
+        case "richTreasury":
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 12))
+            giveDestiny(8)
+            for p in Regimes.monthLand(r, id) {
+                if let s = Regimes.monthStock(r, p.id.asString) {
+                    s.grain = JS(min(50_000_000, ((s.grain.optionalNumber ?? 0) * 1.30).rounded()))
+                }
+            }
+        case "seaDominion":
+            giveGold(800)
+            let nb = Regimes.book(r, id)
+            nb.seaTransportBonus = JS(min(14, (nb.seaTransportBonus.optionalNumber.map(Int.init) ?? 0) + 3))
+            WorldDepth.adjustReputation(r, nation: id, delta: 10)
+        case "cleanCourt":
+            giveGold(500)
+            addTechBoost(r, nationId: id, delta: 40)
+        case "diplomaticLead":
+            giveGold(600); giveDestiny(8)
+            for other in r.world.nations.asArray {
+                let oid = other.id.asString
+                guard oid != id, Vassals.alive(r, oid), !RunWindow.atWar(r, id, oid) else { continue }
+                DiplomacyDeep.adjustOpinionMod(r, id, oid, delta: 15)
+            }
+        case "wonderBuilder":
+            giveGold(1200); giveDestiny(12)
+            WorldDepth.adjustReputation(r, nation: id, delta: 15)
+        case "worldHegemon":
+            giveGold(1500); giveDestiny(15)
+            if r.regimes.goldenAge.isNull { r.regimes.goldenAge = JS.object() }
+            let nowM = r.regimes.month.optionalNumber.map(Int.init) ?? 0
+            let row = JS.object()
+            row.untilMonth = JS(nowM + 60); row.cooldownUntilMonth = JS(nowM + 360)
+            r.regimes.goldenAge[id] = row
+        default: break
+        }
+        r.regimes.missions[id][missionId] = JS(true)
+        _ = People.announce(r, kind: "culture", text: "\(stateName)功成「\(mp.spec.title)」霸业！",
+                            reason: "达成历史伟业，获颁赏赐：\(mp.spec.rewardText)。",
+                            nations: [id], province: nil)
+        return (true, "已达成「\(mp.spec.title)」：\(mp.spec.rewardText)！")
+    }
+
+    /// 主动开启 5 年（60 个月）国家黄金盛世（静态核心实现，玩家与 AI 共用）。
+    @discardableResult
+    public static func startGoldenAge(_ r: JS, nationId id: String) -> (ok: Bool, reason: String) {
+        guard let n = r.world.nations.asArray.first(where: { $0.id.asString == id }) else { return (false, "国家不存在。") }
+        let stateName = n.name.asString
+        guard Vassals.alive(r, id) else { return (false, "该国已亡。") }
+        Regimes.enable(r)
+        if r.regimes.goldenAge.isNull { r.regimes.goldenAge = JS.object() }
+        let rem = goldenAgeRemaining(r, nationId: id)
+        if rem > 0 { return (false, "本国正处于黄金盛世之中（尚余 \(rem) 个月）。") }
+        let cd = goldenAgeCooldownRemaining(r, nationId: id)
+        if cd > 0 { return (false, "距下次开启黄金盛世尚需蓄势 \(cd) 个月。") }
+        let destiny = Int((r.destiny.nations[id].destiny.optionalNumber ?? 50).rounded())
+        let claimed = evaluateMissions(r, nationId: id).filter(\.claimed).count
+        let wonders = controlledWonders(r, nationId: id).count
+        guard destiny >= 68 || claimed >= 2 || wonders >= 1 else {
+            return (false, "尚未达到盛世门槛：需国运 ≥ 68、完成 2 项霸业或实控 1 座天下奇观。")
+        }
+        let nowM = r.regimes.month.optionalNumber.map(Int.init) ?? 0
+        let row = JS.object()
+        row.untilMonth = JS(nowM + 60)
+        row.cooldownUntilMonth = JS(nowM + 360)
+        r.regimes.goldenAge[id] = row
+        _ = People.announce(r, kind: "culture", text: "\(stateName)开启五年黄金盛世！",
+                            reason: "四海升平、文治武功达于极盛：未来 60 个月岁入 +25%、全军攻 +16% 守 +14%、安定 +15、腐化 −10！",
+                            nations: [id], province: nil)
+        return (true, "\(stateName)黄金盛世已启（持续 60 个月）！")
+    }
+
+    /// 招募传世特色雇佣兵团（静态核心实现，玩家与 AI 共用）。
+    @discardableResult
+    public static func hireMercenary(_ r: JS, nationId id: String, mercId: String) -> (ok: Bool, reason: String) {
+        guard let n = r.world.nations.asArray.first(where: { $0.id.asString == id }) else { return (false, "国家不存在。") }
+        let stateName = n.name.asString
+        guard Vassals.alive(r, id) else { return (false, "该国已亡。") }
+        guard let spec = mercById[mercId] else { return (false, "未知的雇佣兵团。") }
+        Regimes.enable(r)
+        if r.regimes.mercCooldown.isNull { r.regimes.mercCooldown = JS.object() }
+        if r.regimes.mercCooldown[id].isNull { r.regimes.mercCooldown[id] = JS.object() }
+        let nowDay = r.world.day.asInt
+        let cdUntil = r.regimes.mercCooldown[id][mercId].optionalNumber.map(Int.init) ?? 0
+        if nowDay < cdUntil { return (false, "「\(spec.name)」正在休整补员，需待 \(cdUntil - nowDay) 日后方可再雇。") }
+        let fin = r.finance.nations[id]
+        let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+        guard gold >= spec.cost else { return (false, "国库不足 \(Int(spec.cost)) 金，无力招募「\(spec.name)」。") }
+
+        let ownedProvs = Regimes.monthLand(r, id)
+        let capPid = Rebellion.capitalProvince(r, id)
+        let siteProv: JS? = {
+            if let capPid, let cp = ownedProvs.first(where: { $0.id.asString == capPid }), Armies.homeCells[capPid] != nil {
+                return cp
+            }
+            return ownedProvs.first(where: { Armies.homeCells[$0.id.asString] != nil })
+        }()
+        guard let siteProv else { return (false, "境内暂无可集结佣兵团的驻地。") }
+        let homePid = siteProv.id.asString
+
+        if !fin.isNull { fin.gold = JS(max(0, gold - spec.cost)) }
+        _ = Armies.create(r, nation: id, home: homePid, kind: "regular")
+        if let created = r.world.armies.asArray.last {
+            let aid = created.id.asString
+            created.name = JS(spec.name)
+            created.troops = JS(spec.troops)
+            created.morale = JS(95)
+            created.supplies = JS(100)
+            if !r.tactics.forces[aid].isNull { r.tactics.forces[aid].fullStrength = JS(spec.troops) }
+            r.units[aid] = JS(spec.unit)
+            if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
+            r.regimes.armyXP[aid] = JS(Double(spec.xp))
+        }
+        r.regimes.mercCooldown[id][mercId] = JS(nowDay + 180)
+        Daily.reconcileMilitaryClock(r)
+        let siteName = siteProv.name.asString
+        _ = People.announce(r, kind: "war", text: "\(stateName)重金招募「\(spec.name)」",
+                            reason: "斥资 \(Int(spec.cost)) 金于\(siteName)成军 \(spec.troops) 名百战精锐（历练 \(spec.xp) · 士气 95），即刻投入战局！",
+                            nations: [id], province: homePid)
+        return (true, "「\(spec.name)」（\(spec.troops) 精锐）已于\(siteName)成军待命！")
+    }
+
+    /// 派遣远征队探索天下秘境与古迹（静态核心实现，玩家与 AI 共用）。
+    @discardableResult
+    public static func dispatchExpedition(_ r: JS, nationId id: String, siteId: String) -> (ok: Bool, reason: String) {
+        guard let n = r.world.nations.asArray.first(where: { $0.id.asString == id }) else { return (false, "国家不存在。") }
+        let stateName = n.name.asString
+        guard Vassals.alive(r, id) else { return (false, "该国已亡，无法派遣远征队。") }
+        guard let spec = expeditionById[siteId] else { return (false, "未知的古迹秘境。") }
+        Regimes.enable(r)
+        if r.regimes.expeditions.isNull { r.regimes.expeditions = JS.object() }
+        if !r.regimes.expeditions[siteId].isNull {
+            let st = r.regimes.expeditions[siteId].status.optionalString ?? ""
+            return (false, st == "done" ? "「\(spec.name)」已被发掘归藏，举世唯一不可重复探索。" : "「\(spec.name)」已有远征队正在勘探之中。")
+        }
+        for (_, row) in r.regimes.expeditions.objectEntries {
+            if row.status.optionalString == "exploring", row.explorerId.optionalString == id {
+                return (false, "本国当前已有远征队在外勘探，请待凯旋后再启新程。")
             }
         }
+        let fin = r.finance.nations[id]
+        let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+        guard gold >= spec.cost else { return (false, "国库不足 \(Int(spec.cost)) 金，难以筹备「\(spec.name)」远征队。") }
+        if !fin.isNull { fin.gold = JS(max(0, gold - spec.cost)) }
+
+        let row = JS.object()
+        row.status = JS("exploring"); row.explorerId = JS(id)
+        row.progress = JS(0); row.totalMonths = JS(spec.months); row.startedDay = r.world.day.clone()
+        r.regimes.expeditions[siteId] = row
+        let pIdx = anchorProvinceIndex(r, siteId: siteId)
+        let pName = (pIdx >= 0 && pIdx < r.world.provinces.length) ? r.world.provinces[pIdx].name.asString : "远方秘境"
+        let pId = (pIdx >= 0 && pIdx < r.world.provinces.length) ? r.world.provinces[pIdx].id.asString : nil
+        _ = People.announce(r, kind: "voyage", text: "\(stateName)派遣远征队探访「\(spec.name)」",
+                            reason: "斥资 \(Int(spec.cost)) 金赴\(pName)一带勘察古迹，预计 \(spec.months) 个月归来（\(spec.rewardLine)）。",
+                            nations: [id], province: pId)
+        return (true, "远征队已启程前往\(pName)探访「\(spec.name)」，预计 \(spec.months) 个月凯旋！")
     }
 
     private static func applyCompletionReward(_ r: JS, nationId: String, provinceId: String, spec: WonderSpec, addDestiny: (Double) -> Void) {
@@ -726,190 +913,29 @@ extension NativeEngine {
 
     /// 领取已达成的国家霸业使命奖赏。
     public func claimMission(_ nationIndex: Int, missionId: String) -> (ok: Bool, reason: String) {
-        let r = run, nations = r.world.nations.asArray
+        let nations = run.world.nations.asArray
         guard nations.indices.contains(nationIndex) else { return (false, "国家不存在。") }
-        let n = nations[nationIndex], id = n.id.asString, stateName = n.name.asString
-        guard Vassals.alive(r, id) else { return (false, "该国已亡。") }
-        Regimes.enable(r)
-        if r.regimes.missions.isNull { r.regimes.missions = JS.object() }
-        if r.regimes.missions[id].isNull { r.regimes.missions[id] = JS.object() }
-        guard let mp = GrandSystems.evaluateMissions(r, nationId: id).first(where: { $0.spec.id == missionId }) else {
-            return (false, "未知的霸业使命。")
-        }
-        guard !mp.claimed else { return (false, "「\(mp.spec.title)」已完成领赏。") }
-        guard mp.done else { return (false, "尚未达成条件（\(mp.statusLine)）。") }
-
-        let fin = r.finance.nations[id]
-        let destinyRow = r.destiny.nations[id]
-        func giveGold(_ v: Double) { if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + v) } }
-        func giveDestiny(_ v: Double) { if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + v)) } }
-
-        switch missionId {
-        case "expandRealm":
-            giveGold(900); giveDestiny(10)
-            if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
-            for a in r.world.armies.asArray where a.nationId.optionalString == id && a.troops.asNumber > 0 {
-                let aid = a.id.asString
-                r.regimes.armyXP[aid] = JS(min(100, (r.regimes.armyXP[aid].optionalNumber ?? 0) + 18))
-            }
-        case "mightyArmy":
-            giveGold(600)
-            for a in r.world.armies.asArray where a.nationId.optionalString == id && a.troops.asNumber > 0 { a.morale = JS(100) }
-            if let cmd = Regimes.activeCommander(r, nation: id, enemy: nil), let cp = People.person(r, cmd.personId) {
-                cp.base.military = JS(min(100, (cp.base.military.optionalNumber ?? 50) + 6))
-            }
-        case "richTreasury":
-            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 12))
-            giveDestiny(8)
-            let ownedIds = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
-            for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
-                s.grain = JS(min(50_000_000, ((s.grain.optionalNumber ?? 0) * 1.30).rounded()))
-            }
-        case "seaDominion":
-            giveGold(800)
-            let nb = Regimes.book(r, id)
-            nb.seaTransportBonus = JS(min(14, (nb.seaTransportBonus.optionalNumber.map(Int.init) ?? 0) + 3))
-            WorldDepth.adjustReputation(r, nation: id, delta: 10)
-        case "cleanCourt":
-            giveGold(500)
-            GrandSystems.addTechBoost(r, nationId: id, delta: 40)
-        case "diplomaticLead":
-            giveGold(600); giveDestiny(8)
-            for other in nations {
-                let oid = other.id.asString
-                guard oid != id, Vassals.alive(r, oid), !RunWindow.atWar(r, id, oid) else { continue }
-                DiplomacyDeep.adjustOpinionMod(r, id, oid, delta: 15)
-            }
-        case "wonderBuilder":
-            giveGold(1200); giveDestiny(12)
-            WorldDepth.adjustReputation(r, nation: id, delta: 15)
-        case "worldHegemon":
-            giveGold(1500); giveDestiny(15)
-            if r.regimes.goldenAge.isNull { r.regimes.goldenAge = JS.object() }
-            let nowM = r.regimes.month.optionalNumber.map(Int.init) ?? 0
-            let row = JS.object()
-            row.untilMonth = JS(nowM + 60); row.cooldownUntilMonth = JS(nowM + 360)
-            r.regimes.goldenAge[id] = row
-        default: break
-        }
-        r.regimes.missions[id][missionId] = JS(true)
-        People.announce(r, kind: "culture", text: "\(stateName)功成「\(mp.spec.title)」霸业！",
-                        reason: "达成历史伟业，获颁赏赐：\(mp.spec.rewardText)。",
-                        nations: [id], province: nil)
-        return (true, "已达成「\(mp.spec.title)」：\(mp.spec.rewardText)！")
+        return GrandSystems.claimMission(run, nationId: nations[nationIndex].id.asString, missionId: missionId)
     }
 
     /// 主动开启 5 年（60 个月）国家黄金盛世（全军攻+16%/守+14%、岁入+25%、安定+15、腐化−10）。
     public func startGoldenAge(_ nationIndex: Int) -> (ok: Bool, reason: String) {
-        let r = run, nations = r.world.nations.asArray
+        let nations = run.world.nations.asArray
         guard nations.indices.contains(nationIndex) else { return (false, "国家不存在。") }
-        let n = nations[nationIndex], id = n.id.asString, stateName = n.name.asString
-        guard Vassals.alive(r, id) else { return (false, "该国已亡。") }
-        Regimes.enable(r)
-        if r.regimes.goldenAge.isNull { r.regimes.goldenAge = JS.object() }
-        let rem = GrandSystems.goldenAgeRemaining(r, nationId: id)
-        if rem > 0 { return (false, "本国正处于黄金盛世之中（尚余 \(rem) 个月）。") }
-        let cd = GrandSystems.goldenAgeCooldownRemaining(r, nationId: id)
-        if cd > 0 { return (false, "距下次开启黄金盛世尚需蓄势 \(cd) 个月。") }
-        let destiny = Int((r.destiny.nations[id].destiny.optionalNumber ?? 50).rounded())
-        let claimed = GrandSystems.evaluateMissions(r, nationId: id).filter(\.claimed).count
-        let wonders = GrandSystems.controlledWonders(r, nationId: id).count
-        guard destiny >= 68 || claimed >= 2 || wonders >= 1 else {
-            return (false, "尚未达到盛世门槛：需国运 ≥ 68、完成 2 项霸业或实控 1 座天下奇观。")
-        }
-        let nowM = r.regimes.month.optionalNumber.map(Int.init) ?? 0
-        let row = JS.object()
-        row.untilMonth = JS(nowM + 60)
-        row.cooldownUntilMonth = JS(nowM + 360)
-        r.regimes.goldenAge[id] = row
-        People.announce(r, kind: "culture", text: "\(stateName)开启五年黄金盛世！",
-                        reason: "四海升平、文治武功达于极盛：未来 60 个月岁入 +25%、全军攻 +16% 守 +14%、安定 +15、腐化 −10！",
-                        nations: [id], province: nil)
-        return (true, "\(stateName)黄金盛世已启（持续 60 个月）！")
+        return GrandSystems.startGoldenAge(run, nationId: nations[nationIndex].id.asString)
     }
 
     /// 招募传世特色雇佣兵团（高士气 95、高历练 45–60，即刻集结于本国都城或重镇投入实战）。
     public func hireMercenary(_ nationIndex: Int, mercId: String) -> (ok: Bool, reason: String) {
-        let r = run, nations = r.world.nations.asArray
+        let nations = run.world.nations.asArray
         guard nations.indices.contains(nationIndex) else { return (false, "国家不存在。") }
-        let n = nations[nationIndex], id = n.id.asString, stateName = n.name.asString
-        guard Vassals.alive(r, id) else { return (false, "该国已亡。") }
-        guard let spec = GrandSystems.mercById[mercId] else { return (false, "未知的雇佣兵团。") }
-        Regimes.enable(r)
-        if r.regimes.mercCooldown.isNull { r.regimes.mercCooldown = JS.object() }
-        if r.regimes.mercCooldown[id].isNull { r.regimes.mercCooldown[id] = JS.object() }
-        let nowDay = r.world.day.asInt
-        let cdUntil = r.regimes.mercCooldown[id][mercId].optionalNumber.map(Int.init) ?? 0
-        if nowDay < cdUntil { return (false, "「\(spec.name)」正在休整补员，需待 \(cdUntil - nowDay) 日后方可再雇。") }
-        let fin = r.finance.nations[id]
-        let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-        guard gold >= spec.cost else { return (false, "国库不足 \(Int(spec.cost)) 金，无力招募「\(spec.name)」。") }
-
-        let provinces = r.world.provinces.asArray
-        let capPid = Rebellion.capitalProvince(r, id)
-        let sitePid: String? = {
-            if let capPid, provinces.contains(where: { $0.id.asString == capPid && $0.controller.optionalString == id }), Armies.homeCells[capPid] != nil {
-                return capPid
-            }
-            return provinces.first(where: { $0.controller.optionalString == id && Armies.homeCells[$0.id.asString] != nil })?.id.asString
-        }()
-        guard let homePid = sitePid else { return (false, "境内暂无可集结佣兵团的驻地。") }
-
-        if !fin.isNull { fin.gold = JS(max(0, gold - spec.cost)) }
-        _ = Armies.create(r, nation: id, home: homePid, kind: "regular")
-        if let created = r.world.armies.asArray.last {
-            let aid = created.id.asString
-            created.name = JS(spec.name)
-            created.troops = JS(spec.troops)
-            created.morale = JS(95)
-            created.supplies = JS(100)
-            if !r.tactics.forces[aid].isNull { r.tactics.forces[aid].fullStrength = JS(spec.troops) }
-            r.units[aid] = JS(spec.unit)
-            if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
-            r.regimes.armyXP[aid] = JS(Double(spec.xp))
-        }
-        r.regimes.mercCooldown[id][mercId] = JS(nowDay + 180)
-        Daily.reconcileMilitaryClock(r)
-        let siteName = provinces.first(where: { $0.id.asString == homePid })?.name.asString ?? "都城"
-        People.announce(r, kind: "war", text: "\(stateName)重金招募「\(spec.name)」",
-                        reason: "斥资 \(Int(spec.cost)) 金于\(siteName)成军 \(spec.troops) 名百战精锐（历练 \(spec.xp) · 士气 95），即刻投入战局！",
-                        nations: [id], province: homePid)
-        return (true, "「\(spec.name)」（\(spec.troops) 精锐）已于\(siteName)成军待命！")
+        return GrandSystems.hireMercenary(run, nationId: nations[nationIndex].id.asString, mercId: mercId)
     }
 
     /// 派遣远征队探索天下秘境与古迹（耗时 4 月，发掘后获宝藏、科技突破与永久全国古迹增益）。
     public func dispatchExpedition(_ nationIndex: Int, siteId: String) -> (ok: Bool, reason: String) {
-        let r = run, nations = r.world.nations.asArray
+        let nations = run.world.nations.asArray
         guard nations.indices.contains(nationIndex) else { return (false, "国家不存在。") }
-        let n = nations[nationIndex], id = n.id.asString, stateName = n.name.asString
-        guard Vassals.alive(r, id) else { return (false, "该国已亡，无法派遣远征队。") }
-        guard let spec = GrandSystems.expeditionById[siteId] else { return (false, "未知的古迹秘境。") }
-        Regimes.enable(r)
-        if r.regimes.expeditions.isNull { r.regimes.expeditions = JS.object() }
-        if !r.regimes.expeditions[siteId].isNull {
-            let st = r.regimes.expeditions[siteId].status.optionalString ?? ""
-            return (false, st == "done" ? "「\(spec.name)」已被发掘归藏，举世唯一不可重复探索。" : "「\(spec.name)」已有远征队正在勘探之中。")
-        }
-        for (_, row) in r.regimes.expeditions.objectEntries {
-            if row.status.optionalString == "exploring", row.explorerId.optionalString == id {
-                return (false, "本国当前已有远征队在外勘探，请待凯旋后再启新程。")
-            }
-        }
-        let fin = r.finance.nations[id]
-        let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-        guard gold >= spec.cost else { return (false, "国库不足 \(Int(spec.cost)) 金，难以筹备「\(spec.name)」远征队。") }
-        if !fin.isNull { fin.gold = JS(max(0, gold - spec.cost)) }
-
-        let row = JS.object()
-        row.status = JS("exploring"); row.explorerId = JS(id)
-        row.progress = JS(0); row.totalMonths = JS(spec.months); row.startedDay = r.world.day.clone()
-        r.regimes.expeditions[siteId] = row
-        let pIdx = GrandSystems.anchorProvinceIndex(r, siteId: siteId)
-        let pName = (pIdx >= 0 && pIdx < r.world.provinces.length) ? r.world.provinces[pIdx].name.asString : "远方秘境"
-        let pId = (pIdx >= 0 && pIdx < r.world.provinces.length) ? r.world.provinces[pIdx].id.asString : nil
-        People.announce(r, kind: "voyage", text: "\(stateName)派遣远征队探访「\(spec.name)」",
-                        reason: "斥资 \(Int(spec.cost)) 金赴\(pName)一带勘察古迹，预计 \(spec.months) 个月归来（\(spec.rewardLine)）。",
-                        nations: [id], province: pId)
-        return (true, "远征队已启程前往\(pName)探访「\(spec.name)」，预计 \(spec.months) 个月凯旋！")
+        return GrandSystems.dispatchExpedition(run, nationId: nations[nationIndex].id.asString, siteId: siteId)
     }
 }

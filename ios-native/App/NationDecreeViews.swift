@@ -207,7 +207,7 @@ struct NationDecreesTab: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        LazyVStack(alignment: .leading, spacing: 20) {
             if !info.alive {
                 Text("此国已亡，无法施政。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
             } else {
@@ -385,7 +385,7 @@ struct NationDecreesTab: View {
         let activeRows = list.filter(\.on)
         let net = Self.netChips(for: activeRows.map(\.id))
 
-        VStack(alignment: .leading, spacing: 22) {
+        LazyVStack(alignment: .leading, spacing: 22) {
             // 1. 现行国策总效（极简古籍统计 + Cormorant Garamond 衬线数字，无彩色胶囊堆砌）
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
@@ -647,7 +647,7 @@ struct NationDecreesTab: View {
                 .padding(.horizontal, Theme.Layout.sectionInset)
                 .padding(.bottom, 4)
 
-            VStack(spacing: 0) {
+            LazyVStack(spacing: 0) {
                 EditorialDivider()
                 ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                     let remDays = cds[item.id] ?? 0
@@ -869,7 +869,7 @@ struct NationTerritoryTab: View {
                 }
             }
         }
-        .task(id: "\(nation)-\(day)-\(revision)") {
+        .task(id: "\(nation)-\(day / 30)-\(revision)") {
             guard alive else { return }
             rows = await model.nationProvinces(nation)
             loaded = true

@@ -53,10 +53,10 @@ struct WorldEditorSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 12) {
-                SheetHeader(title: "世界编辑", subtitle: "笔刷、标注、文化宗教与导出", seal: "编")
+            LazyVStack(spacing: 14) {
+                SheetHeader(title: "世界编辑", subtitle: "笔刷、政区、标注、文化宗教与导出", seal: "编")
                 ChipPicker(items: Tab.allCases.map { ($0, $0.rawValue) }, selection: $tab)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Theme.Layout.pageInset)
                 switch tab {
                 case .land: EditorLandTab(model: model, begin: { n, a in brush(n, a) }, say: { report($0, $1) }, close: close)
                 case .pact: EditorAllianceTab(model: model, say: { report($0, $1) })
@@ -67,36 +67,36 @@ struct WorldEditorSheet: View {
                 case .output: output
                 }
             }
-            .padding(.bottom, 24)
+            .padding(.bottom, 28)
         }
         .paperToast($flash)
         .task { await model.refreshCustom() }
         .onAppear { if let t = Self.tourTab { tab = t } }
         .sheet(item: $choice) { c in
             ScrollView {
-                VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
                     SheetHeader(title: c.title, seal: "择")
                     Group2 {
                         ForEach(Array(c.items.enumerated()), id: \.offset) { i, item in
                             if i > 0 { Divider2() }
                             Button { choice = nil; item.1() } label: {
-                                HStack { Text(item.0).font(Theme.section).foregroundStyle(Theme.ink); Spacer() }.padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                HStack { Text(item.0).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1); Spacer() }.padding(.horizontal, 14).frame(minHeight: 42).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Theme.Layout.pageInset)
                 }
                 .padding(.bottom, 20)
             }
-            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $picking) {
             if let map = model.map, let state = model.state {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
+                    LazyVStack(alignment: .leading, spacing: 14) {
                         SheetHeader(title: "绘制哪国疆域", seal: "择")
-                        Group2 { NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive && $0 < map.meta.nations.count }, selection: $target) }.padding(.horizontal, 16)
+                        Group2 { NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive && $0 < map.meta.nations.count }, selection: $target).padding(12) }.padding(.horizontal, Theme.Layout.pageInset)
                         SealButton(title: "开始绘制", disabled: target < 0) {
                             let t = target
                             picking = false
@@ -104,11 +104,11 @@ struct WorldEditorSheet: View {
                             c.brushName = nil; c.brushAction = nil; c.placingArmy = false; c.paintNation = t
                             close()
                         }
-                        .padding(.horizontal, 22)
+                        .padding(.horizontal, Theme.Layout.pageInset)
                     }
                     .padding(.bottom, 20)
                 }
-                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
         }
         .sheet(item: Binding(get: { exported.map(Shared.init) }, set: { exported = $0?.url })) { ShareSheet(items: [$0.url]) }
@@ -120,39 +120,42 @@ struct WorldEditorSheet: View {
 
     // MARK: 笔刷
     private var brushes: some View {
-        VStack(spacing: 12) {
+        LazyVStack(spacing: 14) {
             quickSection("归属与文化") {
-                quickGrid {
-                    quickTile("绘制国家", "paintbrush.pointed") { target = -1; picking = true }
-                    quickTile("绘制文化", "text.book.closed") {
+                editorToolGrid(columns: 2) {
+                    editorToolButton("绘制国家", glyph: .brush) { target = -1; picking = true }
+                    editorToolButton("绘制文化", glyph: .culture) {
                         choice = Choice(title: "刷上哪种文化", items: Names.culture.keys.sorted().map { k in
                             (Names.culture[k] ?? k, { brush("绘制文化：\(Names.culture[k] ?? k)") { p in await model.setCityCulture(p, k) } })
                         })
                     }
-                    quickTile("绘制信仰", "hands.sparkles") {
+                    editorToolButton("绘制信仰", glyph: .religion) {
                         choice = Choice(title: "刷上哪种信仰", items: Names.religion.keys.filter { $0 != "none" }.sorted().map { k in
                             (Names.religion[k] ?? k, { brush("绘制信仰：\(Names.religion[k] ?? k)") { p in await model.setProvinceFaith(p, religion: k) } })
                         })
                     }
-                    quickTile("定圣地", "sparkles") { brush("定圣地") { p in await model.setHolyProvince(p) } }
+                    editorToolButton("定为圣地", glyph: .crown) { brush("定圣地") { p in await model.setHolyProvince(p) } }
                 }
             }
             quickSection("城防与民生") {
-                quickGrid {
-                    quickTile("筑要塞", "building.columns") { brush("筑要塞") { p in await model.editProvince(p, population: nil, fortress: true) } }
-                    quickTile("拆要塞", "hammer") { brush("拆要塞") { p in await model.editProvince(p, population: nil, fortress: false) } }
-                    quickTile("人口倍增", "person.3") { brush("人口倍增") { p in await scale(p, 2) } }
-                    quickTile("人口减半", "person.2.slash", destructive: true) { brush("人口减半") { p in await scale(p, 0.5) } }
+                editorToolGrid(columns: 2) {
+                    editorToolButton("筑要塞", glyph: .fortress) { brush("筑要塞") { p in await model.editProvince(p, population: nil, fortress: true) } }
+                    editorToolButton("拆要塞", glyph: .trash) { brush("拆要塞") { p in await model.editProvince(p, population: nil, fortress: false) } }
+                    editorToolButton("人口倍增", glyph: .person) { brush("人口倍增") { p in await scale(p, 2) } }
+                    editorToolButton("人口减半", glyph: .minus, destructive: true) { brush("人口减半") { p in await scale(p, 0.5) } }
                 }
             }
             quickSection("天灾") {
-                quickGrid {
-                    quickTile("瘟疫", "allergens", destructive: true) { brush("降瘟疫") { p in await model.provinceDisaster(p, kind: "plague") } }
-                    quickTile("饥荒", "drop.degreesign.slash", destructive: true) { brush("降饥荒") { p in await model.provinceDisaster(p, kind: "famine") } }
-                    quickTile("平息", "cross.case") { brush("平息灾情") { p in await model.provinceDisaster(p, kind: nil) } }
+                editorToolGrid(columns: 3) {
+                    editorToolButton("降瘟疫", glyph: .fire, destructive: true) { brush("降瘟疫") { p in await model.provinceDisaster(p, kind: "plague") } }
+                    editorToolButton("降饥荒", glyph: .fire, destructive: true) { brush("降饥荒") { p in await model.provinceDisaster(p, kind: "famine") } }
+                    editorToolButton("平息灾情", glyph: .peace) { brush("平息灾情") { p in await model.provinceDisaster(p, kind: nil) } }
                 }
             }
-            Text("选好笔刷后，一指点按或划过州郡即可落笔，两指移动地图，点顶部「完成」结束。").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            Text("选好笔刷后，一指点按或划过州郡即可落笔，两指移动地图，点顶部「完成」结束。")
+                .font(Theme.label).foregroundStyle(Theme.ink2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Theme.Layout.pageInset)
         }
     }
     private func scale(_ p: Int, _ k: Double) async -> String? {
@@ -183,22 +186,22 @@ struct WorldEditorSheet: View {
                 }
             }
             if !model.customLabels.isEmpty {
-                quickSection("已有标注（点选修改）") {
-                    ForEach(model.customLabels) { l in
-                        Button {
+                SectionLabel("已有标注（点选修改）")
+                Group2 {
+                    ForEach(Array(model.customLabels.enumerated()), id: \.element.id) { idx, l in
+                        AlignedMetaRow(
+                            label: l.text,
+                            value: "\(Int(l.size))pt",
+                            icon: .brush,
+                            valueColor: labelId == l.id ? Theme.seal : Theme.ink2,
+                            trailingGlyph: .chevronRight
+                        ) {
                             labelId = l.id; labelText = l.text; labelSize = l.size; labelAngle = l.angle * 180 / .pi; labelColor = Names.color(l.color)
-                        } label: {
-                            HStack {
-                                Circle().fill(Names.color(l.color)).frame(width: 12, height: 12)
-                                Text(l.text).font(Theme.body).foregroundStyle(labelId == l.id ? Theme.seal : Theme.ink).lineLimit(1)
-                                Spacer()
-                                InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
-                            }
-                            .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        if idx < model.customLabels.count - 1 { Divider2() }
                     }
                 }
+                .padding(.horizontal, Theme.Layout.pageInset)
             }
         }
     }
@@ -512,7 +515,7 @@ private struct NewUnitEditor: View {
             }
             .padding(.bottom, 16)
         }
-        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
 }
 
@@ -528,7 +531,7 @@ private struct TitleEditor: View {
             Button("恢复默认") { done(nil) }.font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity)
         }
         .padding(.bottom, 16)
-        .presentationDetents([.height(320)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.height(320)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
 }
 
@@ -556,6 +559,43 @@ private struct UnitEditor: View {
             .padding(.bottom, 16)
         }
         .onAppear { name = unit.name; power = unit.power; speed = unit.speed; weight = unit.weight }
-        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
+}
+
+/// 等高对齐的编辑工具宫格（2 列或 3 列，严格 44pt 按钮高度，杜绝文字裁剪与参差错位）。
+func editorToolGrid<C: View>(columns: Int = 2, @ViewBuilder _ content: () -> C) -> some View {
+    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: max(1, columns)), spacing: 8) {
+        content()
+    }
+}
+
+func editorToolButton(_ title: String, glyph: InkGlyph, destructive: Bool = false, action: @escaping () -> Void) -> some View {
+    Button {
+        GameFeel.shared.tap()
+        action()
+    } label: {
+        HStack(spacing: 7) {
+            InkIcon(glyph: glyph, size: 15, weight: 1.7)
+                .frame(width: 18, height: 18)
+            Text(title)
+                .font(Theme.body)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+        }
+        .foregroundStyle(destructive ? Theme.seal : Theme.ink)
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
+        .background(
+            destructive ? Theme.seal.opacity(0.06) : Theme.paperLight.opacity(0.92),
+            in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                .stroke(destructive ? Theme.seal.opacity(0.32) : Theme.hairline, lineWidth: 0.75)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+    }
+    .buttonStyle(PressStyle())
 }

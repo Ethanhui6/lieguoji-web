@@ -16,6 +16,8 @@ public enum NativeCreation {
         public var layout: (seeds: [Int], owners: [Int])? = nil
         /// 有机自然疆界（移动端新世界默认开启，按山脊河谷阻力分疆；核心单测保持 false 以逐位对照网页基准）。
         public var organicBorders: Bool = false
+        /// 真实历史剧本（v5.8.0 历史舆图）：非 nil 时按真实世界底图、历史疆域、政体、君主与开局同盟/战事创建世界。
+        public var historicalScenario: HistoricalScenario? = nil
         public init(seed: String, template: String, count: Int, cityCount: Int, relations: String = "peace", naming: String = "historical-names", cultures: [String] = []) {
             self.seed = seed; self.template = template; self.count = count; self.cityCount = cityCount; self.relations = relations; self.naming = naming; self.cultures = cultures
         }
@@ -42,8 +44,15 @@ public enum NativeCreation {
     /// `worldId` 为地形文档编号（世界种子），`runId` 为局号（"fms-…"）；`progress` 报告阶段（people、armies、map）。
     public static func generate(_ o: Options, inputs x: CreationMap.Inputs, worldId: String, runId: String, progress: ((String) -> Void)? = nil) throws -> World {
         let enabled = cultureIds.filter { o.cultures.isEmpty || o.cultures.contains($0) }
-        let count = o.layout.map(\.seeds.count) ?? max(2, min(24, o.count))
-        var cityCount = max(count, min(480, o.cityCount))
+        let count: Int
+        if let l = o.layout {
+            count = l.seeds.count
+        } else if let sc = o.historicalScenario {
+            count = max(2, min(24, sc.nations.count))
+        } else {
+            count = max(2, min(24, o.count))
+        }
+        var cityCount = max(count, min(480, o.historicalScenario?.provinceCount ?? o.cityCount))
         Climate.precipitationInput = o.precipitation; Climate.temperatureOffset = o.temperatureOffset; Climate.north = o.north; Climate.south = o.south
         let doc = x.document
         let heights: [Int]
@@ -51,33 +60,58 @@ public enum NativeCreation {
             guard drawn.count == doc.points.count else { throw CreationError.message("自绘地图与原作网格不一致。") }
             heights = drawn.map { Int(min(100, $0)) }
             if heights.filter({ $0 >= 20 }).count < count * 4 { throw CreationError.message("陆地太少，请再画一些陆地。") }
+        } else if let sc = o.historicalScenario {
+            if let b64 = sc.customHeightsBase64,
+               let decoded = HistoricalScenarios.decodeHeights(b64, expectedCount: doc.points.count) {
+                heights = decoded.map { Int(min(100, $0)) }
+            } else {
+                heights = HistoricalBasemaps.generateHeights(region: sc.region, document: doc).map(Int.init)
+            }
+            if heights.filter({ $0 >= 20 }).count < count * 4 { throw CreationError.message("历史底图陆地太少，无法生成该剧本。") }
         } else { heights = TerrainGenerator.generate(graph: x.grid, seed: o.seed, template: o.template).map(Int.init) }
         progress?("people")
         // 陆地太碎（岛屿、湖泊）放不下所选州数时，州数按网页的步长增加直到放得下。
-        var found: (run: JS, travel: CreationGeography.Graph, sea: SeaGraph)?
-        // App 新世界（organicBorders == true）清理极小孤立礁石，避免 80 城模板被 1%–3% 边角微岛占掉名额（手绘自定布局/手绘州郡与网页基准测试保持原地形不变）。
-        let effectiveHeights = (o.layout == nil && o.customProvinces == nil && o.organicBorders) ? Regions.cleanTinyIslets(doc, elevations: heights, cities: cityCount) : heights
+        var found: (run: JS, travel: CreationGeography.Graph, sea: SeaGraph, provinceNames: [String]?)?
+        // App 新世界（organicBorders == true）清理极小孤立礁石，避免 80 城模板被 1%–3% 边角微岛占掉名额（手绘自定布局/手绘州郡、历史底图与网页基准测试保持原地形不变）。
+        let effectiveHeights = (o.historicalScenario == nil && o.layout == nil && o.customProvinces == nil && o.organicBorders) ? Regions.cleanTinyIslets(doc, elevations: heights, cities: cityCount) : heights
+        let hasCustomProvinces = o.customProvinces != nil || o.historicalScenario?.customProvinceCells != nil
         while found == nil {
-            found = try opening(o, doc: doc, heights: effectiveHeights, count: count, cityCount: cityCount, enabled: enabled, worldId: worldId, runId: runId)
+            found = try openingWithNames(o, doc: doc, heights: effectiveHeights, count: count, cityCount: cityCount, enabled: enabled, worldId: worldId, runId: runId)
             if found == nil {
-                if o.layout != nil || o.customProvinces != nil || cityCount >= 480 { throw CreationError.message("这片陆地放不下 \(cityCount) 个州郡，请编辑陆地或减少州郡。") }
+                if o.layout != nil || hasCustomProvinces || cityCount >= 480 { throw CreationError.message("这片陆地放不下 \(cityCount) 个州郡，请编辑陆地或减少州郡。") }
                 cityCount = raised(cityCount)
             }
         }
-        let (r, travel, sea) = found!
+        guard let (r, travel, sea, historicalProvinceNames) = found else {
+            throw CreationError.message("无法生成有效世界地图。")
+        }
         progress?("armies")
         CreationForces.attach(r, doc, elevations: effectiveHeights, sea: sea, faceBiomes: CreationForces.faceBiomes(doc, elevations: effectiveHeights, ids: Climate.surface(doc, elevations: effectiveHeights).ids), method: "capital-neighbor-v2")
         CreationPolitics.attach(r)
         r.id = JS(runId); r.world.custom.id = JS(runId)
         let statics = CreationStatics.build(r, doc, elevations: effectiveHeights, sea: sea, travel: travel)
-        if o.relations == "war" {
-            _ = try NativeEngine(created: r, statics: statics)
-            War26.install()
-            guard let engine = Session.engine else { throw CreationError.message("外交数据尚未载入。") }
-            CreationPolitics.openingWars(r, engine: engine)
+        if let sc = o.historicalScenario {
+            CreationRules.enable(r)
+            var warEngine: DeclarationEngine? = nil
+            if !sc.openingWars.isEmpty || o.relations == "war" {
+                _ = try NativeEngine(created: r, statics: statics)
+                War26.install()
+                warEngine = Session.engine
+            }
+            HistoricalScenarios.applyOverrides(run: r, scenario: sc, provinceNames: historicalProvinceNames ?? [], engine: warEngine)
+            if o.relations == "war" && sc.openingWars.isEmpty, let engine = warEngine {
+                CreationPolitics.openingWars(r, engine: engine)
+            }
+        } else {
+            if o.relations == "war" {
+                _ = try NativeEngine(created: r, statics: statics)
+                War26.install()
+                guard let engine = Session.engine else { throw CreationError.message("外交数据尚未载入。") }
+                CreationPolitics.openingWars(r, engine: engine)
+            }
+            CreationRules.enable(r)
+            CreationNames.vary(r, seed: o.seed)
         }
-        CreationRules.enable(r)
-        CreationNames.vary(r, seed: o.seed)
         progress?("map")
         let map = CreationMap.build(x, run: r, elevations: effectiveHeights, seed: o.seed, template: o.template)
         statics.labelGrid = CreationMap.labelGrid(x.grid, elevations: effectiveHeights, cells: map.cells)
@@ -87,15 +121,31 @@ public enum NativeCreation {
 
     /// createCivilizationWorld47 + attachGovernment47（含开局军队位置）。nil：这片陆地放不下 `cityCount` 个州。
     static func opening(_ o: Options, doc: TerrainDocument, heights: [Int], count: Int, cityCount: Int, enabled: [String], worldId: String, runId: String) throws -> (run: JS, travel: CreationGeography.Graph, sea: SeaGraph)? {
+        guard let res = try openingWithNames(o, doc: doc, heights: heights, count: count, cityCount: cityCount, enabled: enabled, worldId: worldId, runId: runId) else { return nil }
+        return (res.run, res.travel, res.sea)
+    }
+
+    private static func openingWithNames(_ o: Options, doc: TerrainDocument, heights: [Int], count: Int, cityCount: Int, enabled: [String], worldId: String, runId: String) throws -> (run: JS, travel: CreationGeography.Graph, sea: SeaGraph, provinceNames: [String]?)? {
         let regions: [Regions.Region]
-        if let customCells = o.customProvinces, let customPart = Regions.fromCellAssignment(doc, elevations: heights, cellProvinces: customCells) {
+        let customCells = o.customProvinces ?? o.historicalScenario?.customProvinceCells
+        if let customCells, let customPart = Regions.fromCellAssignment(doc, elevations: heights, cellProvinces: customCells) {
             regions = customPart.regions
         } else {
-            guard let part = Regions.partition(doc, elevations: heights, cities: cityCount, balanceAreas: o.layout == nil && o.organicBorders) else { return nil }
+            guard let part = Regions.partition(doc, elevations: heights, cities: cityCount, balanceAreas: o.layout == nil && (o.organicBorders || o.historicalScenario != nil)) else { return nil }
             regions = part.regions
         }
         let effCount = max(2, min(count, regions.count))
-        let layout = o.layout ?? (o.organicBorders ? Opening.organicLayout(regions, count: effCount, seed: o.seed) : Opening.layout(regions, count: effCount))
+        let layout: (seeds: [Int], owners: [Int])
+        var historicalProvinceNames: [String]? = nil
+        if let l = o.layout {
+            layout = l
+        } else if let sc = o.historicalScenario {
+            let built = HistoricalScenarios.buildLayout(scenario: sc, regions: regions, width: doc.width, height: doc.height)
+            layout = (built.seeds, built.owners)
+            historicalProvinceNames = built.provinceNames
+        } else {
+            layout = o.organicBorders ? Opening.organicLayout(regions, count: effCount, seed: o.seed) : Opening.layout(regions, count: effCount)
+        }
         if let l = o.layout, l.owners.count != regions.count || l.seeds.contains(where: { $0 < 0 || $0 >= regions.count }) { throw CreationError.message("国家领土布局无效，原稿未改动。") }
         guard let r = Creation.base(regions: regions, seeds: layout.seeds, owners: layout.owners, width: doc.width, height: doc.height, worldId: worldId, runId: runId,
                                     relations: "peace", mode: o.naming == "culture-generated" ? "culture-generated" : "historical-names", enabled: enabled, cultures: Founding.cultures)
@@ -115,6 +165,6 @@ public enum NativeCreation {
                                       ("economy", r.economy), ("destiny", r.destiny), ("armyPositions", positions), ("governmentOpening", r.governmentOpening)]
         for (k, _) in staged { r.delete(k) }
         for (k, v) in staged { r[k] = v }
-        return (r, travel, sea)
+        return (r, travel, sea, historicalProvinceNames)
     }
 }

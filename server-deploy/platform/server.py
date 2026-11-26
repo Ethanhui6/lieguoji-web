@@ -43,6 +43,7 @@ DB_PATH = DATA_DIR / "lieguoji.db"
 SAVES_DIR = DATA_DIR / "saves"
 DOWNLOADS_DIR = DATA_DIR / "downloads"
 HOTPACK_DIR = DATA_DIR / "hotpack"
+WORKSHOP_DIR = DATA_DIR / "workshop_maps"
 SECRET_PATH = DATA_DIR / "admin_secret.txt"
 
 PUBLIC_HOST = os.environ.get("LGJ_PUBLIC_HOST", "111.230.153.235")
@@ -54,12 +55,13 @@ SERVER_REGION = os.environ.get("LGJ_SERVER_REGION", "中国大陆直连")
 ADMIN_USERNAMES = {u.strip().lower() for u in os.environ.get("LGJ_ADMIN_USERS", "ethanhui").split(",") if u.strip()}
 
 MAX_SAVE_BYTES = 24 * 1024 * 1024
+MAX_WORKSHOP_BODY_BYTES = int(2.5 * 1024 * 1024)
 MAX_SAVES_PER_USER = 20
 TOKEN_TTL_SECONDS = 90 * 24 * 3600
 SHANGHAI_TZ = timezone(timedelta(hours=8))
 START_TIME = time.time()
 
-for _d in (DATA_DIR, SAVES_DIR, DOWNLOADS_DIR, HOTPACK_DIR):
+for _d in (DATA_DIR, SAVES_DIR, DOWNLOADS_DIR, HOTPACK_DIR, WORKSHOP_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 
@@ -97,9 +99,17 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
+DEFAULT_LATEST_VERSION = "5.8.0"
+DEFAULT_LATEST_BUILD = 188
+DEFAULT_RELEASE_NOTES: list[str] = [
+    "【切后台返场秒级无感重连 × 告别僵尸连接与二级菜单卡顿】接入全套 iOS 生命周期监听与 1.2 秒硬超时探活（fastProbeRTT），秒级识别后台僵尸套接字并直走 resumeWorld 零上传恢复；同步降低二级菜单后台刷新频率（1.85s）并保持点击瞬时响应。",
+    "【极致流畅计算服 v11 × 65%–80% 省流差量疆域帧 × 弱网自适应】升级至 lieguoji-server/v11：新增疆域差量帧（ownersDelta）、事件去重、启动目录预热（跳过 2MB 上传）与 Linux 低延迟防缓冲膨胀 TCP 调优，弱网 4G 下依旧丝滑推进。",
+    "【真实历史剧本 × 平台 v6 玩家创意工坊舆图库】上线云端创意工坊 API（上传 / 地区检索 / 点赞 / 下载开局）与本地工坊仓库，完善公元前（BCE）纪年显示，玩家可将自制历史剧本一键分享给全服史官。",
+]
+
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 11,
-    "notice": "v5.7.0 已上线：国内多源 8 路并发满速下载（5+ MB/s）+ 256KB 吞吐实测择优 + 平台 v5 全链路加固",
+    "version": 12,
+    "notice": "v5.8.0 已上线：极速计算服 v11 差量推流 + 切后台秒连 + 二级菜单流畅重构 + 创意工坊云端舆图",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 3, "16": 5},
     "tuning": {
@@ -131,8 +141,8 @@ def compute_hotpatch_sha(cfg: dict[str, Any]) -> str:
 
 
 def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
-    v = str(version or "5.7.0").lstrip("v")
-    b = int(build or 187)
+    v = str(version or DEFAULT_LATEST_VERSION).lstrip("v")
+    b = int(build or DEFAULT_LATEST_BUILD)
     fname = f"lieguoji-{v}-build{b}-unsigned.ipa"
     return [
         f"https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
@@ -147,6 +157,12 @@ def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
 
 
 CHANGELOG_HISTORY: list[dict[str, Any]] = [
+    {
+        "version": DEFAULT_LATEST_VERSION,
+        "build": DEFAULT_LATEST_BUILD,
+        "date": "2026-11-26",
+        "lines": list(DEFAULT_RELEASE_NOTES),
+    },
     {
         "version": "5.7.0",
         "build": 187,
@@ -203,8 +219,8 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
 
 
 DEFAULT_RELEASE: dict[str, Any] = {
-    "latestVersion": "5.7.0",
-    "latestBuild": 187,
+    "latestVersion": DEFAULT_LATEST_VERSION,
+    "latestBuild": DEFAULT_LATEST_BUILD,
     "minSupportedBuild": 180,
     "forceUpdate": False,
     "maintenance": False,
@@ -212,14 +228,14 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "releaseDate": "2026-11-26",
     "ipaSizeMB": 42.7,
     "downloadUrl": "https://github.com/Ethanhui6/lieguoji-web/releases/latest",
-    "directIpaUrl": build_default_ipa_mirrors("5.7.0", 187)[0],
-    "ipaMirrors": build_default_ipa_mirrors("5.7.0", 187),
+    "directIpaUrl": build_default_ipa_mirrors(DEFAULT_LATEST_VERSION, DEFAULT_LATEST_BUILD)[0],
+    "ipaMirrors": build_default_ipa_mirrors(DEFAULT_LATEST_VERSION, DEFAULT_LATEST_BUILD),
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
-    "releaseNotes": list(CHANGELOG_HISTORY[0]["lines"]),
+    "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 11,
+        "patchVersion": 12,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v5.7.0 中国大陆满速多源镜像与平台 v5 加固参数",
+        "summary": "v5.8.0 极速计算服 v11 差量推流 + 平台 v6 创意工坊舆图参数",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -545,6 +561,28 @@ def init_db() -> None:
                 v TEXT NOT NULL,
                 updated_at INTEGER NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS workshop_maps (
+                id TEXT PRIMARY KEY,
+                author_user_id TEXT DEFAULT '',
+                author_name TEXT NOT NULL,
+                title TEXT NOT NULL,
+                subtitle TEXT DEFAULT '',
+                region TEXT NOT NULL,
+                era_year INTEGER DEFAULT 1,
+                era_name TEXT DEFAULT '',
+                description TEXT DEFAULT '',
+                nation_count INTEGER DEFAULT 0,
+                province_count INTEGER DEFAULT 0,
+                downloads INTEGER DEFAULT 0,
+                likes INTEGER DEFAULT 0,
+                tags_json TEXT DEFAULT '[]',
+                payload_path TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_workshop_region ON workshop_maps(region);
+            CREATE INDEX IF NOT EXISTS idx_workshop_created ON workshop_maps(created_at DESC);
             """
         )
 
@@ -961,8 +999,8 @@ def get_admin_server_overview() -> dict[str, Any]:
         "hotpackBytes": hp["totalBytes"],
         "hotpackFiles": len(hp["files"]),
         "notice": str(rel.get("hotpatch", {}).get("config", {}).get("notice", "")),
-        "latestVersion": rel.get("latestVersion", "5.7.0"),
-        "latestBuild": int(rel.get("latestBuild", 187)),
+        "latestVersion": rel.get("latestVersion", DEFAULT_LATEST_VERSION),
+        "latestBuild": int(rel.get("latestBuild", DEFAULT_LATEST_BUILD)),
         "forceUpdate": bool(rel.get("forceUpdate", False)),
         "tuning": rel.get("hotpatch", {}).get("config", {}).get("tuning", {}),
         "pace": rel.get("hotpatch", {}).get("config", {}).get("pace", {}),
@@ -1094,8 +1132,8 @@ def _safe_int(value: Any, default: int = 0) -> int:
 
 def render_public_landing_page() -> str:
     rel = get_release_config()
-    ver = str(rel.get("latestVersion", "5.7.0")).lstrip("v")
-    build = _safe_int(rel.get("latestBuild", 187), 187)
+    ver = str(rel.get("latestVersion", DEFAULT_LATEST_VERSION)).lstrip("v")
+    build = _safe_int(rel.get("latestBuild", DEFAULT_LATEST_BUILD), DEFAULT_LATEST_BUILD)
     rel_date = html.escape(str(rel.get("releaseDate", "")))
     size_mb = rel.get("ipaSizeMB", 42.7)
     fname = f"lieguoji-{ver}-build{build}-unsigned.ipa"
@@ -1215,6 +1253,33 @@ def render_public_landing_page() -> str:
 # HTTP Request Handler (Hardened + Admin + HotPack)
 # ---------------------------------------------------------------------------
 
+_WORKSHOP_ID_RE = re.compile(r"^[A-Za-z0-9_\-]{3,64}$")
+
+
+def serialize_workshop_map(row: sqlite3.Row) -> dict[str, Any]:
+    try:
+        raw_tags = json.loads(row["tags_json"] or "[]")
+        tags = [str(t).strip()[:20] for t in raw_tags if str(t).strip()][:12] if isinstance(raw_tags, list) else []
+    except Exception:
+        tags = []
+    return {
+        "id": str(row["id"]),
+        "title": str(row["title"]),
+        "subtitle": str(row["subtitle"] or ""),
+        "authorName": str(row["author_name"]),
+        "region": str(row["region"]),
+        "eraYear": int(row["era_year"]),
+        "eraName": str(row["era_name"] or ""),
+        "description": str(row["description"] or ""),
+        "nationCount": int(row["nation_count"]),
+        "provinceCount": int(row["province_count"]),
+        "downloads": int(row["downloads"]),
+        "likes": int(row["likes"]),
+        "tags": tags,
+        "createdAt": int(row["created_at"]),
+    }
+
+
 class PlatformHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "Lieguoji"
@@ -1322,12 +1387,17 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return None
         return res
 
-    def require_admin(self) -> bool:
+    def _is_admin_request(self) -> bool:
         key = (self.headers.get("X-Admin-Key") or "").strip()
         if key and hmac.compare_digest(key, ADMIN_SECRET):
             return True
         auth = authenticate_token(self.headers.get("Authorization"))
         if auth and str(auth[0]["role"]) == "admin" and int(auth[0]["banned"]) == 0:
+            return True
+        return False
+
+    def require_admin(self) -> bool:
+        if self._is_admin_request():
             return True
         self.send_json({"ok": False, "error": "需管理员权限"}, 403)
         return False
@@ -1434,6 +1504,15 @@ class PlatformHandler(BaseHTTPRequestHandler):
             self.handle_leaderboard(category)
             return
 
+        if path == "/api/v1/maps":
+            self.handle_workshop_list(qs)
+            return
+
+        if path.startswith("/api/v1/maps/"):
+            map_id = urllib.parse.unquote(path[len("/api/v1/maps/"):])
+            self.handle_workshop_get(map_id)
+            return
+
         if path == "/api/v1/saves":
             auth = self.require_auth()
             if not auth:
@@ -1502,6 +1581,13 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return
         if path == "/api/v1/heartbeat":
             self.handle_heartbeat()
+            return
+        if path == "/api/v1/maps/upload":
+            self.handle_workshop_upload()
+            return
+        if path.startswith("/api/v1/maps/") and path.endswith("/like"):
+            map_id = urllib.parse.unquote(path[len("/api/v1/maps/"):-len("/like")])
+            self.handle_workshop_like(map_id)
             return
         if path == "/api/v1/stats/report":
             self.handle_stats_report()
@@ -1577,6 +1663,10 @@ class PlatformHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
         if not self._precheck(path):
+            return
+        if path.startswith("/api/v1/maps/"):
+            map_id = urllib.parse.unquote(path[len("/api/v1/maps/"):])
+            self.handle_workshop_delete(map_id)
             return
         if path.startswith("/api/v1/saves/"):
             auth = self.require_auth()
@@ -1749,8 +1839,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
             cur_patch = 0
 
         rel = get_release_config()
-        latest_ver = str(rel.get("latestVersion", "5.7.0"))
-        latest_build = int(rel.get("latestBuild", 187))
+        latest_ver = str(rel.get("latestVersion", DEFAULT_LATEST_VERSION))
+        latest_build = int(rel.get("latestBuild", DEFAULT_LATEST_BUILD))
         min_build = int(rel.get("minSupportedBuild", 0))
         has_app_update = compare_version(cur_ver, cur_build, latest_ver, latest_build)
         force_update = bool(rel.get("forceUpdate", False)) or (cur_build > 0 and cur_build < min_build)
@@ -2175,6 +2265,232 @@ class PlatformHandler(BaseHTTPRequestHandler):
             fresh = DB.execute("SELECT * FROM users WHERE id = ?", (user_row["id"],)).fetchone()
         self.send_json({"ok": True, "user": serialize_user(fresh)})
 
+    # ----------------------------- Cloud Map Workshop (v6) -----------------------------
+
+    def handle_workshop_list(self, qs: dict[str, list[str]]) -> None:
+        region = (qs.get("region", [""])[0] or "").strip()
+        q = (qs.get("q", [""])[0] or "").strip()[:64]
+        sort = (qs.get("sort", ["popular"])[0] or "popular").strip().lower()
+
+        where_clauses: list[str] = []
+        params: list[Any] = []
+        if region and region.lower() != "all":
+            where_clauses.append("region = ?")
+            params.append(region[:32])
+        if q:
+            like = f"%{q}%"
+            where_clauses.append("(title LIKE ? OR subtitle LIKE ? OR description LIKE ? OR author_name LIKE ? OR tags_json LIKE ?)")
+            params.extend([like, like, like, like, like])
+
+        where_sql = (" WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+        if sort == "newest":
+            order_sql = "ORDER BY created_at DESC, updated_at DESC"
+        else:
+            order_sql = "ORDER BY (likes * 3 + downloads) DESC, created_at DESC"
+
+        with _db_lock:
+            rows = DB.execute(
+                f"SELECT * FROM workshop_maps{where_sql} {order_sql} LIMIT 100",
+                tuple(params),
+            ).fetchall()
+        self.send_json({"ok": True, "maps": [serialize_workshop_map(r) for r in rows]})
+
+    def handle_workshop_get(self, map_id: str) -> None:
+        clean_id = map_id.strip()
+        if not _WORKSHOP_ID_RE.fullmatch(clean_id):
+            self.send_json({"ok": False, "error": "舆图编号无效"}, 400)
+            return
+        with _db_lock:
+            row = DB.execute("SELECT * FROM workshop_maps WHERE id = ?", (clean_id,)).fetchone()
+        if not row:
+            self.send_json({"ok": False, "error": "找不到该工坊舆图"}, 404)
+            return
+        try:
+            root = WORKSHOP_DIR.resolve()
+            fpath = Path(row["payload_path"]).resolve()
+            if not fpath.is_relative_to(root) or not fpath.is_file():
+                self.send_json({"ok": False, "error": "舆图数据文件不存在"}, 404)
+                return
+            payload_obj = json.loads(fpath.read_text(encoding="utf-8"))
+        except Exception:
+            self.send_json({"ok": False, "error": "读取舆图数据失败"}, 500)
+            return
+        with _db_lock:
+            DB.execute("UPDATE workshop_maps SET downloads = downloads + 1 WHERE id = ?", (clean_id,))
+            DB.commit()
+            updated = DB.execute("SELECT * FROM workshop_maps WHERE id = ?", (clean_id,)).fetchone()
+        self.send_json({
+            "ok": True,
+            "map": serialize_workshop_map(updated or row),
+            "scenario": payload_obj,
+        })
+
+    def handle_workshop_upload(self) -> None:
+        ip = self.client_address[0]
+        if not check_rate_limit(f"map_upload:{ip}", 15, 300):
+            self.send_json({"ok": False, "error": "上传过于频繁，请片刻后再试"}, 429)
+            return
+        body = self.read_json_body(max_bytes=MAX_WORKSHOP_BODY_BYTES)
+        if body is None:
+            return
+        scenario = body.get("scenario")
+        if not isinstance(scenario, dict):
+            self.send_json({"ok": False, "error": "缺少有效的舆图剧本数据（scenario）"}, 400)
+            return
+
+        title = str(scenario.get("title") or scenario.get("name") or "").strip()
+        if not title or len(title) > 60:
+            self.send_json({"ok": False, "error": "舆图标题长度须为 1–60 字"}, 400)
+            return
+        nations = scenario.get("nations")
+        if not isinstance(nations, list) or not (2 <= len(nations) <= 24):
+            self.send_json({"ok": False, "error": "舆图列国数量须在 2–24 国之间"}, 400)
+            return
+        region = str(scenario.get("region") or "").strip()[:32]
+        if not region:
+            self.send_json({"ok": False, "error": "请指定舆图所属地理区域（region）"}, 400)
+            return
+
+        auth = authenticate_token(self.headers.get("Authorization"))
+        if auth:
+            author_user_id = str(auth[0]["id"])
+            author_name = (str(auth[0]["nickname"] or "").strip() or str(auth[0]["username"] or "").strip() or "列国制图师")[:24]
+        else:
+            author_user_id = ""
+            raw_author = str(body.get("authorName") or scenario.get("authorName") or scenario.get("author") or "").strip()
+            author_name = raw_author[:24] if raw_author else "列国制图师"
+
+        subtitle = str(scenario.get("subtitle") or "").strip()[:80]
+        raw_era_year = next(
+            (scenario[k] for k in ("eraYear", "year", "startYear") if scenario.get(k) is not None),
+            1,
+        )
+        era_year = _safe_int(raw_era_year, 1)
+        era_name = str(scenario.get("eraName") or scenario.get("era") or "").strip()[:32]
+        description = str(scenario.get("description") or scenario.get("summary") or "").strip()[:600]
+        nation_count = len(nations)
+        province_count = max(nation_count, min(480, _safe_int(scenario.get("provinceCount"), 80)))
+        raw_tags = scenario.get("tags")
+        tags = [str(t).strip()[:20] for t in raw_tags if str(t).strip()][:10] if isinstance(raw_tags, list) else []
+
+        raw_sid = str(scenario.get("id") or "").strip()
+        map_id = ""
+        existing_row = None
+        if author_user_id and raw_sid and _WORKSHOP_ID_RE.fullmatch(raw_sid):
+            with _db_lock:
+                cand = DB.execute("SELECT * FROM workshop_maps WHERE id = ?", (raw_sid,)).fetchone()
+            if cand and str(cand["author_user_id"]) == author_user_id:
+                map_id = raw_sid
+                existing_row = cand
+        if not map_id:
+            map_id = "wm_" + secrets.token_hex(6)
+
+        stored_scenario = dict(scenario)
+        stored_scenario["id"] = map_id
+        fpath = WORKSHOP_DIR / f"{map_id}.json"
+        tmp = WORKSHOP_DIR / f"{map_id}.{secrets.token_hex(6)}.tmp"
+        serialized = json.dumps(stored_scenario, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        if len(serialized) > MAX_WORKSHOP_BODY_BYTES:
+            self.send_json({"ok": False, "error": "舆图数据体积超出 2.5 MB 上限"}, 413)
+            return
+        try:
+            with tmp.open("wb") as f:
+                f.write(serialized)
+            tmp.replace(fpath)
+        except Exception:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass
+            self.send_json({"ok": False, "error": "保存舆图文件失败"}, 500)
+            return
+
+        ts = now_ms()
+        created_at = int(existing_row["created_at"]) if existing_row else ts
+        tags_json = json.dumps(tags, ensure_ascii=False, separators=(",", ":"))
+        with _db_lock:
+            DB.execute(
+                """
+                INSERT INTO workshop_maps(
+                    id, author_user_id, author_name, title, subtitle, region,
+                    era_year, era_name, description, nation_count, province_count,
+                    downloads, likes, tags_json, payload_path, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    author_name=excluded.author_name,
+                    title=excluded.title,
+                    subtitle=excluded.subtitle,
+                    region=excluded.region,
+                    era_year=excluded.era_year,
+                    era_name=excluded.era_name,
+                    description=excluded.description,
+                    nation_count=excluded.nation_count,
+                    province_count=excluded.province_count,
+                    tags_json=excluded.tags_json,
+                    payload_path=excluded.payload_path,
+                    updated_at=excluded.updated_at
+                """,
+                (
+                    map_id, author_user_id, author_name, title, subtitle, region,
+                    era_year, era_name, description, nation_count, province_count,
+                    tags_json, str(fpath), created_at, ts,
+                ),
+            )
+            if author_user_id and existing_row is None:
+                DB.execute("UPDATE users SET exp = exp + 15 WHERE id = ?", (author_user_id,))
+            DB.commit()
+            fresh = DB.execute("SELECT * FROM workshop_maps WHERE id = ?", (map_id,)).fetchone()
+        self.send_json({"ok": True, "id": map_id, "map": serialize_workshop_map(fresh)}, 200 if existing_row else 201)
+
+    def handle_workshop_like(self, map_id: str) -> None:
+        ip = self.client_address[0]
+        if not check_rate_limit(f"map_like:{ip}", 60, 60):
+            self.send_json({"ok": False, "error": "点赞过于频繁，请稍后再试"}, 429)
+            return
+        clean_id = map_id.strip()
+        if not _WORKSHOP_ID_RE.fullmatch(clean_id):
+            self.send_json({"ok": False, "error": "舆图编号无效"}, 400)
+            return
+        with _db_lock:
+            cur = DB.execute("UPDATE workshop_maps SET likes = likes + 1 WHERE id = ?", (clean_id,))
+            if cur.rowcount == 0:
+                self.send_json({"ok": False, "error": "找不到该工坊舆图"}, 404)
+                return
+            DB.commit()
+            row = DB.execute("SELECT likes FROM workshop_maps WHERE id = ?", (clean_id,)).fetchone()
+        self.send_json({"ok": True, "likes": int(row["likes"]) if row else 1})
+
+    def handle_workshop_delete(self, map_id: str) -> None:
+        clean_id = map_id.strip()
+        if not _WORKSHOP_ID_RE.fullmatch(clean_id):
+            self.send_json({"ok": False, "error": "舆图编号无效"}, 400)
+            return
+        with _db_lock:
+            row = DB.execute("SELECT author_user_id, payload_path FROM workshop_maps WHERE id = ?", (clean_id,)).fetchone()
+        if not row:
+            self.send_json({"ok": False, "error": "找不到该工坊舆图"}, 404)
+            return
+        allowed = self._is_admin_request()
+        if not allowed:
+            auth = authenticate_token(self.headers.get("Authorization"))
+            if auth and row["author_user_id"] and str(auth[0]["id"]) == str(row["author_user_id"]):
+                allowed = True
+        if not allowed:
+            self.send_json({"ok": False, "error": "仅作者或管理员可删除该舆图"}, 403)
+            return
+        with _db_lock:
+            DB.execute("DELETE FROM workshop_maps WHERE id = ?", (clean_id,))
+            DB.commit()
+        try:
+            root = WORKSHOP_DIR.resolve()
+            fpath = Path(row["payload_path"]).resolve()
+            if fpath.is_relative_to(root):
+                fpath.unlink(missing_ok=True)
+        except OSError:
+            pass
+        self.send_json({"ok": True})
+
     # ----------------------------- Cloud Saves -----------------------------
 
     def handle_saves_list(self, user_id: str) -> None:
@@ -2575,7 +2891,7 @@ def main() -> None:
             return
         shutdown_started.set()
         _shutdown_event.set()
-        print(f"收到信号 {signum}，正在优雅关闭云端行宫平台服务器 v5.0…", flush=True)
+        print(f"收到信号 {signum}，正在优雅关闭云端行宫平台服务器 v6.0…", flush=True)
         threading.Thread(target=server.shutdown, daemon=True).start()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
@@ -2584,7 +2900,7 @@ def main() -> None:
         except (ValueError, OSError):
             pass
 
-    print(f"列国纪云端行宫平台服务器 v5.0 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
+    print(f"列国纪云端行宫平台服务器 v6.0 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
     try:
         server.serve_forever()
     finally:
@@ -2594,7 +2910,7 @@ def main() -> None:
         except Exception:
             pass
         close_db()
-        print("列国纪云端行宫平台服务器 v5.0 已安全退出并关闭数据库。", flush=True)
+        print("列国纪云端行宫平台服务器 v6.0 已安全退出并关闭数据库。", flush=True)
 
 
 if __name__ == "__main__":

@@ -562,7 +562,7 @@ struct DiplomacyOverviewView: View {
                 PanelPending(failed: failed) { attempt += 1 }
             }
         }
-        .task(id: "\(nation)-\(day)-\(attempt)") { info = await model.diplomacyInfo(nation); failed = info == nil }
+        .task(id: "\(nation)-\(day / 30)-\(attempt)") { info = await model.diplomacyInfo(nation); failed = info == nil }
     }
     private func name(_ n: Int) -> String { n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "无主" }
     private func color(_ n: Int) -> Color { n >= 0 && n < map.meta.nations.count ? Names.color(map.meta.nations[n].color) : .gray }
@@ -664,7 +664,7 @@ struct DiplomacySheet: View {
             .sheet(item: $pickingRole) { role in
                 nationPickerSheet(role: role, map: map, state: state, alive: alive)
                     .presentationDetents([.medium, .fraction(0.89)])
-                    .background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }
+                    .presentationBackground { MemorialPaper() }
                     .presentationDragIndicator(.hidden)
                     .presentationCornerRadius(Theme.Control.cornerSheet)
                     .font(Theme.section)
@@ -820,7 +820,7 @@ struct DiplomacySheet: View {
             Group2 { Row(label: "战事", value: "天下太平，暂无交战") }
                 .padding(.horizontal, Theme.Layout.pageInset)
         } else {
-            VStack(spacing: 10) {
+            LazyVStack(spacing: 10) {
                 ForEach(state.wars) { war in
                     VStack(alignment: .leading, spacing: 9) {
                         HStack(spacing: 6) {
@@ -982,7 +982,7 @@ struct ChronicleSheet: View {
                 && (keyword.isEmpty || e.text.contains(keyword) || e.reason.contains(keyword))
         }
     }
-    private func yearLabel(_ year: Int) -> String { year > 0 ? "\(year)" : "前\(1 - year)" }
+    private func yearLabel(_ year: Int) -> String { year > 0 ? "\(year)" : "前\(year < 0 ? -year : 1)" }
     private var filterName: String? {
         guard let n = nationFilter, let map = model.map, n >= 0, n < map.meta.nations.count else { return nil }
         return MapLayers.stateLabel(map.meta.nations[n].name, full: false)
@@ -1137,18 +1137,21 @@ struct ChronicleSheet: View {
         } else {
             ForEach(groups) { group in
                 let y = group.id
-                VStack(alignment: .leading, spacing: 0) {
+                LazyVStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         HStack(alignment: .firstTextBaseline, spacing: 3) {
-                            Text(y > 0 ? era : "\(era)前")
+                            let isBCE = y <= 0
+                            let absY = isBCE ? (y < 0 ? -y : 1) : y
+                            let eraEnded = era.hasSuffix("年") || era.hasSuffix("载")
+                            Text(isBCE ? (era == "公元" ? "公元前" : "\(era)（前") : (eraEnded ? "\(era)（" : era))
                                 .font(Theme.serif(15))
                                 .foregroundStyle(Theme.ink)
                                 .tracking(1.2)
-                            Text(y > 0 ? "\(y)" : "\(1 - y)")
+                            Text("\(absY)")
                                 .font(Theme.numeral(19))
                                 .foregroundStyle(Theme.ink)
                                 .monospacedDigit()
-                            Text("年")
+                            Text((isBCE && era != "公元") || (!isBCE && eraEnded) ? "年）" : "年")
                                 .font(Theme.serif(14))
                                 .foregroundStyle(Theme.ink2)
                         }
@@ -1361,7 +1364,7 @@ struct ChronicleDynastyScroll: View {
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(1)
                                     .frame(width: 40)
-                                Text(f.year > 0 ? "\(f.year)" : "前\(1 - f.year)")
+                                Text(f.year > 0 ? "\(f.year)" : "前\(f.year < 0 ? -f.year : 1)")
                                     .font(Theme.numeral(11.5))
                                     .foregroundStyle(f.major ? Theme.seal : Theme.ink2)
                                     .monospacedDigit()

@@ -29,10 +29,25 @@ struct ProvinceSheet: View {
     @State private var flash: String?
     @State private var pressMenu: PressMenu?
     @State private var showingBreakdown = false
+    @State private var refreshNonce = 0
+    @State private var infraBusy = false
+    @State private var editingLivelihood = false
+    @State private var editPopulation = 0.0
+    @State private var editGrain = 0.0
+    @State private var editingDefense = false
+    @State private var editDefenseLevel = 1
+    @State private var pickingRename = false
+    @State private var pickingCapitalRole = false
 
     private func report(_ e: String?, _ ok: String) {
         flash = e ?? ok
         GameFeel.shared.notify(e == nil ? .success : .error)
+    }
+
+    private func reloadNow() async {
+        refreshNonce &+= 1
+        info = await model.provinceInfo(province)
+        region = await model.regionInfo(province)
     }
 
     var body: some View {
@@ -44,6 +59,7 @@ struct ProvinceSheet: View {
             let siege = model.state?.sieges.first(where: { $0.province == province })
             let port = model.state?.ports?.first(where: { $0.province == province })
             let holyOf = model.state?.holy?.first(where: { $0.province == province })
+            let isCapital = nation.map { map.meta.cities.indices.contains($0.capital) && map.meta.cities[$0.capital].province == province } ?? false
 
             let ownerState = (model.state?.nations.indices.contains(owner) == true) ? model.state?.nations[owner] : nil
             let lex = LocalizationEngine.lexicon(culture: ownerState?.culture ?? nation?.culture, polity: ownerState?.polity ?? nation?.polity, style: nil)
@@ -61,19 +77,10 @@ struct ProvinceSheet: View {
                     ViewBoundary { sovereignHeroCard(map: map, provinceName: p.name, owner: owner, nation: nation, info: info) }
                         .padding(.horizontal, Theme.Layout.pageInset)
 
-                    // 2. 四格核心指标（人口 / 存粮 / 城防或驻军 / 特产一键可改）
+                    // 2. 2×2 严丝合缝宋版宣纸核心 KPI 宫格（人口 / 存粮 / 城防 / 税赋）
                     if let info {
-                        let popFrac = info.capacity > 0 ? min(1, Double(info.population) / Double(info.capacity)) : nil
-                        let defLv = Int((info.defense ?? 1).rounded())
-                        StatStrip(tiles: [
-                            StatTile(label: "人口", value: Names.wan(info.population), fraction: popFrac, edit: { GameFeel.shared.scrollOpen(); showingBreakdown = true }),
-                            StatTile(label: "存粮", value: Names.wan(Int(info.grain)), edit: { GameFeel.shared.scrollOpen(); showingBreakdown = true }),
-                            StatTile(label: armies.isEmpty ? "城防" : "驻军",
-                                     value: armies.isEmpty ? "\(defLv) 级" : "\(armies.count) 军",
-                                     warn: siege != nil,
-                                     edit: { GameFeel.shared.scrollOpen(); showingBreakdown = true }),
-                            StatTile(label: "特产", value: info.specialty ?? "常产", edit: info.specialty != nil ? { pickingGood = true } : nil),
-                        ])
+                        provinceKpiGrid(info: info, armiesCount: armies.count, siege: siege)
+                            .padding(.horizontal, Theme.Layout.pageInset)
                     }
 
                     // 3. 紧急战况 / 围城告警（有战事才显现，承平之时保持极简）
@@ -120,7 +127,7 @@ struct ProvinceSheet: View {
                     case .military:
                         ViewBoundary { militarySection(map: map, owner: owner) }
                     case .admin:
-                        ViewBoundary { adminSection(map: map, owner: owner, nation: nation, holyOf: holyOf) }
+                        ViewBoundary { adminSection(map: map, p: p, owner: owner, nation: nation, port: port, isCapital: isCapital, holyOf: holyOf) }
                     }
                 }
                 .padding(.bottom, 36)
@@ -131,23 +138,53 @@ struct ProvinceSheet: View {
             .paperToast($flash)
             .sheet(isPresented: $showingBreakdown) {
                 ProvinceBreakdownSheet(model: model, province: province, provinceName: p.name)
-                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
-            .task(id: model.state?.day) {
+            .task(id: "\(province)-\((model.state?.day ?? 0) / 30)-\(refreshNonce)") {
                 if owner >= 0 { model.prefetchNationInfo(owner) }
                 info = await model.provinceInfo(province)
                 if region == nil { region = await model.regionInfo(province) }
             }
             .confirmationDialog("更改本\(lex.adminUnit)特产", isPresented: $pickingGood, titleVisibility: .visible) {
                 ForEach(Array(Trade.goods.enumerated()), id: \.offset) { i, n in
-                    Button(n) { Task { report(await model.setSpecialty(province, i), "特产改为" + n); self.info = await model.provinceInfo(province) } }
+                    Button(n) { Task { report(await model.setSpecialty(province, i), "特产改为" + n); await reloadNow() } }
                 }
-                Button("恢复本地特产") { Task { report(await model.setSpecialty(province, nil), "已恢复本地特产"); self.info = await model.provinceInfo(province) } }
+                Button("恢复本地特产") { Task { report(await model.setSpecialty(province, nil), "已恢复本地特产"); await reloadNow() } }
             }
             .confirmationDialog("更改本地文化", isPresented: $pickingCulture, titleVisibility: .visible) {
                 ForEach(Names.culture.keys.sorted(), id: \.self) { k in
-                    Button(Names.culture[k] ?? k) { Task { report(await model.setCityCulture(province, k), "本地文化已更改"); self.info = await model.provinceInfo(province) } }
+                    Button(Names.culture[k] ?? k) { Task { report(await model.setCityCulture(province, k), "本地文化已更改"); await reloadNow() } }
                 }
+            }
+            .confirmationDialog("州郡改名", isPresented: $pickingRename, titleVisibility: .visible) {
+                Button("按本地文化随机新地名") {
+                    Task {
+                        let e = await model.edit("randomProvinceName", ["province": province])
+                        await model.refreshCustom()
+                        report(e, "地名已焕新")
+                        await reloadNow()
+                    }
+                }
+                if let g = region {
+                    Button("修改所属区域名（\(g.name)）") {
+                        regionName = g.name
+                        renamingRegion = true
+                    }
+                }
+                Button("取消", role: .cancel) {}
+            }
+            .confirmationDialog("都城与州治调整", isPresented: $pickingCapitalRole, titleVisibility: .visible) {
+                if owner >= 0 && !isCapital && map.meta.cities.contains(where: { $0.province == province }) {
+                    Button("迁都至\(p.name)") {
+                        Task { report(await model.setCapital(owner, province: province), "已迁都\(p.name)"); await reloadNow() }
+                    }
+                }
+                if let g = region, g.center != province {
+                    Button("设为「\(g.name)」区域中心") {
+                        Task { report(await model.setRegionCenter(province), "已设为区域中心"); await reloadNow() }
+                    }
+                }
+                Button("取消", role: .cancel) {}
             }
             .sheet(isPresented: $renamingRegion) {
                 VStack(alignment: .leading, spacing: 14) {
@@ -155,16 +192,79 @@ struct ProvinceSheet: View {
                     TextField("", text: $regionName).paperField().padding(.horizontal, 22)
                     SealButton(title: "颁行", disabled: regionName.trimmingCharacters(in: .whitespaces).isEmpty) {
                         renamingRegion = false
-                        Task { report(await model.renameRegion(province, regionName), "区域已更名"); region = await model.regionInfo(province) }
+                        Task { report(await model.renameRegion(province, regionName), "区域已更名"); await reloadNow() }
                     }
                     .padding(.horizontal, 22)
                 }
                 .padding(.bottom, 16)
-                .presentationDetents([.height(280)]).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
+                .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
+            }
+            .sheet(isPresented: $editingDefense) {
+                VStack(alignment: .leading, spacing: 14) {
+                    SheetHeader(title: "城防修缮", subtitle: "\(p.name) · 调节城防等级或修筑要塞", seal: "城")
+                    Group2 {
+                        VStack(spacing: 12) {
+                            PaperStepper(title: "城防等级", value: $editDefenseLevel, range: 1...10, unit: "级")
+                            Divider2()
+                            HStack(spacing: 8) {
+                                EditorialTactileButton(title: "锁定该级", icon: .fortress, accent: true, solid: true, fullWidth: true) {
+                                    let lv = editDefenseLevel
+                                    editingDefense = false
+                                    Task { report(await model.edit("setProvinceDefense", ["province": province, "level": lv]), "城防已修缮为 \(lv) 级"); await reloadNow() }
+                                }
+                                EditorialTactileButton(title: "恢复自动", icon: .refresh, fullWidth: true) {
+                                    editingDefense = false
+                                    Task { report(await model.edit("setProvinceDefense", ["province": province, "level": NSNull()]), "城防已恢复自动"); await reloadNow() }
+                                }
+                            }
+                            HStack(spacing: 8) {
+                                EditorialTactileButton(title: "修筑要塞", icon: .fortress, fullWidth: true) {
+                                    editingDefense = false
+                                    Task { report(await model.editProvince(province, population: nil, fortress: true), "要塞已筑成"); await reloadNow() }
+                                }
+                                EditorialTactileButton(title: "拆除要塞", icon: .trash, accent: true, fullWidth: true) {
+                                    editingDefense = false
+                                    Task { report(await model.editProvince(province, population: nil, fortress: false), "要塞已拆除"); await reloadNow() }
+                                }
+                            }
+                        }
+                        .padding(14)
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
+                .padding(.bottom, 18)
+                .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
+            }
+            .sheet(isPresented: $editingLivelihood) {
+                VStack(alignment: .leading, spacing: 14) {
+                    SheetHeader(title: "补给与民生调整", subtitle: "\(p.name) · 调整州郡人口与仓廪存粮", seal: "民")
+                    Group2 {
+                        VStack(spacing: 12) {
+                            PaperSlider(title: "人口", value: $editPopulation, range: 100...5_000_000, step: 10_000) { Names.wan(Int($0)) }
+                            Divider2()
+                            PaperSlider(title: "存粮", value: $editGrain, range: 0...5_000_000, step: 10_000) { Names.wan(Int($0)) }
+                        }
+                        .padding(14)
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                    SealButton(title: "颁行调整") {
+                        let nextPop = editPopulation, nextGrain = editGrain
+                        editingLivelihood = false
+                        Task {
+                            let e1 = await model.editProvince(province, population: nextPop, fortress: nil)
+                            let e2 = e1 == nil ? await model.setProvinceGrain(province, grain: nextGrain) : e1
+                            report(e2, "民生与存粮已更新")
+                            await reloadNow()
+                        }
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
+                .padding(.bottom, 18)
+                .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
             }
             .sheet(isPresented: $granting) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
+                    LazyVStack(alignment: .leading, spacing: 14) {
                         SheetHeader(title: "划入他国", subtitle: "\(p.name)划入所选国家，法理与实控同时转移", seal: "绘")
                         if let state = model.state {
                             Group2 {
@@ -172,7 +272,7 @@ struct ProvinceSheet: View {
                                 Divider2()
                                 Button {
                                     let t = grantTarget; granting = false
-                                    Task { report(await model.grant(province: province, to: t), "已划入他国"); self.info = await model.provinceInfo(province) }
+                                    Task { report(await model.grant(province: province, to: t), "已划入他国"); await reloadNow() }
                                 } label: {
                                     HStack(spacing: 6) {
                                         InkIcon(glyph: .brush, size: 15, weight: 1.8)
@@ -189,9 +289,109 @@ struct ProvinceSheet: View {
                     }
                     .padding(.bottom, 24)
                 }
-                .presentationDetents([.medium]).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet).font(Theme.section)
+                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet).font(Theme.section)
             }
         }
+    }
+
+    // MARK: - 2×2 宋版宣纸核心 KPI 宫格
+
+    @ViewBuilder
+    private func provinceKpiGrid(info: ProvinceInfo, armiesCount: Int, siege: GameState.Siege?) -> some View {
+        let popFrac = info.capacity > 0 ? min(1, Double(info.population) / Double(info.capacity)) : nil
+        let defLv = Int((info.defense ?? 1).rounded())
+        let taxMul = (info.income ?? 1.0) * (info.terrainTax ?? 1.0)
+        let taxPct = Int((taxMul * 100).rounded())
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 9), GridItem(.flexible(), spacing: 9)], spacing: 9) {
+            kpiCard(
+                icon: .person,
+                label: "人口",
+                value: Names.wan(info.population),
+                sub: "上限 \(Names.wan(info.capacity))",
+                fraction: popFrac,
+                warn: false
+            ) {
+                GameFeel.shared.scrollOpen(); showingBreakdown = true
+            }
+            kpiCard(
+                icon: .goods,
+                label: "存粮",
+                value: Names.wan(Int(info.grain)),
+                sub: "补给 \(Int(info.supply.rounded()))",
+                fraction: nil,
+                warn: info.grain < Double(max(1, info.population)) * 0.12
+            ) {
+                GameFeel.shared.scrollOpen(); showingBreakdown = true
+            }
+            kpiCard(
+                icon: .fortress,
+                label: "城防",
+                value: "\(defLv) 级",
+                sub: siege != nil ? "围城 \(Int((siege!.progress * 100).rounded()))%" : (armiesCount > 0 ? "驻军 \(armiesCount) 支" : "四境安宁"),
+                fraction: min(1, Double(defLv) / 10.0),
+                warn: siege != nil
+            ) {
+                GameFeel.shared.scrollOpen(); showingBreakdown = true
+            }
+            kpiCard(
+                icon: .economy,
+                label: "税赋",
+                value: "\(taxPct)%",
+                sub: info.specialty.map { "特产 · \($0)" } ?? "常产赋税",
+                fraction: nil,
+                warn: taxPct < 85
+            ) {
+                if info.specialty != nil {
+                    GameFeel.shared.tap(); pickingGood = true
+                } else {
+                    GameFeel.shared.scrollOpen(); showingBreakdown = true
+                }
+            }
+        }
+    }
+
+    private func kpiCard(icon: InkGlyph, label: String, value: String, sub: String, fraction: Double?, warn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 6) {
+                    InkIcon(glyph: icon, size: 13.5, weight: 1.7)
+                        .foregroundStyle(warn ? Theme.seal : Theme.ink2)
+                        .frame(width: 16, height: 16)
+                    Text(label)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                    Spacer(minLength: 4)
+                    Text(sub)
+                        .font(Theme.sans(11))
+                        .foregroundStyle(warn ? Theme.seal : Theme.ink2.opacity(0.85))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                Text(value)
+                    .font(Theme.serif(19))
+                    .foregroundStyle(warn ? Theme.seal : Theme.ink)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                    .contentTransition(.numericText())
+                if let fraction {
+                    InkBar(fraction: fraction, color: warn ? Theme.seal : Theme.ink.opacity(0.58), track: Theme.hairline, height: 3)
+                } else {
+                    Rectangle().fill(Color.clear).frame(height: 3)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 76)
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
+                    .stroke(warn ? Theme.seal.opacity(0.38) : Theme.hairline, lineWidth: 0.75)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+        }
+        .buttonStyle(PressStyle())
     }
 
     // MARK: - 置顶所属国家主权大卡
@@ -236,7 +436,7 @@ struct ProvinceSheet: View {
                 }
                 Spacer()
                 EditorialTactileButton(title: "在此立国", solid: true, compact: true) {
-                    Task { report(await model.foundNation(province, war: false), "新国已立"); self.info = await model.provinceInfo(province) }
+                    Task { report(await model.foundNation(province, war: false), "新国已立"); await reloadNow() }
                 }
             }
             .padding(.vertical, 12)
@@ -255,12 +455,12 @@ struct ProvinceSheet: View {
                 quickTile(title: "划入他国", glyph: .brush, tint: Theme.ink) { grantTarget = -1; granting = true }
                 quickTile(title: "在此立国", glyph: .fire, tint: Theme.seal) {
                     pressMenu = PressMenu(title: "在\(p.name)建立新国家", subtitle: "按本地文化生成国号、执政者与氏族", items: [
-                        PressMenuItem(title: "和平独立", symbol: "leaf") { Task { report(await model.foundNation(province, war: false), "新国已立"); self.info = await model.provinceInfo(province) } },
-                        PressMenuItem(title: "举兵独立（与原主开战）", symbol: "flag.2.crossed", destructive: true) { Task { report(await model.foundNation(province, war: true), "已举兵"); self.info = await model.provinceInfo(province) } },
+                        PressMenuItem(title: "和平独立", symbol: "leaf") { Task { report(await model.foundNation(province, war: false), "新国已立"); await reloadNow() } },
+                        PressMenuItem(title: "举兵独立（与原主开战）", symbol: "flag.2.crossed", destructive: true) { Task { report(await model.foundNation(province, war: true), "已举兵"); await reloadNow() } },
                     ])
                 }
                 quickTile(title: holyOf == nil ? "定为圣地" : "本教圣地", glyph: .religion, tint: Theme.ink, disabled: holyOf != nil) {
-                    Task { report(await model.setHolyProvince(province), "已定为\(Names.religion[n.religion] ?? "本教")圣地") }
+                    Task { report(await model.setHolyProvince(province), "已定为\(Names.religion[n.religion] ?? "本教")圣地"); await reloadNow() }
                 }
             }
             .padding(.horizontal, Theme.Layout.pageInset)
@@ -284,15 +484,9 @@ struct ProvinceSheet: View {
             .padding(.horizontal, Theme.Layout.pageInset)
         }
 
-        // 五槽基建与特产战略实效面板
+        // 五槽州郡基建（水利 / 商埠 / 关隘 / 船坞 / 学院）与特产战略实效
         if let info {
-            ProvinceInfraSection(
-                model: model,
-                province: province,
-                info: info,
-                onRefresh: { self.info = await model.provinceInfo(province) },
-                onMessage: { flash = $0 }
-            )
+            alignedInfraSection(info: info)
         }
 
         // 繁盛度与战略定位
@@ -428,72 +622,267 @@ struct ProvinceSheet: View {
         }
     }
 
-    // MARK: - 政区与编辑
+    // MARK: - 对齐五槽州郡基建（水利 / 商埠 / 关隘 / 船坞 / 学院）
+
+    private func infraGlyph(for id: String) -> InkGlyph {
+        switch id {
+        case "irrigation": return .lake
+        case "market": return .economy
+        case "fortress": return .fortress
+        case "shipyard": return .anchor
+        case "academy": return .culture
+        default: return .region
+        }
+    }
 
     @ViewBuilder
-    private func adminSection(map: WorldMap, owner: Int, nation: WorldMeta.Nation?, holyOf: GameState.Holy?) -> some View {
-        SectionLabel("民生与政区（点带笔项可修改）")
+    private func alignedInfraSection(info: ProvinceInfo) -> some View {
+        if let effect = info.specialtyEffect, !effect.isEmpty {
+            Group2 {
+                HStack(spacing: 8) {
+                    PaperTag(text: info.specialtyTier ?? "战略特产", color: Theme.gold, size: 11)
+                    Text("\(info.specialty ?? "物产")：\(effect)")
+                        .font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 10)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        }
+
+        if let slots = info.infra, !slots.isEmpty {
+            SectionLabel("州郡基建（水利 / 商埠 / 关隘 / 船坞 / 学院）")
+            Group2 {
+                VStack(spacing: 0) {
+                    ForEach(Array(slots.enumerated()), id: \.element.id) { idx, row in
+                        let maxLv = max(3, min(5, row.level > 3 ? 5 : 3))
+                        let isMax = row.level >= maxLv
+                        HStack(alignment: .center, spacing: 11) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(row.level > 0 ? Theme.seal.opacity(0.08) : Theme.wash.opacity(0.6))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                            .stroke(row.level > 0 ? Theme.seal.opacity(0.28) : Theme.hairline, lineWidth: 0.7)
+                                    )
+                                InkIcon(glyph: infraGlyph(for: row.id), size: 15, weight: 1.7)
+                                    .foregroundStyle(row.level > 0 ? Theme.seal : Theme.ink2)
+                            }
+                            .frame(width: 30, height: 30)
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 6) {
+                                    Text(row.label)
+                                        .font(Theme.body)
+                                        .foregroundStyle(Theme.ink)
+                                        .lineLimit(1)
+                                    HStack(spacing: 3) {
+                                        ForEach(1...maxLv, id: \.self) { lv in
+                                            Circle()
+                                                .fill(lv <= row.level ? Theme.seal : Theme.ink.opacity(0.14))
+                                                .frame(width: 5.5, height: 5.5)
+                                        }
+                                    }
+                                    Text("Lv.\(row.level)")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(row.level > 0 ? Theme.seal : Theme.ink2)
+                                        .monospacedDigit()
+                                }
+                                Text(row.effect)
+                                    .font(Theme.caption)
+                                    .foregroundStyle(Theme.ink2)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.78)
+                            }
+
+                            Spacer(minLength: 6)
+
+                            Group {
+                                if isMax {
+                                    Text("已满级")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.jade)
+                                        .frame(width: 88, height: 30)
+                                        .background(Theme.jade.opacity(0.09), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.7))
+                                } else if row.available {
+                                    Button {
+                                        guard !infraBusy else { return }
+                                        GameFeel.shared.tap()
+                                        infraBusy = true
+                                        Task {
+                                            let err = await model.buildProvinceInfra(province: province, slot: row.id)
+                                            report(err, err == nil ? "已\(row.level == 0 ? "兴建" : "升级") \(row.level + 1) 级\(row.label)" : "")
+                                            await reloadNow()
+                                            infraBusy = false
+                                        }
+                                    } label: {
+                                        Text("\(row.level == 0 ? "兴建" : "升级") · \(row.cost)金")
+                                            .font(Theme.caption)
+                                            .foregroundStyle(Theme.seal)
+                                            .monospacedDigit()
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.78)
+                                            .frame(width: 88, height: 30)
+                                            .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.seal.opacity(0.32), lineWidth: 0.75))
+                                    }
+                                    .buttonStyle(PressStyle())
+                                    .disabled(infraBusy)
+                                    .opacity(infraBusy ? 0.5 : 1)
+                                } else {
+                                    Text("需沿海港")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.ink2)
+                                        .frame(width: 88, height: 30)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        if idx < slots.count - 1 { Divider2() }
+                    }
+                }
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        }
+    }
+
+    // MARK: - 政区与编辑（全对齐 AlignedMetaRow）
+
+    @ViewBuilder
+    private func adminSection(map: WorldMap, p: WorldMeta.Province, owner: Int, nation: WorldMeta.Nation?, port: GameState.Port?, isCapital: Bool, holyOf: GameState.Holy?) -> some View {
+        let legalNation: WorldMeta.Nation? = {
+            if let info, info.owner >= 0, info.owner < map.meta.nations.count {
+                return map.meta.nations[info.owner]
+            }
+            return nation
+        }()
+        let capitalStatus = isCapital ? "国都" : (region?.center == province ? "区域中心" : "普通州郡")
+        let canAdjustCapitalRole = (owner >= 0 && !isCapital && map.meta.cities.contains(where: { $0.province == province })) || (region != nil && region?.center != province)
+
+        SectionLabel("民生与政区总览")
         Group2 {
-            if let info {
-                Row(label: "人口", value: info.population.formatted()); Divider2()
-                Row(label: "人口上限", value: info.capacity.formatted()); Divider2()
-                Row(label: "存粮", value: Int(info.grain).formatted()); Divider2()
-                if let good = info.specialty {
-                    Button { pickingGood = true } label: {
-                        HStack(spacing: 8) {
-                            Glyph.icon("特产")
-                            Text("特产").foregroundStyle(Theme.ink2)
-                            Spacer()
-                            Text(good).foregroundStyle(Theme.ink)
-                            InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
+            AlignedMetaRow(
+                label: "所属国（法理）",
+                value: legalNation?.name ?? "无主之地",
+                icon: .nation,
+                trailingGlyph: .chevronRight,
+                action: legalNation != nil ? { openNation(info?.owner ?? owner) } : nil
+            )
+            Divider2()
+            AlignedMetaRow(
+                label: "实控国",
+                value: nation?.name ?? "无主之地",
+                icon: .command,
+                valueColor: (info != nil && info!.owner != info!.controller) ? Theme.seal : Theme.ink,
+                trailingGlyph: .chevronRight,
+                action: nation != nil ? { openNation(owner) } : nil
+            )
+            Divider2()
+            AlignedMetaRow(
+                label: "政区地形",
+                value: Self.terrainLine(info, p.terrain, port: port != nil),
+                icon: .mountain
+            )
+            Divider2()
+            AlignedMetaRow(
+                label: "都城 / 州治",
+                value: capitalStatus,
+                icon: .crown,
+                valueColor: isCapital ? Theme.seal : Theme.ink,
+                trailingGlyph: .brush,
+                action: canAdjustCapitalRole ? { pickingCapitalRole = true } : nil
+            )
+            if let g = region {
+                Divider2()
+                AlignedMetaRow(
+                    label: "所属区域",
+                    value: "\(g.name) · \(g.provinces.count)州 · \(Names.wan(Int(g.population)))人",
+                    icon: .region,
+                    trailingGlyph: .brush,
+                    action: { regionActions = true }
+                )
+                .confirmationDialog(g.name, isPresented: $regionActions, titleVisibility: .visible) {
+                    Button("区域更名") { regionName = g.name; renamingRegion = true }
+                    if g.center != province {
+                        Button("设为区域中心") {
+                            Task { report(await model.setRegionCenter(province), "已设为区域中心"); await reloadNow() }
                         }
-                        .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
-                    Divider2()
                 }
-                if let g = region {
-                    Button { regionActions = true } label: {
-                        HStack(spacing: 8) {
-                            Glyph.icon("区域")
-                            Text("区域").foregroundStyle(Theme.ink2)
-                            Spacer()
-                            Text("\(g.name) · \(g.provinces.count)州 · \(Names.wan(Int(g.population)))人").foregroundStyle(Theme.ink).lineLimit(1)
-                            InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
-                        }
-                        .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .confirmationDialog(g.name, isPresented: $regionActions, titleVisibility: .visible) {
-                        Button("区域更名") { regionName = g.name; renamingRegion = true }
-                        if g.center != province { Button("设为区域中心") { Task { report(await model.setRegionCenter(province), "已设为区域中心"); region = await model.regionInfo(province) } } }
-                    }
-                    Divider2()
-                }
-                Button { pickingCulture = true } label: {
-                    HStack(spacing: 8) {
-                        Glyph.icon("本地文化")
-                        Text("本地文化").foregroundStyle(Theme.ink2)
-                        Spacer()
-                        Text(Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—").foregroundStyle(Theme.ink)
-                        InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
-                    }
-                    .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                if let h = holyOf {
-                    Divider2()
-                    Row(label: "圣地", value: (Names.religion[h.religion] ?? h.religion) + "圣地")
-                }
-                if info.owner != info.controller, info.owner >= 0, info.owner < map.meta.nations.count {
-                    Divider2()
-                    Row(label: "法理归属", value: map.meta.nations[info.owner].name)
-                }
+            }
+            if let h = holyOf {
+                Divider2()
+                AlignedMetaRow(label: "圣地归属", value: (Names.religion[h.religion] ?? h.religion) + "圣地", icon: .religion, valueColor: Theme.seal)
             }
             if let n = nation {
                 Divider2()
-                Row(label: "所属政体", value: Names.polity[n.polity] ?? n.polity); Divider2()
-                Row(label: "主体文化", value: Names.culture[n.culture] ?? n.culture)
+                AlignedMetaRow(label: "所属政体", value: Names.polity[n.polity] ?? n.polity, icon: .polity)
+                Divider2()
+                AlignedMetaRow(label: "主体文化", value: Names.culture[n.culture] ?? n.culture, icon: .culture)
+            }
+        }
+        .padding(.horizontal, Theme.Layout.pageInset)
+
+        SectionLabel("政区编辑（点按即时修改）")
+        Group2 {
+            AlignedMetaRow(
+                label: "州郡改名",
+                value: p.name,
+                icon: .brush,
+                trailingGlyph: .brush,
+                action: { pickingRename = true }
+            )
+            Divider2()
+            AlignedMetaRow(
+                label: "疆土划归",
+                value: nation?.name ?? "无主之地",
+                icon: .nation,
+                trailingGlyph: .brush,
+                action: { grantTarget = -1; granting = true }
+            )
+            if let info {
+                Divider2()
+                AlignedMetaRow(
+                    label: "城防修缮",
+                    value: "\(Int((info.defense ?? 1).rounded())) 级",
+                    icon: .fortress,
+                    trailingGlyph: .brush,
+                    action: {
+                        editDefenseLevel = max(1, min(10, Int((info.defense ?? 1).rounded())))
+                        editingDefense = true
+                    }
+                )
+                Divider2()
+                AlignedMetaRow(
+                    label: "补给 / 民生",
+                    value: "\(Names.wan(info.population))人 · \(Names.wan(Int(info.grain)))粮",
+                    icon: .goods,
+                    trailingGlyph: .brush,
+                    action: {
+                        editPopulation = Double(info.population)
+                        editGrain = info.grain
+                        editingLivelihood = true
+                    }
+                )
+                if let good = info.specialty {
+                    Divider2()
+                    AlignedMetaRow(
+                        label: "州郡特产",
+                        value: good,
+                        icon: .goods,
+                        trailingGlyph: .brush,
+                        action: { pickingGood = true }
+                    )
+                }
+                Divider2()
+                AlignedMetaRow(
+                    label: "本地文化",
+                    value: Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—",
+                    icon: .culture,
+                    trailingGlyph: .brush,
+                    action: { pickingCulture = true }
+                )
             }
         }
         .padding(.horizontal, Theme.Layout.pageInset)

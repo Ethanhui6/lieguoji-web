@@ -550,8 +550,10 @@ extension NativeEngine {
                     let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
                     at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at
                 }
-                let fx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
-                let fy = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
+                let rawFx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
+                let rawFy = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
+                let fx = slim ? (rawFx * 10.0).rounded() / 10.0 : rawFx
+                let fy = slim ? (rawFy * 10.0).rounded() / 10.0 : rawFy
                 fleetPoint.append((fx, fy))
                 let rawDecision = row.isNull ? "" : row.decision.optionalString ?? ""
                 let decision = fleetClash != nil ? "busy" : rawDecision

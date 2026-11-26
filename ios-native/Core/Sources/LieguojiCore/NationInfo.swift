@@ -152,6 +152,9 @@ extension NativeEngine {
             if let foe = foes.min(by: { $0.rel < $1.rel }), let foeSurname = r.kin.families[foe.k].surname.optionalString { e.rival = JS(NamingCatalog.houseLabel(foeSurname)) }
             return e
         })
+        c.aiAutoGovern = JS(Regimes.isAutoGoverned(r, id))
+        c.aiProfile = SovereignAI.profileJS(r, nationId: id)
+        c.aiCourtLog = SovereignAI.courtLogJS(r, nationId: id, limit: 16)
         return c
     }
 

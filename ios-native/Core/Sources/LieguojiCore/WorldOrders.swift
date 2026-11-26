@@ -32,9 +32,16 @@ extension NativeEngine {
             Regimes.enable(r)
             if r.regimes.world.isNull { r.regimes.world = JS.object() }
             r.regimes.world[key] = JS(value != 0)
-            if key == "globalAutoGovern" && value != 0 {
+            if key == "globalAutoGovern" {
+                let on = (value != 0)
                 for nItem in r.world.nations.asArray {
-                    Regimes.book(r, nItem.id.asString).manualGovern = JS(false)
+                    let nb = Regimes.book(r, nItem.id.asString)
+                    if on {
+                        nb.manualGovern = JS(false)
+                        nb.autoDecideSet = JS(false)
+                    } else {
+                        nb.autoStrategy = JS(false)
+                    }
                 }
             }
             return (true, key == "globalAutoGovern" ? (value != 0 ? "已开启全图列国自动治理。" : "已关闭全图列国自动治理。") : "诏令已颁行。")

@@ -78,7 +78,7 @@ struct MilitaryOverview: View {
 
     var body: some View {
         let powers = self.powers, kinds = self.kinds, clashes = self.clashes, troubled = self.troubled
-        VStack(alignment: .leading, spacing: 14) {
+        LazyVStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 ForEach(counts, id: \.0) { c in CountTile(title: c.title, value: c.value, hot: c.hot) }
             }

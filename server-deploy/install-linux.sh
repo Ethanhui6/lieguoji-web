@@ -4,6 +4,18 @@ set -euo pipefail
 # 列国纪 24 小时专属云服务器一键部署脚本（Ubuntu / Debian 轻量应用服务器）
 echo "=== 列国纪在线计算服务器 v6 · 专属云服一键部署 ==="
 
+# 2核2G 经济型云服编译 Swift Release 时需要临时虚拟内存，自动补齐 4G Swap 防 OOM（运行时仅占 ~150MB 内存）
+MEM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 4096)
+SWAP_MB=$(awk '/SwapTotal/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0)
+if [ "$MEM_MB" -lt 3600 ] && [ "$SWAP_MB" -lt 2048 ]; then
+  echo "[0/3] 检测到内存 ${MEM_MB}MB，正在创建 4GB Swap 以保证编译稳健..."
+  fallocate -l 4G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=4096 status=none
+  chmod 600 /swapfile
+  mkswap /swapfile >/dev/null
+  swapon /swapfile
+  grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "[1/3] 正在安装 Docker..."
   curl -fsSL https://get.docker.com | sh

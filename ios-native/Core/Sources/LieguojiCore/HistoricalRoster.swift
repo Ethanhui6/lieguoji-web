@@ -913,7 +913,7 @@ public enum HistoricalRoster {
         let ownedProvIds = provinces.filter { $0.controller.optionalString == nationId }.map(\.id.asString)
         let fallbackHome = ownedProvIds.first ?? "p-0"
 
-        var existingNonRuling = r.nobility.families.objectEntries
+        let existingNonRuling = r.nobility.families.objectEntries
             .filter { $0.1.nationId.optionalString == nationId && $0.0 != rulingKey && !r.kin.families[$0.0].isNull }
             .sorted { ($0.1.influence.optionalNumber ?? 0) > ($1.1.influence.optionalNumber ?? 0) }
             .map { $0.0 }
@@ -2045,7 +2045,7 @@ public enum HistoricalRoster {
               p("扎巴坚赞", "款", "扎巴坚赞", "萨迦法王", 22, 68, 86, 84, 86, ["Administrator", "Scholar"], "Successor", "三子"),
           ],
           notables: [
-              p("唃厮啰余帅", "唃厮啰", "河湟大帅", 44, 80, 70, 68, 76, ["Veteran", "Brave"], "WarCommander", "河湟吐蕃首领"),
+              p("唃厮啰余帅", "唃厮啰", "余帅", "河湟大帅", 44, 80, 70, 68, 76, ["Veteran", "Brave"], "WarCommander", "河湟吐蕃首领"),
               p("帕木竹巴", "朗", "帕木竹巴", "噶举大师", 34, 64, 80, 80, 84, ["Scholar", "Charismatic"], "Diplomat", "藏东名僧"),
           ],
           families: [

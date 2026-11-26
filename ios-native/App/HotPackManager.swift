@@ -60,9 +60,20 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
     /// 持久化热更资源目录（位于 Application Support/LieguojiHotPack，系统永不自动清理）
     nonisolated static var rootURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
         return base.appendingPathComponent("LieguojiHotPack", isDirectory: true)
     }
+
+    /// 经中国大陆实测验证的高速 RAW 镜像池（彻底剔除失效站点与慢速源）
+    nonisolated static let cdnMirrors: [(name: String, baseURL: String)] = [
+        ("腾讯云 EdgeOne 专线", "https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("极速镜像节点", "https://ghfast.top/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("国内高速主线 B", "https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("国内加速节点 C", "https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("Gcore 全球加速", "https://gcore.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main"),
+        ("Cloudflare 海外边缘", "https://lieguoji-edge.pages.dev/api/cdn/raw")
+    ]
 
     /// 优先查找已热更落地的最新资源文件，不存在时自动回落至安装包 Bundle，实现全量资源免换包热更。
     nonisolated static func resourceURL(name: String, ext: String, subdirectory: String) -> URL? {
@@ -74,16 +85,53 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return Bundle.main.url(forResource: name, withExtension: ext, subdirectory: subdirectory)
     }
 
+    nonisolated private static func atomicWrite(_ data: Data, to dst: URL) throws {
+        let fm = FileManager.default
+        let dir = dst.deletingLastPathComponent()
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        let tmp = dir.appendingPathComponent(".\(dst.lastPathComponent).tmp.\(UUID().uuidString)")
+        do {
+            try data.write(to: tmp, options: .atomic)
+            if fm.fileExists(atPath: dst.path) {
+                _ = try fm.replaceItemAt(dst, withItemAt: tmp)
+            } else {
+                try fm.moveItem(at: tmp, to: dst)
+            }
+        } catch {
+            try? fm.removeItem(at: tmp)
+            throw error
+        }
+    }
+
+    nonisolated private static func cleanupOrphanTempFiles() {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(at: rootURL, includingPropertiesForKeys: nil) else { return }
+        for case let fileURL as URL in enumerator {
+            if fileURL.lastPathComponent.contains(".tmp.") {
+                try? fm.removeItem(at: fileURL)
+            }
+        }
+    }
+
     private final class OnDemandFlightBox: @unchecked Sendable {
         private let lock = NSLock()
         private var inflight: [String: Task<URL?, Never>] = [:]
         private let session: URLSession = {
             let cfg = URLSessionConfiguration.default
             cfg.httpMaximumConnectionsPerHost = 12
-            cfg.timeoutIntervalForRequest = 16
+            cfg.timeoutIntervalForRequest = 14
             cfg.timeoutIntervalForResource = 120
             return URLSession(configuration: cfg)
         }()
+
+        deinit {
+            lock.lock()
+            let tasks = Array(inflight.values)
+            inflight.removeAll()
+            lock.unlock()
+            for t in tasks { t.cancel() }
+            session.invalidateAndCancel()
+        }
 
         func fetch(path: String) async -> URL? {
             let dst = HotPackManager.rootURL.appendingPathComponent(path)
@@ -113,20 +161,26 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                             ? "ios-native/Resources/\(top)/\(rest)"
                             : (top == "Content" ? "server-deploy/platform/hotpack-content/\(rest)" : nil)
                         if let ghPath {
-                            let ghEnc = ghPath.split(separator: "/").map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }.joined(separator: "/")
-                            if let u0 = URL(string: "https://lieguoji-edge.pages.dev/api/cdn/raw/\(ghEnc)") { candidates.append(u0) }
-                            if let u1 = URL(string: "https://lieguoji-web.pages.dev/api/cdn/raw/\(ghEnc)") { candidates.append(u1) }
-                            if let u2 = URL(string: "https://fastly.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/\(ghEnc)") { candidates.append(u2) }
-                            if let u3 = URL(string: "https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/\(ghEnc)") { candidates.append(u3) }
+                            let ghEnc = ghPath
+                                .split(separator: "/")
+                                .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+                                .joined(separator: "/")
+                            for mirror in HotPackManager.cdnMirrors {
+                                let cleanPrefix = mirror.baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                                if let u = URL(string: "\(cleanPrefix)/\(ghEnc)") {
+                                    candidates.append(u)
+                                }
+                            }
                         }
                     }
                     if let origin = URL(string: "\(OnlinePlatform.apiBase)/api/v1/hotpack/file/\(encoded)") {
                         candidates.append(origin)
                     }
                     for url in candidates {
-                        let host = url.host ?? ""
-                        let isEdgeOrCDN = host.contains("pages.dev") || host.contains("jsdelivr")
-                        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: isEdgeOrCDN ? 8 : 25)
+                        if Task.isCancelled { return nil }
+                        let host = (url.host ?? "").lowercased()
+                        let isOrigin = host.contains("111.230.153.235")
+                        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: isOrigin ? 25 : 10)
                         req.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
                         if let (data, resp) = try? await s.data(for: req),
                            let http = resp as? HTTPURLResponse,
@@ -134,9 +188,9 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                            !data.isEmpty {
                             let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
                             if ct.contains("text/html") { continue }
+                            if Task.isCancelled { return nil }
                             do {
-                                try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
-                                try data.write(to: dst, options: .atomic)
+                                try HotPackManager.atomicWrite(data, to: dst)
                                 return dst
                             } catch {
                                 return nil
@@ -149,6 +203,48 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                 return t
             }()
             return await task.value
+        }
+    }
+
+    private final class HotProbeMetricsDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+        private let lock = NSLock()
+        private var _bodyDuration: Double?
+
+        var bodyDuration: Double? {
+            lock.lock()
+            defer { lock.unlock() }
+            return _bodyDuration
+        }
+
+        func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+            guard let tx = metrics.transactionMetrics.last(where: { $0.responseStartDate != nil && $0.responseEndDate != nil }) else {
+                return
+            }
+            if let rs = tx.responseStartDate, let re = tx.responseEndDate {
+                let dt = re.timeIntervalSince(rs)
+                if dt > 0 {
+                    lock.lock()
+                    _bodyDuration = dt
+                    lock.unlock()
+                }
+            }
+        }
+    }
+
+    private final class HotTaskBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var task: Task<Void, Never>?
+
+        func replace(_ newTask: Task<Void, Never>?) {
+            lock.lock()
+            let old = task
+            task = newTask
+            lock.unlock()
+            old?.cancel()
+        }
+
+        func cancel() {
+            replace(nil)
         }
     }
 
@@ -172,6 +268,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
     @Published private(set) var downloadedBytes: Int64 = 0
     @Published private(set) var speedBytesPerSec: Double = 0
     @Published private(set) var activeCDNName: String = ""
+    @Published private(set) var rankedFastMirrors: [String] = []
     @Published private(set) var currentModuleName: String = ""
     @Published private(set) var statusMessage: String = ""
     @Published private(set) var errorMessage: String?
@@ -183,9 +280,10 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
     @Published private(set) var loreEntries: [HotLoreEntry] = []
 
     private var installedHashes: [String: String] = [:]
-    private var updateTask: Task<Void, Never>?
+    private var updateGeneration: UInt64 = 0
+    private nonisolated let taskBox = HotTaskBox()
 
-    private let session: URLSession = {
+    private nonisolated let session: URLSession = {
         let cfg = URLSessionConfiguration.default
         cfg.httpMaximumConnectionsPerHost = 12
         cfg.timeoutIntervalForRequest = 16
@@ -201,6 +299,11 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
     private init() {
         loadInstalledIndex()
         reloadHotContent()
+    }
+
+    deinit {
+        taskBox.cancel()
+        session.invalidateAndCancel()
     }
 
     nonisolated static func formatBytes(_ bytes: Int64) -> String {
@@ -297,17 +400,92 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         let kind: Kind
         let prefix: String
         let supportsRange: Bool
+        let speedMBps: Double
+    }
+
+    private final class HotMirrorPool: @unchecked Sendable {
+        private let lock = NSLock()
+        let fastNodes: [HotCDNNode]
+        let backupNodes: [HotCDNNode]
+        private var failCounts: [String: Int] = [:]
+        private var cooldownUntil: [String: CFAbsoluteTime] = [:]
+
+        init(fastNodes: [HotCDNNode], backupNodes: [HotCDNNode]) {
+            self.fastNodes = fastNodes
+            self.backupNodes = backupNodes
+        }
+
+        /// 为第 `slot` 号文件生成跨多镜像负载均衡的有序尝试链（高速池轮转起步 -> 其余高速池 -> 备用外镜 -> 源站兜底）
+        func orderedNodes(forSlot slot: Int) -> [HotCDNNode] {
+            lock.lock()
+            defer { lock.unlock() }
+            let now = CFAbsoluteTimeGetCurrent()
+
+            var primaryHealthy: [HotCDNNode] = []
+            var primaryCooling: [HotCDNNode] = []
+            if !fastNodes.isEmpty {
+                let start = slot % fastNodes.count
+                for offset in 0..<fastNodes.count {
+                    let node = fastNodes[(start + offset) % fastNodes.count]
+                    if (cooldownUntil[node.id] ?? 0) > now {
+                        primaryCooling.append(node)
+                    } else {
+                        primaryHealthy.append(node)
+                    }
+                }
+            }
+            var backupHealthy: [HotCDNNode] = []
+            var backupCooling: [HotCDNNode] = []
+            for node in backupNodes {
+                if (cooldownUntil[node.id] ?? 0) > now {
+                    backupCooling.append(node)
+                } else {
+                    backupHealthy.append(node)
+                }
+            }
+            return primaryHealthy + backupHealthy + primaryCooling + backupCooling
+        }
+
+        func reportSuccess(nodeID: String) {
+            lock.lock()
+            failCounts[nodeID] = 0
+            cooldownUntil.removeValue(forKey: nodeID)
+            lock.unlock()
+        }
+
+        func reportFailure(nodeID: String) {
+            lock.lock()
+            let fails = (failCounts[nodeID] ?? 0) + 1
+            failCounts[nodeID] = fails
+            cooldownUntil[nodeID] = CFAbsoluteTimeGetCurrent() + (fails >= 3 ? 25.0 : 8.0)
+            lock.unlock()
+        }
     }
 
     nonisolated private static func defaultHotCDNs(base: String) -> [HotCDNNode] {
         let cleanBase = base.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        return [
-            HotCDNNode(id: "cf-edge", name: "Cloudflare 极速边缘", kind: .rawProxy, prefix: "https://lieguoji-edge.pages.dev/api/cdn/raw/", supportsRange: true),
-            HotCDNNode(id: "cf-web", name: "Cloudflare 主站边缘", kind: .rawProxy, prefix: "https://lieguoji-web.pages.dev/api/cdn/raw/", supportsRange: true),
-            HotCDNNode(id: "fastly", name: "Fastly 全球节点", kind: .rawProxy, prefix: "https://fastly.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/", supportsRange: true),
-            HotCDNNode(id: "jsdelivr", name: "jsDelivr 节点", kind: .rawProxy, prefix: "https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/", supportsRange: true),
-            HotCDNNode(id: "tencent", name: "腾讯云兜底源", kind: .origin, prefix: "\(cleanBase)/api/v1/hotpack/file/", supportsRange: true)
-        ]
+        var nodes: [HotCDNNode] = cdnMirrors.enumerated().map { idx, item in
+            let cleanPrefix = item.baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/"
+            return HotCDNNode(
+                id: "cdn-\(idx)",
+                name: item.name,
+                kind: .rawProxy,
+                prefix: cleanPrefix,
+                supportsRange: true,
+                speedMBps: 0
+            )
+        }
+        nodes.append(
+            HotCDNNode(
+                id: "tencent-origin",
+                name: "腾讯云源站兜底",
+                kind: .origin,
+                prefix: "\(cleanBase)/api/v1/hotpack/file/",
+                supportsRange: true,
+                speedMBps: 0
+            )
+        )
+        return nodes
     }
 
     nonisolated private static func urlForPath(_ path: String, on node: HotCDNNode) -> URL? {
@@ -339,56 +517,102 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         }
     }
 
-    /// 1.5 秒并行竞速 5 路节点：按真实响应延迟排序，并直接剔除失效/超时 CDN，避免每个文件重复浪费 10 秒超时。
-    nonisolated private static func raceHotCDNs(probeFile: HotPackFile, base: String, session: URLSession) async -> [HotCDNNode] {
+    /// 256 KB 吞吐测速（探测 Engine/engine.js Range: bytes=0-262143）：严格按实测 MB/s 降序排列，Top 3 组建高速多镜像池，绝不让 3 Mbps 源站挤占前排。
+    nonisolated private static func raceHotCDNs(base: String) async -> (fast: [HotCDNNode], backups: [HotCDNNode]) {
         let all = defaultHotCDNs(base: base)
-        let probePath = probeFile.path
-        var results: [(HotCDNNode, Double)] = []
+        let externalNodes = all.filter { $0.kind == .rawProxy }
+        let originNode = all.first(where: { $0.kind == .origin })
+        let probePath = "Engine/engine.js"
 
-        await withTaskGroup(of: (HotCDNNode, Double?).self) { group in
-            for node in all {
+        let probeCfg = URLSessionConfiguration.ephemeral
+        probeCfg.timeoutIntervalForRequest = 6.0
+        probeCfg.timeoutIntervalForResource = 7.0
+        probeCfg.waitsForConnectivity = false
+        probeCfg.httpMaximumConnectionsPerHost = 6
+        let probeSession = URLSession(configuration: probeCfg)
+        defer { probeSession.invalidateAndCancel() }
+
+        var measured: [HotCDNNode] = []
+        await withTaskGroup(of: HotCDNNode?.self) { group in
+            for node in externalNodes {
                 group.addTask {
-                    guard let url = Self.urlForPath(probePath, on: node) else { return (node, nil) }
-                    var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 1.5)
-                    req.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
+                    guard let url = Self.urlForPath(probePath, on: node) else { return nil }
+                    var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 6.0)
+                    req.setValue("bytes=0-262143", forHTTPHeaderField: "Range")
+                    req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+                    let metrics = HotProbeMetricsDelegate()
                     let t0 = CFAbsoluteTimeGetCurrent()
                     do {
-                        let (data, resp) = try await session.data(for: req)
-                        guard let http = resp as? HTTPURLResponse, http.statusCode == 200, !data.isEmpty else {
-                            return (node, nil)
+                        let (data, resp) = try await probeSession.data(for: req, delegate: metrics)
+                        let wallDt = max(0.02, CFAbsoluteTimeGetCurrent() - t0)
+                        guard let http = resp as? HTTPURLResponse,
+                              (http.statusCode == 206 || http.statusCode == 200),
+                              data.count >= 16_384 else {
+                            return nil
                         }
                         let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
-                        if ct.contains("text/html") { return (node, nil) }
-                        return (node, CFAbsoluteTimeGetCurrent() - t0)
+                        if ct.contains("text/html") { return nil }
+                        let bodyDuration: Double
+                        if let rawBody = metrics.bodyDuration, rawBody >= 0.005 {
+                            bodyDuration = max(0.02, rawBody)
+                        } else {
+                            bodyDuration = wallDt
+                        }
+                        let speedMBps = (Double(data.count) / 1_048_576.0) / max(0.02, bodyDuration)
+                        return HotCDNNode(
+                            id: node.id,
+                            name: node.name,
+                            kind: node.kind,
+                            prefix: node.prefix,
+                            supportsRange: http.statusCode == 206,
+                            speedMBps: speedMBps
+                        )
                     } catch {
-                        return (node, nil)
+                        return nil
                     }
                 }
             }
-            for await (node, dt) in group {
-                if let dt {
-                    results.append((node, dt))
+            for await item in group {
+                if let item {
+                    measured.append(item)
                 }
             }
         }
 
-        if results.isEmpty {
-            // 极端弱网下 1.5s 全部未及返回时，保留 Cloudflare 边缘与腾讯云兜底，不直接放弃更新
-            return all.filter { $0.id == "cf-edge" || $0.id == "cf-web" || $0.id == "tencent" }
+        if measured.isEmpty {
+            // 极端弱网全部超时：保留国内高速镜像与源站兜底
+            let fallbackFast = Array(externalNodes.prefix(3))
+            var backups = Array(externalNodes.dropFirst(3))
+            if let originNode { backups.append(originNode) }
+            return (fallbackFast, backups)
         }
 
-        results.sort { $0.1 < $1.1 }
-        var ranked = results.map(\.0)
-        // 始终保留源站兜底于队尾（防止管理员刚热更 hot-rules.json 导致镜像 SHA 未同步时单文件无法回源）
-        if !ranked.contains(where: { $0.kind == .origin }), let origin = all.first(where: { $0.kind == .origin }) {
-            ranked.append(origin)
+        measured.sort { a, b in
+            if abs(a.speedMBps - b.speedMBps) > 0.01 { return a.speedMBps > b.speedMBps }
+            return a.supportsRange && !b.supportsRange
         }
-        return ranked
+
+        let fastTop3 = Array(measured.prefix(3))
+        var backups = Array(measured.dropFirst(3))
+        // 源站 111.230.153.235 严格放在队尾兜底（永不排在可用高速外镜前面；亦保障管理员刚热更 hot-rules.json 时可回源）
+        if let originNode {
+            backups.append(originNode)
+        }
+        return (fastTop3, backups)
     }
 
-    /// 大文件（≥ 3 MB，例如 11.7 MB 史诗配乐）4 路并发 HTTP Range 分片下载并严格 SHA256 校验。
-    nonisolated private static func downloadRange4Streams(url: URL, expectedSize: Int64, expectedSHA: String, session: URLSession) async -> Data? {
+    /// 大文件（≥ 3 MB，例如 11.7 MB 史诗配乐）跨多高速镜像 4 路并发 HTTP Range 分片下载并严格 SHA256 校验。
+    nonisolated private static func downloadRange4Streams(
+        file: HotPackFile,
+        nodes: [HotCDNNode],
+        pool: HotMirrorPool,
+        session: URLSession
+    ) async -> (Data, String)? {
+        let expectedSize = file.size
         guard expectedSize >= 3_000_000 else { return nil }
+        let rangeNodes = nodes.filter { $0.supportsRange && $0.kind == .rawProxy }
+        guard !rangeNodes.isEmpty else { return nil }
+
         let streamCount = 4
         let partSize = (expectedSize + Int64(streamCount) - 1) / Int64(streamCount)
         var slices: [(Int, Int64, Int64)] = []
@@ -403,30 +627,47 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         guard slices.count >= 2 else { return nil }
 
         var parts = Array<Data?>(repeating: nil, count: slices.count)
-        let okAll = await withTaskGroup(of: (Int, Data?).self, returning: Bool.self) { group in
+        var usedNodeName = rangeNodes[0].name
+        let okAll = await withTaskGroup(of: (Int, Data?, String?).self, returning: Bool.self) { group in
             for (i, start, end) in slices {
                 let wantLen = Int(end - start + 1)
                 group.addTask {
-                    var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 22)
-                    req.setValue("bytes=\(start)-\(end)", forHTTPHeaderField: "Range")
-                    req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
-                    do {
-                        let (data, resp) = try await session.data(for: req)
-                        guard let http = resp as? HTTPURLResponse,
-                              http.statusCode == 206,
-                              data.count == wantLen else {
-                            return (i, nil)
+                    let attempts = min(rangeNodes.count, 3)
+                    for attempt in 0..<attempts {
+                        if Task.isCancelled { return (i, nil, nil) }
+                        let node = rangeNodes[(i + attempt) % rangeNodes.count]
+                        guard let url = Self.urlForPath(file.path, on: node) else { continue }
+                        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 20)
+                        req.setValue("bytes=\(start)-\(end)", forHTTPHeaderField: "Range")
+                        req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+                        do {
+                            let (data, resp) = try await session.data(for: req)
+                            guard let http = resp as? HTTPURLResponse,
+                                  http.statusCode == 206,
+                                  data.count == wantLen else {
+                                pool.reportFailure(nodeID: node.id)
+                                continue
+                            }
+                            let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+                            if ct.contains("text/html") {
+                                pool.reportFailure(nodeID: node.id)
+                                continue
+                            }
+                            pool.reportSuccess(nodeID: node.id)
+                            return (i, data, node.name)
+                        } catch {
+                            if Task.isCancelled { return (i, nil, nil) }
+                            pool.reportFailure(nodeID: node.id)
                         }
-                        return (i, data)
-                    } catch {
-                        return (i, nil)
                     }
+                    return (i, nil, nil)
                 }
             }
             var success = true
-            for await (i, data) in group {
+            for await (i, data, name) in group {
                 if let data {
                     parts[i] = data
+                    if let name { usedNodeName = name }
                 } else {
                     success = false
                     group.cancelAll()
@@ -443,51 +684,71 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         }
         guard Int64(combined.count) == expectedSize else { return nil }
         let digest = SHA256.hash(data: combined).map { String(format: "%02x", $0) }.joined()
-        guard digest == expectedSHA else { return nil }
-        return combined
+        guard digest == file.sha256 else { return nil }
+        return (combined, usedNodeName)
     }
 
-    nonisolated private static func downloadOne(_ file: HotPackFile, nodes: [HotCDNNode], session: URLSession) async -> (HotPackFile, Bool, String?) {
+    nonisolated private static func downloadOne(
+        _ file: HotPackFile,
+        slot: Int,
+        pool: HotMirrorPool,
+        session: URLSession
+    ) async -> (HotPackFile, Bool, String?) {
         let isLargeFile = file.size >= 3_000_000
-        for (idx, node) in nodes.enumerated() {
+        let nodes = pool.orderedNodes(forSlot: slot)
+
+        // 大文件优先在高速外镜池上走跨节点 4 路 HTTP Range 并发拉取 + 严格 SHA256 校验
+        if isLargeFile {
+            if let (rangedData, usedName) = await Self.downloadRange4Streams(file: file, nodes: nodes, pool: pool, session: session) {
+                if Task.isCancelled { return (file, false, nil) }
+                do {
+                    let dst = rootURL.appendingPathComponent(file.path)
+                    try Self.atomicWrite(rangedData, to: dst)
+                    return (file, true, usedName)
+                } catch {
+                    return (file, false, nil)
+                }
+            }
+        }
+
+        for node in nodes {
             if Task.isCancelled { return (file, false, nil) }
             guard let url = Self.urlForPath(file.path, on: node) else { continue }
 
-            // 大文件优先在优胜边缘节点上走 4 路 HTTP Range 并行拉取
-            if isLargeFile && node.supportsRange && idx == 0 {
-                if let rangedData = await Self.downloadRange4Streams(url: url, expectedSize: file.size, expectedSHA: file.sha256, session: session) {
-                    do {
-                        let dst = rootURL.appendingPathComponent(file.path)
-                        try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
-                        try rangedData.write(to: dst, options: .atomic)
-                        return (file, true, node.name)
-                    } catch {
-                        return (file, false, nil)
-                    }
-                }
-            }
-
-            let timeout: TimeInterval = node.kind == .origin ? 30 : (isLargeFile ? 25 : 10)
+            let timeout: TimeInterval = node.kind == .origin ? 30 : (isLargeFile ? 24 : 12)
             var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
             req.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
             do {
                 let (data, resp) = try await session.data(for: req)
-                guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else { continue }
+                guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else {
+                    pool.reportFailure(nodeID: node.id)
+                    continue
+                }
+                let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+                if ct.contains("text/html") {
+                    pool.reportFailure(nodeID: node.id)
+                    continue
+                }
                 let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-                guard digest == file.sha256 else { continue }
+                guard digest == file.sha256 else {
+                    pool.reportFailure(nodeID: node.id)
+                    continue
+                }
+                if Task.isCancelled { return (file, false, nil) }
                 let dst = rootURL.appendingPathComponent(file.path)
-                try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try data.write(to: dst, options: .atomic)
+                try Self.atomicWrite(data, to: dst)
+                pool.reportSuccess(nodeID: node.id)
                 return (file, true, node.name)
             } catch {
                 if Task.isCancelled { return (file, false, nil) }
+                pool.reportFailure(nodeID: node.id)
                 continue
             }
         }
         return (file, false, nil)
     }
 
-    /// 启动 12 路自适应竞速流水线满速热更新（1.5s 边缘竞速剔除死节点 + 12 路并发 + 大文件 4 路 Range 分片 + SHA256 严格校验）。
+    /// 启动 12 路多镜像吞吐竞速热更新（256 KB 吞吐测速择优 Top 3 镜像 + 12 并发跨镜分发 + 大文件 4 路 Range 分片 + 严格 SHA256 校验）。
     func startHotUpdate(onApplied: (() async -> Void)? = nil) {
         guard !updating, let m = manifest, !pendingFiles.isEmpty else { return }
         updating = true
@@ -496,7 +757,9 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         downloadedBytes = 0
         speedBytesPerSec = 0
         activeCDNName = ""
-        statusMessage = "正在 1.5s 竞速择优边缘 CDN 节点…"
+        rankedFastMirrors = []
+        statusMessage = "正在 256KB 实测各国内高速镜像吞吐（MB/s）…"
+
         // 优先下载轻量核心包（剧本/规则/词典/传报画幅），再并行拉取大体积美术与原声音乐
         let priority: [String: Int] = ["content": 0, "catalog": 1, "world": 2, "video": 3, "engine": 4, "art": 5, "music": 6]
         let queue = pendingFiles.sorted {
@@ -507,29 +770,36 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         let total = max(1, pendingBytes)
         let moduleNames = Dictionary(uniqueKeysWithValues: m.modules.map { ($0.id, $0.name) })
         let base = OnlinePlatform.apiBase
-        let probeCandidate = m.files.first(where: { $0.path == "Content/hot-rules.json" }) ?? queue.first
 
-        updateTask?.cancel()
-        updateTask = Task { [weak self] in
+        updateGeneration &+= 1
+        let runGen = updateGeneration
+
+        let newTask = Task { [weak self] in
             guard let self else { return }
             let dlSession = self.session
+            Self.cleanupOrphanTempFiles()
 
-            let rankedNodes: [HotCDNNode]
-            if let probe = probeCandidate {
-                rankedNodes = await Self.raceHotCDNs(probeFile: probe, base: base, session: dlSession)
-            } else {
-                rankedNodes = Self.defaultHotCDNs(base: base)
-            }
+            let (fastNodes, backupNodes) = await Self.raceHotCDNs(base: base)
+            let mirrorPool = HotMirrorPool(fastNodes: fastNodes, backupNodes: backupNodes)
 
-            if Task.isCancelled {
-                self.updating = false
-                self.statusMessage = "已暂停热更新（已完成部分已自动保存，随时可续传）"
+            if Task.isCancelled || self.updateGeneration != runGen {
+                if self.updateGeneration == runGen {
+                    self.updating = false
+                    self.statusMessage = "已暂停热更新（已完成部分已自动保存，随时可续传）"
+                }
+                Self.cleanupOrphanTempFiles()
                 return
             }
 
-            let winningNodeName = rankedNodes.first?.name ?? "腾讯云兜底源"
-            self.activeCDNName = winningNodeName
-            self.statusMessage = "已锁定极速节点「\(winningNodeName)」，正在 12 路并发下载…"
+            self.rankedFastMirrors = fastNodes.map(\.name)
+            let routeBanner: String
+            if fastNodes.count >= 2, let lead = fastNodes.first {
+                routeBanner = "多路并发 · \(lead.name) 等 \(fastNodes.count) 节点"
+            } else {
+                routeBanner = fastNodes.first?.name ?? backupNodes.first?.name ?? "腾讯云源站兜底"
+            }
+            self.activeCDNName = routeBanner
+            self.statusMessage = "已锁定「\(routeBanner)」，正在 12 路并发满速下载…"
 
             let startTime = CFAbsoluteTimeGetCurrent()
             var completedCount = 0
@@ -542,18 +812,23 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             await withTaskGroup(of: (HotPackFile, Bool, String?).self) { group in
                 let initial = min(maxWorkers, queue.count)
                 for _ in 0..<initial {
-                    let f = queue[nextIdx]
+                    let slot = nextIdx
+                    let f = queue[slot]
                     nextIdx += 1
-                    group.addTask { await Self.downloadOne(f, nodes: rankedNodes, session: dlSession) }
+                    group.addTask { await Self.downloadOne(f, slot: slot, pool: mirrorPool, session: dlSession) }
                 }
                 var lastPersistCount = 0
                 for await (file, ok, usedNode) in group {
+                    if Task.isCancelled || self.updateGeneration != runGen {
+                        group.cancelAll()
+                        continue
+                    }
                     if ok {
                         self.installedHashes[file.path] = file.sha256
                         completedCount += 1
                         completedBytes += file.size
                         self.currentModuleName = moduleNames[file.module] ?? file.module
-                        if let usedNode, !usedNode.isEmpty {
+                        if fastNodes.count < 2, let usedNode, !usedNode.isEmpty {
                             self.activeCDNName = usedNode
                         }
                     } else {
@@ -577,7 +852,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                     self.speedBytesPerSec = self.speedBytesPerSec > 0 ? (self.speedBytesPerSec * 0.4 + instSpeed * 0.6) : instSpeed
                     self.statusMessage = String(
                         format: "%@ ·「%@」%d/%d · %@ / %@ · %.1f MB/s",
-                        self.activeCDNName.isEmpty ? winningNodeName : self.activeCDNName,
+                        self.activeCDNName.isEmpty ? routeBanner : self.activeCDNName,
                         self.currentModuleName,
                         completedCount,
                         queue.count,
@@ -585,21 +860,28 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                         Self.formatBytes(total),
                         self.speedBytesPerSec / 1_048_576.0
                     )
-                    if nextIdx < queue.count && !Task.isCancelled {
-                        let f = queue[nextIdx]
+                    if nextIdx < queue.count && !Task.isCancelled && self.updateGeneration == runGen {
+                        let slot = nextIdx
+                        let f = queue[slot]
                         nextIdx += 1
-                        group.addTask { await Self.downloadOne(f, nodes: rankedNodes, session: dlSession) }
+                        group.addTask { await Self.downloadOne(f, slot: slot, pool: mirrorPool, session: dlSession) }
                     }
                 }
             }
-            self.saveInstalledIndex()
+            Self.cleanupOrphanTempFiles()
 
-            self.updating = false
+            guard self.updateGeneration == runGen else { return }
+
             if Task.isCancelled {
+                self.saveInstalledIndex()
+                self.updating = false
                 self.statusMessage = "已暂停热更新（已完成部分已自动保存，随时可续传）"
                 _ = await self.checkManifest(autoPrompt: false)
                 return
             }
+
+            self.saveInstalledIndex()
+            self.updating = false
 
             if failed == 0 {
                 self.pendingFiles = []
@@ -621,21 +903,25 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                 GameFeel.shared.notify(.warning)
             }
         }
+        taskBox.replace(newTask)
     }
 
     func cancelHotUpdate() {
-        updateTask?.cancel()
-        updateTask = nil
+        taskBox.cancel()
+        Self.cleanupOrphanTempFiles()
     }
 
     /// 清除本地热更缓存（排错或释放空间用）
     func clearCache() {
-        cancelHotUpdate()
+        updateGeneration &+= 1
+        taskBox.cancel()
+        updating = false
         try? FileManager.default.removeItem(at: Self.rootURL)
         installedHashes = [:]
         installedVersion = 0
         installedTag = ""
         installedTotalBytes = 0
+        rankedFastMirrors = []
         extraScenarios = []
         extraMottos = []
         loreEntries = []

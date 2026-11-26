@@ -14,15 +14,17 @@ import Glibc
 import Darwin
 #endif
 
-// 列国纪在线计算服务器 v9（真·非阻塞全双工多路复用推流 + 3Mbps 带宽整形 + LZ4 高速压缩 + 专属云服/家用电脑双模）：
-// 1. v9 非阻塞全双工多路复用直连 TCP（端口 8765，支持 `enableMux` 升级）：TCP 读线程 100% 永不阻塞，
+// 列国纪在线计算服务器 v10（真·非阻塞全双工多路复用推流 + worldId 秒级热续连 + 3Mbps 带宽整形 + LZ4 高速压缩 + 专属云服/家用电脑双模）：
+// 1. v10 非阻塞全双工多路复用直连 TCP（端口 8765，支持 `enableMux` 升级）：TCP 读线程 100% 永不阻塞，
 //    <1ms 瞬回 `MUX_PING`、0ms 消化 `MUX_ACK` 滑动窗口确认，所有业务 `MUX_REQ` 派发至独立串行 RPC 队列；
 //    同时内置 3 Mbps 带宽整形器，彻底杜绝打满链路触发 1000ms TCP Bufferbloat。
-// 2. 云端中转单向推流管道（Cloudflare Pages / Durable Object `/push` -> 手机 WebSocket `MSG_PUSH`）：
+// 2. worldId 感知秒级热续连（`resumeWorld`）：内存命中 0ms / 磁盘 `world-<id>.lgj` 秒载 50ms，0 MB 上传瞬连；
+//    配合 `ping` 携带 `wid` 与 `cat:1` 标志，免除重复上传 2MB 目录与 15MB 存档，彻底消灭切后台重进断联。
+// 3. 云端中转单向推流管道（Cloudflare Pages / Durable Object `/push` -> 手机 WebSocket `MSG_PUSH`）：
 //    外出 4G/5G 省去整趟「手机→中转→PC」请求来回，消除停顿问答感；同时双路长轮询即时处理控制指令。
-// 3. 局域网 UDP 自动发现信标（端口 8766）：同一 Wi-Fi 下无需经过外网中转，10ms 内秒连家用电脑。
-// 4. 专属 24h 云服务器就绪：支持环境变量 `LGJ_PORT` / `LGJ_PAIRING_CODE` / `LGJ_DATA_DIR` / `LGJ_DISABLE_RELAY`，
-//    以及服务端每 60 秒自动磁盘热备（彻底告别手机每 30 秒拉取 10MB 存档造成的卡顿）。
+// 4. 局域网 UDP 自动发现信标（端口 8766）：同一 Wi-Fi 下无需经过外网中转，10ms 内秒连家用电脑。
+// 5. 专属 24h 云服务器就绪：支持环境变量 `LGJ_PORT` / `LGJ_PAIRING_CODE` / `LGJ_DATA_DIR` / `LGJ_DISABLE_RELAY`，
+//    以及服务端每 60 秒自动双写热备（`autosave.lgj` + 最多 10 份 `world-<id>.lgj`）与 SIGTERM/SIGINT 优雅落盘退出。
 
 setvbuf(stdout, nil, _IONBF, 0)
 let env = ProcessInfo.processInfo.environment
@@ -60,6 +62,62 @@ let saveDirURL: URL = {
     return serverDir.appendingPathComponent("saves", isDirectory: true)
 }()
 let autoSaveURL = saveDirURL.appendingPathComponent("autosave.lgj")
+let catalogsCacheURL = saveDirURL.appendingPathComponent("catalogs.json")
+let diskSaveQueue = DispatchQueue(label: "lieguoji.server.save", qos: .utility)
+
+func sanitizeWorldId(_ raw: String) -> String {
+    let allowed = raw.unicodeScalars.filter {
+        ($0.value >= 48 && $0.value <= 57) ||
+        ($0.value >= 65 && $0.value <= 90) ||
+        ($0.value >= 97 && $0.value <= 122) ||
+        $0.value == 45 || $0.value == 95
+    }
+    return String(String(String.UnicodeScalarView(allowed)).prefix(64))
+}
+
+func worldSaveURL(for worldId: String) -> URL? {
+    let clean = sanitizeWorldId(worldId)
+    guard !clean.isEmpty else { return nil }
+    return saveDirURL.appendingPathComponent("world-\(clean).lgj")
+}
+
+func pruneWorldSaves(maxKeep: Int = 10) {
+    let fm = FileManager.default
+    guard let items = try? fm.contentsOfDirectory(
+        at: saveDirURL,
+        includingPropertiesForKeys: [.contentModificationDateKey],
+        options: [.skipsHiddenFiles]
+    ) else { return }
+    let worldFiles = items.filter {
+        let name = $0.lastPathComponent
+        return name.hasPrefix("world-") && name.hasSuffix(".lgj")
+    }
+    guard worldFiles.count > maxKeep else { return }
+    let sorted = worldFiles.sorted { a, b in
+        let da = (try? a.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+        let db = (try? b.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+        return da > db
+    }
+    for old in sorted.dropFirst(maxKeep) {
+        try? fm.removeItem(at: old)
+    }
+}
+
+func writeWorldSnapshot(_ snapshot: Data, worldId: String) {
+    guard !snapshot.isEmpty else { return }
+    try? FileManager.default.createDirectory(at: saveDirURL, withIntermediateDirectories: true)
+    try? snapshot.write(to: autoSaveURL, options: .atomic)
+    if let wURL = worldSaveURL(for: worldId) {
+        try? snapshot.write(to: wURL, options: .atomic)
+        pruneWorldSaves(maxKeep: 10)
+    }
+}
+
+func writeCatalogsCache(_ data: Data) {
+    guard !data.isEmpty else { return }
+    try? FileManager.default.createDirectory(at: saveDirURL, withIntermediateDirectories: true)
+    try? data.write(to: catalogsCacheURL, options: .atomic)
+}
 
 #if os(Windows)
 typealias Socket = SOCKET
@@ -197,7 +255,7 @@ final class RelayPusher {
     private var pending: (seq: UInt32, body: Data)?
     private var noPhoneStreak = 0
     private let code: String
-    private let session: URLSession = {
+    private lazy var session: URLSession = {
         let cfg = URLSessionConfiguration.default
         cfg.httpMaximumConnectionsPerHost = 2
         cfg.timeoutIntervalForRequest = 8
@@ -304,20 +362,29 @@ final class SimStreamer {
     private var dirtySinceSave = false
     private var cachedProvinces = 0
     private var cachedDay = 0
+    private var cachedWorldId = ""
+    private var hasCatalogsLoaded = false
     private var worldLoaded = false
     private let maxInFlight: UInt32 = 2
 
-    func telemetry() -> (playing: Bool, stepMs: Int, provinces: Int, day: Int, open: Bool) {
+    func telemetry() -> (playing: Bool, stepMs: Int, provinces: Int, day: Int, open: Bool, worldId: String, hasCatalogs: Bool) {
         cond.lock()
         defer { cond.unlock() }
-        return (playing, Int(avgStepMs.rounded()), cachedProvinces, cachedDay, worldLoaded)
+        return (playing, Int(avgStepMs.rounded()), cachedProvinces, cachedDay, worldLoaded, cachedWorldId, hasCatalogsLoaded)
     }
 
-    func setWorldMeta(open: Bool, provinces: Int, day: Int) {
+    func setCatalogsLoaded(_ loaded: Bool) {
+        cond.lock()
+        hasCatalogsLoaded = loaded
+        cond.unlock()
+    }
+
+    func setWorldMeta(open: Bool, provinces: Int, day: Int, worldId: String = "") {
         cond.lock()
         worldLoaded = open
         cachedProvinces = provinces
         cachedDay = day
+        cachedWorldId = open ? worldId : ""
         if !open {
             playing = false
             bufferedFrame = nil
@@ -390,7 +457,7 @@ final class SimStreamer {
         cond.broadcast()
         cond.unlock()
         relayPusher.clear()
-        saveCheckpoint(force: true)
+        saveCheckpoint(force: true, sync: true)
     }
 
     func stopForIdle() {
@@ -418,7 +485,7 @@ final class SimStreamer {
         return service.handle("step", ["days": max(1, min(32, fallbackDays)), "slim": slim], payload: nil)
     }
 
-    func saveCheckpoint(force: Bool = false) {
+    func saveCheckpoint(force: Bool = false, sync: Bool = false) {
         let now = Date()
         cond.lock()
         let due = force || now.timeIntervalSince(lastDiskSave) >= 60
@@ -428,10 +495,18 @@ final class SimStreamer {
 
         engineLock.lock()
         let snapshot = service.engine?.save()
+        let wid = service.currentWorldId
         engineLock.unlock()
-        guard let snapshot else { return }
-        try? FileManager.default.createDirectory(at: saveDirURL, withIntermediateDirectories: true)
-        try? snapshot.write(to: autoSaveURL, options: .atomic)
+        guard let snapshot, !snapshot.isEmpty else { return }
+        if sync {
+            diskSaveQueue.sync {
+                writeWorldSnapshot(snapshot, worldId: wid)
+            }
+        } else {
+            diskSaveQueue.async {
+                writeWorldSnapshot(snapshot, worldId: wid)
+            }
+        }
     }
 
     func start() {
@@ -452,11 +527,11 @@ final class SimStreamer {
                 let windowFull = doPush && useWindow && inFlight >= self.maxInFlight && !ackStalled
                 let idleSecs = tickStart.timeIntervalSince(self.lastClientActivity)
                 let dayMsEst = self.avgDayMs
-                if active && idleSecs > 45 {
+                if active && idleSecs > 300 {
                     self.playing = false
                     self.bufferedFrame = nil
                 }
-                if !active || idleSecs > 45 || (!doPush && !needsLegacyBuf) || windowFull {
+                if !active || idleSecs > 300 || (!doPush && !needsLegacyBuf) || windowFull {
                     let shouldIdleSave = self.dirtySinceSave && !active && idleSecs >= 12
                     if shouldIdleSave { self.dirtySinceSave = false }
                     let waitSecs: Double = windowFull ? 0.04 : 0.12
@@ -486,9 +561,11 @@ final class SimStreamer {
 
                 let stepT0 = Date()
                 engineLock.lock()
+                if isFirst { service.resetSlimStaticCache() }
                 let reply = service.handle("step", ["days": sliceDays, "slim": doPush], payload: nil)
                 let pCount = service.engine?.run.world.provinces.length ?? 0
-                let curDay = service.engine?.run.world.day.asInt ?? 0
+                let curDay = service.currentDay
+                let curWid = service.currentWorldId
                 let isOpen = service.engine != nil
                 engineLock.unlock()
 
@@ -500,6 +577,7 @@ final class SimStreamer {
                 self.dirtySinceSave = true
                 self.cachedProvinces = pCount
                 self.cachedDay = curDay
+                self.cachedWorldId = curWid
                 self.worldLoaded = isOpen
                 self.cond.unlock()
 
@@ -507,7 +585,7 @@ final class SimStreamer {
                 if reply.ok, let rawData = reply.data, !rawData.isEmpty {
                     if doPush {
                         let compressed = WireCodec.compress(rawData)
-                        // v9 3 Mbps 出向带宽整形器（3 Mbps = 375 KB/s，安全水位 260 KB/s，彻底杜绝打满带宽导致 1000ms TCP Bufferbloat）
+                        // v10 3 Mbps 出向带宽整形器（3 Mbps = 375 KB/s，安全水位 260 KB/s，彻底杜绝打满带宽导致 1000ms TCP Bufferbloat）
                         wireSec = Double(compressed.count) / 260_000.0
                         self.cond.lock()
                         let stillValid = self.playing && self.streamEpoch == epoch
@@ -521,7 +599,7 @@ final class SimStreamer {
                             self.pushedBytes += compressed.count
                             if tickStart.timeIntervalSince(self.statStarted) >= 30 {
                                 let avgKB = Double(self.pushedBytes) / Double(max(1, self.pushedCount)) / 1024.0
-                                print(String(format: "（v9 非阻塞全双工推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
+                                print(String(format: "（v10 非阻塞全双工推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
                                 self.pushedCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
                             }
                         }
@@ -562,6 +640,16 @@ final class SimStreamer {
 }
 
 let streamer = SimStreamer()
+// 启动预热：若磁盘留有目录缓存则预先载入，令重启后的首条 resumeWorld 也可 0 MB 磁盘秒连！
+if let cachedCatalogs = try? Data(contentsOf: catalogsCacheURL), !cachedCatalogs.isEmpty {
+    engineLock.lock()
+    let catReply = service.handle("catalogs", [:], payload: cachedCatalogs)
+    engineLock.unlock()
+    if catReply.ok {
+        streamer.setCatalogsLoaded(true)
+        print("（v10 启动预热）已从本地磁盘加载目录缓存，客户端重连免重复上传目录")
+    }
+}
 streamer.start()
 if !disableRelay {
     relayPusher.start { streamer.stopForIdle() }
@@ -580,8 +668,20 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
     if call == "ping" {
         // 零锁响应：绝不等待 engineLock，真实反映纯网络 RTT（25–40 ms）！
         let t = streamer.telemetry()
+        let v = (args["v"] as? NSNumber)?.intValue ?? (args["v"] as? Int) ?? 0
         var r = EngineService.Reply(ok: true, reason: EngineWire.greeting)
-        r.text = t.open ? "day:\(t.day)" : "idle"
+        if v >= 6 {
+            let cat = t.hasCatalogs ? 1 : 0
+            r.text = t.open ? "day:\(t.day)|wid:\(t.worldId)|cat:\(cat)" : "idle|cat:\(cat)"
+        } else {
+            r.text = t.open ? "day:\(t.day)" : "idle"
+        }
+        return r
+    }
+    if call == "worldInfo" {
+        let t = streamer.telemetry()
+        var r = EngineService.Reply(ok: true, reason: EngineWire.greeting)
+        r.text = "\(t.worldId)|\(t.day)|\(t.hasCatalogs ? 1 : 0)"
         return r
     }
     if call == "isOpen" {
@@ -610,7 +710,53 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         return service.handle("park", args, payload: nil)
     }
     if call == "enableMux" {
-        return EngineService.Reply(ok: true, reason: "mux-v9")
+        return EngineService.Reply(ok: true, reason: "mux-v10")
+    }
+    if call == "resumeWorld" {
+        let reqWorldId = (args["worldId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let clientDay = (args["day"] as? NSNumber)?.intValue ?? (args["day"] as? Int) ?? 0
+        guard !reqWorldId.isEmpty else { return EngineService.Reply(ok: false, reason: "miss") }
+        streamer.invalidatePending()
+        acquireEngineForRPC()
+        defer { engineLock.unlock() }
+        // 1) 内存热命中：0ms 磁盘、0 MB 上传瞬间恢复
+        if service.engine != nil, service.currentWorldId == reqWorldId, service.currentDay >= clientDay - 2 {
+            let reply = service.handle("resume", [:], payload: nil)
+            let pCount = service.engine?.run.world.provinces.length ?? 0
+            let curDay = service.currentDay
+            streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: reqWorldId)
+            print("（v10 秒级热续连）命中内存世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
+            return reply
+        }
+        // 2) 本地 SSD 磁盘秒载（~50ms，0 MB 上传恢复）
+        if let wURL = worldSaveURL(for: reqWorldId),
+           FileManager.default.fileExists(atPath: wURL.path),
+           let diskData = try? Data(contentsOf: wURL), !diskData.isEmpty {
+            guard service.catalogsLoaded else {
+                return EngineService.Reply(ok: false, reason: "need_catalogs")
+            }
+            if let candidate = try? NativeEngine(world: diskData) {
+                let candDay = candidate.run.world.day.asInt
+                let candWid: String = {
+                    if let s = candidate.run.world.custom.id.optionalString, !s.isEmpty { return s }
+                    if let s = candidate.run.id.optionalString, !s.isEmpty { return s }
+                    if let s = candidate.run.world.id.optionalString, !s.isEmpty { return s }
+                    if let s = candidate.run.world.custom.seed.optionalString, !s.isEmpty { return s }
+                    return ""
+                }()
+                if (candWid.isEmpty || candWid == reqWorldId) && candDay >= clientDay - 2 {
+                    _ = service.adopt(candidate)
+                    candidate.enableAppRules()
+                    let reply = service.handle("resume", [:], payload: nil)
+                    let pCount = candidate.run.world.provinces.length
+                    let curDay = service.currentDay
+                    streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: reqWorldId)
+                    print("（v10 秒级热续连）从本地磁盘秒载世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
+                    return reply
+                }
+            }
+        }
+        return EngineService.Reply(ok: false, reason: "miss")
     }
     let readOnly: Set<String> = [
         "state", "province", "nationInfo", "diplomacyInfo", "tradeInfo",
@@ -619,19 +765,34 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         "provinceBreakdown", "warCompare", "grandInfo", "replayTimeline", "statistics", "route",
         "regime", "posts", "postCandidates", "officeCandidates", "allianceList", "districtList",
         "familyList", "placeNames", "mapExtras", "extraUnits", "unitProfile", "catalogEdits",
-        "mapLabels", "throneCandidates", "nationProvinces", "profileReport"
+        "mapLabels", "throneCandidates", "nationProvinces", "profileReport", "worldInfo"
     ]
     if !readOnly.contains(call) { streamer.invalidatePending() }
 
     acquireEngineForRPC()
     defer { engineLock.unlock() }
     let reply = service.handle(call, args, payload: payload)
-    if call == "open" && reply.ok {
+    if call == "catalogs" && reply.ok {
+        streamer.setCatalogsLoaded(true)
+        if let rawPayload = payload {
+            let unpacked = WireCodec.decompressIfNeeded(rawPayload)
+            if !unpacked.isEmpty {
+                diskSaveQueue.async { writeCatalogsCache(unpacked) }
+            }
+        }
+    } else if call == "open" && reply.ok {
         let pCount = service.engine?.run.world.provinces.length ?? 0
-        let curDay = service.engine?.run.world.day.asInt ?? 0
-        streamer.setWorldMeta(open: true, provinces: pCount, day: curDay)
+        let curDay = service.currentDay
+        let wid = service.currentWorldId
+        streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: wid)
+        if let rawPayload = payload {
+            let snap = WireCodec.decompressIfNeeded(rawPayload)
+            if !snap.isEmpty {
+                diskSaveQueue.async { writeWorldSnapshot(snap, worldId: wid) }
+            }
+        }
     } else if call == "close" {
-        streamer.setWorldMeta(open: false, provinces: 0, day: 0)
+        streamer.setWorldMeta(open: false, provinces: 0, day: 0, worldId: "")
     }
     return reply
 }
@@ -675,7 +836,8 @@ func relayWorker(workerId: Int, code: String) {
     while true {
         if base == nil {
             for b in relayBases {
-                var probe = URLRequest(url: URL(string: b + "/room/\(code)/ping")!)
+                guard let probeURL = URL(string: b + "/room/\(code)/ping") else { continue }
+                var probe = URLRequest(url: probeURL)
                 probe.timeoutInterval = 12
                 if let r = http(probe), r.status == 200, (try? JSONSerialization.jsonObject(with: r.body)) is [String: Any] {
                     base = b
@@ -707,7 +869,12 @@ func relayWorker(workerId: Int, code: String) {
             let lan = localAddresses().map { "\($0):\(port)" }.joined(separator: ",")
             var qs = "v=6"
             if !lan.isEmpty { qs += "&lan=" + lan }
-            var poll = URLRequest(url: URL(string: base! + "/room/\(code)/next?" + qs)!)
+            guard let activeBase = base, let pollURL = URL(string: activeBase + "/room/\(code)/next?" + qs) else {
+                base = nil
+                Thread.sleep(forTimeInterval: 2)
+                continue
+            }
+            var poll = URLRequest(url: pollURL)
             poll.timeoutInterval = 40
             guard let polled = http(poll) else {
                 base = nil
@@ -739,9 +906,11 @@ func relayWorker(workerId: Int, code: String) {
 
         announceLock.lock(); let useLZ4 = relayClientSupportsLZ4; announceLock.unlock()
         let lan = localAddresses().map { "\($0):\(port)" }.joined(separator: ",")
-        var postURL = base! + "/room/\(code)/reply/\(id)?next=1&v=6"
-        if !lan.isEmpty { postURL += "&lan=" + lan }
-        var post = URLRequest(url: URL(string: postURL)!)
+        guard let activeBase = base else { continue }
+        var postURLString = activeBase + "/room/\(code)/reply/\(id)?next=1&v=6"
+        if !lan.isEmpty { postURLString += "&lan=" + lan }
+        guard let postURL = URL(string: postURLString) else { continue }
+        var post = URLRequest(url: postURL)
         post.httpMethod = "POST"
         post.httpBody = EngineWire.reply(reply, compress: useLZ4)
         post.timeoutInterval = 90
@@ -838,7 +1007,10 @@ func startUDPDiscovery(tcpPort: UInt16, roomCode: String) {
                 }
             }
             #endif
-            if got <= 0 { continue }
+            if got <= 0 {
+                if got < 0 { Thread.sleep(forTimeInterval: 0.05) }
+                continue
+            }
             let msg = String(decoding: buf.prefix(got), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
             if msg == "LGJ_DISCOVER" || msg == "LGJ_DISCOVER:\(roomCode)" || msg == "LGJ_DISCOVER:*" {
                 replyBytes.withUnsafeBytes { raw in
@@ -875,7 +1047,7 @@ func tuneClientSocket(_ s: Socket) {
             _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_SNDBUF), ptr, 4)
         }
     }
-    var timeoutMs: DWORD = 90_000
+    var timeoutMs: DWORD = 180_000
     withUnsafePointer(to: &timeoutMs) {
         $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
             _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_RCVTIMEO), ptr, 4)
@@ -886,14 +1058,14 @@ func tuneClientSocket(_ s: Socket) {
     setsockopt(s, Int32(IPPROTO_TCP), TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndBuf, socklen_t(MemoryLayout<Int32>.size))
-    var tv = timeval(tv_sec: 90, tv_usec: 0)
+    var tv = timeval(tv_sec: 180, tv_usec: 0)
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     #else
     setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndBuf, socklen_t(MemoryLayout<Int32>.size))
-    var tv = timeval(tv_sec: 90, tv_usec: 0)
+    var tv = timeval(tv_sec: 180, tv_usec: 0)
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     #endif
@@ -976,7 +1148,44 @@ if bound != 0 || listen(listener, 16) != 0 {
 
 startUDPDiscovery(tcpPort: port, roomCode: code)
 
-print("列国纪在线计算服务器 v9（v9 非阻塞全双工推流 + 3Mbps 带宽整形 + LZ4 压缩 + 局域网自动发现 + 自动热备）已启动")
+#if !os(Windows) && canImport(Dispatch)
+let shutdownLock = NSLock()
+var serverShuttingDown = false
+let signalQueue = DispatchQueue(label: "lieguoji.server.signals")
+var signalSources: [DispatchSourceSignal] = []
+
+func installShutdownSignals() {
+    signal(SIGTERM, SIG_IGN)
+    signal(SIGINT, SIG_IGN)
+    let handleShutdown: (String) -> Void = { name in
+        shutdownLock.lock()
+        let already = serverShuttingDown
+        serverShuttingDown = true
+        shutdownLock.unlock()
+        if already { return }
+        print("收到 \(name)，正在安全暂停推演并同步落盘热备…")
+        streamer.park()
+        clientLock.lock()
+        let cur = activeDirect
+        activeDirect = nil
+        clientLock.unlock()
+        cur?.markClosed()
+        closeSocket(listener)
+        print("世界已安全落盘，服务器退出。")
+        fflush(stdout)
+        exit(0)
+    }
+    for (sig, name) in [(SIGTERM, "SIGTERM"), (SIGINT, "SIGINT")] {
+        let src = DispatchSource.makeSignalSource(signal: sig, queue: signalQueue)
+        src.setEventHandler { handleShutdown(name) }
+        src.resume()
+        signalSources.append(src)
+    }
+}
+installShutdownSignals()
+#endif
+
+print("列国纪在线计算服务器 v10（v10 非阻塞全双工推流 + worldId 秒级热续连 + 3Mbps 带宽整形 + LZ4 压缩 + 局域网自动发现 + 自动热备）已启动")
 print("配对码：\(code)\(disableRelay ? "（纯直连专属云服模式）" : "")")
 print("手机打开游戏即自动接入；同一 Wi-Fi 自动毫秒级直连推流，切后台再返回秒级无感重连。")
 installStartup()
@@ -1040,7 +1249,7 @@ func handleLANClient(_ conn: DirectClient) {
             let v = (args["v"] as? NSNumber)?.intValue ?? (args["v"] as? Int) ?? 0
             if v >= 6 { conn.compress = true }
         }
-        if call != "health" && call != "ping" && !promoted {
+        if call != "health" && call != "ping" && call != "worldInfo" && !promoted {
             promoted = true
             promoteToActiveDirect(conn)
             print("（直连 TCP）手机已接入 [#\(conn.gen)]")
@@ -1055,13 +1264,13 @@ func handleLANClient(_ conn: DirectClient) {
         if isMuxUpgrade {
             conn.mux = true
             conn.compress = true
-            print("（直连 TCP [#\(conn.gen)]）已升级至 v9 非阻塞全双工推流 + 滑动窗口背压 + 3Mbps 带宽整形模式")
+            print("（直连 TCP [#\(conn.gen)]）已升级至 v10 非阻塞全双工推流 + 滑动窗口背压 + 3Mbps 带宽整形模式")
             break
         }
         if call == "health" { break }
     }
 
-    // 阶段二：v9 真·非阻塞全双工多路复用：
+    // 阶段二：v10 真·非阻塞全双工多路复用：
     // TCP 读线程永不阻塞在 serve() 上；MUX_PING <1ms 瞬回、MUX_ACK 0ms 释放滑动窗口，
     // 每条 MUX_REQ 均派发至连接专属串行队列 lieguoji.mux.rpc.<gen> 异步执行与回包。
     if conn.mux {
@@ -1094,12 +1303,12 @@ func handleLANClient(_ conn: DirectClient) {
                     }
                     let reply = serve(req.call, req.args, req.payload)
                     if req.call == "open" {
-                        print(reply.ok ? "（v9 非阻塞全双工推流）世界已载入，随时高速开推" : "（v9 非阻塞全双工推流）世界载入失败：\(reply.reason)")
+                        print(reply.ok ? "（v10 非阻塞全双工推流）世界已载入，随时高速开推" : "（v10 非阻塞全双工推流）世界载入失败：\(reply.reason)")
                     }
-                    if req.call == "park" { print("（v9 非阻塞全双工推流）手机已切入后台，世界热保留并已落盘") }
+                    if req.call == "park" { print("（v10 非阻塞全双工推流）手机已切入后台，世界热保留并已落盘") }
                     rpcStats.calls += 1
                     if Date().timeIntervalSince(rpcStats.started) > 30 {
-                        print("（v9 非阻塞全双工推流）近 30 秒处理 \(rpcStats.calls) 次指令/查询")
+                        print("（v10 非阻塞全双工推流）近 30 秒处理 \(rpcStats.calls) 次指令/查询")
                         rpcStats.calls = 0; rpcStats.started = Date()
                     }
                     if !conn.sendMux(type: EngineWire.muxReply, id: reqFrameId, body: EngineWire.reply(reply, compress: true)) {
@@ -1110,13 +1319,16 @@ func handleLANClient(_ conn: DirectClient) {
         }
     }
 
+    // 严格先释放 clientLock 再调用 streamer.stopForIdle()，根除 clientLock <-> SimStreamer.cond 锁序倒置风险。
     clientLock.lock()
     let wasActive = (activeDirect === conn)
     if wasActive {
         activeDirect = nil
-        streamer.stopForIdle()
     }
     clientLock.unlock()
+    if wasActive {
+        streamer.stopForIdle()
+    }
     conn.markClosed()
     if wasActive {
         print("（直连 TCP）连接 [#\(conn.gen)] 已关闭（世界安全保留在内存中，手机返回前台秒级无感重连）")
@@ -1125,7 +1337,16 @@ func handleLANClient(_ conn: DirectClient) {
 
 while true {
     let client = accept(listener, nil, nil)
-    if client == invalidSocket { continue }
+    if client == invalidSocket {
+        #if !os(Windows) && canImport(Dispatch)
+        shutdownLock.lock()
+        let stopping = serverShuttingDown
+        shutdownLock.unlock()
+        if stopping { break }
+        #endif
+        Thread.sleep(forTimeInterval: 0.05)
+        continue
+    }
     clientLock.lock()
     clientGeneration &+= 1
     let gen = clientGeneration

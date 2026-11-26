@@ -41,12 +41,17 @@ enum CloudSaveClient {
         return URLSession(configuration: cfg)
     }()
 
+    private static func encodedSaveID(_ id: String) -> String {
+        id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+    }
+
     private static func platformURL(_ path: String) -> URL? {
         URL(string: OnlinePlatform.apiBase + "/api/v1/" + path)
     }
 
     private static func roomURL(_ base: String, path: String) -> URL? {
-        URL(string: base + "/room/\(NativeHost.activeRoomCode)/\(path)")
+        let safeRoom = NativeHost.activeRoomCode.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? NativeHost.activeRoomCode
+        return URL(string: base + "/room/\(safeRoom)/\(path)")
     }
 
     static func list() async throws -> [CloudSaveCard] {
@@ -95,7 +100,8 @@ enum CloudSaveClient {
             req.setValue(enc(deviceName), forHTTPHeaderField: "x-save-device")
         }
 
-        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(id)") {
+        let safeId = encodedSaveID(id)
+        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(safeId)") {
             var req = URLRequest(url: url)
             applySaveHeaders(&req)
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -118,7 +124,7 @@ enum CloudSaveClient {
 
         var lastError: Error = EngineError.message("上传云端存档失败，请检查网络")
         for base in RelayLink.bases {
-            guard let url = roomURL(base, path: "saves/\(id)") else { continue }
+            guard let url = roomURL(base, path: "saves/\(safeId)") else { continue }
             var req = URLRequest(url: url)
             applySaveHeaders(&req)
             do {
@@ -138,7 +144,8 @@ enum CloudSaveClient {
     }
 
     static func download(id: String) async throws -> Data {
-        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(id)") {
+        let safeId = encodedSaveID(id)
+        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(safeId)") {
             var req = URLRequest(url: url); req.timeoutInterval = 90
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             if let (data, resp) = try? await session.data(for: req),
@@ -151,7 +158,7 @@ enum CloudSaveClient {
         }
         var lastError: Error = EngineError.message("下载云端存档失败")
         for base in RelayLink.bases {
-            guard let url = roomURL(base, path: "saves/\(id)") else { continue }
+            guard let url = roomURL(base, path: "saves/\(safeId)") else { continue }
             var req = URLRequest(url: url); req.timeoutInterval = 90
             do {
                 let (data, resp) = try await session.data(for: req)
@@ -168,7 +175,8 @@ enum CloudSaveClient {
     }
 
     static func delete(id: String) async throws {
-        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(id)") {
+        let safeId = encodedSaveID(id)
+        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(safeId)") {
             var req = URLRequest(url: url); req.httpMethod = "DELETE"; req.timeoutInterval = 15
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             if let (_, resp) = try? await session.data(for: req), (resp as? HTTPURLResponse)?.statusCode == 200 {
@@ -178,7 +186,7 @@ enum CloudSaveClient {
         }
         var lastError: Error = EngineError.message("删除云端存档失败")
         for base in RelayLink.bases {
-            guard let url = roomURL(base, path: "saves/\(id)") else { continue }
+            guard let url = roomURL(base, path: "saves/\(safeId)") else { continue }
             var req = URLRequest(url: url); req.httpMethod = "DELETE"; req.timeoutInterval = 15
             do {
                 let (_, resp) = try await session.data(for: req)
@@ -235,14 +243,20 @@ extension GameModel {
         }
     }
 
-    /// 下载云端存档并立即展卷载入。
+    /// 下载云端存档并立即展卷载入（先下载校验成功后再归档覆盖本地世界，避免断网污染本地卷宗）。
     func openCloudSave(_ card: CloudSaveCard) async -> String? {
+        let data: Data
+        do {
+            data = try await CloudSaveClient.download(id: card.id)
+        } catch {
+            return error.localizedDescription
+        }
+        guard !data.isEmpty, data.first == UInt8(ascii: "{") else { return "云端存档格式损坏" }
+
         pause()
         if state != nil { await saveNow() }
         await archiveCurrent()
         do {
-            let data = try await CloudSaveClient.download(id: card.id)
-            guard data.first == UInt8(ascii: "{") else { return "云端存档格式损坏" }
             try data.write(to: Self.saveURL, options: .atomic)
             let localCard = ArchivedWorld(id: card.id, title: card.title, date: card.date, nations: card.nations, day: card.day, saved: card.savedDate)
             if let raw = try? JSONEncoder().encode(localCard) { try? raw.write(to: Self.currentCardURL, options: .atomic) }

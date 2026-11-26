@@ -127,6 +127,7 @@ struct GameView: View {
     @State private var weatherDrawerOpen = false
     fileprivate static let hudSpring = Animation.spring(response: 0.34, dampingFraction: 0.88)
     @State private var shot: GameShotFile?
+    @State private var shotTask: Task<Void, Never>?
 
     init(model: GameModel) {
         self.model = model
@@ -170,7 +171,7 @@ struct GameView: View {
                 controller.placingArmy = false
                 controller.paintNation = n
                 panel = nil
-                let name = model.map?.meta.nations.indices.contains(n) == true ? model.map!.meta.nations[n].name : ""
+                let name = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n].name : nil } ?? ""
                 say("绘制疆域：点选或用一指拖过州郡，划入\(name)；两指移动地图")
             },
             placeArmy: { n in
@@ -273,6 +274,16 @@ struct GameView: View {
             exitCleanMap: exitCleanMap,
             syncSheetFocusInsets: syncSheetFocusInsets
         ))
+        .task(id: toastSerial) {
+            guard toastSerial > 0, toast != nil else { return }
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
+            guard !Task.isCancelled else { return }
+            toast = nil
+        }
+        .onDisappear {
+            shotTask?.cancel()
+            shotTask = nil
+        }
         .task(id: "\(hudAutoHide)-\(idleSerial)-\(panel != nil)-\(viewsOpen)-\(cleanMap)-\(wallpaper)") {
             guard hudAutoHide, !ShotTour.on, panel == nil, !viewsOpen, !cleanMap, !wallpaper else {
                 if idleHidden { withAnimation(Self.hudSpring) { idleHidden = false } }
@@ -395,10 +406,8 @@ struct GameView: View {
     }
 
     private func say(_ text: String) {
-        toastSerial += 1
-        let serial = toastSerial
+        toastSerial &+= 1
         toast = text
-        Task { try? await Task.sleep(nanoseconds: 2_400_000_000); if toastSerial == serial { toast = nil } }
     }
 
     /// 统一进入山河回放：竖屏有原生 sheet 时挂起待 onDismiss 彻底完成后再开回放；横屏或无 sheet 时直接进入。
@@ -417,8 +426,13 @@ struct GameView: View {
     private func mapShot() {
         closePage()
         withAnimation(Motion.fade) { wallpaper = true }
-        Task { @MainActor in
+        shotTask?.cancel()
+        shotTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 600_000_000)
+            guard !Task.isCancelled else {
+                withAnimation(Motion.fade) { wallpaper = false }
+                return
+            }
             let window = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
             var url: URL?
             if let window {
@@ -714,6 +728,9 @@ private struct GameTopChrome: View {
         controller.marchingArmy != nil || controller.marchingFleet != nil ||
         controller.paintNation != nil || controller.pickPrompt != nil || !controller.groupArmies.isEmpty
     }
+    private var showOnlineSignalPill: Bool {
+        hudVisible && !viewsOpen && !model.remoteReconnecting && (model.remoteAddress != nil || model.remoteOfflineManual)
+    }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -736,16 +753,36 @@ private struct GameTopChrome: View {
             .allowsHitTesting(hudVisible)
             .animation(GameView.hudSpring, value: hudVisible)
 
-            if hudVisible && hasWeather {
-                GameWeatherOverflowBar(
+            // 真·网游非阻塞浮动自动重连横幅：紧贴顶栏下方轻盈呈现，绝不以系统弹窗锁死地图。
+            if model.remoteReconnecting {
+                GameReconnectBanner(
                     model: model,
-                    controller: controller,
                     leadInset: leadSafe,
                     trailInset: trailSafe,
-                    weatherDrawerOpen: $weatherDrawerOpen,
                     say: say
                 )
                 .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            if (hudVisible && hasWeather) || showOnlineSignalPill {
+                HStack(alignment: .top, spacing: 8) {
+                    if hudVisible && hasWeather {
+                        GameWeatherOverflowBar(
+                            model: model,
+                            controller: controller,
+                            weatherDrawerOpen: $weatherDrawerOpen,
+                            say: say
+                        )
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    Spacer(minLength: 4)
+                    if showOnlineSignalPill {
+                        GameOnlineSignalPill(model: model, say: say)
+                            .transition(.scale(scale: 0.92, anchor: .topTrailing).combined(with: .opacity))
+                    }
+                }
+                .padding(.leading, leadSafe)
+                .padding(.trailing, trailSafe)
             }
 
             if hasBanner {
@@ -772,6 +809,9 @@ private struct GameTopChrome: View {
             )
         }
         .animation(Motion.panel, value: panel?.id)
+        .animation(GameView.hudSpring, value: model.remoteReconnecting)
+        .animation(GameView.hudSpring, value: model.remoteOfflineManual)
+        .animation(GameView.hudSpring, value: model.remoteAddress != nil)
         .opacity(hiddenByMode ? 0 : 1)
         .allowsHitTesting(!hiddenByMode)
     }
@@ -910,29 +950,238 @@ private struct GameTopDateCapsule: View {
                 .buttonStyle(PressStyle())
                 .transition(.scale(scale: 0.86).combined(with: .opacity))
             }
-
-            if model.remoteAddress != nil {
-                Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.75, height: 14)
-                HStack(spacing: 4) {
-                    Circle().fill(Theme.jade).frame(width: 5.5, height: 5.5)
-                    Text(model.remoteRTTMs.map { "云 \($0)ms" } ?? "云推")
-                        .font(Theme.sans(11))
-                        .foregroundStyle(Theme.jade)
-                        .monospacedDigit()
-                        .fixedSize()
-                }
-            } else if model.remoteReconnecting {
-                Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.75, height: 14)
-                Text("续连")
-                    .font(Theme.sans(11))
-                    .foregroundStyle(Theme.ink2)
-                    .fixedSize()
-            }
         }
         .padding(.horizontal, tightLandscape ? 8 : 10)
         .frame(height: height)
         .glass(Capsule())
         .animation(Motion.panel, value: (model.state?.wars.count ?? 0) > 0)
+    }
+}
+
+/// 宋版宣纸三格网游信号强度微标（纯矢量无离屏开销）。
+private struct OnlineSignalBars: View {
+    let bars: Int
+    let activeColor: Color
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 1.8) {
+            ForEach(0..<3, id: \.self) { idx in
+                let lit = idx < bars
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(lit ? activeColor : Theme.ink.opacity(0.18))
+                    .frame(width: 2.3, height: CGFloat(4.5 + Double(idx) * 2.8))
+            }
+        }
+        .frame(height: 11, alignment: .bottom)
+        .accessibilityHidden(true)
+    }
+}
+
+/// 战局内实时云服信号胶囊（连接态可点测速提示，手动离线态一键续连云服）。
+private struct GameOnlineSignalPill: View {
+    @ObservedObject var model: GameModel
+    let say: (String) -> Void
+    @State private var pinging = false
+    @State private var pingTask: Task<Void, Never>?
+
+    private var signalStrength: (bars: Int, color: Color) {
+        guard model.remoteAddress != nil else { return (0, Theme.ink2) }
+        guard let rtt = model.remoteRTTMs else { return (3, Theme.jade) }
+        if rtt < 85 { return (3, Theme.jade) }
+        if rtt < 180 { return (2, Theme.jade) }
+        return (1, Theme.gold)
+    }
+
+    var body: some View {
+        if model.remoteAddress != nil {
+            let sig = signalStrength
+            Button {
+                guard !pinging else { return }
+                GameFeel.shared.tap()
+                pinging = true
+                pingTask?.cancel()
+                pingTask = Task { @MainActor in
+                    let ms = await model.refreshRemoteRTT()
+                    guard !Task.isCancelled else { return }
+                    pinging = false
+                    let transport = model.remoteTransport.isEmpty ? "九州云服" : model.remoteTransport
+                    let detail = model.remoteConnectionDetail.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let ms {
+                        let extra = detail.isEmpty ? "" : " · \(detail)"
+                        say("云服链路畅通（\(transport) · \(ms)ms\(extra)）")
+                    } else if !detail.isEmpty {
+                        say("云服链路状态：\(detail)")
+                    } else {
+                        say("云服已连接（\(transport)）")
+                    }
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(sig.color)
+                        .frame(width: 5.5, height: 5.5)
+                    OnlineSignalBars(bars: sig.bars, activeColor: sig.color)
+                    Text(pinging ? "测速…" : (model.remoteRTTMs.map { "云服 \($0)ms" } ?? "云服在线"))
+                        .font(Theme.sans(11.5))
+                        .foregroundStyle(Theme.ink)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                .padding(.horizontal, 10)
+                .frame(height: 26)
+                .background(Theme.paperLight.opacity(0.95), in: Capsule())
+                .overlay(Capsule().strokeBorder(sig.color.opacity(0.36), lineWidth: 0.75))
+                .overlay(Capsule().inset(by: 2).strokeBorder(Theme.hairline, lineWidth: 0.45))
+            }
+            .buttonStyle(PressStyle())
+            .onDisappear {
+                pingTask?.cancel()
+                pingTask = nil
+            }
+        } else if model.remoteOfflineManual {
+            Button {
+                GameFeel.shared.tap()
+                model.reconnectCloudNow()
+                say("正在重连九州云服…")
+            } label: {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(Theme.ink2.opacity(0.45))
+                        .frame(width: 5.5, height: 5.5)
+                    Text("离线单机 · 点此连云服")
+                        .font(Theme.sans(11.5))
+                        .foregroundStyle(Theme.ink2)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                .padding(.horizontal, 10)
+                .frame(height: 26)
+                .background(Theme.paperLight.opacity(0.94), in: Capsule())
+                .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 0.75))
+            }
+            .buttonStyle(PressStyle())
+        }
+    }
+}
+
+/// 真·网游非阻塞浮动自动重连横幅（4.3 宋版双线宣纸卡片 + 脉动朱砂印点 + 立即重连 / 离线单机）。
+private struct GameReconnectBanner: View {
+    @ObservedObject var model: GameModel
+    let leadInset: CGFloat
+    let trailInset: CGFloat
+    let say: (String) -> Void
+    @State private var pulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var attemptNumber: Int { max(1, model.remoteReconnectAttempt) }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 10) {
+                    statusHeader
+                    Spacer(minLength: 8)
+                    actionButtons
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    statusHeader
+                    HStack {
+                        Spacer(minLength: 0)
+                        actionButtons
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .frame(maxWidth: 468, alignment: .leading)
+            .background(Theme.paperLight.opacity(0.97), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Theme.seal.opacity(0.40), lineWidth: 0.85)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 9.5, style: .continuous)
+                    .strokeBorder(Theme.seal.opacity(0.14), lineWidth: 0.5)
+                    .padding(2.5)
+                    .allowsHitTesting(false)
+            )
+            .shadow(color: Theme.ink.opacity(0.10), radius: 6, y: 2)
+            Spacer(minLength: 0)
+        }
+        .padding(.leading, leadInset)
+        .padding(.trailing, trailInset)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 1.15).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
+        .onDisappear { pulse = false }
+    }
+
+    private var statusHeader: some View {
+        HStack(alignment: .center, spacing: 9) {
+            ZStack {
+                Circle()
+                    .fill(Theme.seal.opacity(pulse && !reduceMotion ? 0.14 : 0.30))
+                    .frame(width: 14, height: 14)
+                    .scaleEffect(pulse && !reduceMotion ? 1.38 : 0.88)
+                Circle()
+                    .fill(Theme.seal)
+                    .frame(width: 6.5, height: 6.5)
+            }
+            .frame(width: 16, height: 16)
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("九州云服自动重连中 · 第 \(attemptNumber) 次")
+                    .font(Theme.serif(13.5))
+                    .foregroundStyle(Theme.ink)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
+                Text("世界进度已安全托管云端，切回即续推")
+                    .font(Theme.sans(11))
+                    .foregroundStyle(Theme.ink2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+    }
+
+    private var actionButtons: some View {
+        HStack(spacing: 6) {
+            Button {
+                GameFeel.shared.tap()
+                model.reconnectCloudNow()
+                say("正在立即重连九州云服…")
+            } label: {
+                Text("立即重连")
+                    .font(Theme.sans(11.5))
+                    .foregroundStyle(Theme.paperLight)
+                    .padding(.horizontal, 10)
+                    .frame(height: 27)
+                    .background(Theme.seal, in: Capsule())
+            }
+            .buttonStyle(PressStyle())
+
+            Button {
+                GameFeel.shared.tap()
+                model.switchToOfflineLocal()
+                say("已暂切离线单机，可随时轻点上方重连云服")
+            } label: {
+                Text("离线单机")
+                    .font(Theme.sans(11.5))
+                    .foregroundStyle(Theme.ink2)
+                    .padding(.horizontal, 9)
+                    .frame(height: 27)
+                    .background(Theme.wash.opacity(0.82), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 0.7))
+            }
+            .buttonStyle(PressStyle())
+        }
+        .fixedSize(horizontal: true, vertical: false)
     }
 }
 
@@ -983,8 +1232,6 @@ private struct GameTopToolButton: View {
 private struct GameWeatherOverflowBar: View {
     @ObservedObject var model: GameModel
     @ObservedObject var controller: MapController
-    let leadInset: CGFloat
-    let trailInset: CGFloat
     @Binding var weatherDrawerOpen: Bool
     let say: (String) -> Void
 
@@ -1012,43 +1259,40 @@ private struct GameWeatherOverflowBar: View {
         if let top = sorted.first {
             let meta = weatherMeta(top.kind)
             VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 6) {
-                    Button {
-                        GameFeel.shared.tap()
-                        if sorted.count == 1 {
-                            controller.fly(to: top.province)
-                            if let map = model.map, map.meta.provinces.indices.contains(top.province) {
-                                say("\(map.meta.provinces[top.province].name)正逢\(meta.label)")
-                            }
-                        } else {
-                            withAnimation(Motion.panel) { weatherDrawerOpen.toggle() }
+                Button {
+                    GameFeel.shared.tap()
+                    if sorted.count == 1 {
+                        controller.fly(to: top.province)
+                        if let map = model.map, map.meta.provinces.indices.contains(top.province) {
+                            say("\(map.meta.provinces[top.province].name)正逢\(meta.label)")
                         }
-                    } label: {
-                        HStack(spacing: 5) {
-                            Circle().fill(meta.color).frame(width: 6, height: 6)
-                            Text(meta.label).font(Theme.kai(11.5)).foregroundStyle(meta.color)
-                            if sorted.count > 1 {
-                                Text("等\(sorted.count)处").font(Theme.kai(10.5)).foregroundStyle(Theme.ink2).monospacedDigit()
-                                InkIcon(glyph: .chevronDown, size: 9, weight: 1.8)
-                                    .foregroundStyle(Theme.ink2)
-                                    .rotationEffect(.degrees(weatherDrawerOpen ? 180 : 0))
-                            }
-                        }
-                        .fixedSize(horizontal: true, vertical: false)
-                        .padding(.horizontal, 9).frame(height: 26)
-                        .background(Theme.paper2.opacity(0.92), in: Capsule())
-                        .overlay(Capsule().stroke(meta.color.opacity(0.35), lineWidth: 0.75))
-                        .shadow(color: Theme.ink.opacity(0.10), radius: 4, y: 1.5)
+                    } else {
+                        withAnimation(Motion.panel) { weatherDrawerOpen.toggle() }
                     }
-                    .buttonStyle(PressStyle())
-                    Spacer(minLength: 0)
+                } label: {
+                    HStack(spacing: 5) {
+                        Circle().fill(meta.color).frame(width: 6, height: 6)
+                        Text(meta.label).font(Theme.kai(11.5)).foregroundStyle(meta.color)
+                        if sorted.count > 1 {
+                            Text("等\(sorted.count)处").font(Theme.kai(10.5)).foregroundStyle(Theme.ink2).monospacedDigit()
+                            InkIcon(glyph: .chevronDown, size: 9, weight: 1.8)
+                                .foregroundStyle(Theme.ink2)
+                                .rotationEffect(.degrees(weatherDrawerOpen ? 180 : 0))
+                        }
+                    }
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(.horizontal, 9).frame(height: 26)
+                    .background(Theme.paper2.opacity(0.92), in: Capsule())
+                    .overlay(Capsule().stroke(meta.color.opacity(0.35), lineWidth: 0.75))
+                    .shadow(color: Theme.ink.opacity(0.10), radius: 4, y: 1.5)
                 }
+                .buttonStyle(PressStyle())
 
                 if weatherDrawerOpen && sorted.count > 1 {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(Array(sorted.prefix(6).enumerated()), id: \.offset) { _, z in
                             let zm = weatherMeta(z.kind)
-                            let pname = (model.map?.meta.provinces.indices.contains(z.province) == true) ? model.map!.meta.provinces[z.province].name : "州郡"
+                            let pname = model.map.flatMap { $0.meta.provinces.indices.contains(z.province) ? $0.meta.provinces[z.province].name : nil } ?? "州郡"
                             Button {
                                 GameFeel.shared.tap()
                                 withAnimation(Motion.tap) { weatherDrawerOpen = false }
@@ -1074,8 +1318,6 @@ private struct GameWeatherOverflowBar: View {
                     .transition(.scale(scale: 0.92, anchor: .topLeading).combined(with: .opacity))
                 }
             }
-            .padding(.leading, leadInset)
-            .padding(.trailing, trailInset)
             .animation(GameView.hudSpring, value: weatherDrawerOpen)
         }
     }
@@ -1937,9 +2179,12 @@ private struct GameLifecycleModifier: ViewModifier {
     let exitCleanMap: () -> Void
     let syncSheetFocusInsets: (Panel?) -> Void
 
+    @State private var rippleTask: Task<Void, Never>?
+
     func body(content: Content) -> some View {
         content
             .onAppear { installMapHandlers() }
+            .onDisappear { teardownMapHandlers() }
             .onChange(of: panel) { _, p in handlePanelChange(p) }
             .onChange(of: sheetDetent) { _, _ in syncSheetFocusInsets(panel) }
             .onChange(of: landscape) { _, _ in syncSheetFocusInsets(panel) }
@@ -1947,6 +2192,17 @@ private struct GameLifecycleModifier: ViewModifier {
             .onChange(of: weatherDrawerOpen) { _, open in if open { model.dismissHerald() } }
             .onChange(of: model.replayActive) { _, active in if active { model.dismissHerald() } }
             .sensoryFeedback(.impact(weight: .light), trigger: panel?.id)
+    }
+
+    private func teardownMapHandlers() {
+        rippleTask?.cancel()
+        rippleTask = nil
+        controller.onMapTap = nil
+        controller.onGroupTarget = nil
+        controller.onLongPress = nil
+        controller.onPaint = nil
+        controller.onFleetTarget = nil
+        controller.onMarchTarget = nil
     }
 
     private func handlePanelChange(_ p: Panel?) {
@@ -1985,7 +2241,13 @@ private struct GameLifecycleModifier: ViewModifier {
         }
         controller.onLongPress = { province, point in
             ripple = point
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) { ripple = nil; show(.quick(province)) }
+            rippleTask?.cancel()
+            rippleTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 260_000_000)
+                guard !Task.isCancelled else { return }
+                ripple = nil
+                show(.quick(province))
+            }
         }
         controller.onPaint = { province in
             if let brush = controller.brushAction { brush(province); return }
@@ -2004,7 +2266,7 @@ private struct GameLifecycleModifier: ViewModifier {
         controller.onFleetTarget = { province in
             guard let index = controller.marchingFleet, let fleet = model.fleet(index) else { controller.marchingFleet = nil; return }
             Task {
-                let name = model.map?.meta.provinces.indices.contains(province) == true ? model.map!.meta.provinces[province].name : ""
+                let name = model.map.flatMap { $0.meta.provinces.indices.contains(province) ? $0.meta.provinces[province].name : nil } ?? ""
                 if let error = await model.fleetOrder(id: fleet.id, province: province) { say(error) }
                 else { say("\(fleet.name)起航，前往\(name)港"); controller.marchingFleet = nil }
                 model.refreshArmies()
@@ -2018,7 +2280,7 @@ private struct GameLifecycleModifier: ViewModifier {
                 if retreat { error = await model.retreat(army: army, to: province) } else { error = await model.order(army: army, to: province) }
                 if let error { say(error) }
                 else {
-                    let pname = model.map?.meta.provinces.indices.contains(province) == true ? model.map!.meta.provinces[province].name : ""
+                    let pname = model.map.flatMap { $0.meta.provinces.indices.contains(province) ? $0.meta.provinces[province].name : nil } ?? ""
                     say("\(model.army(army)?.name ?? "军队")\(retreat ? "撤往" : "前往")\(pname)")
                     controller.marchingArmy = nil
                     marchRetreat = false
@@ -2037,13 +2299,27 @@ private struct GameSelectionModifier: ViewModifier {
     let show: (Panel) -> Void
     let say: (String) -> Void
 
+    @State private var closeViewsTask: Task<Void, Never>?
+    @State private var panProvinceTask: Task<Void, Never>?
+
     func body(content: Content) -> some View {
         content
+            .onDisappear {
+                closeViewsTask?.cancel()
+                closeViewsTask = nil
+                panProvinceTask?.cancel()
+                panProvinceTask = nil
+            }
             .onChange(of: controller.groupArmies) { _, _ in model.refreshArmies() }
             .onChange(of: model.notice) { _, n in if let n { say(n); model.notice = nil } }
             .onChange(of: controller.marchingFleet) { _, _ in model.refreshArmies() }
             .onChange(of: model.mapView) { _, _ in
-                Task { try? await Task.sleep(nanoseconds: 280_000_000); withAnimation { viewsOpen = false } }
+                closeViewsTask?.cancel()
+                closeViewsTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 280_000_000)
+                    guard !Task.isCancelled else { return }
+                    withAnimation { viewsOpen = false }
+                }
             }
             .sensoryFeedback(.selection, trigger: model.mapView)
             .sensoryFeedback(.selection, trigger: controller.selectedProvince)
@@ -2072,9 +2348,13 @@ private struct GameSelectionModifier: ViewModifier {
             .onChange(of: controller.selectedProvince) { _, province in
                 guard !model.replayActive else { return }
                 if province != nil && viewsOpen { viewsOpen = false }
+                panProvinceTask?.cancel()
+                panProvinceTask = nil
                 if let province {
                     show(.province(province))
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                    panProvinceTask = Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 80_000_000)
+                        guard !Task.isCancelled, controller.selectedProvince == province else { return }
                         controller.panAboveSheetIfNeeded(province: province)
                     }
                 } else if case .province = panel {

@@ -7,19 +7,35 @@ import LieguojiCore
 
 struct OnlineHubSheet: View {
     @ObservedObject var platform: OnlinePlatform
-    @ObservedObject var hotPack = HotPackManager.shared
+    @ObservedObject var hotPack: HotPackManager
     @ObservedObject var model: GameModel
-    var initialTab: String = "profile"
-    var onOpenArchive: (() -> Void)? = nil
+    var initialTab: String
+    var onOpenArchive: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
 
-    @State private var tab: String = "profile"
+    @State private var tab: String
     @State private var showAuth = false
     @State private var showBind = false
     @State private var showReleaseNotes = false
     @State private var showAppUpdate = false
     @State private var showHotUpdate = false
     @State private var toast: String?
+    @State private var toastSerial = 0
+
+    init(
+        platform: OnlinePlatform,
+        hotPack: HotPackManager = HotPackManager.shared,
+        model: GameModel,
+        initialTab: String = "profile",
+        onOpenArchive: (() -> Void)? = nil
+    ) {
+        self.platform = platform
+        self.hotPack = hotPack
+        self.model = model
+        self.initialTab = initialTab
+        self.onOpenArchive = onOpenArchive
+        _tab = State(initialValue: initialTab)
+    }
 
     private var hasAnyUpdate: Bool {
         platform.updateInfo?.hasAppUpdate == true || hotPack.hasPendingUpdate
@@ -152,10 +168,15 @@ struct OnlineHubSheet: View {
             }
             .scrollIndicators(.hidden)
             .background(MemorialPaper().ignoresSafeArea())
-            .onAppear { tab = initialTab }
             .task {
                 if platform.isLoggedIn { await platform.refreshInbox() }
                 await platform.refreshLeaderboard()
+            }
+            .task(id: toastSerial) {
+                guard toastSerial > 0, toast != nil else { return }
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                guard !Task.isCancelled else { return }
+                toast = nil
             }
             .sheet(isPresented: $showAuth) {
                 AuthPortalSheet(platform: platform)
@@ -200,11 +221,26 @@ struct OnlineHubSheet: View {
     }
 
     private func showToast(_ msg: String) {
+        toastSerial &+= 1
         toast = msg
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
-            if toast == msg { toast = nil }
+    }
+}
+
+/// 宋版宣纸三格网游信号微标（行宫态势卡专用）。
+private struct HubSignalBars: View {
+    let bars: Int
+    let color: Color
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 2) {
+            ForEach(0..<3, id: \.self) { idx in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(idx < bars ? color : Theme.ink.opacity(0.16))
+                    .frame(width: 2.5, height: CGFloat(5 + idx * 3))
+            }
         }
+        .frame(height: 12, alignment: .bottom)
+        .accessibilityHidden(true)
     }
 }
 
@@ -305,32 +341,47 @@ private struct HubProfileTabView: View {
     @State private var syncBusy = false
     @State private var probeBusy = false
     @State private var checkBusy = false
+    @State private var linkBusy = false
     @State private var confirmLogout = false
 
-    private var engineStatusText: String {
+    private var connectionStateMeta: (title: String, detail: String, bars: Int, color: Color, connected: Bool) {
         if model.remoteAddress != nil {
-            let rtt = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
+            let rtt = model.remoteRTTMs
+            let bars = (rtt ?? 30) < 85 ? 3 : ((rtt ?? 30) < 180 ? 2 : 1)
+            let tone = bars >= 2 ? Theme.jade : Theme.gold
             let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.1fKB/帧", model.remoteFrameKB ?? 0) : ""
-            return "云推 v9 运行中\(rtt)\(kb)"
+            let custom = model.remoteConnectionDetail.trimmingCharacters(in: .whitespacesAndNewlines)
+            let detail = !custom.isEmpty
+                ? custom
+                : ((model.remoteTransport.isEmpty ? "全双工主动推流" : model.remoteTransport) + kb)
+            return ("九州云服 v10 · 实时在线", detail, bars, tone, true)
         }
         if model.remoteReconnecting {
-            return "云推 v9 无感续连中…"
+            let custom = model.remoteConnectionDetail.trimmingCharacters(in: .whitespacesAndNewlines)
+            let detail = custom.isEmpty ? "世界进度安全托管云端，切回即自动续推" : custom
+            return ("自动重连中 · 第 \(max(1, model.remoteReconnectAttempt)) 次", detail, 1, Theme.seal, false)
         }
-        if !model.autoRemote {
-            return "本机满帧直演 · 0ms 零延迟"
+        if model.remoteOfflineManual {
+            return ("离线单机模式", "已手动切至本机运算 · 随时可一键连回九州云服", 0, Theme.ink2, false)
         }
         if model.state == nil {
-            return platform.server?.computeOnline == true ? "云推 v9 就绪（进图自动接入）" : "本机待命（云服暂离线）"
+            let online = platform.server?.computeOnline == true
+            return (
+                online ? "九州云服 v10 · 随时待命" : "云端行宫 · 本机待命",
+                online ? "进入世界自动接入云服，断链自动保活重连" : "云服暂休整，进图默认本机满帧直演",
+                online ? 3 : 0,
+                online ? Theme.jade : Theme.ink2,
+                false
+            )
         }
-        return "本机运行中（可重连云推 v9）"
+        return ("本机演算中 · 可接入云服 v10", "轻点下方按钮即可连接九州云服享受断链续推", 0, Theme.ink2, false)
     }
 
     private var bestMirrorHint: String {
         if probeBusy || platform.probingMirrors { return "正在测速全网节点…" }
         if let best = platform.mirrorResults.first(where: { $0.ok }) {
             let lat = best.latencyMs.map { "\($0)ms" } ?? ""
-            let spd = best.speedMBs.map { String(format: " · %.1fMB/s", $0) } ?? ""
-            return "\(best.name) \(lat)\(spd)"
+            return "\(best.name) · \(best.speedText)" + (lat.isEmpty ? "" : " (\(lat))")
         }
         return "一键检测最快下载源"
     }
@@ -365,74 +416,168 @@ private struct HubProfileTabView: View {
 
     @ViewBuilder private var profileCard: some View {
         if let user = platform.user, platform.isLoggedIn {
-            Group2 {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .center, spacing: 12) {
-                        PlayerSealBadge(char: user.sealChar, style: user.sealStyle, size: 48, filled: true)
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack(spacing: 6) {
-                                Text(user.nickname).font(Theme.serif(19)).foregroundStyle(Theme.ink).lineLimit(1)
-                                Text(user.isAdminAccount ? "管理员" : (user.isGuest ? "游客" : user.id))
-                                    .font(Theme.caption)
-                                    .foregroundStyle(user.isAdminAccount || user.isGuest ? Theme.seal : Theme.ink2)
-                            }
-                            Text(user.bio).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-                            Text("\(user.rank.grade) · \(user.rank.title) · 功勋 \(user.exp)")
-                                .font(Theme.caption).foregroundStyle(Theme.seal).monospacedDigit()
+            // 史官名刺 · 宋版双线宣纸书法主卡
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 13) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .fill(Theme.wash.opacity(0.62))
+                            .frame(width: 58, height: 58)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .strokeBorder(Theme.line, lineWidth: 0.75)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8.5, style: .continuous)
+                                    .strokeBorder(SealInkPalette.color(for: user.sealStyle).opacity(0.24), lineWidth: 0.5)
+                                    .padding(2.5)
+                            )
+                        PlayerSealBadge(char: user.sealChar, style: user.sealStyle, size: 42, filled: true)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3.5) {
+                        HStack(spacing: 6) {
+                            Text(user.nickname)
+                                .font(Theme.serif(20))
+                                .tracking(0.8)
+                                .foregroundStyle(Theme.ink)
+                                .lineLimit(1)
+                            PaperTag(
+                                text: user.isAdminAccount ? "御前司礼" : (user.isGuest ? "游方史官" : user.id),
+                                color: (user.isAdminAccount || user.isGuest) ? Theme.seal : Theme.ink2,
+                                size: 10
+                            )
                         }
-                        Spacer(minLength: 4)
+                        Text(user.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "笔削春秋，记述万邦兴衰" : user.bio)
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink2)
+                            .lineLimit(1)
+                        Text("\(user.rank.grade) · \(user.rank.title)")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.seal)
+                    }
+                    Spacer(minLength: 4)
+                    Button {
+                        GameFeel.shared.tap()
+                        editNick = user.nickname
+                        editBio = user.bio
+                        editSealChar = user.sealChar
+                        editSealStyle = user.sealStyle
+                        withAnimation(Motion.panel) { editing.toggle() }
+                    } label: {
+                        PhosphorIcon(glyph: editing ? .close : .edit, size: 15, weight: .light)
+                            .foregroundStyle(editing ? Theme.seal : Theme.ink2)
+                            .frame(width: 32, height: 32)
+                            .background(Theme.paper, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Theme.hairline, lineWidth: 0.7))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+
+                // 书法品秩晋升刻度仪
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(user.rank.nextTitle.isEmpty ? "一代史圣 · 满秩" : "晋升「\(user.rank.nextTitle)」")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink2)
+                        Spacer()
+                        Text(user.rank.nextTitle.isEmpty ? "功勋 \(user.exp)" : "\(user.exp) / \(user.rank.nextExp) 功勋")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.seal)
+                            .monospacedDigit()
+                    }
+                    InkBar(fraction: user.rank.progress, color: Theme.seal, track: Theme.wash, height: 4, gradient: true)
+                    HStack {
+                        Text(user.rank.title)
+                            .font(Theme.sans(10.5))
+                            .foregroundStyle(Theme.ink2.opacity(0.85))
+                        Spacer()
+                        Text("\(Int((user.rank.progress * 100).rounded()))%")
+                            .font(Theme.sans(10.5))
+                            .foregroundStyle(Theme.ink2.opacity(0.75))
+                            .monospacedDigit()
+                        Spacer()
+                        Text(user.rank.nextTitle.isEmpty ? "满秩" : user.rank.nextTitle)
+                            .font(Theme.sans(10.5))
+                            .foregroundStyle(user.rank.nextTitle.isEmpty ? Theme.seal : Theme.ink2.opacity(0.85))
+                    }
+                }
+
+                // 三列清雅数据栏（品秩 / 签到连胜 / 云端卷宗）
+                VStack(spacing: 0) {
+                    Rectangle().fill(Theme.hairline).frame(height: 0.75)
+                    HStack(spacing: 0) {
+                        heroStatColumn(
+                            label: "史官品秩",
+                            value: user.rank.grade,
+                            sub: "功勋 \(user.exp)",
+                            accent: true
+                        )
+                        Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 38)
+                        heroStatColumn(
+                            label: "签到连胜",
+                            value: "\(user.checkinStreak) 日",
+                            sub: "累计 \(user.totalCheckins) 日",
+                            accent: false
+                        )
+                        Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 38)
                         Button {
                             GameFeel.shared.tap()
-                            editNick = user.nickname; editBio = user.bio
-                            editSealChar = user.sealChar; editSealStyle = user.sealStyle
-                            editing.toggle()
+                            onOpenSavesTab()
                         } label: {
-                            PhosphorIcon(glyph: .edit, size: 16, weight: .light).foregroundStyle(Theme.ink2)
-                                .frame(width: 32, height: 32)
+                            heroStatColumn(
+                                label: "云端卷宗",
+                                value: "\(user.cloudSaveCount)/\(user.cloudSaveQuota)",
+                                sub: "专属云库 ›",
+                                accent: false
+                            )
                         }
                         .buttonStyle(.plain)
                     }
+                    .padding(.vertical, 10)
+                    Rectangle().fill(Theme.hairline).frame(height: 0.75)
+                }
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(user.rank.nextTitle.isEmpty ? "一代史圣 · 满秩" : "晋升「\(user.rank.nextTitle)」")
-                                .font(Theme.caption).foregroundStyle(Theme.ink2)
-                            Spacer()
-                            Text(user.rank.nextTitle.isEmpty ? "满秩" : "\(user.exp) / \(user.rank.nextExp)")
-                                .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
-                        }
-                        InkBar(fraction: user.rank.progress, color: Theme.seal, height: 3.5)
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(user.checkedInToday ? "今日已临朝落印" : "每日临朝签到")
+                            .font(Theme.body)
+                            .foregroundStyle(Theme.ink)
+                        Text(user.checkedInToday ? "明日再来续写连签佳绩" : "落印即获 +15 功勋与连胜记录")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink2)
                     }
-
-                    Divider2()
-
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(user.checkedInToday ? "今日已临朝落印" : "每日临朝签到").font(Theme.body).foregroundStyle(Theme.ink)
-                            Text("连签 \(user.checkinStreak) 日 · 累计 \(user.totalCheckins) 日")
-                                .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
-                        }
-                        Spacer()
-                        EditorialTactileButton(
-                            title: checkinBusy ? "落印中…" : (user.checkedInToday ? "已落印" : "签到 +15"),
-                            icon: user.checkedInToday ? .check : .stamp,
-                            accent: user.checkedInToday,
-                            solid: !user.checkedInToday,
-                            compact: true,
-                            disabled: checkinBusy || user.checkedInToday
-                        ) {
-                            Task {
-                                checkinBusy = true
-                                let res = await platform.dailyCheckin()
-                                checkinBusy = false
-                                GameFeel.shared.notify(res.ok ? .success : .warning)
-                                onToast(res.message)
-                            }
+                    Spacer(minLength: 6)
+                    EditorialTactileButton(
+                        title: checkinBusy ? "落印中…" : (user.checkedInToday ? "已落印" : "签到 +15"),
+                        icon: user.checkedInToday ? .check : .stamp,
+                        accent: user.checkedInToday,
+                        solid: !user.checkedInToday,
+                        compact: true,
+                        disabled: checkinBusy || user.checkedInToday
+                    ) {
+                        Task {
+                            checkinBusy = true
+                            let res = await platform.dailyCheckin()
+                            checkinBusy = false
+                            GameFeel.shared.notify(res.ok ? .success : .warning)
+                            onToast(res.message)
                         }
                     }
                 }
-                .padding(.horizontal, 4).padding(.vertical, 12)
             }
+            .padding(15)
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
+                    .strokeBorder(Theme.line, lineWidth: 0.8)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous)
+                    .strokeBorder(Theme.seal.opacity(0.18), lineWidth: 0.5)
+                    .padding(2.5)
+                    .allowsHitTesting(false)
+            )
             .padding(.horizontal, Theme.Layout.pageInset)
 
             if user.isAdminAccount {
@@ -458,7 +603,7 @@ private struct HubProfileTabView: View {
             }
 
             if editing {
-                SectionLabel("修缮名帖与御印")
+                SectionLabel("修缮名刺与御印")
                 Group2 {
                     VStack(spacing: 10) {
                         TextField("", text: $editNick, prompt: Text("雅号（最多16字）").foregroundColor(Theme.ink2.opacity(0.55))).paperField()
@@ -476,23 +621,55 @@ private struct HubProfileTabView: View {
                             savingProfile = true
                             let err = await platform.updateProfile(nickname: editNick, bio: editBio, sealChar: editSealChar, sealStyle: editSealStyle)
                             savingProfile = false
-                            if let err { onToast(err) } else { editing = false; onToast("名帖与御印已更新") }
+                            if let err { onToast(err) } else { editing = false; onToast("名刺与御印已更新") }
                         }
                     }
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
         } else {
-            Group2 {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("登临云端行宫，解锁 20 卷专属高速云档、每日签到、定制御印与全服天下史榜。")
-                        .font(Theme.body).foregroundStyle(Theme.ink2)
-                    SealButton(title: "前往列国登临阁（登录 / 注册）") { onOpenAuth() }
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    PlayerSealBadge(char: "宫", style: "cinnabar", size: 42, filled: true)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("登临云端行宫").font(Theme.serif(18)).foregroundStyle(Theme.ink)
+                        Text("解锁 20 卷高速云档、每日签到、定制御印与天下史榜").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    }
                 }
-                .padding(.horizontal, 4).padding(.vertical, 12)
+                SealButton(title: "前往列国登临阁（登录 / 注册）") { onOpenAuth() }
             }
+            .padding(15)
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).strokeBorder(Theme.line, lineWidth: 0.75))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous)
+                    .strokeBorder(Theme.hairline, lineWidth: 0.5)
+                    .padding(2.5)
+                    .allowsHitTesting(false)
+            )
             .padding(.horizontal, Theme.Layout.pageInset)
         }
+    }
+
+    private func heroStatColumn(label: String, value: String, sub: String, accent: Bool) -> some View {
+        VStack(spacing: 3) {
+            Text(label)
+                .font(Theme.sans(11))
+                .foregroundStyle(Theme.ink2)
+            Text(value)
+                .font(Theme.serif(16.5))
+                .foregroundStyle(accent ? Theme.seal : Theme.ink)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(sub)
+                .font(Theme.sans(10.5))
+                .foregroundStyle(Theme.ink2.opacity(0.82))
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
     }
 
     private var quickActionGrid: some View {
@@ -642,67 +819,169 @@ private struct HubProfileTabView: View {
     }
 
     private var computeControlCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionLabel("算力引擎与云服态势")
-            Group2 {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("演算引擎模式").font(Theme.body).foregroundStyle(Theme.ink)
-                        Spacer()
-                        Text(model.autoRemote ? "云推 v9 · 省电挂机" : "本机直演 · 0ms 延迟")
-                            .font(Theme.caption)
-                            .foregroundStyle(model.autoRemote ? Theme.jade : Theme.seal)
+        let meta = connectionStateMeta
+        let isOfflineSelected = model.remoteOfflineManual || (!model.autoRemote && model.remoteAddress == nil && !model.remoteReconnecting)
+        return VStack(alignment: .leading, spacing: 10) {
+            SectionLabel("云端行宫 · 实时链路态势")
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .center, spacing: 10) {
+                    HStack(spacing: 7) {
+                        Circle()
+                            .fill(meta.color)
+                            .frame(width: 7, height: 7)
+                        HubSignalBars(bars: meta.bars, color: meta.color)
                     }
-                    ChipPicker(
-                        items: [(false, "本机满帧直演（推荐看海）"), (true, "云端推流 v9（省电挂机）")],
-                        selection: Binding(
-                            get: { model.autoRemote },
-                            set: { useCloud in
-                                model.objectWillChange.send()
-                                model.autoRemote = useCloud
-                                if !useCloud {
-                                    if model.remoteAddress != nil {
-                                        Task {
-                                            await model.disconnectRemote()
-                                            onToast("已切换至本机满帧直演（0ms 零延迟）")
-                                        }
-                                    } else {
-                                        onToast("已切换至本机满帧直演（0ms 零延迟）")
-                                    }
-                                } else {
-                                    if model.remoteAddress == nil && model.state != nil {
-                                        Task {
-                                            let ok = await model.findComputerNow()
-                                            onToast(ok ? "已接入云端推流 v9（省电挂机）" : "已开启云端推流 v9，云服就绪后自动接入")
-                                        }
-                                    } else {
-                                        onToast("已开启云端推流 v9（省电挂机模式）")
-                                    }
-                                }
-                            }
-                        )
-                    )
-                    Text("默认推荐「本机满帧直演」享 0ms 零延迟丝滑看海；长时间挂机或 280 州大图省电不发热，可一键切换「云端推流 v9」。")
-                        .font(Theme.caption)
-                        .foregroundStyle(Theme.ink2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.horizontal, 4).padding(.vertical, 12)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(meta.color.opacity(0.09), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
 
-                Divider2()
-                Row(label: "当前引擎状态", value: engineStatusText)
-                Divider2()
-                Row(label: "平台响应延迟", value: platform.apiRTTMs.map { "\($0) ms" } ?? "未测速")
-                Divider2()
-                Row(label: "在线史官人数", value: platform.server.map { "\($0.onlineCount) 人在线" } ?? "—")
-                Divider2()
-                Row(
-                    label: "已存云档数",
-                    value: platform.user.map { "\($0.cloudSaveCount) / \($0.cloudSaveQuota) 卷" } ?? "登录后享 20 卷专属云库"
-                )
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(meta.title)
+                            .font(Theme.serif(15.5))
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.84)
+                        Text(meta.detail)
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink2)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    Spacer(minLength: 4)
+                    if let rtt = model.remoteRTTMs ?? platform.apiRTTMs {
+                        Text("\(rtt)ms")
+                            .font(Theme.sans(12))
+                            .foregroundStyle(meta.color)
+                            .monospacedDigit()
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(meta.color.opacity(0.09), in: Capsule())
+                    }
+                }
+
+                // 在线云服 / 离线单机清晰切换
+                HStack(spacing: 8) {
+                    linkModeChip(
+                        title: "在线云服 v10",
+                        subtitle: "断链自动续连",
+                        active: !isOfflineSelected
+                    ) {
+                        model.autoRemote = true
+                        model.reconnectCloudNow()
+                        onToast("已切换至在线云服 v10（断链自动重连）")
+                    }
+                    linkModeChip(
+                        title: "离线单机",
+                        subtitle: "纯本机 0ms",
+                        active: isOfflineSelected
+                    ) {
+                        model.switchToOfflineLocal()
+                        onToast("已切换至离线单机模式")
+                    }
+                }
+
+                // 三列紧凑遥测 + 一键重测/重连
+                VStack(spacing: 0) {
+                    Rectangle().fill(Theme.hairline).frame(height: 0.75)
+                    HStack(spacing: 0) {
+                        compactLinkMetric(label: "云服延迟", value: model.remoteRTTMs.map { "\($0) ms" } ?? (model.remoteReconnecting ? "重连中" : "待命"))
+                        Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 28)
+                        compactLinkMetric(label: "平台延迟", value: platform.apiRTTMs.map { "\($0) ms" } ?? "—")
+                        Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 28)
+                        compactLinkMetric(label: "全服在线", value: platform.server.map { "\($0.onlineCount) 人" } ?? "—")
+                    }
+                    .padding(.vertical, 9)
+                    Rectangle().fill(Theme.hairline).frame(height: 0.75)
+                }
+
+                EditorialTactileButton(
+                    title: linkBusy
+                        ? "链路检测中…"
+                        : (meta.connected ? "重测链路延迟" : "立即重连九州云服"),
+                    icon: meta.connected ? .speed : .refresh,
+                    accent: !meta.connected,
+                    solid: model.remoteReconnecting,
+                    compact: true,
+                    fullWidth: true,
+                    disabled: linkBusy
+                ) {
+                    Task {
+                        linkBusy = true
+                        if meta.connected {
+                            let rtt = await model.refreshRemoteRTT()
+                            let apiMs = await platform.pingServer()
+                            linkBusy = false
+                            let cloudStr = rtt.map { "云服 \($0)ms" } ?? "云服已连"
+                            let apiStr = apiMs.map { " · 平台 \($0)ms" } ?? ""
+                            GameFeel.shared.notify(.success)
+                            onToast("链路状态优良（\(cloudStr)\(apiStr)）")
+                        } else {
+                            model.autoRemote = true
+                            model.reconnectCloudNow()
+                            let apiMs = await platform.pingServer()
+                            linkBusy = false
+                            let apiStr = apiMs.map { "（平台 \($0)ms）" } ?? ""
+                            onToast("已触发九州云服立即重连\(apiStr)")
+                        }
+                    }
+                }
             }
+            .padding(14)
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).strokeBorder(Theme.line, lineWidth: 0.75))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous)
+                    .strokeBorder(Theme.hairline, lineWidth: 0.5)
+                    .padding(2.5)
+                    .allowsHitTesting(false)
+            )
             .padding(.horizontal, Theme.Layout.pageInset)
         }
+    }
+
+    private func linkModeChip(title: String, subtitle: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text(title)
+                        .font(Theme.serif(14))
+                        .foregroundStyle(active ? Theme.paperLight : Theme.ink)
+                        .lineLimit(1)
+                    Spacer(minLength: 2)
+                    if active {
+                        PhosphorIcon(glyph: .check, size: 11, weight: .fill)
+                            .foregroundStyle(Theme.paperLight)
+                    }
+                }
+                Text(subtitle)
+                    .font(Theme.sans(10.5))
+                    .foregroundStyle(active ? Theme.paperLight.opacity(0.84) : Theme.ink2)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                active ? Theme.seal : Theme.paper,
+                in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .strokeBorder(active ? Color.clear : Theme.hairline, lineWidth: 0.7)
+            )
+        }
+        .buttonStyle(PressStyle())
+    }
+
+    private func compactLinkMetric(label: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(label).font(Theme.sans(10.5)).foregroundStyle(Theme.ink2)
+            Text(value).font(Theme.sans(12.5)).foregroundStyle(Theme.ink).monospacedDigit().lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var bottomBar: some View {
@@ -741,10 +1020,14 @@ private struct HubSavesTabView: View {
     @State private var deletingCard: CloudSaveCard?
     @State private var loadedOnce = false
 
-    private static func formatTimestamp(_ date: Date) -> String {
+    @MainActor private static let timestampFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy.MM.dd HH:mm"
-        return f.string(from: date)
+        return f
+    }()
+
+    @MainActor private static func formatTimestamp(_ date: Date) -> String {
+        timestampFormatter.string(from: date)
     }
 
     private var quotaTotal: Int {
@@ -1275,64 +1558,61 @@ private struct HubUpdateTabView: View {
         }
     }
 
-    // Card 3: 全网多源极速节点测速仪
+    // Card 3: 加速线路测速矩阵（实测 MB/s 吞吐徽章 + 延迟 + 多源并发下载状态）
     private var mirrorProbeCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionLabel("全网多源极速节点测速仪")
-            Group2 {
-                if platform.mirrorResults.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(platform.probingMirrors ? "正在并发探测全网加速节点延迟与吞吐…" : "尚未测速")
-                            .font(Theme.body)
-                            .foregroundStyle(Theme.ink)
-                        Text("自动测速国内专线、Cloudflare 边缘与全球镜像源，下载客户端安装包时自动择优满速直下。")
-                            .font(Theme.caption)
-                            .foregroundStyle(Theme.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
+        let cols = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center) {
+                SectionLabel("加速线路测速矩阵", inset: false)
+                Spacer()
+                if platform.downloadingIPA {
+                    HStack(spacing: 4) {
+                        Circle().fill(Theme.jade).frame(width: 5.5, height: 5.5)
+                        Text(platform.downloadSpeedMBs > 0.05
+                             ? String(format: "多源并发 · %.1f MB/s", platform.downloadSpeedMBs)
+                             : "多源并发加速中")
+                            .font(Theme.sans(11))
+                            .foregroundStyle(Theme.jade)
+                            .monospacedDigit()
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 12)
-                } else {
-                    ForEach(Array(platform.mirrorResults.enumerated()), id: \.element.id) { idx, node in
-                        if idx > 0 { Divider2() }
-                        HStack(spacing: 10) {
-                            Circle()
-                                .fill(node.ok ? (idx == 0 ? Theme.jade : Theme.ink2.opacity(0.65)) : Theme.seal.opacity(0.55))
-                                .frame(width: 7, height: 7)
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
-                                    Text(node.name)
-                                        .font(Theme.serif(15))
-                                        .foregroundStyle(Theme.ink)
-                                        .lineLimit(1)
-                                    if idx == 0 && node.ok {
-                                        Text("最快")
-                                            .font(Theme.caption)
-                                            .foregroundStyle(Theme.jade)
-                                    }
-                                }
-                                Text(mirrorTelemetryText(node))
-                                    .font(Theme.caption)
-                                    .foregroundStyle(node.ok ? Theme.ink2 : Theme.seal)
-                                    .monospacedDigit()
-                            }
-                            Spacer(minLength: 6)
-                            if node.ok && platform.updateInfo != nil {
-                                EditorialTactileButton(title: "用此源", compact: true, disabled: platform.downloadingIPA) {
-                                    platform.startIPADownload(preferredMirrorURL: node.url)
-                                    onOpenAppUpdate()
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 10)
-                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Theme.jade.opacity(0.10), in: Capsule())
                 }
             }
             .padding(.horizontal, Theme.Layout.pageInset)
 
+            if platform.mirrorResults.isEmpty {
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 8) {
+                        if platform.probingMirrors {
+                            InkBusy(tint: Theme.seal, track: Theme.hairline).frame(width: 36)
+                        }
+                        Text(platform.probingMirrors ? "正在并发测速国内镜像与边缘节点…" : "尚未测速全网加速线路")
+                            .font(Theme.body)
+                            .foregroundStyle(Theme.ink)
+                    }
+                    Text("实时探测各节点真实吞吐（MB/s）与首包延迟（ms），下载安装包时多源并发择优满速直下。")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(13)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).strokeBorder(Theme.line, lineWidth: 0.75))
+                .padding(.horizontal, Theme.Layout.pageInset)
+            } else {
+                LazyVGrid(columns: cols, spacing: 8) {
+                    ForEach(Array(platform.mirrorResults.enumerated()), id: \.element.id) { idx, node in
+                        mirrorMatrixCell(node, isBest: idx == 0 && node.ok)
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+
             EditorialTactileButton(
-                title: platform.probingMirrors ? "全网测速中…" : "一键测速全网加速节点",
+                title: platform.probingMirrors ? "全网测速中…" : "一键测速全网加速线路",
                 icon: .speed,
                 solid: platform.mirrorResults.isEmpty,
                 compact: true,
@@ -1343,11 +1623,10 @@ private struct HubUpdateTabView: View {
                     await platform.probeDownloadMirrors()
                     if let best = platform.mirrorResults.first(where: { $0.ok }) {
                         let lat = best.latencyMs.map { "\($0)ms" } ?? ""
-                        let spd = best.speedMBs.map { String(format: " · %.1f MB/s", $0) } ?? ""
                         GameFeel.shared.notify(.success)
-                        onToast("测速完成 · 最优节点：\(best.name)（\(lat)\(spd)）")
+                        onToast("测速完成 · 最优线路：\(best.name)（\(best.speedText)" + (lat.isEmpty ? "）" : " · \(lat)）"))
                     } else {
-                        onToast("全网节点测速完成，请检查网络连接")
+                        onToast("全网线路测速完成，请检查网络连接")
                     }
                 }
             }
@@ -1355,12 +1634,78 @@ private struct HubUpdateTabView: View {
         }
     }
 
-    private func mirrorTelemetryText(_ node: MirrorProbeResult) -> String {
-        guard node.ok else { return "暂不可达或连接超时" }
-        var parts: [String] = []
-        if let ms = node.latencyMs { parts.append("延迟 \(ms) ms") }
-        if let mb = node.speedMBs, mb > 0 { parts.append(String(format: "实测 %.1f MB/s", mb)) }
-        return parts.isEmpty ? "连通正常" : parts.joined(separator: " · ")
+    private func mirrorMatrixCell(_ node: MirrorProbeResult, isBest: Bool) -> some View {
+        let activeNode = platform.downloadingIPA && !platform.activeDownloadNode.isEmpty && platform.activeDownloadNode == node.name
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(node.ok ? (isBest || activeNode ? Theme.jade : Theme.ink2.opacity(0.65)) : Theme.seal.opacity(0.5))
+                    .frame(width: 6, height: 6)
+                Text(node.name)
+                    .font(Theme.serif(13.5))
+                    .foregroundStyle(node.ok ? Theme.ink : Theme.ink2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+                Spacer(minLength: 2)
+                if activeNode {
+                    Text("下载中")
+                        .font(Theme.sans(10))
+                        .foregroundStyle(Theme.seal)
+                } else if isBest {
+                    Text("最优")
+                        .font(Theme.sans(10))
+                        .foregroundStyle(Theme.jade)
+                }
+            }
+
+            if node.ok {
+                HStack(spacing: 5) {
+                    Text(node.speedText)
+                        .font(Theme.sans(11.5))
+                        .foregroundStyle(Theme.jade)
+                        .monospacedDigit()
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    if let ms = node.latencyMs {
+                        Text("\(ms)ms")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink2)
+                            .monospacedDigit()
+                    }
+                    Spacer(minLength: 0)
+                }
+            } else {
+                Text(node.speedText)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.seal.opacity(0.75))
+            }
+
+            if node.ok && platform.updateInfo != nil {
+                Button {
+                    GameFeel.shared.tap()
+                    platform.startIPADownload(preferredMirrorURL: node.url)
+                    onOpenAppUpdate()
+                } label: {
+                    Text(platform.downloadingIPA ? "下载中…" : "用此源下载 ›")
+                        .font(Theme.sans(11))
+                        .foregroundStyle(isBest ? Theme.seal : Theme.ink2)
+                }
+                .buttonStyle(.plain)
+                .disabled(platform.downloadingIPA)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            isBest ? Theme.jade.opacity(0.045) : Theme.paperLight,
+            in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                .strokeBorder(activeNode ? Theme.seal.opacity(0.42) : (isBest ? Theme.jade.opacity(0.35) : Theme.hairline), lineWidth: 0.75)
+        )
+        .opacity(node.ok ? 1.0 : 0.6)
     }
 
     // Card 4: 热更典籍 & 云端生效平衡参数

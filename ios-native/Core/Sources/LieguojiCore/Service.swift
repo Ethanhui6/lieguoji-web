@@ -9,11 +9,53 @@ import Foundation
 /// [u32][map]` with header `{"ok", "reason", "strings"?, "text"?, "points"?}`. Lengths are big-endian.
 public final class EngineService {
     public private(set) var engine: NativeEngine?
+    /// 目录是否已加载至当前引擎进程（用于 ping/worldInfo 告知客户端免重复上传 2MB 目录）。
+    public private(set) var catalogsLoaded = false
     /// 云端专属计算服极速模式：在大型地图（≥140 州）上自动启用智能国名节流与单帧高效步进，显著提速 280 州等超大图。
     public var cloudTurbo = false
     private var lastOwners: [Int] = []
     private var lastNationSig: [String] = []
+    private var slimStaticInitialized = false
+    private var slimFramesSinceFullStatic = 0
+    private var lastSlimPorts: [GameState.Port] = []
+    private var lastSlimForts: [Int] = []
+    private var lastSlimHoly: [GameState.Holy] = []
+    private var lastSlimWonders: [Int] = []
+    private var lastSlimRuins: [Int] = []
+    private var lastSlimYards: [GameState.Yard] = []
     public init() {}
+
+    /// 当前已载入世界的唯一 ID（优先取 `world.custom.id`，依次回退 `run.id` / `world.id` / `world.custom.seed`）。
+    public var currentWorldId: String {
+        guard let r = engine?.run else { return "" }
+        if let s = r.world.custom.id.optionalString, !s.isEmpty { return s }
+        if let s = r.id.optionalString, !s.isEmpty { return s }
+        if let s = r.world.id.optionalString, !s.isEmpty { return s }
+        if let s = r.world.custom.seed.optionalString, !s.isEmpty { return s }
+        return ""
+    }
+
+    /// 当前已载入世界的游戏天数。
+    public var currentDay: Int {
+        engine?.run.world.day.asInt ?? 0
+    }
+
+    /// 重置精简推流帧的静态数组增量缓存（开新流、读档或前台恢复后确保首帧发送完整基线）。
+    public func resetSlimStaticCache() {
+        slimStaticInitialized = false
+        slimFramesSinceFullStatic = 0
+    }
+
+    private func recordSlimStaticBaseline(from gs: GameState) {
+        lastSlimPorts = gs.ports ?? []
+        lastSlimForts = gs.forts ?? []
+        lastSlimHoly = gs.holy ?? []
+        lastSlimWonders = gs.wonders ?? []
+        lastSlimRuins = gs.ruins ?? []
+        lastSlimYards = gs.yards ?? []
+        slimStaticInitialized = true
+        slimFramesSinceFullStatic = 0
+    }
 
     public struct Reply {
         public var ok = true
@@ -50,7 +92,42 @@ public final class EngineService {
     private var stepsSinceLabels = 0
     func state(stepping: Bool = false, slim: Bool = false) -> Data {
         guard let e = engine else { return Data() }
-        return e.state(includeLabels: labelsDue(e, stepping: stepping), slim: slim)
+        let includeLabels = labelsDue(e, stepping: stepping)
+        if !slim {
+            let gs = e.gameState(includeLabels: includeLabels, slim: false)
+            recordSlimStaticBaseline(from: gs)
+            return Profile.measure("s.json") { (try? JSONEncoder().encode(gs)) ?? Data() }
+        }
+        var gs = e.gameState(includeLabels: includeLabels, slim: true)
+        if !slimStaticInitialized || slimFramesSinceFullStatic >= 30 {
+            gs.ports = gs.ports ?? []
+            gs.forts = gs.forts ?? []
+            gs.holy = gs.holy ?? []
+            gs.wonders = gs.wonders ?? []
+            gs.ruins = gs.ruins ?? []
+            gs.yards = gs.yards ?? []
+            recordSlimStaticBaseline(from: gs)
+        } else {
+            slimFramesSinceFullStatic += 1
+            let curPorts = gs.ports ?? []
+            if curPorts == lastSlimPorts { gs.ports = nil } else { lastSlimPorts = curPorts; gs.ports = curPorts }
+
+            let curForts = gs.forts ?? []
+            if curForts == lastSlimForts { gs.forts = nil } else { lastSlimForts = curForts; gs.forts = curForts }
+
+            let curHoly = gs.holy ?? []
+            if curHoly == lastSlimHoly { gs.holy = nil } else { lastSlimHoly = curHoly; gs.holy = curHoly }
+
+            let curWonders = gs.wonders ?? []
+            if curWonders == lastSlimWonders { gs.wonders = nil } else { lastSlimWonders = curWonders; gs.wonders = curWonders }
+
+            let curRuins = gs.ruins ?? []
+            if curRuins == lastSlimRuins { gs.ruins = nil } else { lastSlimRuins = curRuins; gs.ruins = curRuins }
+
+            let curYards = gs.yards ?? []
+            if curYards == lastSlimYards { gs.yards = nil } else { lastSlimYards = curYards; gs.yards = curYards }
+        }
+        return Profile.measure("s.json") { (try? JSONEncoder().encode(gs)) ?? Data() }
     }
     /// 这一步是否要带国名框（领土易主、新国立国、或国名改称均触发刷新，避免改名或新独立小国漏掉国名）。
     private func labelsDue(_ e: NativeEngine, stepping: Bool) -> Bool {
@@ -90,7 +167,7 @@ public final class EngineService {
 
     /// 采用本机刚建好的世界（NativeCreation，不经 JSON），回复与 "open" 相同：首个状态与地图。
     public func adopt(_ e: NativeEngine) -> Reply {
-        engine = e; lastOwners = []; lastNationSig = []
+        engine = e; lastOwners = []; lastNationSig = []; resetSlimStaticCache()
         var r = Reply(data: state()); r.map = e.mapJSON; return r
     }
 
@@ -118,9 +195,23 @@ public final class EngineService {
             let day = engine?.run.world.day.asInt ?? 0
             r.text = "provinces:\(pCount)|day:\(day)"
             return r
+        case "worldInfo":
+            var r = Reply(ok: true, reason: EngineWire.greeting)
+            r.text = "\(currentWorldId)|\(currentDay)|\(catalogsLoaded ? 1 : 0)"
+            return r
         case "ping":
             var r = Reply(reason: EngineWire.greeting)
-            r.text = engine.map { "day:\($0.run.world.day.asInt)" } ?? "idle"
+            let v = optInt("v") ?? 0
+            if v >= 6 {
+                let cat = catalogsLoaded ? 1 : 0
+                if engine != nil {
+                    r.text = "day:\(currentDay)|wid:\(currentWorldId)|cat:\(cat)"
+                } else {
+                    r.text = "idle|cat:\(cat)"
+                }
+            } else {
+                r.text = engine.map { "day:\($0.run.world.day.asInt)" } ?? "idle"
+            }
             return r
         case "park":
             // 手机切入后台：保持电脑端世界常驻内存并返还最新状态，不断线也不丢进度。
@@ -130,7 +221,7 @@ public final class EngineService {
         case "resume":
             // 手机回到前台：立取当前权威世界状态并补齐国名框，无感续推。
             guard engine != nil else { return Reply(ok: false, reason: "世界尚未载入。") }
-            lastOwners = []; lastNationSig = []
+            lastOwners = []; lastNationSig = []; resetSlimStaticCache()
             return data(state(stepping: false))
         case "stepBatch":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
@@ -138,6 +229,7 @@ public final class EngineService {
             advanceDays(e, days: days)
             return data(state(stepping: true, slim: bool("slim")))
         case "streamConfig":
+            resetSlimStaticCache()
             return Reply(ok: true, reason: "ok")
         case "enableMux":
             return Reply(ok: true, reason: "mux-v6")
@@ -152,18 +244,18 @@ public final class EngineService {
             guard let o = (try? JSONSerialization.jsonObject(with: unpacked)) as? [String: String],
                   let traits = o["traits"].flatMap({ Data(base64Encoded: $0) }), let noble = o["nobleCultures"].flatMap({ Data(base64Encoded: $0) }),
                   let cultures = o["cultures"].flatMap({ Data(base64Encoded: $0) }) else { return Reply(ok: false, reason: "目录数据缺失。") }
-            do { try NativeEngine.loadCatalogs(traits: traits, nobleCultures: noble, cultures: cultures); return Reply() }
+            do { try NativeEngine.loadCatalogs(traits: traits, nobleCultures: noble, cultures: cultures); catalogsLoaded = true; return Reply() }
             catch { return Reply(ok: false, reason: error.localizedDescription) }
         case "open":
             guard let rawPayload = payload else { return Reply(ok: false, reason: "缺少世界数据。") }
             let unpacked = WireCodec.decompressIfNeeded(rawPayload)
             do {
                 let e = try NativeEngine(world: unpacked)
-                engine = e; lastOwners = []; lastNationSig = []
+                engine = e; lastOwners = []; lastNationSig = []; resetSlimStaticCache()
                 var r = Reply(data: state()); r.map = e.mapJSON; return r
             } catch { return Reply(ok: false, reason: error.localizedDescription) }
         case "isOpen": return Reply(ok: engine != nil)
-        case "close": engine = nil; return Reply()
+        case "close": engine = nil; lastOwners = []; lastNationSig = []; resetSlimStaticCache(); return Reply()
         case "step":
             if let e = engine { advanceDays(e, days: max(1, int("days"))) }
             return data(engine == nil ? nil : state(stepping: true, slim: bool("slim")))

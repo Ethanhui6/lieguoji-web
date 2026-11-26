@@ -26,6 +26,13 @@ final class WeatherOverlayView: UIView {
     private var rippleLayers: [SpriteSheetLayer] = []
     private var currentMode: Mode = .off
     private var zoneLayers: [Int: (layer: CALayer, zone: Zone)] = [:]
+    private var wasZonesEmpty = true
+    private var lastAppliedZones: [Zone] = []
+    private var lastZoneScale: Double = -1
+    private var lastLayoutBounds: CGRect = .zero
+
+    /// Fast-path check for pure-pan callers: true when no local weather zone layers exist or were active.
+    var isZonesEmpty: Bool { zoneLayers.isEmpty && wasZonesEmpty }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -59,8 +66,20 @@ final class WeatherOverlayView: UIView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
+    override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
+        if newWindow == nil && currentMode != .off {
+            currentMode = .off
+            applyEmitterMode(.off)
+        }
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
+        guard bounds != lastLayoutBounds,
+              bounds.width.isFinite, bounds.height.isFinite,
+              bounds.width > 0, bounds.height > 0 else { return }
+        lastLayoutBounds = bounds
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         edgeTint.frame = bounds
@@ -93,13 +112,47 @@ final class WeatherOverlayView: UIView {
         return targetPt / max(1, px)
     }
 
-    func update(seasonPhase: Float, zones: [Zone], camera: MapCamera, viewport: CGSize, active: Bool) {
-        let reduce = UIAccessibility.isReduceMotionEnabled
-        let enableParticles = active && EffectsView.particles && !Energy.hot && !reduce && seasonPhase >= 0 && viewport.width > 10
+    func update(seasonPhase: Float, zones: [Zone], camera: MapCamera, viewport: CGSize, active: Bool, purePan: Bool = false) {
+        guard viewport.width.isFinite, viewport.height.isFinite, camera.isValid else { return }
+        if purePan {
+            // Pure-pan fast path: never touch emitter configs or allocate collections;
+            // return immediately when no zone layers exist, otherwise reposition active zone layers only.
+            guard !zoneLayers.isEmpty else {
+                if zones.isEmpty { wasZonesEmpty = true }
+                return
+            }
+            guard viewport.width > 10, viewport.height > 0 else { return }
+            let vp = (width: Double(viewport.width), height: Double(viewport.height))
+            let visible = CGRect(origin: .zero, size: viewport).insetBy(dx: -40, dy: -40)
+            let scaleOK = camera.scale >= 0.42
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            defer { CATransaction.commit() }
+            for (_, entry) in zoneLayers {
+                let p = camera.toScreen(x: entry.zone.x, y: entry.zone.y, viewport: vp)
+                let pt = CGPoint(x: p.x, y: p.y)
+                let onScreen = scaleOK && pt.x.isFinite && pt.y.isFinite && visible.contains(pt)
+                if entry.layer.isHidden == onScreen { entry.layer.isHidden = !onScreen }
+                if onScreen {
+                    entry.layer.position = pt
+                }
+            }
+            return
+        }
 
-        let hasBlizzard = zones.contains { $0.kind == 1 }
-        let hasDrought = zones.contains { $0.kind == 2 }
-        let hasFlood = zones.contains { $0.kind == 3 }
+        let reduce = UIAccessibility.isReduceMotionEnabled
+        let enableParticles = active && EffectsView.particles && !Energy.hot && !reduce && seasonPhase.isFinite && seasonPhase >= 0 && viewport.width > 10
+
+        var hasBlizzard = false
+        var hasDrought = false
+        var hasFlood = false
+        if enableParticles && !zones.isEmpty {
+            for z in zones {
+                if z.kind == 1 { hasBlizzard = true }
+                else if z.kind == 2 { hasDrought = true }
+                else if z.kind == 3 { hasFlood = true }
+            }
+        }
 
         let targetMode: Mode = {
             guard enableParticles else { return .off }
@@ -116,7 +169,11 @@ final class WeatherOverlayView: UIView {
             applyEmitterMode(targetMode)
         }
 
-        updateZoneMarkers(zones: active && !reduce ? zones : [], camera: camera, viewport: viewport)
+        let effectiveZones = active && !reduce ? zones : []
+        if effectiveZones.isEmpty && wasZonesEmpty && zoneLayers.isEmpty {
+            return
+        }
+        updateZoneMarkers(zones: effectiveZones, camera: camera, viewport: viewport)
     }
 
     private func applyEmitterMode(_ mode: Mode) {
@@ -279,8 +336,8 @@ final class WeatherOverlayView: UIView {
     }
 
     private func updateZoneMarkers(zones: [Zone], camera: MapCamera, viewport: CGSize) {
-        let visibleZones = viewport.width > 10 ? Array(zones.prefix(6)) : []
-        if visibleZones.isEmpty {
+        guard viewport.width.isFinite, viewport.height.isFinite, camera.isValid else { return }
+        if zones.isEmpty || viewport.width <= 10 || viewport.height <= 0 {
             if !zoneLayers.isEmpty {
                 CATransaction.begin()
                 CATransaction.setDisableActions(true)
@@ -288,44 +345,63 @@ final class WeatherOverlayView: UIView {
                 zoneLayers.removeAll()
                 CATransaction.commit()
             }
+            lastAppliedZones = []
+            lastZoneScale = -1
+            wasZonesEmpty = true
             return
         }
 
-        let keep = Set(visibleZones.map(\.province))
+        let visibleZones = Array(zones.prefix(6))
+        wasZonesEmpty = false
+
+        let zonesChanged = visibleZones != lastAppliedZones
+        let scaleChanged = abs(camera.scale - lastZoneScale) > 1e-6
+
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         defer { CATransaction.commit() }
 
-        for (pid, entry) in zoneLayers where !keep.contains(pid) {
-            entry.layer.removeFromSuperlayer()
-            zoneLayers[pid] = nil
+        if zonesChanged {
+            let keep = Set(visibleZones.map(\.province))
+            for (pid, entry) in zoneLayers where !keep.contains(pid) {
+                entry.layer.removeFromSuperlayer()
+                zoneLayers[pid] = nil
+            }
+            lastAppliedZones = visibleZones
         }
 
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         let visible = CGRect(origin: .zero, size: viewport).insetBy(dx: -40, dy: -40)
-        let k = CGFloat(max(0.78, min(1.18, camera.scale * 0.72)))
+        let rawK = CGFloat(max(0.78, min(1.18, camera.scale * 0.72)))
+        let k = rawK.isFinite ? rawK : 1.0
+        let scaleOK = camera.scale >= 0.42
 
         for z in visibleZones {
+            var created = false
             let entry: (layer: CALayer, zone: Zone)
             if let existing = zoneLayers[z.province], existing.zone.kind == z.kind {
                 entry = (existing.layer, z)
-                zoneLayers[z.province] = entry
+                if zonesChanged { zoneLayers[z.province] = entry }
             } else {
                 zoneLayers[z.province]?.layer.removeFromSuperlayer()
                 let l = makeZoneLayer(kind: z.kind)
                 layer.insertSublayer(l, below: cloudEmitter)
                 entry = (l, z)
                 zoneLayers[z.province] = entry
+                created = true
+            }
+            if scaleChanged || created {
+                entry.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
             }
             let p = camera.toScreen(x: z.x, y: z.y, viewport: vp)
             let pt = CGPoint(x: p.x, y: p.y)
-            let onScreen = visible.contains(pt) && camera.scale >= 0.42
-            entry.layer.isHidden = !onScreen
+            let onScreen = scaleOK && pt.x.isFinite && pt.y.isFinite && visible.contains(pt)
+            if entry.layer.isHidden == onScreen { entry.layer.isHidden = !onScreen }
             if onScreen {
                 entry.layer.position = pt
-                entry.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
             }
         }
+        lastZoneScale = camera.scale
     }
 
     private static let softHalo: CGImage? = UIGraphicsImageRenderer(size: CGSize(width: 48, height: 48)).image { ctx in

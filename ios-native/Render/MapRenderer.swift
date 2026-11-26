@@ -14,13 +14,15 @@ final class MapBufferPool {
     var buffer: MTLBuffer? { slots[current]?.buffer }
 
     func write(device: MTLDevice, length: Int, capacity: Int? = nil, _ fill: (MTLBuffer) -> Void) -> MTLBuffer? {
+        let safeLength = max(16, length)
+        let allocLength = max(safeLength, capacity ?? safeLength)
         let index = 1 - current
         let buffer: MTLBuffer
-        if let slot = slots[index], slot.buffer.length >= length,
+        if let slot = slots[index], slot.buffer.length >= safeLength,
            slot.lastRead == nil || slot.lastRead?.status == .completed || slot.lastRead?.status == .error {
             buffer = slot.buffer
         } else {
-            guard let replacement = device.makeBuffer(length: max(length, capacity ?? length), options: .storageModeShared) else { return nil }
+            guard let replacement = device.makeBuffer(length: allocLength, options: .storageModeShared) else { return nil }
             buffer = replacement
         }
         fill(buffer)
@@ -454,6 +456,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
 
+    private var released = false
+
     /// 世界切换前夕抢先释放高内存瞬态数据（墨场、拓扑、扫色、海面源字节与展卷场），在保留最后一帧静图的同时削平双世界内存尖峰。
     func releaseHeavyTransientResources() {
         ink = nil
@@ -472,6 +476,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     /// 切换世界卸载旧地图时主动释放重型顶点与墨场缓冲，防止真机内存叠加触发 Jetsam 闪退。
     func releaseResources() {
+        released = true
+        _ = workRevision.replaceMap()
         onDraw = nil
         onOutlines = nil
         releaseHeavyTransientResources()
@@ -496,6 +502,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         scrollArtV = nil
         scrollArtCorners = nil
         route = nil
+        armySprites.removeAll(keepingCapacity: false)
+        dying.removeAll(keepingCapacity: false)
+        deathDelays.removeAll(keepingCapacity: false)
+        routePoints.removeAll(keepingCapacity: false)
+        legFrom.removeAll(keepingCapacity: false)
+        legTo.removeAll(keepingCapacity: false)
+        legLead.removeAll(keepingCapacity: false)
+        lastLegVelocity.removeAll(keepingCapacity: false)
+        spread.removeAll(keepingCapacity: false)
+        fresh.removeAll(keepingCapacity: false)
+        cachedPlacedSprites.removeAll(keepingCapacity: false)
+        cachedPlacedSpritesTime = -1
+        armySpritesRevision &+= 1
         units.removeAll(keepingCapacity: false)
         unitBufferPool.removeAll(keepingCapacity: false)
         colorBufferPool.reset()
@@ -700,7 +719,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     private func uploadSea() {
-        guard let sea, seaSource.count == map.seaWidth * map.seaHeight * 4 else { return }
+        guard !released, let sea, map.seaWidth > 0, map.seaHeight > 0,
+              sea.width == map.seaWidth, sea.height == map.seaHeight,
+              seaSource.count == map.seaWidth * map.seaHeight * 4 else { return }
         var bytes = MapPalette.recolorSea(seaSource, from: .warmPaper, to: MapPalette.ocean(display.ocean))
         if display.mapDetail ?? true {
             MapLayers.applySeaWash(width: map.seaWidth, height: map.seaHeight, to: &bytes)
@@ -715,7 +736,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     func setMap(_ next: WorldMap, replayFast: Bool = false, skipStatic: Bool = false, skipOutlines: Bool = false, animateColors: Bool? = nil) {
         // 硬隔离：setMap 仅用于同一地图网格的疆域/国色更新，严禁跨拓扑传入新世界（否则旧 terrainBase/positions 长度失配会瞬间越界闪退）。
-        guard next.vertices.count == map.vertices.count, next.cellCount == map.cellCount else { return }
+        guard !released, next.vertices.count == map.vertices.count, next.cellCount == map.cellCount else { return }
         let work = workRevision.replaceMap()
         let noStatic = replayFast || skipStatic
         let doFade = animateColors ?? !replayFast
@@ -723,9 +744,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if !coastRefined && !next.coast.isEmpty {
             coastRefined = true
             DispatchQueue.global(qos: .utility).async { [weak self] in
+                guard self != nil else { return }
                 let mask = MapLayers.waterlines(next), marks = MapLayers.ornaments(next).vertices
-                DispatchQueue.main.async {
-                    guard let self else { return }
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, !self.released, self.sea != nil, self.map.vertices.count == next.vertices.count else { return }
                     self.seaSource = next.seaRGBA; self.seaMask = mask; self.ornaments = self.buffer(marks, stride: 6); self.uploadSea(); self.onOutlines?()
                 }
             }
@@ -738,11 +760,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let wide = borderWide
         let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard self != nil else { return }
             let vertices = skipOutlines ? nil : MapLayers.outlines(next, wide: wide).vertices
             let marks = rebuildIcons ? MapLayers.cityIcons(next).vertices : nil
             let colours = MapRenderer.baseColors(next, inputs)
-            DispatchQueue.main.async {
-                guard let self, self.workRevision.acceptsGeometry(work) else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, !self.released, self.workRevision.acceptsGeometry(work) else { return }
                 if let vertices, self.workRevision.acceptsOutlineGeometry(work) { self.outlines = self.buffer(vertices, stride: 6) }
                 if let marks { self.icons = self.buffer(marks, stride: 6) }
                 self.workRevision.installGeometry(work)
@@ -785,14 +808,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var lastCapitalKey: [Int] = []
     private var borderWide = Set<Int>()
     func setBorderEmphasis(_ wide: Set<Int>) {
-        guard wide != borderWide else { return }
+        guard !released, wide != borderWide else { return }
         borderWide = wide
         let work = workRevision.changeOutlines()
         let next = map
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard self != nil else { return }
             let vertices = MapLayers.outlines(next, wide: wide).vertices
-            DispatchQueue.main.async {
-                guard let self, self.workRevision.acceptsOutlineGeometry(work) else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, !self.released, self.workRevision.acceptsOutlineGeometry(work) else { return }
                 self.outlines = self.buffer(vertices, stride: 6)
                 self.onOutlines?()
             }
@@ -890,6 +914,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     static func texture(_ device: MTLDevice, _ image: CGImage) -> MTLTexture? {
         let w = image.width, h = image.height
+        guard w > 0, h > 0 else { return nil }
         var bytes = [UInt8](repeating: 0, count: w * h * 4)
         guard let ctx = CGContext(data: &bytes, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
                                   bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
@@ -926,15 +951,27 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     var tweenEase = true
     var isAnimating: Bool { chasing || fading || washesAnimating }
 
+    private var cachedPlacedSprites: [(sprite: ArmySprite, x: Float, y: Float)] = []
+    private var cachedPlacedSpritesTime: CFTimeInterval = -1
+    private var cachedPlacedSpritesRevision: UInt64 = 0
+    private var armySpritesRevision: UInt64 = 0
+
     private func progress(_ now: CFTimeInterval) -> Float {
-        legLength <= 0 ? 1 : Float(min(1, max(0, (now - legStart) / legLength)))
+        guard now.isFinite, legStart.isFinite, legLength.isFinite, legLength > 1e-6 else { return 1 }
+        return Float(min(1, max(0, (now - legStart) / legLength)))
     }
     func displayedPoint(_ s: ArmySprite) -> SIMD2<Float> { displayed(s) }
     private func displayed(_ s: ArmySprite) -> SIMD2<Float> {
+        displayed(s, progress: progress(pinnedFrameTime ?? CACurrentMediaTime()))
+    }
+    private func displayed(_ s: ArmySprite, progress t: Float) -> SIMD2<Float> {
         guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else {
             return (s.x.isFinite && s.y.isFinite) ? SIMD2(s.x, s.y) : .zero
         }
-        return Self.hermite(a, b, legLead[s.key] ?? (b - a), progress(pinnedFrameTime ?? CACurrentMediaTime()))
+        if t >= 1 {
+            return (b.x.isFinite && b.y.isFinite) ? b : ((s.x.isFinite && s.y.isFinite) ? SIMD2(s.x, s.y) : .zero)
+        }
+        return Self.hermite(a, b, legLead[s.key] ?? (b - a), t)
     }
     static func hermite(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ m0: SIMD2<Float>, _ t: Float) -> SIMD2<Float> {
         let fallback = (b.x.isFinite && b.y.isFinite) ? b : ((a.x.isFinite && a.y.isFinite) ? a : SIMD2<Float>(0, 0))
@@ -953,10 +990,51 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         return t
     }
 
-    static func iconZoom(_ scale: Double) -> Double { 1.12 * min(21.0 / 3.0112, max(6.8 / 3.0112, scale * 0.66)) }
-    static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
+    static func iconZoom(_ scale: Double) -> Double {
+        let safeScale = (scale.isFinite && scale > 0) ? scale : 1
+        return 1.12 * min(21.0 / 3.0112, max(6.8 / 3.0112, safeScale * 0.66))
+    }
+    static func iconPoints(_ scale: Double, iconScale: Double) -> Double {
+        let safeIcon = (iconScale.isFinite && iconScale > 0) ? iconScale : 1
+        return 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * safeIcon * iconZoom(scale)
+    }
+    /// Returns current army world positions, caching settled positions (when spline animation has completed)
+    /// and same-frame queries so interactive pan/fling never recomputes Hermite splines for every army.
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
-        armySprites.map { s in let p = displayed(s); return (s, p.x, p.y) }
+        guard !armySprites.isEmpty else { return [] }
+        let now = pinnedFrameTime ?? CACurrentMediaTime()
+        let t = progress(now)
+        if cachedPlacedSpritesRevision == armySpritesRevision && cachedPlacedSpritesTime >= 0 {
+            if (t >= 1 && cachedPlacedSpritesTime == .infinity) || cachedPlacedSpritesTime == now {
+                return cachedPlacedSprites
+            }
+        }
+        let result: [(sprite: ArmySprite, x: Float, y: Float)]
+        if t >= 1 {
+            result = armySprites.map { s in
+                let p: SIMD2<Float>
+                if !s.key.isEmpty, let b = legTo[s.key], b.x.isFinite, b.y.isFinite {
+                    p = b
+                } else if s.x.isFinite && s.y.isFinite {
+                    p = SIMD2(s.x, s.y)
+                } else {
+                    p = .zero
+                }
+                return (s, p.x, p.y)
+            }
+            cachedPlacedSprites = result
+            cachedPlacedSpritesRevision = armySpritesRevision
+            cachedPlacedSpritesTime = .infinity
+        } else {
+            result = armySprites.map { s in
+                let p = displayed(s, progress: t)
+                return (s, p.x, p.y)
+            }
+            cachedPlacedSprites = result
+            cachedPlacedSpritesRevision = armySpritesRevision
+            cachedPlacedSpritesTime = now
+        }
+        return result
     }
 
     func setArmies(_ rawSprites: [ArmySprite], route rawPoints: [SIMD2<Float>], snap: Bool = false) {
@@ -967,7 +1045,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let previous = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
             var from = [String: SIMD2<Float>](), to = [String: SIMD2<Float>](), fading = Set<String>(), lead = [String: SIMD2<Float>]()
             var nextVel = [String: (vel: SIMD2<Float>, time: CFTimeInterval)]()
-            let newLength = snap ? 0 : max(0.055, tweenDuration)
+            let safeTween = tweenDuration.isFinite ? tweenDuration : 0.3
+            let newLength = snap ? 0 : max(0.055, safeTween)
             for s in sprites where !s.key.isEmpty {
                 let target = SIMD2(s.x, s.y)
                 if !snap, let sx = s.startX, let sy = s.startY, sx.isFinite, sy.isFinite {
@@ -992,31 +1071,32 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                         continue
                     }
                     from[s.key] = p; to[s.key] = target
-                    if newLength > 0, along > 0.001 {
+                    if newLength > 1e-5, along > 0.001 {
                         nextVel[s.key] = (chord / Float(newLength), now)
                     }
                     var carriedPerSec: SIMD2<Float>? = nil
-                    if let a = legFrom[s.key], let b = legTo[s.key], legLength > 0, t < 0.995 {
+                    if let a = legFrom[s.key], let b = legTo[s.key], legLength > 1e-5, t < 0.995 {
                         let m0 = legLead[s.key] ?? (b - a), t2 = t * t
                         let v = a * (6 * t2 - 6 * t) + m0 * (3 * t2 - 4 * t + 1) + b * (6 * t - 6 * t2) + (b - a) * (3 * t2 - 2 * t)
                         carriedPerSec = v / Float(legLength)
                     } else if let prev = lastLegVelocity[s.key], now - prev.time < 0.45 {
                         carriedPerSec = prev.vel
                     }
-                    if let vPerSec = carriedPerSec, newLength > 0 {
+                    if let vPerSec = carriedPerSec, newLength > 1e-5 {
                         var m = vPerSec * Float(newLength)
                         let k = (m.x * m.x + m.y * m.y).squareRoot()
-                        if along < 0.001 || k < 0.0001 || !k.isFinite {
+                        let denom = k * along
+                        if along < 0.001 || k < 0.0001 || !k.isFinite || !denom.isFinite || denom < 1e-9 {
                             m = .zero
                         } else {
-                            let cos = (m.x * chord.x + m.y * chord.y) / (k * along)
+                            let cos = (m.x * chord.x + m.y * chord.y) / denom
                             if !cos.isFinite || cos < 0.45 {
                                 m = chord
                             } else {
                                 let w = (cos - 0.45) / 0.55
                                 m = m * w + chord * (1 - w)
                                 let k2 = (m.x * m.x + m.y * m.y).squareRoot()
-                                if k2.isFinite && k2 > along * 1.05 { m *= (along * 1.05) / k2 }
+                                if k2.isFinite && k2 > 1e-6 && k2 > along * 1.05 { m *= (along * 1.05) / k2 }
                             }
                         }
                         if m.x.isFinite && m.y.isFinite { lead[s.key] = m }
@@ -1038,6 +1118,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             legFrom = from; legTo = to; legLead = lead; fresh = fading
             legStart = now; legLength = newLength
             armySprites = sprites
+            armySpritesRevision &+= 1
+            cachedPlacedSprites.removeAll(keepingCapacity: true)
+            cachedPlacedSpritesTime = -1
             chasing = !snap
             rebuildArmies()
         }
@@ -1173,7 +1256,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     private func buffer(_ data: [Float], stride: Int) -> (MTLBuffer, Int)? {
-        guard !data.isEmpty, let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
+        guard stride > 0, !data.isEmpty, let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
         return (b, data.count / stride)
     }
 
@@ -1186,12 +1269,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     private var washViewSwitch = false
     private func rebuildAppearance(fade: Bool = false, viewSwitch: Bool = true) {
+        guard !released else { return }
         let work = workRevision.changeAppearance(), map = self.map
         let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard self != nil else { return }
             let colours = MapRenderer.baseColors(map, inputs)
-            DispatchQueue.main.async {
-                guard let self, self.workRevision.acceptsColours(work) else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, !self.released, self.workRevision.acceptsColours(work) else { return }
                 self.workRevision.installColours(work)
                 if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
                 if self.shade.isEmpty { self.shade = colours.shade }
@@ -1211,7 +1296,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 在 CPU 单次预算出四季色温系数与四季权重 `(winter, spring, summer, autumn)`，海陆片元零三角函数、零噪声运算。
     /// 政区模式下陆地色温严格克制（≤ ±3.5%），杜绝秋冬白雪/赭染把列国国色盖灰或混色；地形模式保留饱满四季色貌。
     private static func seasonalTints(phase: Float, lighting: Float, terrainMode: Bool) -> (land: SIMD4<Float>, sea: SIMD4<Float>, weights: SIMD4<Float>) {
-        guard lighting > 0.01, phase >= 0 else { return (SIMD4(1, 1, 1, 1), SIMD4(1, 1, 1, 1), SIMD4(0, 0, 0, 0)) }
+        guard lighting.isFinite, phase.isFinite, lighting > 0.01, phase >= 0 else { return (SIMD4(1, 1, 1, 1), SIMD4(1, 1, 1, 1), SIMD4(0, 0, 0, 0)) }
         let ang = phase * Float.pi * 2
         func smooth(_ a: Float, _ b: Float, _ x: Float) -> Float {
             let t = max(0, min(1, (x - a) / (b - a)))
@@ -1240,12 +1325,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     func draw(in view: MTKView) {
-        guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
-        frameTime = pinnedFrameTime ?? CACurrentMediaTime()
+        guard !released, let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
+        let now = CACurrentMediaTime()
+        if let pinned = pinnedFrameTime, pinned.isFinite, abs(now - pinned) < 0.05 {
+            frameTime = pinned
+        } else {
+            frameTime = now
+        }
+        pinnedFrameTime = nil
         let probe = Self.frameProbe
         var spriteProgress: Float = advanceChase()
         let size = view.bounds.size
-        guard size.width > 0, size.height > 0 else { return }
+        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return }
         if !camera.isValid {
             camera = MapCamera.cover(map: (Double(map.width), Double(map.height)), viewport: (Double(size.width), Double(size.height)))
         }
@@ -1316,7 +1407,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
         }
         func colored(_ layer: (buffer: MTLBuffer, count: Int)?, alpha: Float = 1) {
-            guard let layer, alpha > 0 else { return }
+            guard let layer, layer.count > 0, alpha > 0 else { return }
             u.alpha = alpha
             encoder.setRenderPipelineState(coloredPipeline)
             encoder.setVertexBuffer(layer.buffer, offset: 0, index: 0)
@@ -1391,7 +1482,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 colored(coastInk, alpha: ramp(0.1) * (1 - ramp(0.75)))
             } else if coastInk != nil { coastInk = nil }
             if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }
-            if let rivers, stage > 0.42 {
+            if let rivers, rivers.count > 0, stage > 0.42 {
                 var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, ramp(0.42))
                 encoder.setRenderPipelineState(flatPipeline)
                 encoder.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
@@ -1424,7 +1515,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
                     encoder.setVertexBytes(&clock, length: MemoryLayout<Float>.stride, index: 5)
                     encoder.setFragmentSamplerState(sampler, index: 0)
-                    for unit in units {
+                    for unit in units where unit.count > 0 {
                         encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
                         encoder.setFragmentTexture(unit.texture, index: 0)
                         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
@@ -1456,16 +1547,26 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
         encoder.endEncoding()
         if let probe {
-            probe.encode.append((CACurrentMediaTime() - frameTime) * 1000)
-            buffer.addCompletedHandler { b in
+            let encodeMs = (CACurrentMediaTime() - frameTime) * 1000
+            if encodeMs.isFinite && encodeMs >= 0 { probe.encode.append(encodeMs) }
+            buffer.addCompletedHandler { [weak probe] b in
                 let g = (b.gpuEndTime - b.gpuStartTime) * 1000
-                DispatchQueue.main.async { probe.gpu.append(g) }
+                guard g.isFinite && g >= 0 else { return }
+                DispatchQueue.main.async { [weak probe] in
+                    probe?.gpu.append(g)
+                }
             }
             #if !targetEnvironment(simulator)
-            drawable.addPresentedHandler { d in
+            drawable.addPresentedHandler { [weak probe] d in
                 let t = d.presentedTime
-                DispatchQueue.main.async {
-                    if t > 0 { if probe.lastPresent > 0 { probe.presented.append((t - probe.lastPresent) * 1000) }; probe.lastPresent = t }
+                guard t.isFinite && t > 0 else { return }
+                DispatchQueue.main.async { [weak probe] in
+                    guard let probe else { return }
+                    if probe.lastPresent > 0 {
+                        let gap = (t - probe.lastPresent) * 1000
+                        if gap.isFinite && gap >= 0 { probe.presented.append(gap) }
+                    }
+                    probe.lastPresent = t
                 }
             }
             #endif

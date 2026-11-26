@@ -1,7 +1,51 @@
 import SwiftUI
 import UIKit
 
-// MARK: - 标题页极简热更进度条（纯 4.3 宣纸细墨风格，无阴影无金框）
+/// 向下兼容别名：允许以 `AppUpdateSheet` 或 `CloudUpdateSheet` 唤起客户端版本更新卷轴。
+typealias AppUpdateSheet = CloudUpdateSheet
+
+// MARK: - 宋版朱砂丝带进度条与共享测速格式化器
+
+private struct SongProgressRibbon: View {
+    let progress: Double
+    var completed: Bool { progress >= 0.999 }
+
+    var body: some View {
+        let clamped = min(1.0, max(0.0, progress.isFinite ? progress : 0))
+        ZStack(alignment: .leading) {
+            Capsule()
+                .fill(Theme.wash)
+            if clamped > 0.002 {
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: completed
+                                ? [Theme.jade.opacity(0.85), Theme.jade]
+                                : [Theme.seal.opacity(0.82), Theme.seal],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .scaleEffect(x: max(0.02, clamped), y: 1, anchor: .leading)
+                    .animation(Motion.panel, value: clamped)
+            }
+        }
+        .frame(height: 5.5)
+        .clipShape(Capsule())
+        .overlay(Capsule().strokeBorder(Theme.hairline, lineWidth: 0.5))
+    }
+}
+
+private enum UpdateSpeedFormat {
+    static func liveBytesPerSec(_ bps: Double) -> String {
+        guard bps.isFinite, bps > 1024 else { return "" }
+        let mb = bps / 1_048_576.0
+        if mb >= 1.0 { return String(format: "%.1f MB/s", mb) }
+        return "\(max(1, Int((bps / 1024.0).rounded()))) KB/s"
+    }
+}
+
+// MARK: - 标题页极简热更进度条（纯 4.3 宣纸细墨风格）
 
 struct HotpatchSyncBanner: View {
     @ObservedObject var platform: OnlinePlatform
@@ -9,7 +53,8 @@ struct HotpatchSyncBanner: View {
 
     var body: some View {
         if hotPack.updating {
-            VStack(spacing: 5) {
+            let speedStr = UpdateSpeedFormat.liveBytesPerSec(hotPack.speedBytesPerSec)
+            VStack(spacing: 6) {
                 HStack(spacing: 6) {
                     Text(hotPack.statusMessage.isEmpty ? "正在游戏内满速热更新…" : hotPack.statusMessage)
                         .font(Theme.caption)
@@ -17,8 +62,8 @@ struct HotpatchSyncBanner: View {
                         .lineLimit(1)
                         .monospacedDigit()
                     Spacer(minLength: 4)
-                    if hotPack.speedBytesPerSec > 10_240 {
-                        Text(String(format: "%.1f MB/s", hotPack.speedBytesPerSec / 1_048_576.0))
+                    if !speedStr.isEmpty {
+                        Text(speedStr)
                             .font(Theme.caption)
                             .foregroundStyle(Theme.jade)
                             .monospacedDigit()
@@ -28,12 +73,12 @@ struct HotpatchSyncBanner: View {
                         .foregroundStyle(Theme.seal)
                         .monospacedDigit()
                 }
-                InkBar(fraction: hotPack.progress, color: Theme.seal, height: 3)
+                SongProgressRibbon(progress: hotPack.progress)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Theme.paperLight.opacity(0.95), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
+            .background(Theme.paperLight.opacity(0.96), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.line, lineWidth: 0.75))
         } else if let text = platform.hotpatchBanner {
             HStack(spacing: 6) {
                 PhosphorIcon(glyph: .check, size: 12, weight: .fill).foregroundStyle(Theme.jade)
@@ -47,12 +92,22 @@ struct HotpatchSyncBanner: View {
     }
 }
 
-// MARK: - 「游戏内免换包资源热更新」弹窗（12 路自适应边缘加速 · SHA256 精确差分 · 即时热加载生效）
+// MARK: - 「游戏内免换包资源热更新」弹窗（多源并发加速 · SHA256 增量差分 · 即时热加载生效）
 
 struct HotUpdateSheet: View {
     @ObservedObject var hotPack: HotPackManager
     var onApplied: (() async -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
+
+    private var speedText: String {
+        UpdateSpeedFormat.liveBytesPerSec(hotPack.speedBytesPerSec)
+    }
+
+    private var progressBytesText: String {
+        let total = max(hotPack.pendingBytes, hotPack.downloadedBytes)
+        guard total > 0 else { return "" }
+        return "\(HotPackManager.formatBytes(hotPack.downloadedBytes)) / \(HotPackManager.formatBytes(total))"
+    }
 
     var body: some View {
         ViewBoundary {
@@ -65,93 +120,119 @@ struct HotUpdateSheet: View {
                     )
 
                     if let m = hotPack.manifest {
-                        Group2 {
-                            Row(label: "本次更新体积", value: hotPack.hasPendingUpdate ? hotPack.pendingSummaryText : "已是最新")
+                        // 宋版双线总览卷卡
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(alignment: .center, spacing: 10) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(hotPack.hasPendingUpdate ? "待同步典藏资源包" : "本地典藏包已是最新")
+                                        .font(Theme.serif(16.5))
+                                        .foregroundStyle(Theme.ink)
+                                    Text(hotPack.hasPendingUpdate ? hotPack.pendingSummaryText : "完整体积 \(HotPackManager.formatBytes(m.totalBytes))（\(m.files.count) 项）")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.ink2)
+                                        .monospacedDigit()
+                                }
+                                Spacer(minLength: 6)
+                                PaperTag(
+                                    text: hotPack.hasPendingUpdate ? "免换包热更" : "已同步",
+                                    color: hotPack.hasPendingUpdate ? Theme.seal : Theme.jade,
+                                    size: 11
+                                )
+                            }
+
                             Divider2()
-                            Row(label: "热更完整包大小", value: "\(HotPackManager.formatBytes(m.totalBytes))（\(m.files.count) 项）")
-                            Divider2()
-                            Row(
-                                label: "当前加速节点",
-                                value: hotPack.activeCDNName.isEmpty ? "自动竞速择优（Cloudflare 边缘优先）" : hotPack.activeCDNName
-                            )
-                            Divider2()
-                            Row(label: "更新方式", value: "12 路并发 SHA256 增量热更 · 无需换包")
+
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("加速线路")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.ink2)
+                                    Text(hotPack.activeCDNName.isEmpty ? "多源边缘自动择优" : hotPack.activeCDNName)
+                                        .font(Theme.label)
+                                        .foregroundStyle(Theme.jade)
+                                        .lineLimit(1)
+                                }
+                                Spacer(minLength: 8)
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text("校验方式")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.ink2)
+                                    Text("12 路并发 · SHA256 差分")
+                                        .font(Theme.label)
+                                        .foregroundStyle(Theme.ink)
+                                        .lineLimit(1)
+                                }
+                            }
+
+                            if !m.summary.isEmpty {
+                                Divider2()
+                                Text(m.summary)
+                                    .font(Theme.label)
+                                    .foregroundStyle(Theme.ink2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
+                        .padding(14)
+                        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).strokeBorder(Theme.line, lineWidth: 0.75))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous)
+                                .strokeBorder(Theme.hairline, lineWidth: 0.5)
+                                .padding(2.5)
+                                .allowsHitTesting(false)
+                        )
                         .padding(.horizontal, Theme.Layout.pageInset)
 
-                        if !m.summary.isEmpty {
-                            Text(m.summary)
-                                .font(Theme.body)
-                                .foregroundStyle(Theme.ink2)
+                        // 实时满速传输仪表卡
+                        if hotPack.updating || hotPack.progress > 0 || !hotPack.statusMessage.isEmpty {
+                            hotDownloadTelemetryCard
                                 .padding(.horizontal, Theme.Layout.pageInset)
                         }
 
-                        SectionLabel("本次包含内容模块")
+                        SectionLabel("本次包含典藏模块（\(m.modules.count)）")
                         Group2 {
                             ForEach(Array(m.modules.enumerated()), id: \.element.id) { idx, mod in
                                 if idx > 0 { Divider2() }
                                 HStack(alignment: .center, spacing: 10) {
-                                    VStack(alignment: .leading, spacing: 3) {
+                                    Rectangle()
+                                        .fill(Theme.seal.opacity(0.65))
+                                        .frame(width: 2.2, height: 28)
+                                    VStack(alignment: .leading, spacing: 2.5) {
                                         Text(mod.name).font(Theme.serif(15)).foregroundStyle(Theme.ink)
                                         Text(mod.detail).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
                                     }
                                     Spacer(minLength: 8)
-                                    EditorialValueText(mod.sizeText, size: 15, color: Theme.ink)
+                                    EditorialValueText(mod.sizeText, size: 14.5, color: Theme.ink)
                                 }
                                 .padding(.horizontal, 4)
-                                .padding(.vertical, 11)
+                                .padding(.vertical, 10)
                             }
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
-                    }
-
-                    if hotPack.updating || !hotPack.statusMessage.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 8) {
-                                if !hotPack.activeCDNName.isEmpty {
-                                    Text(hotPack.activeCDNName)
-                                        .font(Theme.caption)
-                                        .foregroundStyle(Theme.jade)
-                                        .padding(.horizontal, 7)
-                                        .padding(.vertical, 2)
-                                        .background(Theme.jade.opacity(0.09), in: Capsule())
-                                }
-                                if hotPack.updating && hotPack.speedBytesPerSec > 1024 {
-                                    Text(String(format: "%.1f MB/s", hotPack.speedBytesPerSec / 1_048_576.0))
-                                        .font(Theme.caption)
-                                        .foregroundStyle(Theme.seal)
-                                        .monospacedDigit()
-                                }
-                                Spacer()
-                                if hotPack.updating {
-                                    Button("暂停") { hotPack.cancelHotUpdate() }
-                                        .font(Theme.caption)
-                                        .foregroundStyle(Theme.seal)
-                                }
-                            }
-                            Text(hotPack.statusMessage)
-                                .font(Theme.caption)
-                                .foregroundStyle(Theme.ink)
-                                .monospacedDigit()
-                                .fixedSize(horizontal: false, vertical: true)
-                            if hotPack.updating || hotPack.progress > 0 {
-                                InkBar(fraction: hotPack.progress, color: hotPack.progress >= 1 ? Theme.jade : Theme.seal, height: 4)
-                            }
-                        }
-                        .padding(.horizontal, Theme.Layout.pageInset)
+                    } else if hotPack.updating || !hotPack.statusMessage.isEmpty {
+                        hotDownloadTelemetryCard
+                            .padding(.horizontal, Theme.Layout.pageInset)
                     }
 
                     if let err = hotPack.errorMessage {
-                        Text(err).font(Theme.label).foregroundStyle(Theme.seal)
-                            .padding(.horizontal, Theme.Layout.pageInset)
+                        HStack(spacing: 7) {
+                            PhosphorIcon(glyph: .warning, size: 14, weight: .fill).foregroundStyle(Theme.seal)
+                            Text(err).font(Theme.label).foregroundStyle(Theme.seal)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 9)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.seal.opacity(0.06), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).strokeBorder(Theme.seal.opacity(0.28), lineWidth: 0.7))
+                        .padding(.horizontal, Theme.Layout.pageInset)
                     }
 
                     VStack(spacing: 10) {
                         if hotPack.hasPendingUpdate {
                             SealButton(
                                 title: hotPack.updating
-                                    ? (hotPack.speedBytesPerSec > 10_240
-                                       ? String(format: "满速更新中（%d%% · %.1f MB/s）", Int(hotPack.progress * 100), hotPack.speedBytesPerSec / 1_048_576.0)
+                                    ? (!speedText.isEmpty
+                                       ? "满速更新中（\(Int(hotPack.progress * 100))% · \(speedText)）"
                                        : "正在测速并下载（\(Int(hotPack.progress * 100))%）…")
                                     : "立即满速热更新（\(HotPackManager.formatBytes(hotPack.pendingBytes))）",
                                 busy: hotPack.updating,
@@ -191,16 +272,79 @@ struct HotUpdateSheet: View {
             .background(MemorialPaper().ignoresSafeArea())
         }
     }
+
+    private var hotDownloadTelemetryCard: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                if hotPack.updating && !speedText.isEmpty {
+                    Text(speedText)
+                        .font(Theme.serif(19))
+                        .foregroundStyle(Theme.seal)
+                        .monospacedDigit()
+                } else {
+                    Text(hotPack.progress >= 1 ? "同步完成" : "\(Int(hotPack.progress * 100))%")
+                        .font(Theme.serif(17))
+                        .foregroundStyle(hotPack.progress >= 1 ? Theme.jade : Theme.ink)
+                        .monospacedDigit()
+                }
+                if !progressBytesText.isEmpty {
+                    Text(progressBytesText)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 6)
+                if hotPack.updating {
+                    Button {
+                        GameFeel.shared.tap()
+                        hotPack.cancelHotUpdate()
+                    } label: {
+                        Text("暂停")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.seal)
+                            .padding(.horizontal, 9).padding(.vertical, 3.5)
+                            .background(Theme.seal.opacity(0.08), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            SongProgressRibbon(progress: hotPack.progress)
+
+            HStack(spacing: 6) {
+                if !hotPack.activeCDNName.isEmpty {
+                    Text(hotPack.activeCDNName)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.jade)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(Theme.jade.opacity(0.09), in: Capsule())
+                }
+                Text(hotPack.statusMessage)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.ink2)
+                    .monospacedDigit()
+                    .lineLimit(2)
+            }
+        }
+        .padding(13)
+        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                .strokeBorder(hotPack.updating ? Theme.seal.opacity(0.32) : Theme.hairline, lineWidth: 0.75)
+        )
+    }
 }
 
-// MARK: - 客户端内核版本更新弹窗（8 路并行分块满速下载 · 多节点实时测速择优）
+// MARK: - 客户端内核版本更新弹窗（多源并发满速分块下载 · 实时速率仪表 · 多版本更新志）
 
 struct CloudUpdateSheet: View {
     @ObservedObject var platform: OnlinePlatform
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
     @State private var copiedLink = false
+    @State private var copySerial = 0
     @State private var selectedMirrorURL: String? = nil
+    @State private var expandedHistory = false
 
     private let mirrorColumns = [
         GridItem(.flexible(), spacing: 8),
@@ -210,6 +354,8 @@ struct CloudUpdateSheet: View {
     var body: some View {
         ViewBoundary {
             if let info = platform.updateInfo {
+                let extraVersions = platform.cloudChangelog
+                    .filter { $0.version != info.latestVersion && !$0.lines.isEmpty }
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         SheetHeader(
@@ -218,28 +364,22 @@ struct CloudUpdateSheet: View {
                             seal: info.hasAppUpdate ? "新" : "阅"
                         )
 
-                        Group2 {
-                            Row(label: "当前版本", value: "v\(info.currentVersion)（构建 \(info.currentBuild)）")
-                            Divider2()
-                            Row(label: "最新版本", value: "v\(info.latestVersion)（构建 \(info.latestBuild)）")
-                            Divider2()
-                            Row(label: "安装包大小", value: String(format: "%.1f MB · %@", info.ipaSizeMB, info.releaseDate))
-                            if !platform.activeDownloadNode.isEmpty {
-                                Divider2()
-                                Row(label: "当前加速节点", value: platform.activeDownloadNode)
-                            }
-                        }
-                        .padding(.horizontal, Theme.Layout.pageInset)
+                        versionHeroCard(info)
+                            .padding(.horizontal, Theme.Layout.pageInset)
 
-                        // 多节点实时测速与一键切换
+                        // 实时多源并发下载仪表卡
+                        if platform.downloadingIPA || !platform.downloadDetail.isEmpty {
+                            downloadTelemetryCard(info)
+                                .padding(.horizontal, Theme.Layout.pageInset)
+                        }
+
+                        // 多节点实时测速与一键切换矩阵
                         VStack(alignment: .leading, spacing: 10) {
                             HStack(alignment: .center) {
-                                Text("加速下载节点")
-                                    .font(Theme.serif(15.5))
-                                    .foregroundStyle(Theme.ink)
+                                SectionLabel("加速下载线路", inset: false)
                                 Spacer()
                                 EditorialTactileButton(
-                                    title: platform.probingMirrors ? "测速中…" : "测速择优节点",
+                                    title: platform.probingMirrors ? "测速中…" : "重新测速",
                                     icon: .speed,
                                     accent: true,
                                     compact: true,
@@ -250,70 +390,71 @@ struct CloudUpdateSheet: View {
                             }
 
                             if platform.probingMirrors && platform.mirrorResults.isEmpty {
-                                HStack(spacing: 8) {
+                                HStack(spacing: 10) {
                                     InkBusy(tint: Theme.seal, track: Theme.hairline).frame(width: 44)
-                                    Text("正在并发测试 Cloudflare 边缘与全球镜像延迟与吞吐…")
+                                    Text("正在并发测试国内镜像、边缘节点与源站吞吐…")
                                         .font(Theme.caption)
                                         .foregroundStyle(Theme.ink2)
                                 }
-                                .padding(.vertical, 6)
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).strokeBorder(Theme.hairline, lineWidth: 0.7))
                             } else if !platform.mirrorResults.isEmpty {
                                 LazyVGrid(columns: mirrorColumns, spacing: 8) {
-                                    ForEach(platform.mirrorResults) { mirror in
-                                        mirrorPill(mirror)
+                                    ForEach(Array(platform.mirrorResults.enumerated()), id: \.element.id) { idx, mirror in
+                                        mirrorPill(mirror, isBest: idx == 0 && mirror.ok)
                                     }
                                 }
                             }
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
 
-                        if !info.releaseNotes.isEmpty {
-                            SectionLabel("本版更新志")
-                            Group2 {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    ForEach(Array(info.releaseNotes.enumerated()), id: \.offset) { idx, line in
-                                        Text("\(idx + 1). \(line)")
-                                            .font(Theme.body)
-                                            .foregroundStyle(Theme.ink)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                }
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 12)
-                            }
-                            .padding(.horizontal, Theme.Layout.pageInset)
-                        }
+                        // 多版本更新志卡片
+                        if !info.releaseNotes.isEmpty || !extraVersions.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                SectionLabel("版本更新志", inset: false)
 
-                        if platform.downloadingIPA || !platform.downloadDetail.isEmpty {
-                            VStack(alignment: .leading, spacing: 7) {
-                                HStack(spacing: 8) {
-                                    if !platform.activeDownloadNode.isEmpty {
-                                        Text(platform.activeDownloadNode)
-                                            .font(Theme.caption)
-                                            .foregroundStyle(Theme.jade)
-                                            .padding(.horizontal, 7)
-                                            .padding(.vertical, 2)
-                                            .background(Theme.jade.opacity(0.09), in: Capsule())
+                                if !info.releaseNotes.isEmpty {
+                                    changelogCard(
+                                        version: info.latestVersion,
+                                        date: info.releaseDate,
+                                        tag: info.hasAppUpdate ? "新版" : "当前",
+                                        lines: info.releaseNotes,
+                                        accent: true
+                                    )
+                                }
+
+                                if !extraVersions.isEmpty {
+                                    let shownExtra = expandedHistory ? Array(extraVersions.prefix(4)) : Array(extraVersions.prefix(1))
+                                    ForEach(shownExtra) { entry in
+                                        changelogCard(
+                                            version: entry.version,
+                                            date: entry.date ?? "",
+                                            tag: nil,
+                                            lines: entry.lines,
+                                            accent: false
+                                        )
                                     }
-                                    if platform.downloadingIPA && platform.downloadSpeedMBs > 0.01 {
-                                        Text(String(format: "%.1f MB/s", platform.downloadSpeedMBs))
-                                            .font(Theme.caption)
-                                            .foregroundStyle(Theme.seal)
-                                            .monospacedDigit()
-                                    }
-                                    Spacer()
-                                    if platform.downloadingIPA {
-                                        Button("取消") { platform.cancelIPADownload() }
-                                            .font(Theme.caption)
-                                            .foregroundStyle(Theme.seal)
+                                    if extraVersions.count > 1 && !expandedHistory {
+                                        Button {
+                                            GameFeel.shared.tap()
+                                            withAnimation(Motion.panel) { expandedHistory = true }
+                                        } label: {
+                                            HStack(spacing: 5) {
+                                                Text("展开更多版本更新志（+\(min(3, extraVersions.count - 1)) 版）")
+                                                    .font(Theme.caption)
+                                                PhosphorIcon(glyph: .chevronDown, size: 11, weight: .light)
+                                            }
+                                            .foregroundStyle(Theme.ink2)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 8)
+                                            .background(Theme.paperLight.opacity(0.75), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).strokeBorder(Theme.hairline, lineWidth: 0.7))
+                                        }
+                                        .buttonStyle(.plain)
                                     }
                                 }
-                                Text(platform.downloadDetail)
-                                    .font(Theme.caption)
-                                    .foregroundStyle(Theme.ink)
-                                    .monospacedDigit()
-                                    .fixedSize(horizontal: false, vertical: true)
-                                InkBar(fraction: platform.downloadProgress, color: platform.downloadProgress >= 1 ? Theme.jade : Theme.seal, height: 4)
                             }
                             .padding(.horizontal, Theme.Layout.pageInset)
                         }
@@ -345,6 +486,7 @@ struct CloudUpdateSheet: View {
                                     let bestLink = bestCopyLink(for: info)
                                     UIPasteboard.general.string = bestLink
                                     copiedLink = true
+                                    copySerial &+= 1
                                     GameFeel.shared.notify(.success)
                                 }
                             }
@@ -354,7 +496,11 @@ struct CloudUpdateSheet: View {
                                     platform.dismissCurrentUpdatePrompt()
                                     dismiss()
                                 } label: {
-                                    Text("稍后再说").font(Theme.label).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 8)
+                                    Text("稍后再说")
+                                        .font(Theme.label)
+                                        .foregroundStyle(Theme.ink2)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -370,6 +516,12 @@ struct CloudUpdateSheet: View {
                         await platform.probeDownloadMirrors()
                     }
                     syncDefaultSelectedMirror()
+                }
+                .task(id: copySerial) {
+                    guard copySerial > 0 else { return }
+                    try? await Task.sleep(nanoseconds: 2_400_000_000)
+                    guard !Task.isCancelled else { return }
+                    copiedLink = false
                 }
                 .onChange(of: platform.mirrorResults) { _, _ in
                     syncDefaultSelectedMirror()
@@ -416,58 +568,243 @@ struct CloudUpdateSheet: View {
         }
     }
 
+    private func versionHeroCard(_ info: AppUpdateInfo) -> some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("当前版本").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Text("v\(info.currentVersion)")
+                        .font(Theme.serif(17))
+                        .foregroundStyle(Theme.ink2)
+                        .monospacedDigit()
+                }
+                PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
+                    .foregroundStyle(Theme.seal)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("云端新版").font(Theme.caption).foregroundStyle(Theme.seal)
+                    Text("v\(info.latestVersion)")
+                        .font(Theme.serif(19))
+                        .foregroundStyle(Theme.seal)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 6)
+                VStack(alignment: .trailing, spacing: 3) {
+                    PaperTag(text: "多源并发加速", color: Theme.jade, size: 10.5)
+                    Text(String(format: "%.1f MB · Build %d", info.ipaSizeMB, info.latestBuild))
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .monospacedDigit()
+                }
+            }
+
+            Divider2()
+
+            HStack(spacing: 12) {
+                HStack(spacing: 5) {
+                    PhosphorIcon(glyph: .calendar, size: 12.5, weight: .light).foregroundStyle(Theme.ink2)
+                    Text(info.releaseDate.isEmpty ? "正式版" : info.releaseDate)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 6)
+                if !platform.activeDownloadNode.isEmpty {
+                    HStack(spacing: 4) {
+                        Circle().fill(Theme.jade).frame(width: 5.5, height: 5.5)
+                        Text(platform.activeDownloadNode)
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.jade)
+                            .lineLimit(1)
+                    }
+                } else if let best = platform.mirrorResults.first(where: { $0.ok }) {
+                    HStack(spacing: 4) {
+                        Circle().fill(Theme.jade).frame(width: 5.5, height: 5.5)
+                        Text("优选：\(best.name)")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.jade)
+                            .lineLimit(1)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).strokeBorder(Theme.line, lineWidth: 0.75))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous)
+                .strokeBorder(Theme.seal.opacity(0.18), lineWidth: 0.5)
+                .padding(2.5)
+                .allowsHitTesting(false)
+        )
+    }
+
+    private func downloadTelemetryCard(_ info: AppUpdateInfo) -> some View {
+        let downloadedMB = max(0.0, min(info.ipaSizeMB, info.ipaSizeMB * platform.downloadProgress))
+        let pct = Int((min(1.0, max(0.0, platform.downloadProgress)) * 100.0).rounded())
+        return VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                if platform.downloadingIPA && platform.downloadSpeedMBs > 0.01 {
+                    Text(String(format: "%.1f MB/s", platform.downloadSpeedMBs))
+                        .font(Theme.serif(20))
+                        .foregroundStyle(Theme.seal)
+                        .monospacedDigit()
+                } else {
+                    Text(platform.downloadProgress >= 1 ? "下载就绪" : "\(pct)%")
+                        .font(Theme.serif(18))
+                        .foregroundStyle(platform.downloadProgress >= 1 ? Theme.jade : Theme.ink)
+                        .monospacedDigit()
+                }
+                Text(String(format: "%.1f / %.1f MB · %d%%", downloadedMB, info.ipaSizeMB, pct))
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.ink2)
+                    .monospacedDigit()
+                Spacer(minLength: 4)
+                if platform.downloadingIPA {
+                    Button {
+                        GameFeel.shared.tap()
+                        platform.cancelIPADownload()
+                    } label: {
+                        Text("取消")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.seal)
+                            .padding(.horizontal, 9).padding(.vertical, 3.5)
+                            .background(Theme.seal.opacity(0.08), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            SongProgressRibbon(progress: platform.downloadProgress)
+
+            HStack(spacing: 6) {
+                if !platform.activeDownloadNode.isEmpty {
+                    Text(platform.activeDownloadNode)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.jade)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(Theme.jade.opacity(0.09), in: Capsule())
+                }
+                Text(platform.downloadDetail)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.ink2)
+                    .monospacedDigit()
+                    .lineLimit(2)
+            }
+        }
+        .padding(13)
+        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                .strokeBorder(platform.downloadingIPA ? Theme.seal.opacity(0.35) : Theme.hairline, lineWidth: 0.75)
+        )
+    }
+
+    private func changelogCard(version: String, date: String, tag: String?, lines: [String], accent: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 7) {
+                Text("v\(version)")
+                    .font(Theme.serif(16.5))
+                    .foregroundStyle(accent ? Theme.seal : Theme.ink)
+                    .monospacedDigit()
+                if let tag, !tag.isEmpty {
+                    PaperTag(text: tag, color: accent ? Theme.seal : Theme.ink2, size: 10)
+                }
+                Spacer(minLength: 4)
+                if !date.isEmpty {
+                    Text(date)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .monospacedDigit()
+                }
+            }
+
+            Divider2()
+
+            VStack(alignment: .leading, spacing: 7) {
+                ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
+                    HStack(alignment: .top, spacing: 7) {
+                        Text("\(idx + 1).")
+                            .font(Theme.caption)
+                            .foregroundStyle(accent ? Theme.seal : Theme.ink2)
+                            .monospacedDigit()
+                            .frame(width: 16, alignment: .trailing)
+                        Text(line)
+                            .font(Theme.label)
+                            .foregroundStyle(Theme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.paperLight.opacity(accent ? 0.96 : 0.78), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                .strokeBorder(accent ? Theme.seal.opacity(0.28) : Theme.hairline, lineWidth: 0.75)
+        )
+    }
+
     @ViewBuilder
-    private func mirrorPill(_ mirror: MirrorProbeResult) -> some View {
+    private func mirrorPill(_ mirror: MirrorProbeResult, isBest: Bool) -> some View {
         let isSelected = (selectedMirrorURL == mirror.url) || (selectedMirrorURL == nil && mirror.ok && platform.mirrorResults.first(where: { $0.ok })?.id == mirror.id)
         Button {
             guard mirror.ok, !platform.downloadingIPA else { return }
             GameFeel.shared.tap()
             selectedMirrorURL = mirror.url
+            copiedLink = false
         } label: {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 4) {
+                    Circle()
+                        .fill(mirror.ok ? (isBest ? Theme.jade : Theme.ink2.opacity(0.65)) : Theme.seal.opacity(0.45))
+                        .frame(width: 5.5, height: 5.5)
                     Text(mirror.name)
                         .font(Theme.caption)
                         .foregroundStyle(mirror.ok ? (isSelected ? Theme.seal : Theme.ink) : Theme.ink2)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .minimumScaleFactor(0.78)
                     Spacer(minLength: 2)
                     if isSelected && mirror.ok {
                         PhosphorIcon(glyph: .check, size: 11, weight: .fill)
                             .foregroundStyle(Theme.seal)
+                    } else if isBest {
+                        Text("优")
+                            .font(Theme.sans(10))
+                            .foregroundStyle(Theme.jade)
                     }
                 }
                 if mirror.ok {
-                    HStack(spacing: 6) {
-                        if let spd = mirror.speedMBs {
-                            Text(String(format: "%.1f MB/s", spd))
-                                .font(Theme.caption)
-                                .foregroundStyle(Theme.jade)
-                                .monospacedDigit()
-                        }
+                    HStack(spacing: 5) {
+                        Text(mirror.speedText)
+                            .font(Theme.sans(11.5))
+                            .foregroundStyle(Theme.jade)
+                            .monospacedDigit()
+                            .padding(.horizontal, 5.5).padding(.vertical, 1.5)
+                            .background(Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                         if let ms = mirror.latencyMs {
-                            Text("\(ms) ms")
+                            Text("\(ms)ms")
                                 .font(Theme.caption)
                                 .foregroundStyle(Theme.ink2)
                                 .monospacedDigit()
                         }
                     }
                 } else {
-                    Text("暂不可达")
+                    Text(mirror.speedText)
                         .font(Theme.caption)
                         .foregroundStyle(Theme.ink2.opacity(0.65))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.vertical, 9)
             .background(
-                isSelected && mirror.ok ? Theme.seal.opacity(0.07) : Theme.paperLight.opacity(0.86),
+                isSelected && mirror.ok ? Theme.seal.opacity(0.065) : Theme.paperLight.opacity(0.9),
                 in: RoundedRectangle(cornerRadius: 8, style: .continuous)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(isSelected && mirror.ok ? Theme.seal.opacity(0.45) : Theme.hairline, lineWidth: isSelected && mirror.ok ? 1.0 : 0.75)
+                    .stroke(isSelected && mirror.ok ? Theme.seal.opacity(0.48) : Theme.hairline, lineWidth: isSelected && mirror.ok ? 1.0 : 0.75)
             )
             .opacity(mirror.ok ? 1.0 : 0.55)
         }

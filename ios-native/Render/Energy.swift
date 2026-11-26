@@ -24,5 +24,44 @@ enum Energy {
     }
     static var hot: Bool { level >= 2 }
     /// The share of real time the simulation may keep a core busy (the rest it sleeps).
-    static var duty: Double { max(0.2, min(1, load) * [1, 0.8, 0.55, 0.4][level]) }
+    static var duty: Double {
+        let safeLoad = load.isFinite ? load : 0.8
+        let idx = max(0, min(3, level))
+        let scales = [1.0, 0.8, 0.55, 0.4]
+        return max(0.2, min(1.0, safeLoad) * scales[idx])
+    }
+    /// Interactive map pan/pinch/fling frame-rate floor by thermal state:
+    /// - `.nominal` (0): 60–120fps (honours user setting)
+    /// - `.fair` (1): 60fps (never drops to 30fps on `.fair`)
+    /// - `.serious` (2): 60fps during active user gesture, 45fps idle
+    /// - `.critical` (3): 45fps during active user gesture, 30fps idle
+    static func mapFPS(preferred: Int, interactive: Bool) -> Int {
+        let base = max(30, min(120, preferred))
+        switch level {
+        case 0: return base
+        case 1: return min(base, 60)
+        case 2: return min(base, interactive ? 60 : 45)
+        default: return min(base, interactive ? 45 : 30)
+        }
+    }
+    /// Marching / background animation display-link cadence by thermal state (never drops to 30fps on `.fair`).
+    static func glideFPS(preferred: Int) -> Int {
+        let base = max(15, min(120, preferred))
+        switch level {
+        case 0: return base
+        case 1: return min(base, 60)
+        case 2: return min(base, 45)
+        default: return min(base, 30)
+        }
+    }
+    /// Decorative CoreAnimation effect cadence by thermal state.
+    static func effectFPS(preferred: Int) -> Int {
+        let base = max(15, min(60, preferred))
+        switch level {
+        case 0: return base
+        case 1: return min(base, 45)
+        case 2: return min(base, 30)
+        default: return min(base, 15)
+        }
+    }
 }

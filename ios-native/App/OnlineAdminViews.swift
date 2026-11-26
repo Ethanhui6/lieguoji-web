@@ -33,8 +33,8 @@ struct HubAdminTabView: View {
     @State private var pace1 = 1
     @State private var pace4 = 2
     @State private var pace16 = 5
-    @State private var relVersion = "5.6.0"
-    @State private var relBuild = "186"
+    @State private var relVersion = "5.7.0"
+    @State private var relBuild = "187"
     @State private var relForce = false
     @State private var packTag = ""
     @State private var packSummary = ""

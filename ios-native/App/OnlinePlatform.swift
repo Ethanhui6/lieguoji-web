@@ -50,6 +50,42 @@ struct MirrorProbeResult: Identifiable, Equatable, Sendable {
     let latencyMs: Int?
     let speedMBs: Double?
     let ok: Bool
+    let supportsRange: Bool
+    let contentLength: Int64
+
+    init(
+        id: String,
+        name: String,
+        url: String,
+        latencyMs: Int?,
+        speedMBs: Double?,
+        ok: Bool,
+        supportsRange: Bool = false,
+        contentLength: Int64 = 0
+    ) {
+        self.id = id
+        self.name = name
+        self.url = url
+        self.latencyMs = latencyMs
+        self.speedMBs = speedMBs
+        self.ok = ok
+        self.supportsRange = supportsRange
+        self.contentLength = contentLength
+    }
+
+    var label: String { name }
+    var ttfbMs: Int { latencyMs ?? 0 }
+    var speedMBps: Double { speedMBs ?? 0 }
+    var speedText: String {
+        guard ok else { return "暂不可达" }
+        if let spd = speedMBs, spd >= 0.05 {
+            return String(format: "%.1f MB/s", spd)
+        }
+        if let spd = speedMBs, spd > 0 {
+            return "<0.1 MB/s"
+        }
+        return "连通正常"
+    }
 }
 
 struct CloudChangelogEntry: Codable, Identifiable, Equatable, Sendable {
@@ -169,7 +205,26 @@ struct AdminUserRow: Decodable, Identifiable, Equatable {
     let lastSeenAt: Double
 }
 
+private final class SafeDateFormatter: @unchecked Sendable {
+    private let lock = NSLock()
+    private let formatter: DateFormatter
+
+    init(_ format: String) {
+        let f = DateFormatter()
+        f.dateFormat = format
+        self.formatter = f
+    }
+
+    func string(from date: Date) -> String {
+        lock.lock()
+        defer { lock.unlock() }
+        return formatter.string(from: date)
+    }
+}
+
 struct AnnouncementItem: Codable, Identifiable, Equatable {
+    private static let formatter = SafeDateFormatter("MM月dd日 HH:mm")
+
     let id: Int
     let badge: String
     let title: String
@@ -178,13 +233,13 @@ struct AnnouncementItem: Codable, Identifiable, Equatable {
     let createdAt: Double
 
     var dateText: String {
-        let f = DateFormatter()
-        f.dateFormat = "MM月dd日 HH:mm"
-        return f.string(from: Date(timeIntervalSince1970: createdAt / 1000.0))
+        Self.formatter.string(from: Date(timeIntervalSince1970: createdAt / 1000.0))
     }
 }
 
 struct InboxMail: Codable, Identifiable, Equatable {
+    private static let formatter = SafeDateFormatter("MM.dd HH:mm")
+
     let id: Int
     let sender: String
     let title: String
@@ -193,9 +248,7 @@ struct InboxMail: Codable, Identifiable, Equatable {
     let createdAt: Double
 
     var dateText: String {
-        let f = DateFormatter()
-        f.dateFormat = "MM.dd HH:mm"
-        return f.string(from: Date(timeIntervalSince1970: createdAt / 1000.0))
+        Self.formatter.string(from: Date(timeIntervalSince1970: createdAt / 1000.0))
     }
 }
 
@@ -261,19 +314,12 @@ private enum TokenVault {
     }
 }
 
-// MARK: - IPA 下载进度代理与 8 路并行分块辅助（全 Sendable，严格并发安全）
+// MARK: - IPA 多源满速并发分块下载辅助（全 Sendable，严格并发与句柄安全）
 
 private struct IPAMirrorCandidate: Sendable {
     let id: String
     let name: String
     let url: String
-}
-
-private struct RangeProbeInfo: Sendable {
-    let candidate: IPAMirrorCandidate
-    let totalBytes: Int64
-    let supportsRange: Bool
-    let ttfbMs: Int
 }
 
 private struct ByteChunk: Sendable {
@@ -289,9 +335,48 @@ private struct ChunkResult: Sendable {
     let ok: Bool
 }
 
+private final class ProbeMetricsDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _bodyDuration: Double?
+    private var _ttfbMs: Int?
+
+    var bodyDuration: Double? {
+        lock.lock()
+        defer { lock.unlock() }
+        return _bodyDuration
+    }
+
+    var ttfbMs: Int? {
+        lock.lock()
+        defer { lock.unlock() }
+        return _ttfbMs
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+        guard let tx = metrics.transactionMetrics.last(where: { $0.responseStartDate != nil && $0.responseEndDate != nil }) else {
+            return
+        }
+        lock.lock()
+        defer { lock.unlock() }
+        if let rs = tx.responseStartDate, let re = tx.responseEndDate {
+            let body = re.timeIntervalSince(rs)
+            if body > 0 {
+                _bodyDuration = body
+            }
+            if let start = tx.fetchStartDate ?? tx.requestStartDate {
+                let ttfb = rs.timeIntervalSince(start)
+                if ttfb >= 0 {
+                    _ttfbMs = max(1, Int((ttfb * 1000.0).rounded()))
+                }
+            }
+        }
+    }
+}
+
 private final class ChunkFileWriter: @unchecked Sendable {
     private let lock = NSLock()
     private var handle: FileHandle?
+    private var isClosed = false
 
     init(fileURL: URL, totalSize: Int64) throws {
         let fm = FileManager.default
@@ -303,14 +388,24 @@ private final class ChunkFileWriter: @unchecked Sendable {
             throw NSError(domain: "OnlinePlatform.ChunkWriter", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法创建本地缓存文件"])
         }
         let fh = try FileHandle(forWritingTo: fileURL)
-        try fh.truncate(atOffset: UInt64(max(0, totalSize)))
+        do {
+            try fh.truncate(atOffset: UInt64(max(0, totalSize)))
+        } catch {
+            try? fh.close()
+            try? fm.removeItem(at: fileURL)
+            throw error
+        }
         self.handle = fh
+    }
+
+    deinit {
+        close()
     }
 
     func write(_ data: Data, at offset: Int64) throws {
         lock.lock()
         defer { lock.unlock() }
-        guard let fh = handle else {
+        guard !isClosed, let fh = handle else {
             throw NSError(domain: "OnlinePlatform.ChunkWriter", code: 2, userInfo: [NSLocalizedDescriptionKey: "下载文件句柄已关闭"])
         }
         try fh.seek(toOffset: UInt64(offset))
@@ -320,6 +415,8 @@ private final class ChunkFileWriter: @unchecked Sendable {
     func close() {
         lock.lock()
         defer { lock.unlock() }
+        guard !isClosed else { return }
+        isClosed = true
         if let fh = handle {
             try? fh.synchronize()
             try? fh.close()
@@ -328,39 +425,238 @@ private final class ChunkFileWriter: @unchecked Sendable {
     }
 }
 
-private final class MirrorCursor: @unchecked Sendable {
+private final class ChunkWorkQueue: @unchecked Sendable {
     private let lock = NSLock()
-    private var index = 0
-    private var failStreak = 0
-    let count: Int
+    private var chunks: [ByteChunk]
+    private var cursor = 0
 
-    init(count: Int) {
-        self.count = max(1, count)
+    init(_ chunks: [ByteChunk]) {
+        self.chunks = chunks
     }
 
-    func current() -> Int {
+    func popNext() -> ByteChunk? {
         lock.lock()
         defer { lock.unlock() }
-        return index
+        guard cursor < chunks.count else { return nil }
+        let next = chunks[cursor]
+        cursor += 1
+        return next
+    }
+}
+
+private final class WeightedMirrorPool: @unchecked Sendable {
+    struct Entry: Sendable {
+        let candidate: IPAMirrorCandidate
+        let speedMBps: Double
+        let isBackup: Bool
     }
 
-    func reportSuccess(index i: Int) {
-        lock.lock()
-        index = i % count
-        failStreak = 0
-        lock.unlock()
+    private let lock = NSLock()
+    private let primaryEntries: [Entry]
+    private let backupEntries: [Entry]
+    private let schedule: [Int]
+    private var rrCursor = 0
+    private var failCounts: [String: Int] = [:]
+    private var cooldownUntil: [String: CFAbsoluteTime] = [:]
+
+    var primaryCount: Int { primaryEntries.count }
+    var totalCount: Int { primaryEntries.count + backupEntries.count }
+
+    init(primary: [(IPAMirrorCandidate, Double)], backups: [(IPAMirrorCandidate, Double)], pinnedFirst: Bool) {
+        self.primaryEntries = primary.map { Entry(candidate: $0.0, speedMBps: max(0.05, $0.1), isBackup: false) }
+        self.backupEntries = backups.map { Entry(candidate: $0.0, speedMBps: max(0.05, $0.1), isBackup: true) }
+
+        // 按实测吞吐加权生成交错轮询表，让高带宽节点拉取更多分块，同时多节点并发打满总带宽
+        if primaryEntries.isEmpty {
+            self.schedule = []
+        } else {
+            let minSpd = max(0.2, primaryEntries.map(\.speedMBps).min() ?? 1.0)
+            let weights: [Int] = primaryEntries.enumerated().map { idx, item in
+                var w = max(1, min(5, Int((item.speedMBps / minSpd).rounded())))
+                if pinnedFirst && idx == 0 {
+                    w = max(w, 3)
+                }
+                return w
+            }
+            var built: [Int] = []
+            let maxW = weights.max() ?? 1
+            for round in 0..<maxW {
+                for idx in weights.indices where weights[idx] > round {
+                    built.append(idx)
+                }
+            }
+            self.schedule = built.isEmpty ? Array(primaryEntries.indices) : built
+        }
     }
 
-    func reportFailure(index i: Int) {
+    func nextMirror(excluding tried: Set<String>) -> Entry? {
         lock.lock()
-        if index == (i % count) {
-            failStreak += 1
-            if failStreak >= 2 && count > 1 {
-                index = (index + 1) % count
-                failStreak = 0
+        defer { lock.unlock() }
+        let now = CFAbsoluteTimeGetCurrent()
+
+        if !schedule.isEmpty {
+            for offset in 0..<schedule.count {
+                let slot = (rrCursor + offset) % schedule.count
+                let entryIdx = schedule[slot]
+                let entry = primaryEntries[entryIdx]
+                if tried.contains(entry.candidate.url) { continue }
+                if (cooldownUntil[entry.candidate.url] ?? 0) > now { continue }
+                rrCursor = (slot + 1) % schedule.count
+                return entry
+            }
+            // 若主池全部处于冷却，仍优先尝试未在本次分块失败过的节点
+            for offset in 0..<schedule.count {
+                let slot = (rrCursor + offset) % schedule.count
+                let entryIdx = schedule[slot]
+                let entry = primaryEntries[entryIdx]
+                if !tried.contains(entry.candidate.url) {
+                    rrCursor = (slot + 1) % schedule.count
+                    return entry
+                }
             }
         }
+
+        for entry in backupEntries {
+            if tried.contains(entry.candidate.url) { continue }
+            if (cooldownUntil[entry.candidate.url] ?? 0) > now { continue }
+            return entry
+        }
+        for entry in backupEntries where !tried.contains(entry.candidate.url) {
+            return entry
+        }
+        return primaryEntries.first ?? backupEntries.first
+    }
+
+    func reportSuccess(url: String) {
+        lock.lock()
+        failCounts[url] = 0
+        cooldownUntil.removeValue(forKey: url)
         lock.unlock()
+    }
+
+    func reportFailure(url: String) {
+        lock.lock()
+        let fails = (failCounts[url] ?? 0) + 1
+        failCounts[url] = fails
+        let backoff: Double = fails >= 2 ? 30.0 : 8.0
+        cooldownUntil[url] = CFAbsoluteTimeGetCurrent() + backoff
+        lock.unlock()
+    }
+
+    func routeSummaryLabel() -> String {
+        lock.lock()
+        defer { lock.unlock() }
+        let now = CFAbsoluteTimeGetCurrent()
+        let healthyPrimary = primaryEntries.filter { (cooldownUntil[$0.candidate.url] ?? 0) <= now }
+        let activeCount = max(1, healthyPrimary.isEmpty ? primaryEntries.count : healthyPrimary.count)
+        if primaryEntries.count >= 2 && activeCount >= 2 {
+            return "多路满速并发 · \(activeCount) 节点"
+        }
+        if let first = healthyPrimary.first ?? primaryEntries.first ?? backupEntries.first {
+            return "\(first.candidate.name) · 8 路分块"
+        }
+        return "多路满速并发"
+    }
+}
+
+private final class SessionLifecycleBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var heartbeatTask: Task<Void, Never>?
+    private var ipaDownloadTask: Task<Void, Never>?
+    private var ipaDownloadSession: URLSession?
+    private var singleDownloadSession: URLSession?
+    private var singleDownloadTask: URLSessionDownloadTask?
+
+    func hasHeartbeat() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return heartbeatTask != nil
+    }
+
+    func setHeartbeat(_ task: Task<Void, Never>?) {
+        lock.lock()
+        let old = heartbeatTask
+        heartbeatTask = task
+        lock.unlock()
+        old?.cancel()
+    }
+
+    func replaceIPATask(_ task: Task<Void, Never>?) {
+        lock.lock()
+        let old = ipaDownloadTask
+        ipaDownloadTask = task
+        lock.unlock()
+        old?.cancel()
+    }
+
+    func replaceIPASession(_ session: URLSession?) {
+        lock.lock()
+        let old = ipaDownloadSession
+        ipaDownloadSession = session
+        lock.unlock()
+        old?.invalidateAndCancel()
+    }
+
+    func clearIPASession(ifMatches session: URLSession) {
+        lock.lock()
+        let matched = (ipaDownloadSession === session)
+        if matched { ipaDownloadSession = nil }
+        lock.unlock()
+        session.invalidateAndCancel()
+    }
+
+    func replaceSingleDownload(session: URLSession?, task: URLSessionDownloadTask?) {
+        lock.lock()
+        let oldTask = singleDownloadTask
+        let oldSession = singleDownloadSession
+        singleDownloadTask = task
+        singleDownloadSession = session
+        lock.unlock()
+        oldTask?.cancel()
+        oldSession?.invalidateAndCancel()
+    }
+
+    func clearSingleDownload(ifMatches session: URLSession?) {
+        lock.lock()
+        let oldTask = singleDownloadTask
+        let oldSession = singleDownloadSession
+        if session == nil || oldSession === session {
+            singleDownloadTask = nil
+            singleDownloadSession = nil
+        }
+        lock.unlock()
+        if session == nil || oldSession === session {
+            oldTask?.cancel()
+            oldSession?.invalidateAndCancel()
+        }
+    }
+
+    func cancelDownloads() {
+        lock.lock()
+        let t1 = ipaDownloadTask; ipaDownloadTask = nil
+        let s1 = ipaDownloadSession; ipaDownloadSession = nil
+        let t2 = singleDownloadTask; singleDownloadTask = nil
+        let s2 = singleDownloadSession; singleDownloadSession = nil
+        lock.unlock()
+        t1?.cancel()
+        s1?.invalidateAndCancel()
+        t2?.cancel()
+        s2?.invalidateAndCancel()
+    }
+
+    func invalidateAll() {
+        lock.lock()
+        let hb = heartbeatTask; heartbeatTask = nil
+        let t1 = ipaDownloadTask; ipaDownloadTask = nil
+        let s1 = ipaDownloadSession; ipaDownloadSession = nil
+        let t2 = singleDownloadTask; singleDownloadTask = nil
+        let s2 = singleDownloadSession; singleDownloadSession = nil
+        lock.unlock()
+        hb?.cancel()
+        t1?.cancel()
+        s1?.invalidateAndCancel()
+        t2?.cancel()
+        s2?.invalidateAndCancel()
     }
 }
 
@@ -369,6 +665,8 @@ private final class IPADownloadDelegate: NSObject, URLSessionDownloadDelegate, @
     let onFinish: @Sendable (Result<URL, Error>) -> Void
     private let destination: URL
     private let startTime = CFAbsoluteTimeGetCurrent()
+    private let finishLock = NSLock()
+    private var finished = false
 
     init(destination: URL,
          onProgress: @escaping @Sendable (Double, Int64, Int64, Double) -> Void,
@@ -376,6 +674,16 @@ private final class IPADownloadDelegate: NSObject, URLSessionDownloadDelegate, @
         self.destination = destination
         self.onProgress = onProgress
         self.onFinish = onFinish
+    }
+
+    private func deliverFinishOnce(_ result: Result<URL, Error>) {
+        finishLock.lock()
+        let shouldSend = !finished
+        finished = true
+        finishLock.unlock()
+        if shouldSend {
+            onFinish(result)
+        }
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
@@ -395,14 +703,16 @@ private final class IPADownloadDelegate: NSObject, URLSessionDownloadDelegate, @
             try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
             if fm.fileExists(atPath: destination.path) { try fm.removeItem(at: destination) }
             try fm.moveItem(at: location, to: destination)
-            onFinish(.success(destination))
+            deliverFinishOnce(.success(destination))
         } catch {
-            onFinish(.failure(error))
+            deliverFinishOnce(.failure(error))
         }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        if let error { onFinish(.failure(error)) }
+        if let error {
+            deliverFinishOnce(.failure(error))
+        }
     }
 }
 
@@ -466,7 +776,7 @@ private final class TokenBox: @unchecked Sendable {
     @Published private(set) var leaderboard: [LeaderboardEntry] = []
     @Published private(set) var leaderboardCategory = "provinces"
 
-    // IPA 站内 8 路并行分块下载与多节点实时测速状态
+    // IPA 站内 8 路多源并发分块下载与真实吞吐测速状态
     @Published private(set) var downloadingIPA = false
     @Published private(set) var downloadProgress: Double = 0
     @Published private(set) var downloadDetail: String = ""
@@ -475,17 +785,18 @@ private final class TokenBox: @unchecked Sendable {
     @Published private(set) var probingMirrors = false
     @Published private(set) var activeDownloadNode: String = ""
     @Published private(set) var downloadSpeedMBs: Double = 0
+    @Published var preferredMirrorIndex: Int? = nil
     @Published private(set) var cloudChangelog: [CloudChangelogEntry] = []
 
+    var downloadRouteLabel: String { activeDownloadNode }
+    var downloadSpeedMBps: Double { downloadSpeedMBs }
+
     private var token: String?
-    private var heartbeatTask: Task<Void, Never>?
-    private var downloadSession: URLSession?
-    private var downloadTask: URLSessionDownloadTask?
-    private var ipaDownloadTask: Task<Void, Never>?
-    private var ipaDownloadSession: URLSession?
+    private nonisolated let lifecycleBox = SessionLifecycleBox()
+    private var lastMirrorProbeAt: CFAbsoluteTime = 0
     private var bootstrappedOnce = false
 
-    private let session: URLSession = {
+    private nonisolated let session: URLSession = {
         let cfg = URLSessionConfiguration.default
         cfg.timeoutIntervalForRequest = 10
         cfg.timeoutIntervalForResource = 25
@@ -494,10 +805,10 @@ private final class TokenBox: @unchecked Sendable {
     }()
 
     static var currentVersionString: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "5.3.0"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "5.7.0"
     }
     static var currentBuildNumber: Int {
-        Int((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "183") ?? 183
+        Int((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "187") ?? 187
     }
     private static var deviceUUID: String {
         let k = "online.deviceId.v1"
@@ -522,6 +833,11 @@ private final class TokenBox: @unchecked Sendable {
            let decoded = try? JSONDecoder().decode(OnlineUser.self, from: rawUser) {
             self.user = decoded
         }
+    }
+
+    deinit {
+        lifecycleBox.invalidateAll()
+        session.invalidateAndCancel()
     }
 
     private func persistSession(token: String?, user: OnlineUser?) {
@@ -668,13 +984,14 @@ private final class TokenBox: @unchecked Sendable {
     }
 
     private func startHeartbeatLoop() {
-        guard heartbeatTask == nil else { return }
-        heartbeatTask = Task { [weak self] in
+        guard !lifecycleBox.hasHeartbeat() else { return }
+        let task = Task { [weak self] in
             while let self, !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 90_000_000_000)
                 await self.sendHeartbeat()
             }
         }
+        lifecycleBox.setHeartbeat(task)
     }
 
     func sendHeartbeat() async {
@@ -925,17 +1242,33 @@ private final class TokenBox: @unchecked Sendable {
         }
     }
 
-    // MARK: - 多节点测速择优 + 8 路并行 HTTP Range 满速分块下载 IPA（下完即刻呼出安装/自签共享窗）
+    // MARK: - 256 KB 吞吐测速择优 + 多源 8 路工作窃取并发分块下载 IPA（下完即刻呼出安装/自签共享窗）
 
-    nonisolated private static func mirrorDisplayName(for urlString: String) -> String {
+    nonisolated static func mirrorLabel(for urlString: String) -> String {
         let lower = urlString.lowercased()
-        if lower.contains("lieguoji-edge.pages.dev") { return "Cloudflare 极速边缘" }
-        if lower.contains("lieguoji-web.pages.dev") { return "Cloudflare 主站边缘" }
-        if lower.contains("gh-proxy") || lower.contains("ghproxy") { return "GitHub 国内镜像" }
-        if lower.contains("github.com") || lower.contains("githubusercontent.com") { return "GitHub 官方源" }
-        if lower.contains("111.230.153.235") || lower.contains("/downloads/") { return "腾讯云直连" }
+        if lower.contains("cdn.gh-proxy.org") { return "国内高速主线 A" }
+        if lower.contains("edgeone.gh-proxy.com") { return "腾讯云 EdgeOne 专线" }
+        if lower.contains("gh-proxy.org") { return "国内高速主线 B" }
+        if lower.contains("gh-proxy.com") { return "国内加速节点 C" }
+        if lower.contains("ghfast.top") { return "极速镜像节点 D" }
+        if lower.contains("lieguoji-edge.pages.dev") { return "Cloudflare 海外边缘" }
+        if lower.contains("github.com") || lower.contains("githubusercontent.com") { return "GitHub 直连" }
+        if lower.contains("111.230.153.235") || lower.contains("/downloads/") { return "腾讯云源站兜底" }
         if let host = URL(string: urlString)?.host, !host.isEmpty { return host }
         return "加速节点"
+    }
+
+    nonisolated private static func mirrorDisplayName(for urlString: String) -> String {
+        mirrorLabel(for: urlString)
+    }
+
+    nonisolated private static func isOriginFallbackURL(_ urlString: String) -> Bool {
+        let lower = urlString.lowercased()
+        return lower.contains("111.230.153.235") || lower.contains("/downloads/lieguoji-latest.ipa")
+    }
+
+    nonisolated private static func isBrokenMirrorURL(_ urlString: String) -> Bool {
+        urlString.lowercased().contains("lieguoji-web.pages.dev")
     }
 
     nonisolated private static func buildMirrorCandidates(
@@ -945,61 +1278,54 @@ private final class TokenBox: @unchecked Sendable {
         includeLatestFallback: Bool
     ) -> [IPAMirrorCandidate] {
         var out: [IPAMirrorCandidate] = []
+        var deferredOrigins: [IPAMirrorCandidate] = []
         var seen = Set<String>()
 
-        func appendUnique(id: String, name: String? = nil, url: String) {
+        func appendUnique(id: String, name: String? = nil, url: String, allowOriginEarly: Bool = false) {
             let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty, URL(string: trimmed) != nil, !seen.contains(trimmed) else { return }
+            guard !trimmed.isEmpty,
+                  !isBrokenMirrorURL(trimmed),
+                  URL(string: trimmed) != nil,
+                  !seen.contains(trimmed) else { return }
             seen.insert(trimmed)
-            out.append(IPAMirrorCandidate(id: id, name: name ?? mirrorDisplayName(for: trimmed), url: trimmed))
+            let candidate = IPAMirrorCandidate(id: id, name: name ?? mirrorLabel(for: trimmed), url: trimmed)
+            if isOriginFallbackURL(trimmed) && !allowOriginEarly {
+                deferredOrigins.append(candidate)
+            } else {
+                out.append(candidate)
+            }
         }
 
         if let preferredURL, !preferredURL.isEmpty {
-            appendUnique(id: "preferred", url: preferredURL)
+            appendUnique(id: "preferred", url: preferredURL, allowOriginEarly: true)
         }
 
-        for r in priorResults where r.ok {
-            appendUnique(id: r.id, name: r.name, url: r.url)
+        for r in priorResults where r.ok && !isOriginFallbackURL(r.url) {
+            appendUnique(id: r.id, name: mirrorLabel(for: r.url), url: r.url)
         }
 
         if let info, !info.latestVersion.isEmpty, info.latestBuild > 0 {
             let ver = info.latestVersion.hasPrefix("v") ? String(info.latestVersion.dropFirst()) : info.latestVersion
             let tag = "v\(ver)"
             let fname = "lieguoji-\(ver)-build\(info.latestBuild)-unsigned.ipa"
-            appendUnique(
-                id: "cf-edge",
-                name: "Cloudflare 极速边缘",
-                url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/\(tag)/\(fname)"
-            )
-            appendUnique(
-                id: "cf-web",
-                name: "Cloudflare 主站边缘",
-                url: "https://lieguoji-web.pages.dev/api/cdn/ipa/\(tag)/\(fname)"
-            )
+            let ghAsset = "https://github.com/Ethanhui6/lieguoji-web/releases/download/\(tag)/\(fname)"
+
+            appendUnique(id: "cdn-gh-proxy-org", name: "国内高速主线 A", url: "https://cdn.gh-proxy.org/\(ghAsset)")
+            appendUnique(id: "edgeone-gh-proxy", name: "腾讯云 EdgeOne 专线", url: "https://edgeone.gh-proxy.com/\(ghAsset)")
+            appendUnique(id: "gh-proxy-org", name: "国内高速主线 B", url: "https://gh-proxy.org/\(ghAsset)")
+            appendUnique(id: "gh-proxy-com", name: "国内加速节点 C", url: "https://gh-proxy.com/\(ghAsset)")
+            appendUnique(id: "ghfast-top", name: "极速镜像节点 D", url: "https://ghfast.top/\(ghAsset)")
+            appendUnique(id: "cf-edge", name: "Cloudflare 海外边缘", url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/\(tag)/\(fname)")
             if let extras = info.ipaMirrors {
                 for (idx, raw) in extras.enumerated() {
                     appendUnique(id: "mirror-\(idx)", url: raw)
                 }
             }
-            appendUnique(
-                id: "github-direct",
-                name: "GitHub 官方源",
-                url: "https://github.com/Ethanhui6/lieguoji-web/releases/download/\(tag)/\(fname)"
-            )
+            appendUnique(id: "github-direct", name: "GitHub 直连", url: ghAsset)
             if !info.directIpaUrl.isEmpty {
                 appendUnique(id: "direct-ipa", url: info.directIpaUrl)
             }
         } else {
-            appendUnique(
-                id: "cf-edge-latest",
-                name: "Cloudflare 极速边缘",
-                url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/latest"
-            )
-            appendUnique(
-                id: "cf-web-latest",
-                name: "Cloudflare 主站边缘",
-                url: "https://lieguoji-web.pages.dev/api/cdn/ipa/latest"
-            )
             if let info {
                 if let extras = info.ipaMirrors {
                     for (idx, raw) in extras.enumerated() {
@@ -1010,30 +1336,20 @@ private final class TokenBox: @unchecked Sendable {
                     appendUnique(id: "direct-ipa", url: info.directIpaUrl)
                 }
             }
+            appendUnique(id: "cf-edge-latest", name: "Cloudflare 海外边缘", url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/latest")
         }
 
         if includeLatestFallback {
-            appendUnique(
-                id: "cf-edge-latest",
-                name: "Cloudflare 极速边缘",
-                url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/latest"
-            )
+            appendUnique(id: "cf-edge-latest", name: "Cloudflare 海外边缘", url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/latest")
         }
 
         let originBase = OnlinePlatform.apiBase
-        appendUnique(
-            id: "tencent-direct",
-            name: "腾讯云直连",
-            url: "\(originBase)/downloads/lieguoji-latest.ipa"
-        )
+        appendUnique(id: "tencent-origin", name: "腾讯云源站兜底", url: "\(originBase)/downloads/lieguoji-latest.ipa")
         if originBase != OnlinePlatform.defaultPlatformBase {
-            appendUnique(
-                id: "tencent-default",
-                name: "腾讯云直连",
-                url: "\(OnlinePlatform.defaultPlatformBase)/downloads/lieguoji-latest.ipa"
-            )
+            appendUnique(id: "tencent-origin-default", name: "腾讯云源站兜底", url: "\(OnlinePlatform.defaultPlatformBase)/downloads/lieguoji-latest.ipa")
         }
 
+        out.append(contentsOf: deferredOrigins)
         return out
     }
 
@@ -1056,21 +1372,22 @@ private final class TokenBox: @unchecked Sendable {
         return false
     }
 
-    nonisolated private static func probeSingleMirror128K(_ candidate: IPAMirrorCandidate, session: URLSession) async -> MirrorProbeResult {
+    /// 256 KB 真实持续吞吐探针（HTTP 206 + Content-Range 校验，严禁 1 字节 Ping 误判）。
+    nonisolated private static func probeSingleMirror256K(_ candidate: IPAMirrorCandidate, session: URLSession) async -> MirrorProbeResult {
         guard let url = URL(string: candidate.url) else {
             return MirrorProbeResult(id: candidate.id, name: candidate.name, url: candidate.url, latencyMs: nil, speedMBs: nil, ok: false)
         }
-        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 5.0)
+        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 6.0)
         req.httpMethod = "GET"
-        req.setValue("bytes=0-131071", forHTTPHeaderField: "Range")
+        req.setValue("bytes=0-262143", forHTTPHeaderField: "Range")
         req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+        let metrics = ProbeMetricsDelegate()
         let t0 = CFAbsoluteTimeGetCurrent()
         do {
-            let (data, resp) = try await session.data(for: req)
-            let dt = max(0.005, CFAbsoluteTimeGetCurrent() - t0)
+            let (data, resp) = try await session.data(for: req, delegate: metrics)
+            let wallDt = max(0.02, CFAbsoluteTimeGetCurrent() - t0)
             guard let http = resp as? HTTPURLResponse,
-                  (http.statusCode == 206 || http.statusCode == 200),
-                  data.count >= 1024,
+                  data.count >= 4096,
                   Self.isLikelyZipHeader(data) else {
                 return MirrorProbeResult(id: candidate.id, name: candidate.name, url: candidate.url, latencyMs: nil, speedMBs: nil, ok: false)
             }
@@ -1078,65 +1395,116 @@ private final class TokenBox: @unchecked Sendable {
             if ct.contains("text/html") {
                 return MirrorProbeResult(id: candidate.id, name: candidate.name, url: candidate.url, latencyMs: nil, speedMBs: nil, ok: false)
             }
-            let ms = max(1, Int((dt * 1000.0).rounded()))
-            let mbps = (Double(data.count) / 1_048_576.0) / dt
-            return MirrorProbeResult(id: candidate.id, name: candidate.name, url: candidate.url, latencyMs: ms, speedMBs: mbps, ok: true)
+
+            let supportsRange: Bool
+            let contentLength: Int64
+            if http.statusCode == 206 {
+                guard let total = Self.parseTotalBytes(fromContentRange: http.value(forHTTPHeaderField: "Content-Range")),
+                      total > 100_000 else {
+                    return MirrorProbeResult(id: candidate.id, name: candidate.name, url: candidate.url, latencyMs: nil, speedMBs: nil, ok: false)
+                }
+                supportsRange = true
+                contentLength = total
+            } else if http.statusCode == 200 {
+                let clHeader = http.value(forHTTPHeaderField: "Content-Length").flatMap { Int64($0) }
+                let total = clHeader ?? Int64(data.count)
+                guard total > 100_000 else {
+                    return MirrorProbeResult(id: candidate.id, name: candidate.name, url: candidate.url, latencyMs: nil, speedMBs: nil, ok: false)
+                }
+                supportsRange = false
+                contentLength = total
+            } else {
+                return MirrorProbeResult(id: candidate.id, name: candidate.name, url: candidate.url, latencyMs: nil, speedMBs: nil, ok: false)
+            }
+
+            let rawBody = metrics.bodyDuration
+            let bodyDuration: Double
+            if let rawBody, rawBody >= 0.005 {
+                bodyDuration = max(0.02, rawBody)
+            } else {
+                bodyDuration = wallDt
+            }
+            let speedMBps = (Double(data.count) / 1_048_576.0) / max(0.02, bodyDuration)
+            let ttfbMs = metrics.ttfbMs ?? max(1, Int((wallDt * 1000.0).rounded()))
+            return MirrorProbeResult(
+                id: candidate.id,
+                name: candidate.name,
+                url: candidate.url,
+                latencyMs: ttfbMs,
+                speedMBs: speedMBps,
+                ok: true,
+                supportsRange: supportsRange,
+                contentLength: contentLength
+            )
         } catch {
             return MirrorProbeResult(id: candidate.id, name: candidate.name, url: candidate.url, latencyMs: nil, speedMBs: nil, ok: false)
         }
     }
 
-    nonisolated private static func probeSingleMirrorRange(_ candidate: IPAMirrorCandidate, session: URLSession) async -> RangeProbeInfo? {
-        guard let url = URL(string: candidate.url) else { return nil }
-        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 5.0)
-        req.httpMethod = "GET"
-        req.setValue("bytes=0-0", forHTTPHeaderField: "Range")
-        req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
-        let t0 = CFAbsoluteTimeGetCurrent()
-        do {
-            let (data, resp) = try await session.data(for: req)
-            let ms = max(1, Int(((CFAbsoluteTimeGetCurrent() - t0) * 1000.0).rounded()))
-            guard let http = resp as? HTTPURLResponse else { return nil }
-            let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
-            if ct.contains("text/html") { return nil }
-            if http.statusCode == 206 {
-                guard Self.isLikelyZipHeader(data),
-                      let total = Self.parseTotalBytes(fromContentRange: http.value(forHTTPHeaderField: "Content-Range")),
-                      total > 100_000 else {
-                    return nil
-                }
-                return RangeProbeInfo(candidate: candidate, totalBytes: total, supportsRange: true, ttfbMs: ms)
+    /// 严格吞吐排序：高速外部镜像（非 111.230.153.235 且 ≥ 0.15 MB/s）严格优先于源站，再按实测 MB/s 降序排列。
+    nonisolated private static func sortProbeResults(_ results: inout [MirrorProbeResult]) {
+        results.sort { a, b in
+            if a.ok != b.ok { return a.ok && !b.ok }
+            if a.ok && b.ok {
+                let aFastExt = !Self.isOriginFallbackURL(a.url) && a.speedMBps >= 0.15
+                let bFastExt = !Self.isOriginFallbackURL(b.url) && b.speedMBps >= 0.15
+                if aFastExt != bFastExt { return aFastExt }
+                if abs(a.speedMBps - b.speedMBps) > 0.01 { return a.speedMBps > b.speedMBps }
+                if a.supportsRange != b.supportsRange { return a.supportsRange && !b.supportsRange }
+                return (a.latencyMs ?? Int.max) < (b.latencyMs ?? Int.max)
             }
-            if http.statusCode == 200 {
-                let clHeader = http.value(forHTTPHeaderField: "Content-Length").flatMap { Int64($0) }
-                let total = clHeader ?? Int64(data.count)
-                guard total > 100_000, Self.isLikelyZipHeader(data) else { return nil }
-                return RangeProbeInfo(candidate: candidate, totalBytes: total, supportsRange: false, ttfbMs: ms)
-            }
-            return nil
-        } catch {
-            return nil
+            return a.name < b.name
         }
     }
 
-    nonisolated private static func downloadSingleChunk(
+    nonisolated private static func runConcurrent256KProbe(candidates: [IPAMirrorCandidate]) async -> [MirrorProbeResult] {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 6.0
+        cfg.timeoutIntervalForResource = 7.0
+        cfg.waitsForConnectivity = false
+        cfg.httpMaximumConnectionsPerHost = 6
+        let probeSession = URLSession(configuration: cfg)
+        defer { probeSession.invalidateAndCancel() }
+
+        var results: [MirrorProbeResult] = []
+        await withTaskGroup(of: MirrorProbeResult.self) { group in
+            for c in candidates {
+                group.addTask {
+                    await Self.probeSingleMirror256K(c, session: probeSession)
+                }
+            }
+            for await res in group {
+                results.append(res)
+            }
+        }
+        Self.sortProbeResults(&results)
+        return results
+    }
+
+    nonisolated private static func downloadSingleChunkFromPool(
         _ chunk: ByteChunk,
-        mirrors: [IPAMirrorCandidate],
-        cursor: MirrorCursor,
+        pool: WeightedMirrorPool,
         writer: ChunkFileWriter,
         session: URLSession
     ) async -> ChunkResult {
-        guard !mirrors.isEmpty else { return ChunkResult(bytes: 0, nodeName: "", ok: false) }
-        let maxAttempts = max(3, mirrors.count * 2)
-        for attempt in 0..<maxAttempts {
+        let maxAttempts = max(4, pool.totalCount * 2)
+        var tried = Set<String>()
+        for _ in 0..<maxAttempts {
             if Task.isCancelled { return ChunkResult(bytes: 0, nodeName: "", ok: false) }
-            let mirrorIdx = (cursor.current() + attempt) % mirrors.count
-            let mirror = mirrors[mirrorIdx]
+            if tried.count >= pool.totalCount {
+                tried.removeAll()
+            }
+            guard let entry = pool.nextMirror(excluding: tried) else {
+                return ChunkResult(bytes: 0, nodeName: "", ok: false)
+            }
+            let mirror = entry.candidate
+            tried.insert(mirror.url)
             guard let url = URL(string: mirror.url) else {
-                cursor.reportFailure(index: mirrorIdx)
+                pool.reportFailure(url: mirror.url)
                 continue
             }
-            var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 22)
+            let chunkTimeout: TimeInterval = (entry.isBackup || Self.isOriginFallbackURL(mirror.url)) ? 24.0 : 14.0
+            var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: chunkTimeout)
             req.httpMethod = "GET"
             req.setValue("bytes=\(chunk.start)-\(chunk.end)", forHTTPHeaderField: "Range")
             req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
@@ -1145,23 +1513,32 @@ private final class TokenBox: @unchecked Sendable {
                 guard let http = resp as? HTTPURLResponse,
                       http.statusCode == 206,
                       Int64(data.count) == chunk.length else {
-                    cursor.reportFailure(index: mirrorIdx)
+                    pool.reportFailure(url: mirror.url)
+                    continue
+                }
+                let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+                if ct.contains("text/html") {
+                    pool.reportFailure(url: mirror.url)
                     continue
                 }
                 if chunk.index == 0 && !Self.isLikelyZipHeader(data) {
-                    cursor.reportFailure(index: mirrorIdx)
+                    pool.reportFailure(url: mirror.url)
                     continue
                 }
                 try writer.write(data, at: chunk.start)
-                cursor.reportSuccess(index: mirrorIdx)
+                pool.reportSuccess(url: mirror.url)
                 return ChunkResult(bytes: chunk.length, nodeName: mirror.name, ok: true)
             } catch {
                 if Task.isCancelled { return ChunkResult(bytes: 0, nodeName: mirror.name, ok: false) }
-                cursor.reportFailure(index: mirrorIdx)
-                try? await Task.sleep(nanoseconds: 180_000_000)
+                pool.reportFailure(url: mirror.url)
+                try? await Task.sleep(nanoseconds: 120_000_000)
             }
         }
         return ChunkResult(bytes: 0, nodeName: "", ok: false)
+    }
+
+    func probeMirrors() async {
+        await probeDownloadMirrors()
     }
 
     func probeDownloadMirrors() async {
@@ -1175,37 +1552,9 @@ private final class TokenBox: @unchecked Sendable {
             priorResults: [],
             includeLatestFallback: false
         )
-        let cfg = URLSessionConfiguration.ephemeral
-        cfg.timeoutIntervalForRequest = 5.0
-        cfg.timeoutIntervalForResource = 5.5
-        cfg.waitsForConnectivity = false
-        cfg.httpMaximumConnectionsPerHost = 6
-        let probeSession = URLSession(configuration: cfg)
-        defer { probeSession.invalidateAndCancel() }
-
-        var results: [MirrorProbeResult] = []
-        await withTaskGroup(of: MirrorProbeResult.self) { group in
-            for c in candidates {
-                group.addTask {
-                    await Self.probeSingleMirror128K(c, session: probeSession)
-                }
-            }
-            for await res in group {
-                results.append(res)
-            }
-        }
-
-        results.sort { a, b in
-            if a.ok != b.ok { return a.ok && !b.ok }
-            if a.ok && b.ok {
-                let sa = a.speedMBs ?? 0
-                let sb = b.speedMBs ?? 0
-                if abs(sa - sb) > 0.05 { return sa > sb }
-                return (a.latencyMs ?? Int.max) < (b.latencyMs ?? Int.max)
-            }
-            return a.name < b.name
-        }
+        let results = await Self.runConcurrent256KProbe(candidates: candidates)
         self.mirrorResults = results
+        self.lastMirrorProbeAt = CFAbsoluteTimeGetCurrent()
     }
 
     func startIPADownload(preferredMirrorURL: String? = nil) {
@@ -1213,79 +1562,64 @@ private final class TokenBox: @unchecked Sendable {
         downloadingIPA = true
         downloadProgress = 0
         downloadSpeedMBs = 0
-        activeDownloadNode = "正在测速择优节点…"
-        downloadDetail = "正在探测满速下载节点与分块能力…"
+        activeDownloadNode = "正在 256KB 实测吞吐择优…"
+        downloadDetail = "正在并发探测各高速镜像真实吞吐（MB/s）与分块能力…"
         downloadedIPAURL = nil
+
+        let explicitPinned = preferredMirrorURL?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let indexPinned: String? = {
+            guard let idx = preferredMirrorIndex,
+                  mirrorResults.indices.contains(idx),
+                  mirrorResults[idx].ok else { return nil }
+            return mirrorResults[idx].url
+        }()
+        let pinnedURL: String? = (explicitPinned?.isEmpty == false) ? explicitPinned : indexPinned
 
         let infoSnapshot = updateInfo
         let priorSnapshot = mirrorResults
+        let priorAge = CFAbsoluteTimeGetCurrent() - lastMirrorProbeAt
         let candidates = Self.buildMirrorCandidates(
             info: infoSnapshot,
-            preferredURL: preferredMirrorURL,
+            preferredURL: pinnedURL,
             priorResults: priorSnapshot,
             includeLatestFallback: true
         )
         let ver = infoSnapshot?.latestVersion ?? Self.currentVersionString
         let build = infoSnapshot?.latestBuild ?? Self.currentBuildNumber
-        let fallbackSizeMB = infoSnapshot?.ipaSizeMB ?? 42.5
+        let fallbackSizeMB = infoSnapshot?.ipaSizeMB ?? 42.7
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         let dest = caches.appendingPathComponent("Updates/lieguoji-\(ver)-b\(build).ipa")
         let partDest = caches.appendingPathComponent("Updates/lieguoji-\(ver)-b\(build).ipa.part")
 
-        ipaDownloadTask?.cancel()
-        ipaDownloadTask = Task { [weak self] in
+        let dlTask = Task { [weak self] in
             guard let self else { return }
 
-            let probeCfg = URLSessionConfiguration.ephemeral
-            probeCfg.timeoutIntervalForRequest = 5.0
-            probeCfg.timeoutIntervalForResource = 6.0
-            probeCfg.waitsForConnectivity = false
-            probeCfg.httpMaximumConnectionsPerHost = 6
-            let probeSession = URLSession(configuration: probeCfg)
+            // 若 45 秒内已有完整的 256 KB 吞吐测速结果且包含目标节点，直接复用免等待；否则立即并发实测 256 KB 吞吐
+            let hasFreshProbes: Bool = {
+                guard priorAge < 45.0,
+                      priorSnapshot.contains(where: { $0.ok && $0.supportsRange && $0.contentLength > 100_000 }) else {
+                    return false
+                }
+                if let pinnedURL, !priorSnapshot.contains(where: { $0.url == pinnedURL && $0.ok && $0.contentLength > 100_000 }) {
+                    return false
+                }
+                return true
+            }()
 
-            var healthyProbes: [RangeProbeInfo] = []
-            if let preferredMirrorURL, !preferredMirrorURL.isEmpty, let first = candidates.first(where: { $0.url == preferredMirrorURL }) {
-                if let p = await Self.probeSingleMirrorRange(first, session: probeSession) {
-                    healthyProbes.append(p)
-                }
-            }
-            if healthyProbes.isEmpty {
-                await withTaskGroup(of: RangeProbeInfo?.self) { group in
-                    for c in candidates {
-                        group.addTask {
-                            await Self.probeSingleMirrorRange(c, session: probeSession)
-                        }
-                    }
-                    for await probe in group {
-                        if let probe {
-                            healthyProbes.append(probe)
-                        }
-                    }
-                }
-                healthyProbes.sort { a, b in
-                    if a.supportsRange != b.supportsRange { return a.supportsRange && !b.supportsRange }
-                    return a.ttfbMs < b.ttfbMs
-                }
+            let probedResults: [MirrorProbeResult]
+            if hasFreshProbes {
+                var sorted = priorSnapshot
+                Self.sortProbeResults(&sorted)
+                probedResults = sorted
             } else {
-                // 也并发收集其余兼容分块的备用节点，供单块容错秒切
-                let primaryURL = healthyProbes[0].candidate.url
-                let expectedSize = healthyProbes[0].totalBytes
-                let others = candidates.filter { $0.url != primaryURL }
-                await withTaskGroup(of: RangeProbeInfo?.self) { group in
-                    for c in others {
-                        group.addTask {
-                            await Self.probeSingleMirrorRange(c, session: probeSession)
-                        }
-                    }
-                    for await probe in group {
-                        if let probe, probe.supportsRange, probe.totalBytes == expectedSize {
-                            healthyProbes.append(probe)
-                        }
-                    }
+                let fresh = await Self.runConcurrent256KProbe(candidates: candidates)
+                if !Task.isCancelled {
+                    self.mirrorResults = fresh
+                    self.lastMirrorProbeAt = CFAbsoluteTimeGetCurrent()
                 }
+                probedResults = fresh
             }
-            probeSession.invalidateAndCancel()
 
             if Task.isCancelled {
                 self.downloadingIPA = false
@@ -1293,7 +1627,13 @@ private final class TokenBox: @unchecked Sendable {
                 return
             }
 
-            guard let winner = healthyProbes.first else {
+            var healthy = probedResults.filter(\.ok)
+            if let pinnedURL, let pinIdx = healthy.firstIndex(where: { $0.url == pinnedURL }), pinIdx > 0 {
+                let pinnedItem = healthy.remove(at: pinIdx)
+                healthy.insert(pinnedItem, at: 0)
+            }
+
+            guard let winner = healthy.first(where: { $0.supportsRange && $0.contentLength > 2 * 1024 * 1024 }) ?? healthy.first else {
                 self.downloadingIPA = false
                 self.activeDownloadNode = ""
                 self.downloadSpeedMBs = 0
@@ -1302,32 +1642,69 @@ private final class TokenBox: @unchecked Sendable {
                 return
             }
 
-            // 若支持 206 Range 且文件大于 2 MB，则启动 8 路并行 2 MB 分块满速下载
             let chunkBytes: Int64 = 2 * 1024 * 1024
-            if winner.supportsRange && winner.totalBytes > chunkBytes {
-                let totalBytes = winner.totalBytes
-                let rangeMirrors = healthyProbes
-                    .filter { $0.supportsRange && $0.totalBytes == totalBytes }
-                    .map(\.candidate)
-                let activeMirrors = rangeMirrors.isEmpty ? [winner.candidate] : rangeMirrors
+            if winner.supportsRange && winner.contentLength > chunkBytes {
+                let totalBytes = winner.contentLength
+                let compatible = healthy.filter { $0.supportsRange && $0.contentLength == totalBytes }
+
+                // 精选 Top 3 最快高速外部镜像并行拉取；其余可用镜像与源站作为热备故障切换池
+                let fastExternal = compatible.filter { !Self.isOriginFallbackURL($0.url) && $0.speedMBps >= 0.15 }
+                let slowOrOrigin = compatible.filter { Self.isOriginFallbackURL($0.url) || $0.speedMBps < 0.15 }
+
+                var primaryProbes: [MirrorProbeResult] = []
+                var backupProbes: [MirrorProbeResult] = []
+
+                if !fastExternal.isEmpty {
+                    if let pinnedURL,
+                       let pinnedSlow = slowOrOrigin.first(where: { $0.url == pinnedURL }) {
+                        primaryProbes.append(pinnedSlow)
+                        primaryProbes.append(contentsOf: fastExternal.prefix(2))
+                        backupProbes.append(contentsOf: fastExternal.dropFirst(2))
+                        backupProbes.append(contentsOf: slowOrOrigin.filter { $0.url != pinnedURL })
+                    } else {
+                        primaryProbes = Array(fastExternal.prefix(3))
+                        backupProbes.append(contentsOf: fastExternal.dropFirst(3))
+                        backupProbes.append(contentsOf: slowOrOrigin)
+                    }
+                } else {
+                    primaryProbes = Array(compatible.prefix(3))
+                    backupProbes = Array(compatible.dropFirst(3))
+                }
+                if primaryProbes.isEmpty {
+                    primaryProbes = [winner]
+                }
+
+                let primaryTuples: [(IPAMirrorCandidate, Double)] = primaryProbes.map {
+                    (IPAMirrorCandidate(id: $0.id, name: $0.name, url: $0.url), $0.speedMBps)
+                }
+                let backupTuples: [(IPAMirrorCandidate, Double)] = backupProbes.map {
+                    (IPAMirrorCandidate(id: $0.id, name: $0.name, url: $0.url), $0.speedMBps)
+                }
+                let pool = WeightedMirrorPool(primary: primaryTuples, backups: backupTuples, pinnedFirst: pinnedURL != nil)
 
                 let dlCfg = URLSessionConfiguration.ephemeral
                 dlCfg.httpMaximumConnectionsPerHost = 12
-                dlCfg.timeoutIntervalForRequest = 20
+                dlCfg.timeoutIntervalForRequest = 16
                 dlCfg.timeoutIntervalForResource = 300
                 dlCfg.waitsForConnectivity = true
                 let dlSession = URLSession(configuration: dlCfg)
-                self.ipaDownloadSession = dlSession
+                self.lifecycleBox.replaceIPASession(dlSession)
+                defer {
+                    self.lifecycleBox.clearIPASession(ifMatches: dlSession)
+                }
 
                 let writer: ChunkFileWriter
                 do {
                     writer = try ChunkFileWriter(fileURL: partDest, totalSize: totalBytes)
                 } catch {
-                    dlSession.invalidateAndCancel()
-                    self.ipaDownloadSession = nil
-                    self.startSingleStreamIPADownload(candidate: winner.candidate, dest: dest, fallbackSizeMB: fallbackSizeMB)
+                    self.startSingleStreamIPADownload(
+                        candidate: IPAMirrorCandidate(id: winner.id, name: winner.name, url: winner.url),
+                        dest: dest,
+                        fallbackSizeMB: fallbackSizeMB
+                    )
                     return
                 }
+                defer { writer.close() }
 
                 var chunks: [ByteChunk] = []
                 var offset: Int64 = 0
@@ -1339,25 +1716,24 @@ private final class TokenBox: @unchecked Sendable {
                     idx += 1
                 }
 
-                let cursor = MirrorCursor(count: activeMirrors.count)
+                let workQueue = ChunkWorkQueue(chunks)
                 let totalMB = Double(totalBytes) / 1_048_576.0
-                self.activeDownloadNode = winner.candidate.name
-                self.downloadDetail = String(format: "%@（8 路满速）· 0.0 / %.1f MB", winner.candidate.name, totalMB)
+                let initialLabel = pool.routeSummaryLabel()
+                self.activeDownloadNode = initialLabel
+                self.downloadDetail = String(format: "%@ · 0.0 / %.1f MB", initialLabel, totalMB)
 
                 let startTime = CFAbsoluteTimeGetCurrent()
                 var bytesDone: Int64 = 0
                 var failedChunks = 0
-                var nextIdx = 0
-                let workerCount = 8
+                let workerCount = min(8, chunks.count)
                 var samples: [(Double, Int64)] = [(startTime, 0)]
 
                 await withTaskGroup(of: ChunkResult.self) { group in
-                    let initial = min(workerCount, chunks.count)
-                    for _ in 0..<initial {
-                        let ch = chunks[nextIdx]
-                        nextIdx += 1
-                        group.addTask {
-                            await Self.downloadSingleChunk(ch, mirrors: activeMirrors, cursor: cursor, writer: writer, session: dlSession)
+                    for _ in 0..<workerCount {
+                        if let ch = workQueue.popNext() {
+                            group.addTask {
+                                await Self.downloadSingleChunkFromPool(ch, pool: pool, writer: writer, session: dlSession)
+                            }
                         }
                     }
                     for await res in group {
@@ -1370,19 +1746,20 @@ private final class TokenBox: @unchecked Sendable {
                             }
                             let avgMBs = (Double(bytesDone) / 1_048_576.0) / max(0.12, now - startTime)
                             let windowDt = now - samples[0].0
-                            let instMBs = windowDt >= 0.35
+                            let instMBs = windowDt >= 0.30
                                 ? (Double(bytesDone - samples[0].1) / 1_048_576.0) / windowDt
                                 : avgMBs
                             let smoothMBs = self.downloadSpeedMBs > 0.01
-                                ? (self.downloadSpeedMBs * 0.45 + instMBs * 0.55)
+                                ? (self.downloadSpeedMBs * 0.4 + instMBs * 0.6)
                                 : instMBs
 
-                            self.activeDownloadNode = res.nodeName
+                            let routeLabel = pool.routeSummaryLabel()
+                            self.activeDownloadNode = routeLabel
                             self.downloadSpeedMBs = smoothMBs
                             self.downloadProgress = min(0.99, Double(bytesDone) / Double(totalBytes))
                             self.downloadDetail = String(
-                                format: "%@（8 路满速）· %.1f / %.1f MB · %.1f MB/s",
-                                res.nodeName,
+                                format: "%@ · %.1f / %.1f MB · %.1f MB/s",
+                                routeLabel,
                                 Double(bytesDone) / 1_048_576.0,
                                 totalMB,
                                 smoothMBs
@@ -1391,19 +1768,15 @@ private final class TokenBox: @unchecked Sendable {
                             failedChunks += 1
                             group.cancelAll()
                         }
-                        if nextIdx < chunks.count && failedChunks == 0 && !Task.isCancelled {
-                            let ch = chunks[nextIdx]
-                            nextIdx += 1
+                        if failedChunks == 0 && !Task.isCancelled, let nextChunk = workQueue.popNext() {
                             group.addTask {
-                                await Self.downloadSingleChunk(ch, mirrors: activeMirrors, cursor: cursor, writer: writer, session: dlSession)
+                                await Self.downloadSingleChunkFromPool(nextChunk, pool: pool, writer: writer, session: dlSession)
                             }
                         }
                     }
                 }
 
                 writer.close()
-                dlSession.invalidateAndCancel()
-                self.ipaDownloadSession = nil
 
                 if Task.isCancelled {
                     try? FileManager.default.removeItem(at: partDest)
@@ -1440,16 +1813,26 @@ private final class TokenBox: @unchecked Sendable {
                     }
                 }
 
-                // 分块异常时清理临时文件并平滑降级至单流下载
                 try? FileManager.default.removeItem(at: partDest)
-                self.startSingleStreamIPADownload(candidate: winner.candidate, dest: dest, fallbackSizeMB: fallbackSizeMB)
+                self.startSingleStreamIPADownload(
+                    candidate: IPAMirrorCandidate(id: winner.id, name: winner.name, url: winner.url),
+                    dest: dest,
+                    fallbackSizeMB: fallbackSizeMB
+                )
             } else {
-                self.startSingleStreamIPADownload(candidate: winner.candidate, dest: dest, fallbackSizeMB: fallbackSizeMB)
+                self.startSingleStreamIPADownload(
+                    candidate: IPAMirrorCandidate(id: winner.id, name: winner.name, url: winner.url),
+                    dest: dest,
+                    fallbackSizeMB: fallbackSizeMB
+                )
             }
         }
+        lifecycleBox.replaceIPATask(dlTask)
     }
 
     private func startSingleStreamIPADownload(candidate: IPAMirrorCandidate, dest: URL, fallbackSizeMB: Double) {
+        lifecycleBox.clearSingleDownload(ifMatches: nil)
+
         guard let url = URL(string: candidate.url) else {
             downloadingIPA = false
             downloadSpeedMBs = 0
@@ -1476,10 +1859,8 @@ private final class TokenBox: @unchecked Sendable {
             onFinish: { [weak self] result in
                 Task { @MainActor in
                     guard let self else { return }
+                    self.lifecycleBox.clearSingleDownload(ifMatches: nil)
                     self.downloadingIPA = false
-                    self.downloadTask = nil
-                    self.downloadSession?.invalidateAndCancel()
-                    self.downloadSession = nil
                     switch result {
                     case .success(let fileURL):
                         self.downloadProgress = 1.0
@@ -1498,22 +1879,17 @@ private final class TokenBox: @unchecked Sendable {
                 }
             }
         )
-        let s = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-        downloadSession = s
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 25
+        cfg.timeoutIntervalForResource = 300
+        let s = URLSession(configuration: cfg, delegate: delegate, delegateQueue: nil)
         let task = s.downloadTask(with: url)
-        downloadTask = task
+        lifecycleBox.replaceSingleDownload(session: s, task: task)
         task.resume()
     }
 
     func cancelIPADownload() {
-        ipaDownloadTask?.cancel()
-        ipaDownloadTask = nil
-        ipaDownloadSession?.invalidateAndCancel()
-        ipaDownloadSession = nil
-        downloadTask?.cancel()
-        downloadSession?.invalidateAndCancel()
-        downloadTask = nil
-        downloadSession = nil
+        lifecycleBox.cancelDownloads()
         downloadingIPA = false
         downloadSpeedMBs = 0
         downloadDetail = "已取消下载"

@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-列国纪 · 云端行宫平台服务器 v4.0（Cloudflare 满速边缘 CDN · 8 路分块镜像 · 实时版本更新志 · 管理员中枢）
+列国纪 · 云端行宫平台服务器 v5.0（中国大陆满速多源镜像 · 8 路多节点并发分块 · DB/FD/内存全链路加固 · 管理员中枢）
 零第三方依赖（纯 Python 3.12 标准库 + SQLite WAL）：
-1. 启动版本检测 + 多镜像满速 IPA 调度 + 实时版本更新日志（/api/v1/changelog）+ 免换包热更资源包服务器
+1. 启动版本检测 + 中国大陆实测高速多镜像调度（cdn.gh-proxy.org / EdgeOne / gh-proxy / ghfast）+ 实时版本更新志 + 免换包热更资源包
 2. 完整账号系统（注册/登录/游客/转正/御印/scrypt/90天令牌）+ ethanhui 专属管理员 RBAC
 3. 游戏内管理员控制台 API（公告/跑马灯/热更参数/版本发布/全服邮件/用户管理/维护模式/主机监控）
-4. 账号绑定高速云存档库 + 每日签到品秩 + 天下史榜 + 无侵入式计算服 v8 健康探针
-5. 极简安全公开官网（Cloudflare 边缘主链 + 腾讯云/GitHub 双备用 · 零内部运维泄露）+ 防暴力破解 IP 封锁
+4. 账号绑定高速云存档库（流式读取 + 原子临时文件清理）+ 每日签到品秩 + 天下史榜 + 无侵入式计算服健康探针
+5. 极简安全公开官网（国内高速主线优先 + 多镜像一键切换 · 零内部运维泄露）+ 防暴力破解 IP 封锁 + 限流内存定时裁剪 + 30s 套接字超时 + 优雅停机闭库
 """
 
 from __future__ import annotations
 
+import atexit
 import gzip
 import hashlib
 import hmac
@@ -20,6 +21,7 @@ import os
 import re
 import secrets
 import shutil
+import signal
 import socket
 import sqlite3
 import struct
@@ -96,8 +98,8 @@ RANKS = [
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 10,
-    "notice": "v5.6.0 已上线：Cloudflare 边缘全速分发 + 8 路并行分块极速更新 + 实时版本更新志",
+    "version": 11,
+    "notice": "v5.7.0 已上线：国内多源 8 路并发满速下载（5+ MB/s）+ 256KB 吞吐实测择优 + 平台 v5 全链路加固",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 3, "16": 5},
     "tuning": {
@@ -129,19 +131,33 @@ def compute_hotpatch_sha(cfg: dict[str, Any]) -> str:
 
 
 def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
-    v = str(version or "5.6.0").lstrip("v")
-    b = int(build or 186)
+    v = str(version or "5.7.0").lstrip("v")
+    b = int(build or 187)
     fname = f"lieguoji-{v}-build{b}-unsigned.ipa"
     return [
-        f"https://lieguoji-edge.pages.dev/api/cdn/ipa/v{v}/{fname}",
-        f"https://lieguoji-web.pages.dev/api/cdn/ipa/v{v}/{fname}",
+        f"https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
+        f"https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
+        f"https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
+        f"https://ghfast.top/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
+        f"https://lieguoji-edge.pages.dev/api/cdn/ipa/v{v}/{fname}",
         f"https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"http://{PUBLIC_HOST}/downloads/lieguoji-latest.ipa",
     ]
 
 
 CHANGELOG_HISTORY: list[dict[str, Any]] = [
+    {
+        "version": "5.7.0",
+        "build": 187,
+        "date": "2026-11-26",
+        "lines": [
+            "【中国大陆多源并发满速下载（5+ MB/s）】全新接入 cdn.gh-proxy.org、腾讯云 EdgeOne 专线、gh-proxy.org、gh-proxy.com 与 ghfast.top 国内实测高速镜像，8 路动态工作窃取分块同步聚合 Top 3 节点并发拉取。",
+            "【256 KB 真实吞吐测速择优】根治旧版仅测 1 字节延迟（Ping）导致 3 Mbps 源站误胜高速 CDN 的问题；安装包与免换包热更均以 256 KB Range 真实吞吐（MB/s）降序排位，源站严格退居最后兜底。",
+            "【免换包热更 12 路多镜像分发】热更引擎全面切换国内高速 RAW 镜像池，12 路并发跨多节点均衡拉取并自动容错切换，严格 SHA256 校验与原子临时文件清理。",
+            "【平台 v5 全链路安定加固】服务端新增 SQLite 忙等待与优雅停机闭库、安全限流表定时防泄漏裁剪、30 秒套接字防挂死超时、流式云档读写及客户端 URLSession/FileHandle/DateFormatter 专项审计修复。",
+        ],
+    },
     {
         "version": "5.6.0",
         "build": 186,
@@ -187,23 +203,23 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
 
 
 DEFAULT_RELEASE: dict[str, Any] = {
-    "latestVersion": "5.6.0",
-    "latestBuild": 186,
+    "latestVersion": "5.7.0",
+    "latestBuild": 187,
     "minSupportedBuild": 180,
     "forceUpdate": False,
     "maintenance": False,
     "maintenanceMessage": "九州云服正在例行修缮，稍候片刻即可重登。",
     "releaseDate": "2026-11-26",
-    "ipaSizeMB": 42.5,
+    "ipaSizeMB": 42.7,
     "downloadUrl": "https://github.com/Ethanhui6/lieguoji-web/releases/latest",
-    "directIpaUrl": "https://lieguoji-edge.pages.dev/api/cdn/ipa/v5.6.0/lieguoji-5.6.0-build186-unsigned.ipa",
-    "ipaMirrors": build_default_ipa_mirrors("5.6.0", 186),
+    "directIpaUrl": build_default_ipa_mirrors("5.7.0", 187)[0],
+    "ipaMirrors": build_default_ipa_mirrors("5.7.0", 187),
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(CHANGELOG_HISTORY[0]["lines"]),
     "hotpatch": {
-        "patchVersion": 10,
+        "patchVersion": 11,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v5.6.0 全速 Cloudflare 边缘分发与多节点热更参数",
+        "summary": "v5.7.0 中国大陆满速多源镜像与平台 v5 加固参数",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -275,6 +291,9 @@ _rate_buckets: dict[str, list[float]] = {}
 _login_failures: dict[str, list[float]] = {}
 _blocked_ips: dict[str, float] = {}
 _security_stats = {"blockedRequests": 0, "scannerHits": 0, "loginFailures": 0}
+_last_sec_prune: float = 0.0
+_SEC_PRUNE_INTERVAL = 60.0
+_SEC_MAX_ENTRIES = 2000
 
 SCANNER_PATTERNS = (
     "/.env", "/.git", "/wp-admin", "/wp-login", "/xmlrpc.php", "/phpmyadmin",
@@ -283,9 +302,52 @@ SCANNER_PATTERNS = (
 )
 
 
+def _prune_security_maps(now: float, force: bool = False) -> None:
+    """Must be called while holding _sec_lock. Evicts expired rate/failure/ban entries to prevent unbounded RAM growth."""
+    global _last_sec_prune
+    total_entries = len(_rate_buckets) + len(_login_failures) + len(_blocked_ips)
+    if not force and (now - _last_sec_prune) < _SEC_PRUNE_INTERVAL and total_entries <= _SEC_MAX_ENTRIES:
+        return
+    _last_sec_prune = now
+
+    for ip in [k for k, until in _blocked_ips.items() if now >= until]:
+        _blocked_ips.pop(ip, None)
+
+    for ip in list(_login_failures.keys()):
+        fresh = [t for t in _login_failures[ip] if now - t < 300.0]
+        if fresh:
+            _login_failures[ip] = fresh
+        else:
+            _login_failures.pop(ip, None)
+
+    for key in list(_rate_buckets.keys()):
+        max_age = 600.0 if key.startswith("scan:") else (300.0 if key.startswith(("reg:", "login:", "guest:")) else 60.0)
+        fresh = [t for t in _rate_buckets[key] if now - t < max_age]
+        if fresh:
+            _rate_buckets[key] = fresh
+        else:
+            _rate_buckets.pop(key, None)
+
+    # Hard safety cap under extreme flood traffic
+    hard_cap = _SEC_MAX_ENTRIES * 2
+    if len(_rate_buckets) > hard_cap:
+        excess = len(_rate_buckets) - _SEC_MAX_ENTRIES
+        for key in sorted(_rate_buckets.keys(), key=lambda k: _rate_buckets[k][-1] if _rate_buckets[k] else 0.0)[:excess]:
+            _rate_buckets.pop(key, None)
+    if len(_login_failures) > hard_cap:
+        excess = len(_login_failures) - _SEC_MAX_ENTRIES
+        for ip in sorted(_login_failures.keys(), key=lambda k: _login_failures[k][-1] if _login_failures[k] else 0.0)[:excess]:
+            _login_failures.pop(ip, None)
+    if len(_blocked_ips) > hard_cap:
+        excess = len(_blocked_ips) - _SEC_MAX_ENTRIES
+        for ip in sorted(_blocked_ips.keys(), key=lambda k: _blocked_ips[k])[:excess]:
+            _blocked_ips.pop(ip, None)
+
+
 def is_ip_blocked(ip: str) -> bool:
     now = time.monotonic()
     with _sec_lock:
+        _prune_security_maps(now)
         until = _blocked_ips.get(ip)
         if until is None:
             return False
@@ -299,18 +361,21 @@ def is_ip_blocked(ip: str) -> bool:
 def record_login_failure(ip: str) -> None:
     now = time.monotonic()
     with _sec_lock:
+        _prune_security_maps(now)
         _security_stats["loginFailures"] += 1
         arr = [t for t in _login_failures.get(ip, []) if now - t < 300]
         arr.append(now)
-        _login_failures[ip] = arr
         if len(arr) >= 8:
             _blocked_ips[ip] = now + 600
-            _login_failures[ip] = []
+            _login_failures.pop(ip, None)
+        else:
+            _login_failures[ip] = arr
 
 
 def record_scanner_hit(ip: str) -> None:
     now = time.monotonic()
     with _sec_lock:
+        _prune_security_maps(now)
         _security_stats["scannerHits"] += 1
         arr = [t for t in _rate_buckets.get(f"scan:{ip}", []) if now - t < 600]
         arr.append(now)
@@ -322,6 +387,7 @@ def record_scanner_hit(ip: str) -> None:
 def check_rate_limit(key: str, limit: int, window_sec: float) -> bool:
     now = time.monotonic()
     with _sec_lock:
+        _prune_security_maps(now)
         arr = [t for t in _rate_buckets.get(key, []) if now - t < window_sec]
         if len(arr) >= limit:
             _rate_buckets[key] = arr
@@ -333,10 +399,11 @@ def check_rate_limit(key: str, limit: int, window_sec: float) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Database Layer (with safe migrations)
+# Database Layer (with safe migrations, busy_timeout & graceful close)
 # ---------------------------------------------------------------------------
 
 _db_lock = threading.RLock()
+_db_closed = False
 
 
 def open_db() -> sqlite3.Connection:
@@ -345,10 +412,31 @@ def open_db() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
+    conn.execute("PRAGMA busy_timeout=5000;")
+    conn.execute("PRAGMA temp_store=MEMORY;")
     return conn
 
 
 DB = open_db()
+
+
+def close_db() -> None:
+    global _db_closed
+    with _db_lock:
+        if _db_closed:
+            return
+        _db_closed = True
+        try:
+            DB.execute("PRAGMA wal_checkpoint(TRUNCATE);")
+        except Exception:
+            pass
+        try:
+            DB.close()
+        except Exception:
+            pass
+
+
+atexit.register(close_db)
 
 
 def init_db() -> None:
@@ -533,7 +621,13 @@ def get_release_config() -> dict[str, Any]:
     if not isinstance(mirrors, list) or not [m for m in mirrors if isinstance(m, str) and m.strip()]:
         mirrors = build_default_ipa_mirrors(ver, build)
     else:
-        mirrors = [str(m).strip() for m in mirrors if isinstance(m, str) and m.strip()]
+        mirrors = [
+            str(m).strip()
+            for m in mirrors
+            if isinstance(m, str) and m.strip() and "lieguoji-web.pages.dev" not in str(m).lower()
+        ]
+        if not mirrors:
+            mirrors = build_default_ipa_mirrors(ver, build)
     local_ipa_url = f"http://{PUBLIC_HOST}/downloads/lieguoji-latest.ipa"
     latest_ipa = DOWNLOADS_DIR / "lieguoji-latest.ipa"
     if latest_ipa.exists() and latest_ipa.stat().st_size > 1_000_000:
@@ -542,8 +636,9 @@ def get_release_config() -> dict[str, Any]:
         if not cfg.get("ipaSizeMB"):
             cfg["ipaSizeMB"] = round(latest_ipa.stat().st_size / (1024 * 1024), 1)
     cfg["ipaMirrors"] = mirrors
-    if not cfg.get("directIpaUrl") or str(cfg.get("directIpaUrl")).strip() == local_ipa_url:
-        # 优先分配 Cloudflare 边缘满速直链（兼容旧版本客户端单流直下，避免 3 Mbps 源站限速）
+    cur_direct = str(cfg.get("directIpaUrl") or "").strip()
+    if not cur_direct or cur_direct == local_ipa_url or "lieguoji-web.pages.dev" in cur_direct.lower():
+        # 优先分配中国大陆实测满速主线（兼容旧版本客户端单流直下，避免 3 Mbps 源站限速与失效域名）
         cfg["directIpaUrl"] = mirrors[0] if mirrors else local_ipa_url
     if not cfg.get("webDownloadUrl"):
         cfg["webDownloadUrl"] = f"http://{PUBLIC_HOST}/download"
@@ -612,10 +707,12 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
         return []
     quoted = urllib.parse.quote(gh_path, safe="/")
     return [
+        f"https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://ghfast.top/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://gcore.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
         f"https://lieguoji-edge.pages.dev/api/cdn/raw/{quoted}",
-        f"https://lieguoji-web.pages.dev/api/cdn/raw/{quoted}",
-        f"https://fastly.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
-        f"https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
     ]
 
 
@@ -755,11 +852,14 @@ def probe_compute_once() -> None:
         _compute_state["checkedAt"] = now_ms()
 
 
+_shutdown_event = threading.Event()
+
+
 def start_probe_thread() -> None:
     def loop() -> None:
-        while True:
+        while not _shutdown_event.is_set():
             probe_compute_once()
-            time.sleep(20)
+            _shutdown_event.wait(20)
 
     t = threading.Thread(target=loop, daemon=True)
     t.start()
@@ -819,6 +919,7 @@ def get_admin_server_overview() -> dict[str, Any]:
     with _probe_lock:
         cs = dict(_compute_state)
     with _sec_lock:
+        _prune_security_maps(time.monotonic(), force=True)
         sec = dict(_security_stats)
         sec["activeBlockedIPs"] = len(_blocked_ips)
     rel = get_release_config()
@@ -840,8 +941,8 @@ def get_admin_server_overview() -> dict[str, Any]:
         "hotpackBytes": hp["totalBytes"],
         "hotpackFiles": len(hp["files"]),
         "notice": str(rel.get("hotpatch", {}).get("config", {}).get("notice", "")),
-        "latestVersion": rel.get("latestVersion", "5.6.0"),
-        "latestBuild": int(rel.get("latestBuild", 186)),
+        "latestVersion": rel.get("latestVersion", "5.7.0"),
+        "latestBuild": int(rel.get("latestBuild", 187)),
         "forceUpdate": bool(rel.get("forceUpdate", False)),
         "tuning": rel.get("hotpatch", {}).get("config", {}).get("tuning", {}),
         "pace": rel.get("hotpatch", {}).get("config", {}).get("pace", {}),
@@ -962,14 +1063,31 @@ def compare_version(cur_ver: str, cur_build: int, latest_ver: str, latest_build:
 # Hardened Minimalist Public Landing Page (ZERO internal/ops info exposed)
 # ---------------------------------------------------------------------------
 
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None or value == "":
+            return default
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def render_public_landing_page() -> str:
     rel = get_release_config()
-    ver = html.escape(str(rel.get("latestVersion", "5.6.0")))
+    ver = str(rel.get("latestVersion", "5.7.0")).lstrip("v")
+    build = _safe_int(rel.get("latestBuild", 187), 187)
     rel_date = html.escape(str(rel.get("releaseDate", "")))
-    size_mb = rel.get("ipaSizeMB", 42.5)
-    cf_edge_url = "https://lieguoji-edge.pages.dev/api/cdn/ipa/latest"
-    tencent_backup_url = "/downloads/lieguoji-latest.ipa"
-    gh_url = str(rel.get("downloadUrl") or "https://github.com/Ethanhui6/lieguoji-web/releases/latest")
+    size_mb = rel.get("ipaSizeMB", 42.7)
+    fname = f"lieguoji-{ver}-build{build}-unsigned.ipa"
+    gh_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/v{ver}/{fname}"
+
+    primary_url = f"https://cdn.gh-proxy.org/{gh_asset}"
+    edgeone_url = f"https://edgeone.gh-proxy.com/{gh_asset}"
+    mirror_b_url = f"https://gh-proxy.org/{gh_asset}"
+    cf_overseas_url = f"https://lieguoji-edge.pages.dev/api/cdn/ipa/v{ver}/{fname}"
+    origin_fallback_url = "/downloads/lieguoji-latest.ipa"
+    gh_release_url = str(rel.get("downloadUrl") or "https://github.com/Ethanhui6/lieguoji-web/releases/latest")
+
     notes_html = "".join(f"<li>{html.escape(str(n))}</li>" for n in rel.get("releaseNotes", [])[:5])
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -981,7 +1099,7 @@ def render_public_landing_page() -> str:
 <style>
   :root {{
     --paper: #F5F0E6; --paper2: #FAF7F0; --ink: #241D17; --ink2: #5E564E;
-    --seal: #A83226; --line: rgba(36,29,23,0.11);
+    --seal: #A83226; --jade: #2E6B56; --line: rgba(36,29,23,0.11);
   }}
   * {{ box-sizing: border-box; }}
   body {{
@@ -989,7 +1107,7 @@ def render_public_landing_page() -> str:
     font-family: "Kaiti SC", "STKaiti", "Songti SC", "PingFang SC", serif;
     line-height: 1.75; -webkit-font-smoothing: antialiased;
   }}
-  .wrap {{ max-width: 520px; margin: 0 auto; }}
+  .wrap {{ max-width: 540px; margin: 0 auto; }}
   .head {{ display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--line); }}
   .title {{ font-size: 32px; letter-spacing: 8px; margin: 0; font-weight: 400; }}
   .sub {{ font-size: 13.5px; color: var(--ink2); letter-spacing: 2px; margin-top: 4px; }}
@@ -1003,12 +1121,22 @@ def render_public_landing_page() -> str:
   .meta strong {{ color: var(--seal); font-weight: 400; }}
   .btn {{
     display: block; width: 100%; text-align: center; text-decoration: none;
-    background: var(--seal); color: var(--paper2); padding: 13px 18px; border-radius: 8px;
-    font-size: 16px; letter-spacing: 2px;
+    background: var(--seal); color: var(--paper2); padding: 14px 18px; border-radius: 8px;
+    font-size: 16px; letter-spacing: 1.5px;
   }}
+  .btn-sub {{ display: block; font-size: 12px; opacity: 0.9; letter-spacing: 0.5px; margin-top: 2px; }}
+  .mirrors-title {{ font-size: 13px; color: var(--ink2); margin: 16px 0 8px; letter-spacing: 1px; }}
+  .mirror-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }}
+  .mirror-card {{
+    display: block; text-decoration: none; background: var(--paper2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px;
+  }}
+  .mirror-name {{ font-size: 14px; color: var(--ink); display: block; }}
+  .mirror-tag {{ font-size: 11.5px; color: var(--jade); display: block; margin-top: 2px; }}
+  .mirror-tag.muted {{ color: var(--ink2); }}
   .btn.sec {{
     background: var(--paper2); color: var(--ink); border: 1px solid var(--line);
-    font-size: 13.5px; padding: 10px; margin-top: 10px; letter-spacing: 1px;
+    font-size: 13px; padding: 10px; margin-top: 12px; letter-spacing: 1px;
   }}
   .sec-block {{ padding: 22px 0; border-bottom: 1px solid var(--line); }}
   .sec-title {{ font-size: 16px; letter-spacing: 2px; margin: 0 0 12px; color: var(--ink); }}
@@ -1027,10 +1155,31 @@ def render_public_landing_page() -> str:
       <div class="seal" aria-hidden="true">龙</div>
     </header>
     <section class="hero">
-      <div class="meta">当前版本 <strong>v{ver}</strong> · {size_mb} MB · {rel_date} · 支持 8 路分块满速下载与免换包热更新</div>
-      <a class="btn" href="{html.escape(cf_edge_url)}">Cloudflare 边缘满速直链下载（推荐）</a>
-      <a class="btn sec" href="{html.escape(tencent_backup_url)}">腾讯云国内备用直链</a>
-      <a class="btn sec" href="{html.escape(gh_url)}">GitHub 官方源</a>
+      <div class="meta">当前版本 <strong>v{html.escape(ver)}</strong> · {size_mb} MB · {rel_date} · 国内多源 8 路并发满速下载</div>
+      <a class="btn" href="{html.escape(primary_url)}">
+        国内高速主线 A 满速下载（推荐）
+        <span class="btn-sub">中国大陆直连实测 5+ MB/s · 支持多线程断点续传</span>
+      </a>
+      <div class="mirrors-title">一键切换备用加速节点</div>
+      <div class="mirror-grid">
+        <a class="mirror-card" href="{html.escape(edgeone_url)}">
+          <span class="mirror-name">EdgeOne 专线</span>
+          <span class="mirror-tag">国内高速 · 3.7+ MB/s</span>
+        </a>
+        <a class="mirror-card" href="{html.escape(mirror_b_url)}">
+          <span class="mirror-name">极速主线 B</span>
+          <span class="mirror-tag">国内直连镜像</span>
+        </a>
+        <a class="mirror-card" href="{html.escape(cf_overseas_url)}">
+          <span class="mirror-name">Cloudflare 海外</span>
+          <span class="mirror-tag muted">海外网络首选</span>
+        </a>
+        <a class="mirror-card" href="{html.escape(origin_fallback_url)}">
+          <span class="mirror-name">源站兜底</span>
+          <span class="mirror-tag muted">备用稳定直链</span>
+        </a>
+      </div>
+      <a class="btn sec" href="{html.escape(gh_release_url)}">查看 GitHub Releases 发布页</a>
     </section>
     <section class="sec-block">
       <h2 class="sec-title">本版更新志</h2>
@@ -1050,7 +1199,12 @@ class PlatformHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "Lieguoji"
     sys_version = ""
+    timeout = 30.0
     _body_consumed = False
+
+    def setup(self) -> None:
+        super().setup()
+        self.request.settimeout(30.0)
 
     def handle_one_request(self) -> None:
         self._body_consumed = False
@@ -1121,7 +1275,11 @@ class PlatformHandler(BaseHTTPRequestHandler):
 
     def read_json_body(self, max_bytes: int = 512 * 1024) -> Optional[dict[str, Any]]:
         self._body_consumed = True
-        cl = int(self.headers.get("Content-Length", "0") or "0")
+        try:
+            cl = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            self.send_json({"ok": False, "error": "无效的请求长度"}, 400)
+            return None
         if cl <= 0:
             return {}
         if cl > max_bytes:
@@ -1431,9 +1589,9 @@ class PlatformHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": "文件不存在"}, 404)
             return
         size = target.stat().st_size
-        start, end, status = 0, size - 1, 200
+        start, end, status = 0, max(0, size - 1), 200
         rng = self.headers.get("Range")
-        if rng and rng.startswith("bytes="):
+        if rng and rng.startswith("bytes=") and size > 0:
             try:
                 s_str, e_str = rng[6:].split(",")[0].strip().split("-", 1)
                 if s_str:
@@ -1442,9 +1600,11 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     end = min(size - 1, int(e_str))
                 if 0 <= start <= end < size:
                     status = 206
+                else:
+                    start, end, status = 0, size - 1, 200
             except Exception:
                 start, end, status = 0, size - 1, 200
-        length = end - start + 1
+        length = (end - start + 1) if size > 0 else 0
         self.send_response(status)
         self._security_headers()
         self.send_header("Content-Type", "application/octet-stream")
@@ -1454,15 +1614,20 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if status == 206:
             self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
         self.end_headers()
-        with target.open("rb") as f:
-            f.seek(start)
-            rem = length
-            while rem > 0:
-                chunk = f.read(min(256 * 1024, rem))
-                if not chunk:
-                    break
-                self.wfile.write(chunk)
-                rem -= len(chunk)
+        if length <= 0:
+            return
+        try:
+            with target.open("rb") as f:
+                f.seek(start)
+                rem = length
+                while rem > 0:
+                    chunk = f.read(min(256 * 1024, rem))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    rem -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError, TimeoutError, socket.timeout):
+            self.close_connection = True
 
     def handle_hotpack_file(self, rel_path: str) -> None:
         if not rel_path or ".." in rel_path or rel_path.startswith("/"):
@@ -1495,35 +1660,60 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     self.send_header("Cache-Control", "public, max-age=86400")
                     self.send_header("Connection", "keep-alive")
                     self.end_headers()
-                    with target.open("rb") as f:
-                        f.seek(start)
-                        rem = length
-                        while rem > 0:
-                            chunk = f.read(min(256 * 1024, rem))
-                            if not chunk:
-                                break
-                            self.wfile.write(chunk)
-                            rem -= len(chunk)
+                    try:
+                        with target.open("rb") as f:
+                            f.seek(start)
+                            rem = length
+                            while rem > 0:
+                                chunk = f.read(min(256 * 1024, rem))
+                                if not chunk:
+                                    break
+                                self.wfile.write(chunk)
+                                rem -= len(chunk)
+                    except (BrokenPipeError, ConnectionResetError, TimeoutError, socket.timeout):
+                        self.close_connection = True
                     return
             except Exception:
                 pass
-        data = target.read_bytes()
         accept_enc = (self.headers.get("Accept-Encoding") or "").lower()
         compressible = target.suffix.lower() in (".json", ".js", ".html", ".css", ".txt", ".svg")
-        use_gzip = compressible and "gzip" in accept_enc and len(data) >= 512
-        payload = gzip.compress(data, compresslevel=6) if use_gzip else data
+        use_gzip = compressible and "gzip" in accept_enc and 512 <= size <= 8 * 1024 * 1024
+        if use_gzip:
+            with target.open("rb") as f:
+                payload = gzip.compress(f.read(), compresslevel=6)
+            self.send_response(200)
+            self._security_headers()
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Vary", "Accept-Encoding")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.send_header("Connection", "keep-alive")
+            self.end_headers()
+            try:
+                self.wfile.write(payload)
+            except (BrokenPipeError, ConnectionResetError, TimeoutError, socket.timeout):
+                self.close_connection = True
+            return
+
         self.send_response(200)
         self._security_headers()
         self.send_header("Content-Type", "application/octet-stream")
         self.send_header("Accept-Ranges", "bytes")
-        if use_gzip:
-            self.send_header("Content-Encoding", "gzip")
-            self.send_header("Vary", "Accept-Encoding")
-        self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Content-Length", str(size))
         self.send_header("Cache-Control", "public, max-age=86400")
         self.send_header("Connection", "keep-alive")
         self.end_headers()
-        self.wfile.write(payload)
+        try:
+            with target.open("rb") as f:
+                while True:
+                    chunk = f.read(256 * 1024)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+        except (BrokenPipeError, ConnectionResetError, TimeoutError, socket.timeout):
+            self.close_connection = True
 
     # ----------------------------- Public Game APIs -----------------------------
 
@@ -1539,8 +1729,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
             cur_patch = 0
 
         rel = get_release_config()
-        latest_ver = str(rel.get("latestVersion", "5.6.0"))
-        latest_build = int(rel.get("latestBuild", 186))
+        latest_ver = str(rel.get("latestVersion", "5.7.0"))
+        latest_build = int(rel.get("latestBuild", 187))
         min_build = int(rel.get("minSupportedBuild", 0))
         has_app_update = compare_version(cur_ver, cur_build, latest_ver, latest_build)
         force_update = bool(rel.get("forceUpdate", False)) or (cur_build > 0 and cur_build < min_build)
@@ -1582,7 +1772,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     "latestVersion": latest_ver,
                     "latestBuild": latest_build,
                     "releaseDate": rel.get("releaseDate", ""),
-                    "ipaSizeMB": rel.get("ipaSizeMB", 42.5),
+                    "ipaSizeMB": rel.get("ipaSizeMB", 42.7),
                     "downloadUrl": rel.get("downloadUrl", ""),
                     "directIpaUrl": rel.get("directIpaUrl", ""),
                     "ipaMirrors": rel.get("ipaMirrors", []),
@@ -1936,12 +2126,12 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return
         world_title = str(body.get("worldTitle", "")).strip()[:32] or "无名之世"
         top_nation = str(body.get("topNation", "")).strip()[:24] or "中原列国"
-        provinces_held = max(0, min(5000, int(body.get("provincesHeld", 0) or 0)))
-        total_days = max(0, min(10_000_000, int(body.get("totalDays", 0) or 0)))
-        years_elapsed = max(0, min(50_000, int(body.get("yearsElapsed", total_days // 365) or 0)))
-        nations_count = max(0, min(500, int(body.get("nationsCount", 0) or 0)))
-        wars_count = max(0, min(100_000, int(body.get("warsCount", 0) or 0)))
-        wonders_count = max(0, min(50, int(body.get("wondersCount", 0) or 0)))
+        provinces_held = max(0, min(5000, _safe_int(body.get("provincesHeld"), 0)))
+        total_days = max(0, min(10_000_000, _safe_int(body.get("totalDays"), 0)))
+        years_elapsed = max(0, min(50_000, _safe_int(body.get("yearsElapsed"), total_days // 365)))
+        nations_count = max(0, min(500, _safe_int(body.get("nationsCount"), 0)))
+        wars_count = max(0, min(100_000, _safe_int(body.get("warsCount"), 0)))
+        wonders_count = max(0, min(50, _safe_int(body.get("wondersCount"), 0)))
 
         ts = now_ms()
         with _db_lock:
@@ -1994,7 +2184,11 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if not safe_id:
             self.send_json({"ok": False, "reason": "存档编号无效"}, 400)
             return
-        cl = int(self.headers.get("Content-Length", "0") or "0")
+        try:
+            cl = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            self.send_json({"ok": False, "reason": "无效的存档长度"}, 400)
+            return
         if cl <= 0 or cl > MAX_SAVE_BYTES:
             self.send_json({"ok": False, "reason": f"存档大小须在 1 B – {MAX_SAVE_BYTES // (1024*1024)} MB 之间"}, 413)
             return
@@ -2005,12 +2199,23 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return
         self._body_consumed = True
         payload = self.rfile.read(cl)
+        if len(payload) != cl:
+            self.send_json({"ok": False, "reason": "存档上传不完整，请重试"}, 400)
+            return
         user_dir = SAVES_DIR / user_id
         user_dir.mkdir(parents=True, exist_ok=True)
         fpath = user_dir / f"{safe_id}.bin"
-        tmp = user_dir / f"{safe_id}.tmp"
-        tmp.write_bytes(payload)
-        tmp.replace(fpath)
+        tmp = user_dir / f"{safe_id}.{secrets.token_hex(6)}.tmp"
+        try:
+            with tmp.open("wb") as f:
+                f.write(payload)
+            tmp.replace(fpath)
+        except Exception:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise
 
         def hdr(name: str, default: str = "") -> str:
             v = self.headers.get(name, default)
@@ -2018,9 +2223,9 @@ class PlatformHandler(BaseHTTPRequestHandler):
 
         title = hdr("X-Save-Title", "当前世界")[:40]
         date_text = hdr("X-Save-Date", "")[:32]
-        nations = int(hdr("X-Save-Nations", "0") or "0")
-        provinces = int(hdr("X-Save-Provinces", "0") or "0")
-        day = int(hdr("X-Save-Day", "0") or "0")
+        nations = _safe_int(hdr("X-Save-Nations", "0"), 0)
+        provinces = _safe_int(hdr("X-Save-Provinces", "0"), 0)
+        day = _safe_int(hdr("X-Save-Day", "0"), 0)
         device = hdr("X-Save-Device", "")[:48]
         encoding = (hdr("X-Save-Encoding", "zlib") or "zlib").lower()
         ts = now_ms()
@@ -2052,18 +2257,30 @@ class PlatformHandler(BaseHTTPRequestHandler):
         safe_id = re.sub(r"[^A-Za-z0-9_\-]", "", save_id)[:64]
         with _db_lock:
             row = DB.execute("SELECT file_path, encoding FROM cloud_saves WHERE user_id = ? AND id = ?", (user_id, safe_id)).fetchone()
-        if not row or not Path(row["file_path"]).exists():
+        if not row:
             self.send_json({"ok": False, "error": "云端存档不存在"}, 404)
             return
-        data = Path(row["file_path"]).read_bytes()
+        save_path = Path(row["file_path"])
+        if not save_path.exists() or not save_path.is_file():
+            self.send_json({"ok": False, "error": "云端存档不存在"}, 404)
+            return
+        size = save_path.stat().st_size
         self.send_response(200)
         self._security_headers()
         self.send_header("Content-Type", "application/octet-stream")
         self.send_header("X-Save-Encoding", row["encoding"])
-        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Content-Length", str(size))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            with save_path.open("rb") as f:
+                while True:
+                    chunk = f.read(256 * 1024)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+        except (BrokenPipeError, ConnectionResetError, TimeoutError, socket.timeout):
+            self.close_connection = True
 
     def handle_save_delete(self, user_id: str, save_id: str) -> None:
         safe_id = re.sub(r"[^A-Za-z0-9_\-]", "", save_id)[:64]
@@ -2127,7 +2344,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 self.send_json({"ok": False, "error": "找不到该史官"}, 404)
                 return
             if "expDelta" in body:
-                delta = max(-5000, min(5000, int(body["expDelta"] or 0)))
+                delta = max(-5000, min(5000, _safe_int(body.get("expDelta"), 0)))
                 DB.execute("UPDATE users SET exp = MAX(0, exp + ?) WHERE id = ?", (delta, uid))
             if "banned" in body and row["role"] != "admin":
                 b = 1 if body["banned"] else 0
@@ -2216,7 +2433,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if isinstance(body.get("pace"), dict):
             p = cfg.get("pace", {})
             for k, v in body["pace"].items():
-                p[str(k)] = max(1, min(60, int(v)))
+                p[str(k)] = max(1, min(60, _safe_int(v, 1)))
             cfg["pace"] = p
         if "notice" in body:
             cfg["notice"] = str(body["notice"]).strip()[:120]
@@ -2228,10 +2445,20 @@ class PlatformHandler(BaseHTTPRequestHandler):
         hp["sha256"] = compute_hotpatch_sha(cfg)
         cur["hotpatch"] = hp
         save_release_config(cur)
-        # Also mirror updated hot-rules.json into hotpack so new downloads stay in sync
+        # Also mirror updated hot-rules.json into hotpack atomically so new downloads stay in sync
         rules_path = HOTPACK_DIR / "Content" / "hot-rules.json"
         if rules_path.parent.exists():
-            rules_path.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+            tmp_rules = rules_path.parent / f".hot-rules.{secrets.token_hex(6)}.tmp"
+            try:
+                with tmp_rules.open("w", encoding="utf-8") as f:
+                    json.dump(cfg, f, ensure_ascii=False, indent=2)
+                tmp_rules.replace(rules_path)
+            except Exception:
+                try:
+                    tmp_rules.unlink(missing_ok=True)
+                except OSError:
+                    pass
+                raise
             rebuild_hotpack_manifest(bump_version=True, summary=hp["summary"])
         self.send_json({"ok": True, "patchVersion": hp["patchVersion"]})
 
@@ -2306,15 +2533,44 @@ class PlatformHandler(BaseHTTPRequestHandler):
         self.send_json({"ok": True, "packVersion": m["packVersion"], "totalBytes": m["totalBytes"], "files": len(m["files"])})
 
 
+class PlatformHTTPServer(ThreadingHTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+
 def main() -> None:
     init_db()
     rebuild_hotpack_manifest(bump_version=False)
     probe_compute_once()
     start_probe_thread()
-    server = ThreadingHTTPServer(("0.0.0.0", PORT), PlatformHandler)
-    server.daemon_threads = True
-    print(f"列国纪云端行宫平台服务器 v4.0 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
-    server.serve_forever()
+    server = PlatformHTTPServer(("0.0.0.0", PORT), PlatformHandler)
+    shutdown_started = threading.Event()
+
+    def _request_shutdown(signum: int, _frame: Any) -> None:
+        if shutdown_started.is_set():
+            return
+        shutdown_started.set()
+        _shutdown_event.set()
+        print(f"收到信号 {signum}，正在优雅关闭云端行宫平台服务器 v5.0…", flush=True)
+        threading.Thread(target=server.shutdown, daemon=True).start()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            signal.signal(sig, _request_shutdown)
+        except (ValueError, OSError):
+            pass
+
+    print(f"列国纪云端行宫平台服务器 v5.0 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
+    try:
+        server.serve_forever()
+    finally:
+        _shutdown_event.set()
+        try:
+            server.server_close()
+        except Exception:
+            pass
+        close_db()
+        print("列国纪云端行宫平台服务器 v5.0 已安全退出并关闭数据库。", flush=True)
 
 
 if __name__ == "__main__":

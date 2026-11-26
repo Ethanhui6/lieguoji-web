@@ -81,7 +81,7 @@ final class EffectsView: UIView {
     /// 动画帧率 (推演与画面): 常温丝滑 60fps，微温自动收至 30fps，发热/低电量降至 15fps。
     static var fps = 60
     static func calm(_ a: CAAnimation) -> CAAnimation {
-        let target = Energy.hot ? min(fps, 15) : (Energy.level >= 1 ? min(fps, 30) : fps)
+        let target = Energy.effectFPS(preferred: fps)
         let f = Float(max(12, target))
         a.preferredFrameRateRange = CAFrameRateRange(minimum: max(10, f / 2), maximum: f, preferred: f)
         return a
@@ -109,13 +109,30 @@ final class EffectsView: UIView {
     private var seen = Set<String>()
     private var seenOrder: [String] = []
     private var camera: MapCamera?
+    /// Camera & viewport at which path-based CAShapeLayers (`battleArrows`, `geoArcLayers`, `arrowLayers`, `clashLayers`, `landingLayers.arc`) last built their `CGPath`s.
+    /// During pure pan (`camera.scale == pathLayoutCamera.scale` & same viewport), all path layers rigidly translate via `.position` with zero `CGPath` rebuilds.
+    private var pathLayoutCamera: MapCamera?
+    private var pathLayoutViewport: CGSize = .zero
+    private var scratchMarks: [CGPoint] = []
     /// 地图上军队图标此刻的边长（点）：阵亡动画里倒下的军旗与之同大。
     private var iconPoints: CGFloat { CGFloat(MapRenderer.iconPoints(camera?.scale ?? 1, iconScale: 1)) }
     private var viewport: CGSize = .zero
     private var reduceMotion = false
 
+    private var hasActiveLayers: Bool {
+        !activeFloats.isEmpty || !waves.isEmpty || !battleLayers.isEmpty || !clashLayers.isEmpty
+            || !siegeLayers.isEmpty || !flashLayers.isEmpty || !claimLayers.isEmpty || !burstLayers.isEmpty
+            || !peaceLayers.isEmpty || !battleArrows.isEmpty || !geoArcLayers.isEmpty || !arrowLayers.isEmpty
+            || !blockadeLayers.isEmpty || !landingLayers.isEmpty
+    }
+
     override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
+        if newWindow == nil { stopWaves() }
+    }
 
     nonisolated private static func image(_ name: String) -> CGImage? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "World"),
@@ -173,37 +190,42 @@ final class EffectsView: UIView {
         l.add(Self.calm(g), forKey: "float")
         let id = UUID()
         activeFloats.append((id: id, host: host, x: worldX, y: worldY))
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.48) { [weak self] in
-            host.removeFromSuperlayer()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.48) { [weak self, weak host] in
+            host?.removeFromSuperlayer()
             self?.activeFloats.removeAll { $0.id == id }
         }
     }
     func startWaves() {
         guard waveTimer == nil else { return }
-        waveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in self?.spawnWave() }
+        waveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            self.spawnWave()
+        }
     }
     func stopWaves() { waveTimer?.invalidate(); waveTimer = nil }
     private func spawnWave() {
-        guard Self.particles, !Energy.hot, let sheet = Self.waveSheet, let camera, !seaSpots.isEmpty, waves.count < 9, window != nil, viewport.width > 0 else { return }
+        guard Self.particles, !Energy.hot, let sheet = Self.waveSheet, let firstFrame = Self.waveFrames.first, let camera, !seaSpots.isEmpty, waves.count < 9, window != nil, viewport.width > 0 else { return }
         let vp = (width: Double(viewport.width), height: Double(viewport.height)), view = bounds.insetBy(dx: 10, dy: 60)
         var pick: (CGPoint, CGPoint)?
         for _ in 0..<12 {
             let s = seaSpots[Int.random(in: 0..<seaSpots.count)], p = camera.toScreen(x: Double(s.x), y: Double(s.y), viewport: vp)
+            guard p.x.isFinite && p.y.isFinite else { continue }
             let q = CGPoint(x: p.x, y: p.y)
             if view.contains(q) { pick = (s, q); break }
         }
         guard let (spot, at) = pick else { return }
         let side = CGFloat(min(110, max(30, 22 * camera.scale)))
         let l = CALayer()
-        l.contents = sheet; l.contentsRect = Self.waveFrames[0].cgRectValue
+        l.contents = sheet; l.contentsRect = firstFrame.cgRectValue
         l.bounds = CGRect(x: 0, y: 0, width: side, height: side); l.position = at; l.opacity = 0.9
         let flip = CAKeyframeAnimation(keyPath: "contentsRect"); flip.values = Self.waveFrames; flip.calculationMode = .discrete
         flip.duration = 2.7; flip.fillMode = .forwards; flip.isRemovedOnCompletion = false
         l.add(Self.calm(flip), forKey: "wave")
         layer.insertSublayer(l, at: 0)
         waves.append((l, Double(spot.x), Double(spot.y), camera.scale))
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.7) { [weak self] in
-            l.removeFromSuperlayer(); self?.waves.removeAll { $0.layer === l }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.7) { [weak self, weak l] in
+            l?.removeFromSuperlayer()
+            if let l { self?.waves.removeAll { $0.layer === l } }
         }
     }
     nonisolated private static let claimIcon = image("war-claim")
@@ -268,18 +290,19 @@ final class EffectsView: UIView {
 
     /// The two sides' strength over a fight: one bar in their colours, split by troops.
     private func setStrength(_ root: CALayer, _ b: MapEffects.Battle) {
-        guard let bar = root.sublayers?.first(where: { $0.name == "strength" }), bar.sublayers?.count == 2 else { return }
+        guard let bar = root.sublayers?.first(where: { $0.name == "strength" }), let subs = bar.sublayers, subs.count >= 2 else { return }
         let total = b.leftTroops + b.rightTroops
         guard let l = b.left, let r = b.right, total > 0 else { bar.isHidden = true; return }
         let wasHidden = bar.isHidden
         bar.isHidden = false
-        let w = bar.bounds.width, h = bar.bounds.height, share = w * CGFloat(b.leftTroops) / CGFloat(total)
+        let w = bar.bounds.width, h = bar.bounds.height
+        let share = max(0, min(w, w * CGFloat(b.leftTroops) / CGFloat(total)))
         // 首次出现立即落位（避免从复用旧条滑变），交战中再平滑过渡兵力消长。
         CATransaction.setDisableActions(wasHidden)
         if !wasHidden { CATransaction.setAnimationDuration(0.35) }
         defer { CATransaction.setDisableActions(true) }
-        bar.sublayers![0].frame = CGRect(x: 0, y: 0, width: share, height: h); bar.sublayers![0].backgroundColor = UIColor(red: l.r, green: l.g, blue: l.b, alpha: 1).cgColor
-        bar.sublayers![1].frame = CGRect(x: share, y: 0, width: w - share, height: h); bar.sublayers![1].backgroundColor = UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1).cgColor
+        subs[0].frame = CGRect(x: 0, y: 0, width: share, height: h); subs[0].backgroundColor = UIColor(red: l.r, green: l.g, blue: l.b, alpha: 1).cgColor
+        subs[1].frame = CGRect(x: share, y: 0, width: w - share, height: h); subs[1].backgroundColor = UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1).cgColor
     }
     private func battleLayer(culture: String) -> CALayer {
         // 36 帧（6×6 @ 30fps）高清多帧拼接交锋动画：复用原作 40 帧双剑挥斩交击序列，精铸寒钢铜柄刀剑＋交击朱金气浪环＋四溅火星与扬尘，彻底告别简陋代码折线！
@@ -670,23 +693,24 @@ final class EffectsView: UIView {
     }
     private func layoutArrow(_ v: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow), _ screen: (Double, Double) -> CGPoint) {
         let s = screen(v.a.sx, v.a.sy), c = screen(v.a.cx, v.a.cy), e = screen(v.a.ex, v.a.ey)
+        guard s.x.isFinite, s.y.isFinite, c.x.isFinite, c.y.isFinite, e.x.isFinite, e.y.isFinite else { return }
         func bezier(_ t: CGFloat) -> CGPoint { CGPoint(x: (1 - t) * (1 - t) * s.x + 2 * (1 - t) * t * c.x + t * t * e.x, y: (1 - t) * (1 - t) * s.y + 2 * (1 - t) * t * c.y + t * t * e.y) }
         let points = (0..<30).map { bezier(0.1 + 0.65 * CGFloat($0) / 29) }
         func width(_ k: CGFloat) -> CGFloat { 5.6 - 3.8 * k * k * (3 - 2 * k) }
         var left = [CGPoint](), right = [CGPoint]()
+        left.reserveCapacity(30); right.reserveCapacity(30)
         for (i, p) in points.enumerated() {
             let q = points[min(i + 1, 29)], o = points[max(i - 1, 0)], dx = q.x - o.x, dy = q.y - o.y, len = max(0.001, hypot(dx, dy))
             let w = width(CGFloat(i) / 29) / 2
             left.append(CGPoint(x: p.x - dy / len * w, y: p.y + dx / len * w)); right.append(CGPoint(x: p.x + dy / len * w, y: p.y - dx / len * w))
         }
+        guard left.count == 30, right.count == 30 else { return }
         let body = UIBezierPath(); body.move(to: left[0]); for p in left.dropFirst() { body.addLine(to: p) }; for p in right.reversed() { body.addLine(to: p) }; body.close()
         v.fill.path = body.cgPath; v.outline.path = body.cgPath
         let tip = points[29], before = points[28], dx = tip.x - before.x, dy = tip.y - before.y, len = max(0.001, hypot(dx, dy)), ux = dx / len, uy = dy / len
         let h: CGFloat = 5.5, l: CGFloat = 10
         let head = UIBezierPath(); head.move(to: CGPoint(x: tip.x - uy * h, y: tip.y + ux * h)); head.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l)); head.addLine(to: CGPoint(x: tip.x + uy * h, y: tip.y - ux * h)); head.close()
         v.head.path = head.cgPath
-        let center = UIBezierPath(); center.move(to: points[0]); for p in points.dropFirst() { center.addLine(to: p) }; center.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l))
-        _ = center
         // The deepening bands: band i covers the body from a point i/6 along to the head.
         for (i, band) in (v.reveal.sublayers ?? []).enumerated() {
             guard let shape = band as? CAShapeLayer else { continue }
@@ -805,7 +829,7 @@ final class EffectsView: UIView {
                          rate: 6, life: 0.7, velocity: 20, range: .pi * 0.8, scale: 0.45, scaleSpeed: -0.45, alphaSpeed: -1.1, angle: -.pi / 2, accel: 14)
                 ]
                 root.addSublayer(e)
-                DispatchQueue.main.asyncAfter(deadline: .now() + b.delay + 0.55) { e.birthRate = 0 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + b.delay + 0.55) { [weak e] in e?.birthRate = 0 }
             }
         default:
             // 融图水墨大气荡纹（彻底废除违和的旧版贴纸图标浮标：天灾、丰年、政变、兴邦皆以纯墨晕涟漪＋局部微粒融于山河）
@@ -821,7 +845,7 @@ final class EffectsView: UIView {
                     cell(particleImg, color: accent.withAlphaComponent(0.62), rate: 8, life: 1.15, velocity: 18, range: .pi * 2, scale: pScale, scaleSpeed: 0.10, alphaSpeed: -0.52, spin: 0.7)
                 ]
                 root.addSublayer(e)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { e.birthRate = 0 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak e] in e?.birthRate = 0 }
             }
         }
         return root
@@ -878,7 +902,7 @@ final class EffectsView: UIView {
         let fade = CABasicAnimation(keyPath: "opacity"); fade.fromValue = l.presentation()?.opacity ?? l.opacity; fade.toValue = 0; fade.duration = 0.3
         fade.timingFunction = CAMediaTimingFunction(name: .easeOut)
         l.opacity = 0; l.add(fade, forKey: "retire")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) { l.removeFromSuperlayer() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) { [weak l] in l?.removeFromSuperlayer() }
     }
     private func once(_ id: String, after seconds: Double, remove: @escaping () -> Void) {
         if seen.insert(id).inserted { seenOrder.append(id) }
@@ -1066,52 +1090,197 @@ final class EffectsView: UIView {
     }
 
     func update(camera: MapCamera, viewport: CGSize, effectsChanged: Bool = false) {
+        guard viewport.width.isFinite, viewport.height.isFinite, viewport.width > 0, viewport.height > 0, camera.isValid else { return }
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
-        guard effectsChanged || camera != self.camera || viewport != self.viewport || reduceMotion != self.reduceMotion else { return }
+        let prevCamera = self.camera
+        let prevViewport = self.viewport
+        let prevReduceMotion = self.reduceMotion
+        guard effectsChanged || camera != prevCamera || viewport != prevViewport || reduceMotion != prevReduceMotion else { return }
         self.camera = camera; self.viewport = viewport; self.reduceMotion = reduceMotion
+        if !hasActiveLayers {
+            pathLayoutCamera = nil
+            return
+        }
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         let visibleRect = CGRect(origin: .zero, size: viewport).insetBy(dx: -80, dy: -80)
-        func screen(_ x: Double, _ y: Double) -> CGPoint { let p = camera.toScreen(x: x, y: y, viewport: vp); return CGPoint(x: p.x, y: p.y) }
-        CATransaction.begin(); CATransaction.setDisableActions(true)
+        func screen(_ x: Double, _ y: Double) -> CGPoint {
+            let p = camera.toScreen(x: x, y: y, viewport: vp)
+            return CGPoint(x: p.x, y: p.y)
+        }
+
+        // Pure-pan fast path: scale & viewport & effect set are unchanged — translate all existing CALayers
+        // via `.position` only inside disabled-actions CATransaction, with ZERO CGPath rebuilds or array allocations!
+        if !effectsChanged,
+           viewport == prevViewport,
+           reduceMotion == prevReduceMotion,
+           let refCam = pathLayoutCamera,
+           pathLayoutViewport == viewport,
+           abs(camera.scale - refCam.scale) < 1e-6 {
+            let panDx = CGFloat((refCam.centerX - camera.centerX) * camera.scale)
+            let panDy = CGFloat((refCam.centerY - camera.centerY) * camera.scale)
+            guard panDx.isFinite, panDy.isFinite else { return }
+            let panOffset = CGPoint(x: panDx, y: panDy)
+            let k = CGFloat(max(0.8, min(1.2, camera.scale / 2)))
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            defer { CATransaction.commit() }
+
+            for f in activeFloats {
+                let p = screen(f.x, f.y)
+                if p.x.isFinite && p.y.isFinite { f.host.position = p }
+            }
+            for w in waves {
+                let p = screen(w.x, w.y)
+                if p.x.isFinite && p.y.isFinite { w.layer.position = p }
+            }
+            if !battleOrder.isEmpty {
+                scratchMarks.removeAll(keepingCapacity: true)
+                for key in battleOrder {
+                    guard let v = battleLayers[key] else { continue }
+                    var p = screen(v.x, v.y); p.y -= 15 * k
+                    guard p.x.isFinite && p.y.isFinite && visibleRect.contains(p) else {
+                        visibility(v.layer, visible: false)
+                        continue
+                    }
+                    let crowded = scratchMarks.contains { hypot($0.x - p.x, $0.y - p.y) < 28 * k }
+                    visibility(v.layer, visible: !crowded)
+                    guard !crowded else { continue }
+                    scratchMarks.append(p)
+                    v.layer.position = p
+                }
+            }
+            for v in clashLayers.values {
+                let m = screen(v.battle.x, v.battle.y)
+                let visible = m.x.isFinite && m.y.isFinite && visibleRect.contains(m)
+                visibility(v.a, visible: visible); visibility(v.b, visible: visible)
+                guard visible else { continue }
+                v.a.position = panOffset
+                v.b.position = panOffset
+            }
+            for v in siegeLayers.values {
+                var p = screen(v.x, v.y); p.y -= 14 * k
+                let vis = p.x.isFinite && p.y.isFinite && visibleRect.contains(p)
+                if vis { v.layer.position = p }
+                visibility(v.layer, visible: vis)
+            }
+            for v in flashLayers.values {
+                let p = screen(v.x, v.y)
+                if p.x.isFinite && p.y.isFinite { v.layer.position = p }
+            }
+            for v in claimLayers.values {
+                let p = screen(v.x, v.y)
+                if p.x.isFinite && p.y.isFinite { v.layer.position = p }
+            }
+            for v in burstLayers.values {
+                let p = screen(v.x, v.y)
+                if p.x.isFinite && p.y.isFinite { v.layer.position = p }
+            }
+            for v in peaceLayers.values {
+                var p = screen(v.x, v.y); p.y -= 10
+                if p.x.isFinite && p.y.isFinite { v.layer.position = p }
+            }
+            if !battleArrows.isEmpty {
+                let arrowPos = CGPoint(x: viewport.width * 0.5 + panDx, y: viewport.height * 0.5 + panDy)
+                for v in battleArrows.values {
+                    v.root.position = arrowPos
+                }
+            }
+            for v in geoArcLayers.values {
+                v.layer.position = panOffset
+            }
+            for v in arrowLayers.values {
+                v.layer.position = panOffset
+                v.head.position = panOffset
+            }
+            for v in blockadeLayers.values {
+                let p = screen(v.x, v.y)
+                let vis = p.x.isFinite && p.y.isFinite && visibleRect.contains(p)
+                if vis { v.layer.position = p }
+                visibility(v.layer, visible: vis)
+            }
+            for v in landingLayers.values {
+                let p = screen(v.item.x, v.item.y)
+                let vis = p.x.isFinite && p.y.isFinite && visibleRect.contains(p)
+                if vis { v.layer.position = p }
+                visibility(v.layer, visible: vis)
+                if let arc = v.arc {
+                    arc.position = panOffset
+                    visibility(arc, visible: vis && arc.path != nil)
+                }
+            }
+            return
+        }
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
         for f in activeFloats {
-            f.host.position = screen(f.x, f.y)
+            let p = screen(f.x, f.y)
+            if p.x.isFinite && p.y.isFinite { f.host.position = p }
         }
         for w in waves {
-            w.layer.position = screen(w.x, w.y)
-            let z = CGFloat(camera.scale / max(0.0001, w.scale)); w.layer.setAffineTransform(CGAffineTransform(scaleX: z, y: z))
+            let p = screen(w.x, w.y)
+            if p.x.isFinite && p.y.isFinite { w.layer.position = p }
+            let z = CGFloat(camera.scale / max(0.0001, w.scale))
+            if z.isFinite && z > 0.01 && z < 100 {
+                w.layer.setAffineTransform(CGAffineTransform(scaleX: z, y: z))
+            }
         }
         let k = CGFloat(max(0.8, min(1.2, camera.scale / 2)))
         // The swords hang just above the armies they belong to (the figures stay visible beneath),
         // and battles that would overlap on screen share one mark.
-        var marks = [CGPoint]()
+        scratchMarks.removeAll(keepingCapacity: true)
         for key in battleOrder {
             guard let v = battleLayers[key] else { continue }
+            v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
             var p = screen(v.x, v.y); p.y -= 15 * k
-            guard visibleRect.contains(p) else {
+            guard p.x.isFinite && p.y.isFinite && visibleRect.contains(p) else {
                 visibility(v.layer, visible: false)
                 continue
             }
-            let crowded = marks.contains { hypot($0.x - p.x, $0.y - p.y) < 28 * k }
+            let crowded = scratchMarks.contains { hypot($0.x - p.x, $0.y - p.y) < 28 * k }
             visibility(v.layer, visible: !crowded)
             guard !crowded else { continue }
-            marks.append(p)
-            v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
+            scratchMarks.append(p)
+            v.layer.position = p
         }
         for v in clashLayers.values {
             let m = screen(v.battle.x, v.battle.y)
-            let visible = visibleRect.contains(m)
-            visibility(v.a, visible: visible); visibility(v.b, visible: visible)
-            guard visible else { continue }
             let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by)
-            let pa = UIBezierPath(); pa.move(to: a); pa.addLine(to: m); v.a.path = pa.cgPath
-            let pb = UIBezierPath(); pb.move(to: b); pb.addLine(to: m); v.b.path = pb.cgPath
-            v.a.lineWidth = 1 + k * 0.6; v.b.lineWidth = 1 + k * 0.6
+            v.a.position = .zero; v.b.position = .zero
+            if a.x.isFinite && a.y.isFinite && m.x.isFinite && m.y.isFinite && b.x.isFinite && b.y.isFinite {
+                let pa = UIBezierPath(); pa.move(to: a); pa.addLine(to: m); v.a.path = pa.cgPath
+                let pb = UIBezierPath(); pb.move(to: b); pb.addLine(to: m); v.b.path = pb.cgPath
+                v.a.lineWidth = 1 + k * 0.6; v.b.lineWidth = 1 + k * 0.6
+                let visible = visibleRect.contains(m)
+                visibility(v.a, visible: visible); visibility(v.b, visible: visible)
+            } else {
+                visibility(v.a, visible: false); visibility(v.b, visible: false)
+            }
         }
-        for v in siegeLayers.values { var p = screen(v.x, v.y); p.y -= 14 * k; v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
-        for v in flashLayers.values { v.layer.position = screen(v.x, v.y) }
-        for v in claimLayers.values { v.layer.position = screen(v.x, v.y) }
-        for v in burstLayers.values { v.layer.position = screen(v.x, v.y) }
-        for v in peaceLayers.values { var p = screen(v.x, v.y); p.y -= 10; v.layer.position = p }
+        for v in siegeLayers.values {
+            v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
+            var p = screen(v.x, v.y); p.y -= 14 * k
+            let vis = p.x.isFinite && p.y.isFinite && visibleRect.contains(p)
+            if vis { v.layer.position = p }
+            visibility(v.layer, visible: vis)
+        }
+        for v in flashLayers.values {
+            let p = screen(v.x, v.y)
+            if p.x.isFinite && p.y.isFinite { v.layer.position = p }
+        }
+        for v in claimLayers.values {
+            let p = screen(v.x, v.y)
+            if p.x.isFinite && p.y.isFinite { v.layer.position = p }
+        }
+        for v in burstLayers.values {
+            let p = screen(v.x, v.y)
+            if p.x.isFinite && p.y.isFinite { v.layer.position = p }
+        }
+        for v in peaceLayers.values {
+            var p = screen(v.x, v.y); p.y -= 10
+            if p.x.isFinite && p.y.isFinite { v.layer.position = p }
+        }
         let vpRect = CGRect(origin: .zero, size: viewport)
         for v in battleArrows.values {
             v.root.frame = vpRect; v.gradient.frame = vpRect; v.fill.frame = vpRect
@@ -1119,7 +1288,9 @@ final class EffectsView: UIView {
             layoutArrow(v) { screen($0, $1) }
         }
         for v in geoArcLayers.values {
+            v.layer.position = .zero
             let a = screen(v.arc.fromX, v.arc.fromY), b = screen(v.arc.toX, v.arc.toY)
+            guard a.x.isFinite && a.y.isFinite && b.x.isFinite && b.y.isFinite else { v.layer.path = nil; continue }
             let dx = b.x - a.x, dy = b.y - a.y, len = max(1, hypot(dx, dy))
             let bow = min(56, len * 0.16)
             let ctrl = CGPoint(x: (a.x + b.x) * 0.5 - (dy / len) * bow, y: (a.y + b.y) * 0.5 + (dx / len) * bow)
@@ -1127,7 +1298,9 @@ final class EffectsView: UIView {
             v.layer.path = path.cgPath
         }
         for v in arrowLayers.values {
+            v.layer.position = .zero; v.head.position = .zero
             let a = screen(v.d.fromX, v.d.fromY), b = screen(v.d.toX, v.d.toY)
+            guard a.x.isFinite && a.y.isFinite && b.x.isFinite && b.y.isFinite else { v.layer.path = nil; v.head.path = nil; continue }
             let dx = b.x - a.x, dy = b.y - a.y, len = max(1, hypot(dx, dy)), ux = dx / len, uy = dy / len
             // 略带弧度的一笔（向左侧拱起距离的 12%），箭头顺着笔尾的方向。
             let tip = CGPoint(x: b.x - ux * 8, y: b.y - uy * 8)
@@ -1142,32 +1315,35 @@ final class EffectsView: UIView {
             head.addQuadCurve(to: tip, controlPoint: CGPoint(x: tip.x - tx * 5 + ty * 1.5, y: tip.y - ty * 5 - tx * 1.5)); head.close()
             v.head.path = head.cgPath
         }
-        for v in siegeLayers.values { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
         for v in blockadeLayers.values {
-            let p = screen(v.x, v.y)
-            v.layer.position = p
             v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
-            visibility(v.layer, visible: visibleRect.contains(p))
+            let p = screen(v.x, v.y)
+            let vis = p.x.isFinite && p.y.isFinite && visibleRect.contains(p)
+            if vis { v.layer.position = p }
+            visibility(v.layer, visible: vis)
         }
         for v in landingLayers.values {
-            let p = screen(v.item.x, v.item.y)
-            v.layer.position = p
             v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
-            let vis = visibleRect.contains(p)
+            let p = screen(v.item.x, v.item.y)
+            let vis = p.x.isFinite && p.y.isFinite && visibleRect.contains(p)
+            if vis { v.layer.position = p }
             visibility(v.layer, visible: vis)
             if let arc = v.arc {
+                arc.position = .zero
                 let fp = screen(v.item.fx, v.item.fy)
-                let dist = hypot(p.x - fp.x, p.y - fp.y)
-                if vis && dist > 6 {
+                let dist = (p.x.isFinite && p.y.isFinite && fp.x.isFinite && fp.y.isFinite) ? hypot(p.x - fp.x, p.y - fp.y) : 0
+                if dist > 6 {
                     let ctrl = CGPoint(x: (fp.x + p.x) * 0.5, y: min(fp.y, p.y) - min(42, dist * 0.35))
                     let bp = UIBezierPath(); bp.move(to: fp); bp.addQuadCurve(to: p, controlPoint: ctrl)
                     arc.path = bp.cgPath
-                    visibility(arc, visible: true)
+                    visibility(arc, visible: vis)
                 } else {
+                    arc.path = nil
                     visibility(arc, visible: false)
                 }
             }
         }
-        CATransaction.commit()
+        pathLayoutCamera = camera
+        pathLayoutViewport = viewport
     }
 }

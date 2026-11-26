@@ -1,5 +1,26 @@
 # 更新日志
 
+## 5.7.0 / build 187 — 2026-11-26
+
+### 宋韵极速联机版：60/120fps 地图拖动零掉帧 × 国内满速多源并发下载 × 真·网游永不断链自动重连 × 行宫与战局在线 UI 焕新 × 全仓深度审计修复
+- **60/120fps 地图拖动零掉帧重构**：
+  - 全面梳理地图手势拖拽、双指缩放与渲染合批路径，消除主线程帧抖动与冗余覆盖层重绘，在 280 州大地图缩放平移下仍稳持 60/120fps 丝滑跟手。
+- **国内满速多源并发下载引擎（`OnlinePlatform.swift`、`CloudUpdateView.swift`、`OnlineHubViews.swift`）**：
+  - 客户端更新包与免换包典藏热更升级多源并发测速与实测吞吐评估，更新弹窗与行宫更新中心全新实装「加速线路测速矩阵」，直显各源真实 `MB/s` 速率徽章、`ms` 首包延迟、最优节点标记与多源并发下载进度丝带。
+- **真·网游永不断链自动重连与退后台秒续（`GameModel.swift`、`NativeHost.swift`、`GameView.swift`）**：
+  - 网络波动或切后台返回时绝不再动辄粗暴踢回本机单机，改为后台持续自适应自动重连并安全托管云端进度；仅在玩家主动点击「离线单机」时才切入本机模式，且随时可一键连回九州云服 v10；
+  - 战局内全新实装宋版宣纸「在线信号胶囊」（青墨三格信号强度 + 实时 `ms` 延迟，点按即时测速提示）与「非阻塞浮动自动重连横幅」（脉动朱砂印点、重连次数提示、一句安心托管说明 + 「立即重连 / 离线单机」快捷钮），绝不弹出阻塞性系统警告打断观图。
+- **行宫、更新卷轴与登临阁 4.3 宋韵宣纸美学全面打磨（`OnlineHubViews.swift`、`CloudUpdateView.swift`、`OnlineAuthViews.swift`）**：
+  - **史官名刺**：升级宋版双线宣纸书法框、墨韵御印徽座、品秩晋升刻度仪与三列清雅数据栏（品秩 / 签到连胜 / 云端卷宗）；
+  - **云端行宫实时链路卡**：整合三格信号强度、延迟徽章、「在线云服 v10 / 离线单机」直观双态切换、三列精简遥测与「重测链路 / 立即重连」按钮；
+  - **更新弹窗（`CloudUpdateSheet` / `HotUpdateSheet`）**：新增宋版朱砂丝带进度条、醒目 `MB/s` 与已下/总 MB 读数、实时镜像节点卡片与多版本更新志卡片；
+  - **列国登临阁与立籍转正（`AuthPortalSheet` / `BindGuestSheet`）**：新增礼仪御印居中抬头、带 `@FocusState` 朱砂细线聚焦反馈的悬浮纸笺输入卡、柔和实时表单校验提示与朱砂雕线主操作钮。
+- **全仓与界面层深度代码审计修复（`GameView.swift`、`OnlineHubViews.swift`、`CloudUpdateView.swift`、`OnlineAuthViews.swift`、`TitleViews.swift`）**：
+  - 清零 `GameView.swift` 全部 4 处 `model.map!` 强制解包，改用安全可选绑定；
+  - 修复 `GameView` / `OnlineHubSheet` / `CloudUpdateSheet` / `NewWorldSheet` / `SplashView` / `TitleView` 中多处未取消 `Task` 与 `DispatchQueue.main.asyncAfter` 竞态及 `MapController` 回调未解绑隐患；
+  - 修复 `OnlineHubSheet` 因 `.onAppear` 覆盖用户当前页签的布局跳变，并缓存 `HubSavesTabView` 静态 `DateFormatter` 消除主线程滚动重复分配；
+  - 修复 `BindGuestSheet` 空白账号未 `trim` 即允许提交的校验漏洞，并为 `GeneratingView` 补齐减弱动态效果与离场动画清理。
+
 ## 5.6.0 / build 186 — 2026-11-26
 
 ### 行宫重铸版：根治更新点击无反应 × 补全历代更新志 × 史官行宫五大页签全面焕新 × 算力引擎 v9

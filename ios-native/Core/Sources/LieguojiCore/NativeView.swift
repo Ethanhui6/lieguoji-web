@@ -10,22 +10,14 @@ extension NativeEngine {
         var h = 0.0
         if d > 0 { h = mx == r ? ((g - b) / d) / 6 : mx == g ? (2 + (b - r) / d) / 6 : (4 + (r - g) / d) / 6; if h < 0 { h += 1 } }
         let s = min(1, max(0, (mx > 0 ? d / mx : 0) + ds)), val = min(1, max(0, mx - dv))
-        let sector = h * 6, i = Int(sector.rounded(.down)) % 6, f = sector - sector.rounded(.down)
+        let sector = h.isFinite ? h * 6 : 0
+        let i = ((Int(sector.rounded(.down)) % 6) + 6) % 6, f = sector - sector.rounded(.down)
         let p = val * (1 - s), q = val * (1 - s * f), t = val * (1 - s * (1 - f))
         return [(val, t, p), (q, val, p), (p, val, t), (p, q, val), (t, p, val), (val, p, q)][i]
     }
     public static func stateLineColor(_ css: String) -> String {
         let v = Int(css.dropFirst(), radix: 16) ?? 0x999999
-        func adjust(_ c: (Double, Double, Double), _ ds: Double, _ dv: Double) -> (Double, Double, Double) {
-            let (r, g, b) = c, mx = max(r, g, b), mn = min(r, g, b), d = mx - mn
-            var h = 0.0
-            if d > 0 { h = mx == r ? ((g - b) / d) / 6 : mx == g ? (2 + (b - r) / d) / 6 : (4 + (r - g) / d) / 6; if h < 0 { h += 1 } }
-            let s = min(1, max(0, (mx > 0 ? d / mx : 0) + ds)), val = min(1, max(0, mx - dv))
-            let sector = h * 6, i = Int(sector.rounded(.down)) % 6, f = sector - sector.rounded(.down)
-            let p = val * (1 - s), q = val * (1 - s * f), t = val * (1 - s * (1 - f))
-            return [(val, t, p), (q, val, p), (p, val, t), (p, q, val), (t, p, val), (val, p, q)][i]
-        }
-        let c = adjust(adjust((Double(v >> 16 & 255) / 255, Double(v >> 8 & 255) / 255, Double(v & 255) / 255), 0.1, 0.05), 0.2, 0.2)
+        let c = Self.adjustColor(Self.adjustColor((Double(v >> 16 & 255) / 255, Double(v >> 8 & 255) / 255, Double(v & 255) / 255), 0.1, 0.05), 0.2, 0.2)
         return String(format: "#%02x%02x%02x", Int((c.0 * 255).rounded()), Int((c.1 * 255).rounded()), Int((c.2 * 255).rounded()))
     }
     /// original-labels47 stateLabelBoxes47 over the label grid of the statics (cell → land province).
@@ -35,10 +27,21 @@ extension NativeEngine {
         let grid = statics.labelGrid
         if grid.isNull { return .array() }
         // The label grid is fixed for a world: read into arrays once.
-        if labelGridCache == nil { labelGridCache = (grid.points.asArray.map(\.asNumber), grid.cells.asArray.map(\.asInt)) }
-        let cellsX = grid.cellsX.asInt, pts = labelGridCache!.points, cells = labelGridCache!.cells
+        let cache: (points: [Double], cells: [Int])
+        if let existing = labelGridCache {
+            cache = existing
+        } else {
+            let built = (grid.points.asArray.map(\.asNumber), grid.cells.asArray.map(\.asInt))
+            labelGridCache = built
+            cache = built
+        }
+        let cellsX = grid.cellsX.asInt, pts = cache.points, cells = cache.cells
         let n = cells.count, unit = 1600.0 / 240.0
-        func group(_ c: Int) -> Int? { cells[c] >= 0 && owners[cells[c]] >= 0 ? owners[cells[c]] : nil }
+        guard n > 0, cellsX > 0, pts.count >= 2 * n else { return .array() }
+        func group(_ c: Int) -> Int? {
+            let p = cells[c]
+            return p >= 0 && p < owners.count && owners[p] >= 0 ? owners[p] : nil
+        }
         var order = [Int](), groups = [Int: [Int]]()
         for c in 0..<n { guard let k = group(c) else { continue }; if groups[k] == nil { order.append(k) }; groups[k, default: []].append(c) }
         var singles = [Int: Int](); for o in owners { singles[o, default: 0] += 1 }
@@ -49,7 +52,7 @@ extension NativeEngine {
         // points) stay unnamed.
         var parts = [(Int, [Int])]()
         for k in order {
-            let all = groups[k]!
+            guard let all = groups[k] else { continue }
             var seen = Set<Int>(), pieces = [[Int]]()
             for s in all where !seen.contains(s) {
                 var piece = [Int](), stack = [s]
@@ -281,14 +284,15 @@ extension NativeEngine {
     }
 
     /// state(): day, date, owners (and labels when they changed), nations, armies, wars, sieges, events — as JSON (远程计算与测试).
-    /// `slim = true`：推流精简帧模式——省略地图不使用的长篇军队/舰队文案（点击面板时由 detail 接口按需补齐），使单帧压缩体积极速降至 5–10 KB。
-    public func state(includeLabels: Bool, slim: Bool = false) -> Data {
-        let s = gameState(includeLabels: includeLabels, slim: slim)
+    /// `slim = true`：推流精简帧模式——省略地图不使用的长篇军队/舰队文案与冗余事件（点击面板时由 detail 接口按需补齐），使单帧压缩体积极速降至 5–10 KB。
+    /// `omitStatic = true`：跳过低频静态数组（港口/要塞/圣地/奇观/古迹/造船厂），留空供客户端沿用上一帧。
+    public func state(includeLabels: Bool, slim: Bool = false, omitStatic: Bool = false) -> Data {
+        let s = gameState(includeLabels: includeLabels, slim: slim, omitStatic: omitStatic)
         return Profile.measure("s.json") { (try? JSONEncoder().encode(s)) ?? Data() }
     }
 
     /// 界面状态，直接构造结构体（本机推演不经 JSON；字段与 JSON 版一致）。
-    public func gameState(includeLabels: Bool, slim: Bool = false) -> GameState {
+    public func gameState(includeLabels: Bool, slim: Bool = false, omitStatic: Bool = false) -> GameState {
         let r = run, w = r.world, sc = r.scale.asNumber
         let nations = w.nations.asArray, provinces = w.provinces.asArray
         var ni = [String: Int](); for (i, n) in nations.enumerated() { ni[n.id.asString] = i }
@@ -582,54 +586,65 @@ extension NativeEngine {
                 fleetRows.append(flRow)
             }
         }
-        // 造舰: sunk fleets their state is rebuilding + custom shipyard build orders, with the months left.
+        // 造舰 / 圣地 / 要塞 / 奇观 / 古迹 / 港口（低频变化，当 omitStatic == true 时直接留空由客户端沿用上帧）。
         var yards: [GameState.Yard]?
-        var yardList = [GameState.Yard]()
-        if !r.navy.isNull, !r.navy.fleets.isNull {
-            for fl in r.navy.fleets.asArray {
-                if let left = Shipyards.remaining(r, fl) {
-                    yardList.append(GameState.Yard(name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, months: left.rounded(.up)))
+        var holy: [GameState.Holy]?
+        var forts: [Int]?
+        var wonderProvs: [Int]?
+        var ruinProvs: [Int]?
+        var ports: [GameState.Port]?
+        if !omitStatic {
+            var yardList = [GameState.Yard]()
+            if !r.navy.isNull, !r.navy.fleets.isNull {
+                for fl in r.navy.fleets.asArray {
+                    if let left = Shipyards.remaining(r, fl) {
+                        yardList.append(GameState.Yard(name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, months: left.rounded(.up)))
+                    }
                 }
             }
-        }
-        if !r.regimes.isNull, !r.regimes.shipyard.isNull, !r.regimes.shipyard.orders.isNull {
-            for ord in r.regimes.shipyard.orders.asArray {
-                let nIdx = ni[ord.nation.asString] ?? -1
-                let h = ord.heavy.asInt, l = ord.light.asInt, g = ord.gunboats.asInt
-                let label = "排产新舰（主\(h)/轻\(l)/炮\(g)）"
-                yardList.append(GameState.Yard(name: label, nation: nIdx, months: max(1, (ord.monthsLeft.optionalNumber ?? 1).rounded(.up))))
-            }
-        }
-        if !yardList.isEmpty { yards = yardList }
-        // 圣地: each faith's holy province.
-        let holy = Regimes.holyProvinces(r).map { GameState.Holy(religion: $0.religion, province: $0.province) }
-        // 要塞: provinces whose city defence is level three or more (a fortress mark on the map).
-        let forts = provinces.enumerated().compactMap { i, p -> Int? in (r.upperCombat.provinces[p.id.asString].storedDefense.optionalNumber ?? 1) >= 3 ? i : nil }
-        // 已建成奇观与已发掘古迹所在州索引（在舆图上绘制金顶古阁与古铜青玉星碑）
-        var wonderProvs = [Int]()
-        var ruinProvs = [Int]()
-        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
-            if !r.regimes.wonders.isNull {
-                for (_, row) in r.regimes.wonders.objectEntries where row.status.optionalString == "done" {
-                    if let pid = row.provinceId.optionalString, let idx = pi[pid] { wonderProvs.append(idx) }
+            if !r.regimes.isNull, !r.regimes.shipyard.isNull, !r.regimes.shipyard.orders.isNull {
+                for ord in r.regimes.shipyard.orders.asArray {
+                    let nIdx = ni[ord.nation.asString] ?? -1
+                    let h = ord.heavy.asInt, l = ord.light.asInt, g = ord.gunboats.asInt
+                    let label = "排产新舰（主\(h)/轻\(l)/炮\(g)）"
+                    yardList.append(GameState.Yard(name: label, nation: nIdx, months: max(1, (ord.monthsLeft.optionalNumber ?? 1).rounded(.up))))
                 }
             }
-            if !r.regimes.expeditions.isNull {
-                for (sid, row) in r.regimes.expeditions.objectEntries where row.status.optionalString == "done" {
-                    let idx = GrandSystems.anchorProvinceIndex(r, siteId: sid)
-                    if idx >= 0 && idx < provinces.count { ruinProvs.append(idx) }
+            if !yardList.isEmpty { yards = yardList }
+            // 圣地: each faith's holy province.
+            holy = Regimes.holyProvinces(r).map { GameState.Holy(religion: $0.religion, province: $0.province) }
+            // 要塞: provinces whose city defence is level three or more (a fortress mark on the map).
+            forts = provinces.enumerated().compactMap { i, p -> Int? in (r.upperCombat.provinces[p.id.asString].storedDefense.optionalNumber ?? 1) >= 3 ? i : nil }
+            // 已建成奇观与已发掘古迹所在州索引（在舆图上绘制金顶古阁与古铜青玉星碑）
+            var wList = [Int]()
+            var rList = [Int]()
+            if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+                if !r.regimes.wonders.isNull {
+                    for (_, row) in r.regimes.wonders.objectEntries where row.status.optionalString == "done" {
+                        if let pid = row.provinceId.optionalString, let idx = pi[pid] { wList.append(idx) }
+                    }
+                }
+                if !r.regimes.expeditions.isNull {
+                    for (sid, row) in r.regimes.expeditions.objectEntries where row.status.optionalString == "done" {
+                        let idx = GrandSystems.anchorProvinceIndex(r, siteId: sid)
+                        if idx >= 0 && idx < provinces.count { rList.append(idx) }
+                    }
                 }
             }
-        }
-        wonderProvs.sort(); ruinProvs.sort()
-        let ports = (Naval.sea?.ports ?? []).compactMap { port -> GameState.Port? in
-            guard let q = pi[port.provinceId] else { return nil }
-            let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId]
-            let blk = UnitKinds.enabled ? MaritimeWarfare.isPortBlockaded(r, provinceId: port.provinceId) : false
-            let dLvl = UnitKinds.enabled ? SeaDominion.shipyardLevel(r, provinceId: port.provinceId) : 1
-            return GameState.Port(province: q, x: Float(port.center.x / sc), y: Float(port.center.y / sc), owner: c.isNull ? -1 : ni[c.landOwnerId.asString] ?? -1,
-                                  occupier: c.isNull ? -1 : ni[c.occupierId.asString] ?? -1, value: c.isNull ? 100 : c.value.asNumber.rounded(),
-                                  blockaded: blk ? true : nil, shipyardLevel: dLvl)
+            wList.sort(); rList.sort()
+            wonderProvs = wList.isEmpty ? nil : wList
+            ruinProvs = rList.isEmpty ? nil : rList
+            ports = (Naval.sea?.ports ?? []).compactMap { port -> GameState.Port? in
+                guard let q = pi[port.provinceId] else { return nil }
+                let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId]
+                let blk = UnitKinds.enabled ? MaritimeWarfare.isPortBlockaded(r, provinceId: port.provinceId) : false
+                let dLvl = UnitKinds.enabled ? SeaDominion.shipyardLevel(r, provinceId: port.provinceId) : 1
+                let px = (port.center.x / safeScale).isFinite ? Float(port.center.x / safeScale) : 0
+                let py = (port.center.y / safeScale).isFinite ? Float(port.center.y / safeScale) : 0
+                return GameState.Port(province: q, x: px, y: py, owner: c.isNull ? -1 : ni[c.landOwnerId.asString] ?? -1,
+                                      occupier: c.isNull ? -1 : ni[c.occupierId.asString] ?? -1, value: c.isNull ? 100 : c.value.asNumber.rounded(),
+                                      blockaded: blk ? true : nil, shipyardLevel: dLvl)
+            }
         }
         var armyIndex = [String: Int](); for (i, v) in space.enumerated() { armyIndex[Daily.key("army", v.army.id.asString)] = i }
         let contacts = pairs.compactMap { p -> [Int]? in
@@ -681,17 +696,17 @@ extension NativeEngine {
             return x
         }
         Profile.measure("s.arrows") { battleArrows.update(r, day: w.day.asInt) }
-        let arrows = battleArrows.all.map { a in [Double(a.source), Double(a.target), Double(a.attacker), Double(a.defender), a.start.x / sc, a.start.y / sc, a.control.x / sc, a.control.y / sc, a.end.x / sc, a.end.y / sc] }
+        let arrows = battleArrows.all.map { a in [Double(a.source), Double(a.target), Double(a.attacker), Double(a.defender), a.start.x / safeScale, a.start.y / safeScale, a.control.x / safeScale, a.control.y / safeScale, a.end.x / safeScale, a.end.y / safeScale] }
         let sieges = r.occupation.sieges.asArray.map { s in
             GameState.Siege(province: pi[s.provinceId.asString] ?? -1, nation: ni[s.controller.asString] ?? -1, progress: s.maximum.asNumber > 0 ? s.resistance.asNumber / s.maximum.asNumber : 0)
         }
-        let events = r.chronicle.entries.asArray.suffix(slim ? 12 : 30).map { e in
+        let events = r.chronicle.entries.asArray.suffix(slim ? 8 : 30).map { e in
             GameState.Event(day: e.day.asInt, text: e.text.optionalString ?? "", kind: e.kind.optionalString ?? "", province: e.place.id.optionalString.flatMap { pi[$0] })
         }
         var out = GameState(day: w.day.asInt, date: date, owners: owners, labels: labelBoxes, nations: nationRows, armies: armyRows, wars: wars, sieges: sieges, events: events)
         out.fleets = fleetRows; out.yards = yards; out.ports = ports; out.forts = forts; out.holy = holy
-        out.wonders = wonderProvs.isEmpty ? nil : wonderProvs
-        out.ruins = ruinProvs.isEmpty ? nil : ruinProvs
+        out.wonders = wonderProvs
+        out.ruins = ruinProvs
         // 汇总当前持续中的天时与灾异州郡（暴雪/大旱/洪涝/瘟疫/丰年），供地图 GPU 着色与天气粒子实时呈现
         var wzs = [GameState.WeatherZone]()
         if !r.regimes.isNull, !r.regimes.disasters.isNull {

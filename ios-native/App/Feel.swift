@@ -184,15 +184,15 @@ struct RemoteSettings: View {
             let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.1fKB/帧", model.remoteFrameKB ?? 0) : ""
             return "已连服务器（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
         }
-        if model.remoteReconnecting { return "正在无感续连云推 v9 服务器…" }
-        return model.autoRemote ? "正在待命连接云端推流 v9" : "纯本机满帧直演 · 0ms"
+        if model.remoteReconnecting { return "正在自动续连九州云服 v10…" }
+        return model.autoRemote ? "正在待命连接九州云服 v10" : "离线单机 · 本机满帧 0ms"
     }
     private var statusSubtitle: String {
         if let addr = model.remoteAddress {
-            return "\(addr) · v9 主动推流 + LZ4 压缩 + 抖动缓冲，手机零计算负担"
+            return "\(addr) · v10 主动推流 + worldId 热续连 + LZ4 压缩，手机零计算负担"
         }
-        if model.remoteReconnecting { return "世界仍热保存在服务器内存中，返回前台自动秒连" }
-        return model.autoRemote ? "优先直连专属云服或同 Wi-Fi 电脑（UDP 秒发现），外出自动走云端推流" : "当前由手机本机满帧直演（0ms 零延迟）；开启云端推流 v9 后可将推演卸给服务器省电挂机"
+        if model.remoteReconnecting { return "世界进度安全托管云端，网络就绪后自动秒连续推" }
+        return model.autoRemote ? "优先直连专属云服或同 Wi-Fi 电脑（UDP 秒发现），断链自动持久重连" : "当前由手机本机满帧直演（0ms 零延迟）；开启九州云服 v10 后可享断链续连与省电挂机"
     }
 
     var body: some View {
@@ -249,25 +249,29 @@ struct RemoteSettings: View {
                 HStack {
                     Text("算力与运行模式").font(Theme.body).foregroundStyle(Theme.ink)
                     Spacer()
-                    Text(model.autoRemote ? "云端推流 v9 · 省电挂机" : "纯本机满帧 · 0ms 零延迟")
+                    Text(model.autoRemote ? "九州云服 v10 · 断链自动续连" : "离线单机 · 本机满帧 0ms")
                         .font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 ChipPicker(
-                    items: [(false, "纯本机满帧（推荐看海 · 0ms）"), (true, "云端推流 v9（省电挂机）")],
+                    items: [(true, "在线云服 v10（默认 · 自动续连）"), (false, "离线单机（纯本机 0ms）")],
                     selection: Binding(
                         get: { model.autoRemote },
                         set: { on in
                             model.objectWillChange.send()
                             model.autoRemote = on
-                            if !on && model.remoteAddress != nil {
-                                Task { await model.disconnectRemote() }
-                            } else if on && model.remoteAddress == nil && model.state != nil {
+                            if !on {
+                                if model.remoteAddress != nil {
+                                    Task { await model.disconnectRemote() }
+                                } else {
+                                    model.switchToOfflineLocal()
+                                }
+                            } else if model.remoteAddress == nil && model.state != nil {
                                 Task { _ = await model.findComputerNow() }
                             }
                         }
                     )
                 )
-                Text("默认推荐「纯本机满帧」享 0ms 零延迟丝滑看海；长时挂机或 280 州大图省电不发热，可一键切至「云端推流 v9（微步滑动窗口）」。")
+                Text("默认开启「在线云服 v10」，切后台返回或网络波动时自动续连且绝不误踢单机；需离线游玩时可手动切至「离线单机」。")
                     .font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 16).padding(.vertical, 11)

@@ -87,18 +87,23 @@ struct SplashView: View {
             withAnimation(.easeOut(duration: 1.4)) { contours = true }
             withAnimation(.easeOut(duration: 1.3).delay(0.15)) { hills = true }
             try? await Task.sleep(nanoseconds: 280_000_000)
+            guard !Task.isCancelled else { return }
             for i in 1...3 {
                 withAnimation(Motion.reveal) { brushed = i }
                 try? await Task.sleep(nanoseconds: 260_000_000)
+                guard !Task.isCancelled else { return }
             }
             try? await Task.sleep(nanoseconds: 140_000_000)
+            guard !Task.isCancelled else { return }
             withAnimation(Motion.stamp) { stamped = true }
             withAnimation(.easeOut(duration: 0.6)) { stampRing = true }
             GameFeel.shared.tap()
             withAnimation(Motion.reveal.delay(0.15)) { motto = true }
             try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard !Task.isCancelled else { return }
             withAnimation(Motion.reveal) { dried = true }
             try? await Task.sleep(nanoseconds: 420_000_000)
+            guard !Task.isCancelled else { return }
             done()
         }
     }
@@ -169,6 +174,7 @@ struct TitleView: View {
     @State private var hubTab = "profile"
     @State private var updateSheetOpen = false
     @State private var hotUpdateSheetOpen = false
+    @State private var pendingLaunchTask: Task<Void, Never>?
     /// A line of the classics under the title, changing each launch (merges hot-updated mottos).
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
     @State private var motto = (TitleView.mottos + HotPackManager.shared.extraMottos).randomElement() ?? "天下大势，分久必合，合久必分"
@@ -305,7 +311,11 @@ struct TitleView: View {
             shown = false
             withAnimation(Motion.drift.delay(model.controller.reveal < 1 ? 0.9 : 0.1)) { shown = true }
         }
-        .onDisappear { model.controller.sheetOpen = false }
+        .onDisappear {
+            model.controller.sheetOpen = false
+            pendingLaunchTask?.cancel()
+            pendingLaunchTask = nil
+        }
         .onChange(of: creating || archive || settings || notes || importing || authOpen || hubOpen || updateSheetOpen || hotUpdateSheetOpen) { _, open in
             model.controller.sheetOpen = open
         }
@@ -321,17 +331,21 @@ struct TitleView: View {
             NewWorldSheet(
                 start: { options in
                     creating = false
-                    Task { @MainActor in
+                    pendingLaunchTask?.cancel()
+                    pendingLaunchTask = Task { @MainActor in
                         if !ShotTour.on {
                             try? await Task.sleep(nanoseconds: 230_000_000)
                         }
+                        guard !Task.isCancelled else { return }
                         await model.generate(options)
                     }
                 },
                 draw: { options in
                     creating = false
-                    Task { @MainActor in
+                    pendingLaunchTask?.cancel()
+                    pendingLaunchTask = Task { @MainActor in
                         try? await Task.sleep(nanoseconds: 210_000_000)
+                        guard !Task.isCancelled else { return }
                         model.openEditor(options)
                     }
                 },
@@ -343,8 +357,10 @@ struct TitleView: View {
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model, open: { world in
                 archive = false
-                Task { @MainActor in
+                pendingLaunchTask?.cancel()
+                pendingLaunchTask = Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 220_000_000)
+                    guard !Task.isCancelled else { return }
                     await model.openArchived(world)
                 }
             }, onCloudOpened: { archive = false })
@@ -393,8 +409,10 @@ struct TitleView: View {
         }
         .sheet(isPresented: $hubOpen) {
             OnlineHubSheet(platform: platform, model: model, initialTab: hubTab, onOpenArchive: {
-                Task { @MainActor in
+                pendingLaunchTask?.cancel()
+                pendingLaunchTask = Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 240_000_000)
+                    guard !Task.isCancelled else { return }
                     archive = true
                 }
             })
@@ -500,6 +518,7 @@ struct NewWorldSheet: View {
     @State private var immediateRoll = true
     @State private var refreshSpin: Double = 0
     @State private var seedCopied = false
+    @State private var seedCopySerial = 0
     @State private var selectedPreset: String? = nil
     private var seed: String { options.seed.isEmpty ? rolled : options.seed }
     private var chosen: GameModel.NewWorld { var o = options; o.seed = seed; return o }
@@ -758,6 +777,12 @@ struct NewWorldSheet: View {
         }
         .scrollIndicators(.hidden)
         .task(id: "\(seed)|\(options.template)|\(previewShowNations ? options.nations : 0)") { await drawTerrain() }
+        .task(id: seedCopySerial) {
+            guard seedCopySerial > 0 else { return }
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(Motion.fade) { seedCopied = false }
+        }
     }
     /// 高清山河预览卡：双缓冲水墨溶叠过渡（彻底移除丑陋的全宽横线进度条）、宣纸胶囊浮标、战略地势评语与顺滑换图旋钮。
     private var terrainCard: some View {
@@ -795,10 +820,7 @@ struct NewWorldSheet: View {
                         UIPasteboard.general.string = seed
                         GameFeel.shared.tap()
                         withAnimation(Motion.tap) { seedCopied = true }
-                        Task {
-                            try? await Task.sleep(nanoseconds: 1_400_000_000)
-                            withAnimation(Motion.fade) { seedCopied = false }
-                        }
+                        seedCopySerial &+= 1
                     } label: {
                         HStack(spacing: 5) {
                             Text(Names.templates.first(where: { $0.id == options.template })?.name ?? options.template)
@@ -1135,6 +1157,7 @@ struct GeneratingView: View {
     let note: String
     @State private var pulse = false
     @State private var spin = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         ZStack {
             MemorialPaper(rules: false).ignoresSafeArea()
@@ -1148,10 +1171,10 @@ struct GeneratingView: View {
                                 lineWidth: i == 0 ? 1.4 : 1.0
                             )
                             .frame(width: 58, height: 58)
-                            .scaleEffect(pulse ? 2.35 : 0.72)
-                            .opacity(pulse ? 0 : 0.82)
+                            .scaleEffect(pulse && !reduceMotion ? 2.35 : 0.72)
+                            .opacity(pulse && !reduceMotion ? 0 : 0.82)
                             .animation(
-                                .easeOut(duration: 2.2).repeatForever(autoreverses: false).delay(Double(i) * 0.72),
+                                reduceMotion ? nil : .easeOut(duration: 2.2).repeatForever(autoreverses: false).delay(Double(i) * 0.72),
                                 value: pulse
                             )
                     }
@@ -1159,8 +1182,8 @@ struct GeneratingView: View {
                     Circle()
                         .stroke(SplashView.gold.opacity(0.55), style: StrokeStyle(lineWidth: 1.0, dash: [4, 5]))
                         .frame(width: 84, height: 84)
-                        .rotationEffect(.degrees(spin ? 360 : 0))
-                        .animation(.linear(duration: 18).repeatForever(autoreverses: false), value: spin)
+                        .rotationEffect(.degrees(spin && !reduceMotion ? 360 : 0))
+                        .animation(reduceMotion ? nil : .linear(duration: 18).repeatForever(autoreverses: false), value: spin)
                     SealFace(text: "开卷", size: 48)
                         .shadow(color: Theme.seal.opacity(0.28), radius: 10, y: 4)
                 }
@@ -1177,8 +1200,13 @@ struct GeneratingView: View {
             .padding(.horizontal, 28)
         }
         .onAppear {
+            guard !reduceMotion else { return }
             pulse = true
             spin = true
+        }
+        .onDisappear {
+            pulse = false
+            spin = false
         }
     }
 }

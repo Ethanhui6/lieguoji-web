@@ -1,5 +1,5 @@
-// 列国纪全速边缘分发代理：将 GitHub Releases 安装包与 163 项热更静态资源经由 Cloudflare 全球边缘节点满速流式分发。
-// 彻底绕过源站 3 Mbps 带宽上限与 25 MB 单文件缓存限制，完整透传 HTTP Range（206 Partial Content）支持 8 路并发分块下载。
+// 列国纪边缘分发代理：将 GitHub Releases 安装包与 163 项热更静态资源经由 Cloudflare 全球边缘节点流式分发（海外加速与容错节点）。
+// 完整透传 HTTP Range（206 Partial Content），严格路径校验并及时释放未消费响应流。
 
 type CFRequestInit = RequestInit & {
   cf?: {
@@ -18,7 +18,7 @@ interface GitHubRelease {
 }
 
 const REPO = 'Ethanhui6/lieguoji-web';
-const CDN_USER_AGENT = 'Lieguoji-CDN/5.6';
+const CDN_USER_AGENT = 'Lieguoji-CDN/5.7';
 
 const ROUTE_IPA_TAG = /^\/api\/cdn\/ipa\/([A-Za-z0-9._-]{1,40})\/([A-Za-z0-9._-]{1,120}\.ipa)$/;
 const ROUTE_IPA_LATEST = /^\/api\/cdn\/ipa\/latest\/?$/;
@@ -29,8 +29,37 @@ const RAW_ALLOWED_PREFIXES = [
   'server-deploy/platform/hotpack-content/',
 ] as const;
 
+function hasControlChars(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code < 0x20 || code === 0x7f) return true;
+  }
+  return false;
+}
+const ALLOWED_ASSET_PREFIXES = [
+  `https://github.com/${REPO}/releases/download/`,
+  'https://objects.githubusercontent.com/',
+] as const;
+
 function cfFetch(url: string, init: CFRequestInit): Promise<Response> {
   return fetch(url, init as RequestInit);
+}
+
+function cancelBodyQuietly(resp: Response): void {
+  if (!resp.body) return;
+  try {
+    void resp.body.cancel().catch(() => {});
+  } catch {
+    // Body stream may already be locked or disturbed.
+  }
+}
+
+function sanitizeDownloadFilename(name: string): string {
+  const cleaned = name.replace(/[^A-Za-z0-9._-]/g, '');
+  if (!cleaned || cleaned.startsWith('.') || cleaned.includes('..')) {
+    return 'lieguoji-latest.ipa';
+  }
+  return cleaned;
 }
 
 function applyCorsHeaders(headers: Headers): void {
@@ -53,11 +82,11 @@ function buildUpstreamRequestHeaders(request: Request): Headers {
   const headers = new Headers();
   headers.set('User-Agent', CDN_USER_AGENT);
   const range = request.headers.get('Range');
-  if (range) headers.set('Range', range);
+  if (range && !hasControlChars(range)) headers.set('Range', range);
   const ifNoneMatch = request.headers.get('If-None-Match');
-  if (ifNoneMatch) headers.set('If-None-Match', ifNoneMatch);
+  if (ifNoneMatch && !hasControlChars(ifNoneMatch)) headers.set('If-None-Match', ifNoneMatch);
   const ifModifiedSince = request.headers.get('If-Modified-Since');
-  if (ifModifiedSince) headers.set('If-Modified-Since', ifModifiedSince);
+  if (ifModifiedSince && !hasControlChars(ifModifiedSince)) headers.set('If-Modified-Since', ifModifiedSince);
   return headers;
 }
 
@@ -93,10 +122,14 @@ function buildProxiedResponse(
     headers.set('Accept-Ranges', upstream.headers.get('Accept-Ranges') || 'bytes');
   }
   if (options.downloadFilename && !headers.has('Content-Disposition') && (upstream.status === 200 || upstream.status === 206)) {
-    headers.set('Content-Disposition', `attachment; filename="${options.downloadFilename}"`);
+    const safeFilename = sanitizeDownloadFilename(options.downloadFilename);
+    headers.set('Content-Disposition', `attachment; filename="${safeFilename}"`);
   }
 
-  const noBody = request.method === 'HEAD' || upstream.status === 204 || upstream.status === 304;
+  const noBody = request.method.toUpperCase() === 'HEAD' || upstream.status === 204 || upstream.status === 304;
+  if (noBody) {
+    cancelBodyQuietly(upstream);
+  }
   return new Response(noBody ? null : upstream.body, {
     status: upstream.status,
     statusText: upstream.statusText,
@@ -105,12 +138,19 @@ function buildProxiedResponse(
 }
 
 async function handleIpaTagged(request: Request, tag: string, filename: string): Promise<Response> {
-  if (tag.includes('..') || filename.includes('..')) {
+  if (
+    tag.includes('..') ||
+    filename.includes('..') ||
+    tag.startsWith('.') ||
+    filename.startsWith('.') ||
+    hasControlChars(tag) ||
+    hasControlChars(filename)
+  ) {
     return jsonError('Invalid release path', 400);
   }
   const upstreamUrl = `https://github.com/${REPO}/releases/download/${encodeURIComponent(tag)}/${encodeURIComponent(filename)}`;
   const upstream = await cfFetch(upstreamUrl, {
-    method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+    method: request.method.toUpperCase() === 'HEAD' ? 'HEAD' : 'GET',
     headers: buildUpstreamRequestHeaders(request),
     redirect: 'follow',
   });
@@ -129,30 +169,42 @@ function pickIpaAsset(release: unknown): { name: string; url: string } | null {
   for (const item of assets) {
     if (!item || typeof item !== 'object') continue;
     const asset = item as GitHubAsset;
-    if (typeof asset.name !== 'string' || typeof asset.browser_download_url !== 'string') continue;
-    if (!asset.name.toLowerCase().endsWith('.ipa')) continue;
-    if (!asset.browser_download_url.startsWith('https://')) continue;
-    return { name: asset.name, url: asset.browser_download_url };
+    const assetName = asset.name;
+    const downloadUrl = asset.browser_download_url;
+    if (typeof assetName !== 'string' || typeof downloadUrl !== 'string') continue;
+    if (!assetName.toLowerCase().endsWith('.ipa')) continue;
+    const allowedOrigin = ALLOWED_ASSET_PREFIXES.some((prefix) => downloadUrl.startsWith(prefix));
+    if (!allowedOrigin) continue;
+    return { name: assetName, url: downloadUrl };
   }
   return null;
 }
 
 async function handleIpaLatest(request: Request): Promise<Response> {
   const apiUrl = `https://api.github.com/repos/${REPO}/releases/latest`;
-  const metaResp = await cfFetch(apiUrl, {
-    method: 'GET',
-    headers: {
-      'User-Agent': CDN_USER_AGENT,
-      Accept: 'application/vnd.github+json',
-    },
-    redirect: 'follow',
-    cf: {
-      cacheTtl: 300,
-      cacheEverything: true,
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+  let metaResp: Response;
+  try {
+    metaResp = await cfFetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': CDN_USER_AGENT,
+        Accept: 'application/vnd.github+json',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+      cf: {
+        cacheTtl: 300,
+        cacheEverything: true,
+      },
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!metaResp.ok) {
+    cancelBodyQuietly(metaResp);
     return jsonError(`Upstream release lookup failed (${metaResp.status})`, 502);
   }
 
@@ -160,6 +212,7 @@ async function handleIpaLatest(request: Request): Promise<Response> {
   try {
     releaseData = await metaResp.json();
   } catch {
+    cancelBodyQuietly(metaResp);
     return jsonError('Invalid release metadata', 502);
   }
 
@@ -169,12 +222,12 @@ async function handleIpaLatest(request: Request): Promise<Response> {
   }
 
   const upstream = await cfFetch(asset.url, {
-    method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+    method: request.method.toUpperCase() === 'HEAD' ? 'HEAD' : 'GET',
     headers: buildUpstreamRequestHeaders(request),
     redirect: 'follow',
   });
 
-  const safeName = asset.name.replace(/[^A-Za-z0-9._-]/g, '') || 'lieguoji-latest.ipa';
+  const safeName = sanitizeDownloadFilename(asset.name);
   return buildProxiedResponse(request, upstream, {
     routeTag: 'ipa-latest',
     cacheControl: 'public, max-age=300',
@@ -184,6 +237,10 @@ async function handleIpaLatest(request: Request): Promise<Response> {
 }
 
 async function handleRawAsset(request: Request, rawSubpath: string): Promise<Response> {
+  if (!rawSubpath || rawSubpath.length > 512) {
+    return jsonError('Invalid path length', 400);
+  }
+
   let decoded: string;
   try {
     decoded = decodeURIComponent(rawSubpath);
@@ -191,12 +248,17 @@ async function handleRawAsset(request: Request, rawSubpath: string): Promise<Res
     return jsonError('Malformed path encoding', 400);
   }
 
+  // Reject traversal, backslashes, control characters, and double-encoded traversal sequences
+  const lowerDecoded = decoded.toLowerCase();
   if (
     !decoded ||
     decoded.includes('..') ||
     decoded.includes('\\') ||
-    decoded.includes('\0') ||
-    decoded.startsWith('/')
+    decoded.startsWith('/') ||
+    hasControlChars(decoded) ||
+    lowerDecoded.includes('%2e') ||
+    lowerDecoded.includes('%2f') ||
+    lowerDecoded.includes('%5c')
   ) {
     return jsonError('Forbidden path', 400);
   }
@@ -207,14 +269,14 @@ async function handleRawAsset(request: Request, rawSubpath: string): Promise<Res
   }
 
   const segments = decoded.split('/');
-  if (segments.some((seg) => seg.length === 0 || seg === '.' || seg === '..')) {
+  if (segments.some((seg) => seg.length === 0 || seg === '.' || seg === '..' || seg.includes('..'))) {
     return jsonError('Invalid path segment', 400);
   }
 
   const encodedPath = segments.map((seg) => encodeURIComponent(seg)).join('/');
   const upstreamUrl = `https://raw.githubusercontent.com/${REPO}/main/${encodedPath}`;
   const upstream = await cfFetch(upstreamUrl, {
-    method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+    method: request.method.toUpperCase() === 'HEAD' ? 'HEAD' : 'GET',
     headers: buildUpstreamRequestHeaders(request),
     redirect: 'follow',
     cf: {
@@ -231,25 +293,29 @@ async function handleRawAsset(request: Request, rawSubpath: string): Promise<Res
 }
 
 export const onRequest = async (context: { request: Request }): Promise<Response> => {
-  const { request } = context;
-  const method = request.method.toUpperCase();
-
-  if (method === 'OPTIONS') {
-    const headers = new Headers({ 'Access-Control-Max-Age': '86400' });
-    applyCorsHeaders(headers);
-    return new Response(null, { status: 204, headers });
-  }
-
-  if (method !== 'GET' && method !== 'HEAD') {
-    const headers = new Headers({ Allow: 'GET, HEAD, OPTIONS' });
-    applyCorsHeaders(headers);
-    return new Response('Method Not Allowed', { status: 405, headers });
-  }
-
-  const url = new URL(request.url);
-  const pathname = url.pathname;
-
   try {
+    const { request } = context;
+    const method = request.method.toUpperCase();
+
+    if (method === 'OPTIONS') {
+      const headers = new Headers({ 'Access-Control-Max-Age': '86400' });
+      applyCorsHeaders(headers);
+      return new Response(null, { status: 204, headers });
+    }
+
+    if (method !== 'GET' && method !== 'HEAD') {
+      const headers = new Headers({ Allow: 'GET, HEAD, OPTIONS' });
+      applyCorsHeaders(headers);
+      return new Response('Method Not Allowed', { status: 405, headers });
+    }
+
+    let pathname: string;
+    try {
+      pathname = new URL(request.url).pathname;
+    } catch {
+      return jsonError('Invalid request URL', 400);
+    }
+
     const tagMatch = ROUTE_IPA_TAG.exec(pathname);
     if (tagMatch) {
       return await handleIpaTagged(request, tagMatch[1], tagMatch[2]);
@@ -271,7 +337,7 @@ export const onRequest = async (context: { request: Request }): Promise<Response
       });
       applyCorsHeaders(headers);
       return new Response(
-        JSON.stringify({ ok: true, service: 'lieguoji-edge-cdn', version: '5.6.0' }),
+        JSON.stringify({ ok: true, service: 'lieguoji-edge-cdn', version: '5.7.0' }),
         { status: 200, headers },
       );
     }

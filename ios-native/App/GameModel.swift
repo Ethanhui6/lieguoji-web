@@ -1123,7 +1123,10 @@ import LieguojiCore
         let next = try step.get()
         guard owns(ticket) else { return }
         if remoteAddress != nil, !isRemote { remoteAddress = nil; remoteTransport = ""; remoteRTTMs = nil }
-        if isRemote { remoteRTTMs = native.liveRTTMs ?? (await native.lastRTTMs) }
+        if isRemote {
+            if let live = native.liveRTTMs { remoteRTTMs = live }
+            else { remoteRTTMs = await native.lastRTTMs }
+        }
         let now = CACurrentMediaTime()
         if playing, let last = lastApplied, now - last < 0.85 { stepInterval = stepInterval * 0.65 + (now - last) * 0.35 }
         lastApplied = playing ? now : nil

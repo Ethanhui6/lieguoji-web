@@ -626,10 +626,10 @@ struct PlayerWorkshopBrowserView: View {
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
 
-            if let statusBanner, !statusBanner.isEmpty {
+            if let banner = statusBanner, !banner.isEmpty {
                 HStack(spacing: 8) {
                     InkIcon(glyph: .edict, size: 14).foregroundStyle(Theme.seal)
-                    Text(statusBanner)
+                    Text(banner)
                         .font(Theme.caption)
                         .foregroundStyle(Theme.ink)
                     Spacer()

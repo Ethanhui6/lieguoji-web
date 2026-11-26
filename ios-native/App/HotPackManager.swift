@@ -116,7 +116,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         reloadHotContent()
     }
 
-    static func formatBytes(_ bytes: Int64) -> String {
+    nonisolated static func formatBytes(_ bytes: Int64) -> String {
         if bytes >= 1_048_576 { return String(format: "%.1f MB", Double(bytes) / 1_048_576.0) }
         if bytes >= 1024 { return "\(max(1, bytes / 1024)) KB" }
         return "\(max(0, bytes)) B"

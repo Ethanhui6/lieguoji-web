@@ -182,10 +182,11 @@ public enum NuclearWarfare {
         let rawAir: Double = {
             if let explicit = hp.airPower.optionalNumber { return explicit }
             if era == .ww2 || era == .modern {
-                return (10.0 + ic * 0.24 + Double(techMil) * 6.5) * (indIdx >= 1.15 ? 1.12 : 1.0)
+                // 二战/现代制空权由航空军备科技（techMil）与真实工业底盘（indIdx）主导，防止低工业农业大国仅靠面积顶满 100 抹平日本/德美苏空军代差
+                return (Double(techMil) * 8.5 + min(300.0, ic) * 0.12) * pow(indIdx, 0.85)
             }
             if era == .ww1 {
-                return 4.0 + ic * 0.08 + Double(techMil) * 2.0
+                return (Double(techMil) * 2.5 + min(260.0, ic) * 0.06) * pow(indIdx, 0.70)
             }
             return 0.0
         }()
@@ -461,13 +462,14 @@ public enum NuclearWarfare {
             let wsDelta = max(-3.0, min(3.0, (targetWS - curWS) * 0.20))
             row.warSupport = JS((clamp(curWS + wsDelta, 0.0, 100.0) * 10).rounded() / 10)
 
-            // 3d. 制空权演进
+            // 3d. 制空权演进（与初始化公式一致，受航空军备科技与真实工业底盘 indIdx 制约）
+            let indIdx = industryIndex(r, nationId: nid)
             let targetAir: Double = {
                 if era == .ww2 || era == .modern {
-                    return clamp((nextIC * 0.24 + Double(techMil) * 6.5) * law.milProdMult, 4.0, 100.0)
+                    return clamp((Double(techMil) * 8.5 + min(300.0, nextIC) * 0.12) * pow(indIdx, 0.85) * law.milProdMult, 4.0, 100.0)
                 }
                 if era == .ww1 {
-                    return clamp(nextIC * 0.08 + Double(techMil) * 2.5, 0.0, 45.0)
+                    return clamp((Double(techMil) * 2.5 + min(260.0, nextIC) * 0.06) * pow(indIdx, 0.70) * law.milProdMult, 0.0, 45.0)
                 }
                 return 0.0
             }()

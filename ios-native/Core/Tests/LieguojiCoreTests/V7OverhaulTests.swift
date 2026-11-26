@@ -82,7 +82,7 @@ final class V7OverhaulTests: XCTestCase {
         let r = cw.run
         guard let usa = findNationId(r, nameContains: "美利坚"),
               let ussr = findNationId(r, nameContains: "苏联"),
-              let uk = findNationId(r, nameContains: "不列颠") ?? findNationId(r, nameContains: "英国") else {
+              let uk = findNationId(r, nameContains: "英") ?? findNationId(r, nameContains: "不列颠") else {
             XCTFail("1950 冷战剧本缺少核心大国")
             return
         }
@@ -112,24 +112,26 @@ final class V7OverhaulTests: XCTestCase {
         }
 
         let jpHead = Regimes.ruler(r, jpId)
-        let jpHeadName = jpHead?.name.optionalString ?? ""
-        let jpHeadTitle = jpHead?.title.optionalString ?? ""
+        let jpHeadName = jpHead.map { NativeEngine.displayPersonName($0) } ?? ""
+        let jpHeadTitle = jpHead?.historicalTitle.optionalString ?? Regimes.seats(r, jpId).head ?? ""
         XCTAssertTrue(jpHeadName.contains("裕仁"), "1941 日本国家元首应为裕仁，实际为 \(jpHeadName)")
         XCTAssertFalse(jpHeadName.contains("东条"), "东条英机绝不可误任日本天皇！")
         XCTAssertTrue(jpHeadTitle.contains("天皇"), "1941 日本国家元首称谓应为天皇，实际为 \(jpHeadTitle)")
 
         let jpPremier = Regimes.premier(r, jpId)
-        let jpPremierName = jpPremier?.name.optionalString ?? ""
+        let jpPremierName = jpPremier.map { NativeEngine.displayPersonName($0) } ?? ""
         XCTAssertTrue(jpPremierName.contains("东条英机"), "1941 日本内阁总理大臣应为东条英机，实际为 \(jpPremierName)")
 
         let jpGov = Regimes.governor(r, jpId)
-        XCTAssertTrue((jpGov?.name.optionalString ?? "").contains("东条英机"), "二元君主立宪体制下实际掌政者应为内阁总理大臣东条英机")
+        let jpGovName = jpGov.map { NativeEngine.displayPersonName($0) } ?? ""
+        XCTAssertTrue(jpGovName.contains("东条英机"), "二元君主立宪体制下实际掌政者应为内阁总理大臣东条英机，实际为 \(jpGovName)")
 
-        let eraName = r.regimes.nations[jpId].eraName.optionalString ?? ""
+        let eraName = r.regimes.reignLore.objectEntries
+            .first(where: { $0.0.hasPrefix("\(jpId)|") })?.1.era.optionalString ?? ""
         XCTAssertTrue(eraName.contains("昭和"), "1941 日本年号应为昭和，实际为 \(eraName)")
 
-        let mcHeadName = Regimes.ruler(r, manchuId)?.name.optionalString ?? ""
-        let mcPremierName = Regimes.premier(r, manchuId)?.name.optionalString ?? ""
+        let mcHeadName = Regimes.ruler(r, manchuId).map { NativeEngine.displayPersonName($0) } ?? ""
+        let mcPremierName = Regimes.premier(r, manchuId).map { NativeEngine.displayPersonName($0) } ?? ""
         XCTAssertTrue(mcHeadName.contains("溥仪"), "伪满洲国名义皇帝应为爱新觉罗·溥仪，实际为 \(mcHeadName)")
         XCTAssertTrue(mcPremierName.contains("梅津"), "伪满洲国实权关东军首脑应为梅津美治郎，实际为 \(mcPremierName)")
         XCTAssertEqual(Vassals.overlord(r, manchuId), jpId, "伪满洲国开局必须隶属大日本帝国附庸")
@@ -139,16 +141,20 @@ final class V7OverhaulTests: XCTestCase {
         let eu = try launchScenario("ww2_europe_1939")
         let er = eu.run
         if let ukId = findNationId(er, nameContains: "英") ?? findNationId(er, nameContains: "不列颠") {
-            let ukHead = Regimes.ruler(er, ukId)?.name.optionalString ?? ""
-            let ukPm = Regimes.premier(er, ukId)?.name.optionalString ?? ""
+            let ukHead = Regimes.ruler(er, ukId).map { NativeEngine.displayPersonName($0) } ?? ""
+            let ukPm = Regimes.premier(er, ukId).map { NativeEngine.displayPersonName($0) } ?? ""
             XCTAssertTrue(ukHead.contains("乔治"), "1939 英国君主应为乔治六世，实际为 \(ukHead)")
             XCTAssertTrue(ukPm.contains("张伯伦"), "1939 英国首相应为内维尔·张伯伦，实际为 \(ukPm)")
+        } else {
+            XCTFail("1939 欧洲剧本缺少大英帝国")
         }
         if let itId = findNationId(er, nameContains: "意大利") {
-            let itHead = Regimes.ruler(er, itId)?.name.optionalString ?? ""
-            let itPm = Regimes.premier(er, itId)?.name.optionalString ?? ""
+            let itHead = Regimes.ruler(er, itId).map { NativeEngine.displayPersonName($0) } ?? ""
+            let itPm = Regimes.premier(er, itId).map { NativeEngine.displayPersonName($0) } ?? ""
             XCTAssertTrue(itHead.contains("维托里奥") || itHead.contains("埃马努埃莱"), "1939 意大利君主应为维托里奥·埃马努埃莱三世，实际为 \(itHead)")
             XCTAssertTrue(itPm.contains("墨索里尼"), "1939 意大利首相/领袖应为墨索里尼，实际为 \(itPm)")
+        } else {
+            XCTFail("1939 欧洲剧本缺少意大利王国")
         }
     }
 
@@ -172,7 +178,8 @@ final class V7OverhaulTests: XCTestCase {
                 XCTAssertFalse(forbiddenPlaceSurnames.contains(sn), "\(stage) 日本家族出现地名姓氏：\(sn)")
                 for mid in fam.memberIds.asArray {
                     guard let p = People.person(r, NativeEngine.personId(mid)) else { continue }
-                    let full = p.name.optionalString ?? ""
+                    let full = NativeEngine.displayPersonName(p)
+                    XCTAssertFalse(full.isEmpty, "\(stage) 日本家族人物姓名不应为空")
                     for tok in forbiddenForeignTokens {
                         XCTAssertFalse(full.contains(tok), "\(stage) 日本家族混入外籍姓名：\(full)")
                     }
@@ -222,9 +229,10 @@ final class V7OverhaulTests: XCTestCase {
         let indRatio = NuclearWarfare.industrialCombatRatio(r, attacker: jpId, victim: rocId)
         let airPlain = NuclearWarfare.airSuperiorityBonus(r, attacker: jpId, victim: rocId, terrain: "plain")
         let airMountain = NuclearWarfare.airSuperiorityBonus(r, attacker: jpId, victim: rocId, terrain: "mountain")
-        XCTAssertGreaterThan(indRatio, 1.20, "1941 日本工业与机械化综合战力比应明显高于民国")
-        XCTAssertGreaterThan(airPlain, 0.15, "1941 日本在平原战区应拥有显著制空权加成")
-        XCTAssertLessThan(airMountain, airPlain, "西南/华中山地地形应有效衰减制空打击优势")
+        XCTAssertGreaterThan(indRatio, 1.20, "1941 日本工业与机械化综合战力比应明显高于民国（实际 \(indRatio)）")
+        XCTAssertGreaterThan(airPlain, 1.15, "1941 日本在平原战区应拥有显著制空权加成（实际 \(airPlain)）")
+        XCTAssertGreaterThan(airMountain, 1.0, "1941 日本在山地战区仍保留一定制空压制（实际 \(airMountain)）")
+        XCTAssertLessThan(airMountain, airPlain, "西南/华中山地地形应有效衰减制空打击优势（山地 \(airMountain) vs 平原 \(airPlain)）")
     }
 
     // MARK: - 5. 突破 24 国上限（32 国稳定建世）+ LGB1 二进制帧 + 45 纪元 LGE4 解析

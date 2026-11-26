@@ -609,6 +609,16 @@ def next_uid() -> str:
         return f"LGJ{v}"
 
 
+def _normalize_release_notes(raw: Any) -> list[str]:
+    if isinstance(raw, list):
+        out = [str(x).strip().lstrip("•·- ").strip() for x in raw if str(x).strip()]
+        return out or list(DEFAULT_RELEASE["releaseNotes"])
+    if isinstance(raw, str):
+        lines = [ln.strip().lstrip("•·- ").strip() for ln in raw.replace("\r\n", "\n").split("\n") if ln.strip()]
+        return lines or list(DEFAULT_RELEASE["releaseNotes"])
+    return list(DEFAULT_RELEASE["releaseNotes"])
+
+
 def get_release_config() -> dict[str, Any]:
     with _db_lock:
         row = DB.execute("SELECT v FROM kv_store WHERE k = 'release'").fetchone()
@@ -617,6 +627,16 @@ def get_release_config() -> dict[str, Any]:
     cfg.setdefault("maintenanceMessage", "九州云服正在例行修缮，稍候片刻即可重登。")
     ver = str(cfg.get("latestVersion") or DEFAULT_RELEASE["latestVersion"])
     build = int(cfg.get("latestBuild") or DEFAULT_RELEASE["latestBuild"])
+    cfg["latestVersion"] = ver
+    cfg["latestBuild"] = build
+    cfg["forceUpdate"] = bool(cfg.get("forceUpdate", False))
+    cfg["releaseNotes"] = _normalize_release_notes(cfg.get("releaseNotes"))
+    try:
+        cfg["ipaSizeMB"] = float(cfg.get("ipaSizeMB") or DEFAULT_RELEASE["ipaSizeMB"])
+    except (TypeError, ValueError):
+        cfg["ipaSizeMB"] = float(DEFAULT_RELEASE["ipaSizeMB"])
+    if not cfg.get("downloadUrl"):
+        cfg["downloadUrl"] = f"https://github.com/Ethanhui6/lieguoji-web/releases/tag/v{ver.lstrip('v')}"
     mirrors = cfg.get("ipaMirrors")
     if not isinstance(mirrors, list) or not [m for m in mirrors if isinstance(m, str) and m.strip()]:
         mirrors = build_default_ipa_mirrors(ver, build)
@@ -2476,10 +2496,14 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 if k == "ipaMirrors":
                     if isinstance(body[k], list):
                         cur[k] = [str(x).strip() for x in body[k] if isinstance(x, str) and str(x).strip()]
+                elif k == "releaseNotes":
+                    cur[k] = _normalize_release_notes(body[k])
                 else:
                     cur[k] = body[k]
         new_ver = str(cur.get("latestVersion") or prev_ver)
         new_build = int(cur.get("latestBuild") or prev_build)
+        if new_ver != prev_ver and "downloadUrl" not in body:
+            cur["downloadUrl"] = f"https://github.com/Ethanhui6/lieguoji-web/releases/tag/v{new_ver.lstrip('v')}"
         if (new_ver != prev_ver or new_build != prev_build) and "ipaMirrors" not in body:
             cur["ipaMirrors"] = build_default_ipa_mirrors(new_ver, new_build)
             if "directIpaUrl" not in body:

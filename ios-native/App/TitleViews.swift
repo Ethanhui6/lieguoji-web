@@ -271,7 +271,13 @@ struct TitleView: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     InkIcon(glyph: .edict, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
-                                    Text(notice).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(2)
+                                    Text(notice)
+                                        .font(Theme.kai(13))
+                                        .foregroundStyle(Theme.ink)
+                                        .lineLimit(2)
+                                        .multilineTextAlignment(.leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Spacer(minLength: 2)
                                     PhosphorIcon(glyph: .chevronRight, size: 10, weight: .light).foregroundStyle(Theme.ink2)
                                 }
                             }
@@ -293,8 +299,9 @@ struct TitleView: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel("关闭公告")
                         }
-                        .padding(.leading, 12).padding(.trailing, 7).padding(.vertical, 6)
-                        .background(Theme.paper2.opacity(0.95), in: Capsule()).overlay(Capsule().stroke(Theme.seal.opacity(0.3)))
+                        .padding(.leading, 12).padding(.trailing, 8).padding(.vertical, 7)
+                        .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.seal.opacity(0.3), lineWidth: 0.75))
                         .transition(.opacity.combined(with: .scale(scale: 0.94)))
                         .rise(shown, 0)
                     }

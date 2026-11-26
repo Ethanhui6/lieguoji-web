@@ -23,6 +23,14 @@ const CDN_USER_AGENT = 'Lieguoji-CDN/5.7';
 const ROUTE_IPA_TAG = /^\/api\/cdn\/ipa\/([A-Za-z0-9._-]{1,40})\/([A-Za-z0-9._-]{1,120}\.ipa)$/;
 const ROUTE_IPA_LATEST = /^\/api\/cdn\/ipa\/latest\/?$/;
 const ROUTE_RAW = /^\/api\/cdn\/raw\/(.+)$/;
+const ROUTE_HOTPACK = /^\/api\/cdn\/hotpack\/(.+)$/;
+
+const HOTPACK_RELEASE_TAG = 'hotpack-v5';
+const HOTPACK_ALLOWED_PREFIXES = [
+  'gis-basemaps-10m/',
+  'gis-historical-45eras/',
+  'gis-cities-encyclopedia/',
+] as const;
 
 const RAW_ALLOWED_PREFIXES = [
   'ios-native/Resources/',
@@ -292,6 +300,55 @@ async function handleRawAsset(request: Request, rawSubpath: string): Promise<Res
   });
 }
 
+async function handleHotpackAsset(request: Request, rawSubpath: string): Promise<Response> {
+  if (!rawSubpath || rawSubpath.length > 512) {
+    return jsonError('Invalid hotpack path length', 400);
+  }
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rawSubpath);
+  } catch {
+    return jsonError('Malformed path encoding', 400);
+  }
+  const lowerDecoded = decoded.toLowerCase();
+  if (
+    !decoded ||
+    decoded.includes('..') ||
+    decoded.includes('\\') ||
+    decoded.startsWith('/') ||
+    hasControlChars(decoded) ||
+    lowerDecoded.includes('%2e') ||
+    lowerDecoded.includes('%2f') ||
+    lowerDecoded.includes('%5c')
+  ) {
+    return jsonError('Forbidden hotpack path', 400);
+  }
+  const allowed = HOTPACK_ALLOWED_PREFIXES.some((prefix) => decoded.startsWith(prefix));
+  if (!allowed) {
+    return jsonError('Path outside allowed hotpack modules', 403);
+  }
+  const segments = decoded.split('/');
+  if (segments.length !== 2 || segments.some((s) => !s || s === '.' || s === '..')) {
+    return jsonError('Invalid hotpack asset segment', 400);
+  }
+  const assetName = segments[1];
+  const upstreamUrl = `https://github.com/${REPO}/releases/download/${HOTPACK_RELEASE_TAG}/${encodeURIComponent(assetName)}`;
+  const upstream = await cfFetch(upstreamUrl, {
+    method: request.method.toUpperCase() === 'HEAD' ? 'HEAD' : 'GET',
+    headers: buildUpstreamRequestHeaders(request),
+    redirect: 'follow',
+    cf: {
+      cacheTtl: 86400,
+      cacheEverything: true,
+    },
+  });
+  return buildProxiedResponse(request, upstream, {
+    routeTag: 'hotpack-v5',
+    cacheControl: 'public, max-age=86400',
+    fallbackContentType: 'application/octet-stream',
+  });
+}
+
 export const onRequest = async (context: { request: Request }): Promise<Response> => {
   try {
     const { request } = context;
@@ -328,6 +385,11 @@ export const onRequest = async (context: { request: Request }): Promise<Response
     const rawMatch = ROUTE_RAW.exec(pathname);
     if (rawMatch) {
       return await handleRawAsset(request, rawMatch[1]);
+    }
+
+    const hotpackMatch = ROUTE_HOTPACK.exec(pathname);
+    if (hotpackMatch) {
+      return await handleHotpackAsset(request, hotpackMatch[1]);
     }
 
     if (pathname === '/api/cdn' || pathname === '/api/cdn/') {

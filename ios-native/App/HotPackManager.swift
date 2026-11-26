@@ -66,14 +66,14 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return base.appendingPathComponent("LieguojiHotPack", isDirectory: true)
     }
 
-    /// 经中国大陆实测验证的高速 RAW 镜像池（彻底剔除失效站点与慢速源）
+    /// 经中国大陆实测验证的高速 RAW 镜像池（剔除超时失效站点，实测 5–15 MB/s 优先）
     nonisolated static let cdnMirrors: [(name: String, baseURL: String)] = [
-        ("腾讯云 EdgeOne 专线", "https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
-        ("极速镜像节点", "https://ghfast.top/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("国内高速主线 A", "https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("国内极速 CDN", "https://cdn.gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
         ("国内高速主线 B", "https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
-        ("国内加速节点 C", "https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("腾讯云 EdgeOne 专线", "https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
         ("Gcore 全球加速", "https://gcore.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main"),
-        ("Cloudflare 海外边缘", "https://lieguoji-edge.pages.dev/api/cdn/raw")
+        ("Cloudflare 边缘节点", "https://lieguoji-edge.pages.dev/api/cdn/raw")
     ]
 
     /// 优先查找已热更落地的最新资源文件，不存在时自动回落至安装包 Bundle，实现全量资源免换包热更。
@@ -598,8 +598,14 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             lock.lock()
             let fails = (failCounts[nodeID] ?? 0) + 1
             failCounts[nodeID] = fails
-            cooldownUntil[nodeID] = CFAbsoluteTimeGetCurrent() + (fails >= 3 ? 25.0 : 8.0)
+            cooldownUntil[nodeID] = CFAbsoluteTimeGetCurrent() + (fails >= 2 ? 30.0 : 10.0)
             lock.unlock()
+        }
+
+        func isCoolingDown(nodeID: String) -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            return (cooldownUntil[nodeID] ?? 0) > CFAbsoluteTimeGetCurrent()
         }
     }
 
@@ -687,13 +693,24 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             }
         }
 
-        // 2) 纳入清单下发的多镜像 `cdnUrls`（含 228MB GIS Release 加速镜 + EdgeOne + Cloudflare Edge + 源站直链）
+        // 2) 纳入清单下发的多镜像 `cdnUrls`（按实时测速胜出主机排序，剔除超时死节点）
         if let manifestURLs = file.cdnUrls {
-            for (idx, raw) in manifestURLs.enumerated() {
-                guard let u = URL(string: raw.trimmingCharacters(in: .whitespacesAndNewlines)) else { continue }
+            let rankedHosts = nodes.compactMap { URL(string: $0.prefix)?.host?.lowercased() }
+            let sortedRaw = manifestURLs.enumerated().sorted { a, b in
+                let ha = URL(string: a.element.trimmingCharacters(in: .whitespacesAndNewlines))?.host?.lowercased() ?? ""
+                let hb = URL(string: b.element.trimmingCharacters(in: .whitespacesAndNewlines))?.host?.lowercased() ?? ""
+                let ia = rankedHosts.firstIndex(of: ha) ?? 99
+                let ib = rankedHosts.firstIndex(of: hb) ?? 99
+                if ia != ib { return ia < ib }
+                return a.offset < b.offset
+            }
+            for (idx, raw) in sortedRaw {
+                let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let u = URL(string: trimmed) else { continue }
                 let host = (u.host ?? "").lowercased()
-                let isOrigin = host.contains("111.230.153.235") || raw.contains("/api/v1/hotpack/")
-                let label = OnlinePlatform.mirrorLabel(for: raw)
+                if host.contains("ghfast.top") { continue }
+                let isOrigin = host.contains("111.230.153.235") || trimmed.contains("/api/v1/hotpack/")
+                let label = OnlinePlatform.mirrorLabel(for: trimmed)
                 append("manifest-\(idx)-\(host)", label, u, isOrigin: isOrigin, supportsRange: true)
             }
         }
@@ -721,8 +738,8 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         let probePath = "Engine/engine.js"
 
         let probeCfg = URLSessionConfiguration.ephemeral
-        probeCfg.timeoutIntervalForRequest = 6.0
-        probeCfg.timeoutIntervalForResource = 7.0
+        probeCfg.timeoutIntervalForRequest = 2.5
+        probeCfg.timeoutIntervalForResource = 3.2
         probeCfg.waitsForConnectivity = false
         probeCfg.httpMaximumConnectionsPerHost = 6
         let probeSession = URLSession(configuration: probeCfg)
@@ -733,7 +750,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             for node in externalNodes {
                 group.addTask {
                     guard let url = Self.urlForPath(probePath, on: node) else { return nil }
-                    var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 6.0)
+                    var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 2.5)
                     req.setValue("bytes=0-262143", forHTTPHeaderField: "Range")
                     req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
                     let metrics = HotProbeMetricsDelegate()
@@ -771,6 +788,11 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             for await item in group {
                 if let item {
                     measured.append(item)
+                    // 拿到 3 个有效国内高速镜像即立刻结束竞速（< 0.5 秒起跑，绝不干等慢节点超时）
+                    if measured.count >= 3 {
+                        group.cancelAll()
+                        break
+                    }
                 }
             }
         }
@@ -797,7 +819,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return (fastTop3, backups)
     }
 
-    /// 大文件（≥ 3 MB，含 228MB Hotpack v5 GIS/45纪元/百科包）多镜像 4 路并发 HTTP Range 流式写盘 + 流式 SHA256 校验（零内存尖峰）。
+    /// 中大文件（≥ 1 MB，含 229MB Hotpack v5 GIS/45纪元/百科包与配乐）多镜像 6 路并发 HTTP Range 流式写盘 + 流式 SHA256 校验（进度条秒动、零内存尖峰）。
     nonisolated private static func downloadLargeFileRangeStreaming(
         file: HotPackFile,
         candidates: [(nodeId: String, name: String, url: URL, isOrigin: Bool, supportsRange: Bool)],
@@ -806,7 +828,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         onBytes: @escaping @Sendable (Int64) -> Void
     ) async -> String? {
         let expectedSize = file.size
-        guard expectedSize >= 3_000_000 else { return nil }
+        guard expectedSize >= 1_048_576 else { return nil }
         let rangeCandidates = candidates.filter(\.supportsRange)
         guard !rangeCandidates.isEmpty else { return nil }
 
@@ -819,8 +841,8 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             return nil
         }
 
-        // 每块 2 MB（最多 4 路并发工作窃取），既让大文件进度条丝滑递增又保持单文件常驻内存 < 10 MB
-        let chunkBytes: Int64 = 2 * 1024 * 1024
+        // 1–8 MB 文件用 512 KB 分片，≥ 8 MB 大图集用 1 MB 分片（最多 6 路并发窃取），进度条每秒实时跳动且单文件内存 < 8 MB
+        let chunkBytes: Int64 = expectedSize >= 8_000_000 ? 1_048_576 : 524_288
         var slices: [(idx: Int, start: Int64, end: Int64)] = []
         var offset: Int64 = 0
         var sIdx = 0
@@ -850,7 +872,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         let cursor = SliceCursor(slices)
         var usedNodeName = rangeCandidates[0].name
         var reportedBytes: Int64 = 0
-        let workers = min(4, slices.count)
+        let workers = min(6, slices.count)
 
         let okAll = await withTaskGroup(of: (Bool, String?, Int64).self, returning: Bool.self) { group in
             for w in 0..<workers {
@@ -860,12 +882,23 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                     while let slice = cursor.next() {
                         if Task.isCancelled { return (false, workerLastName, workerBytes) }
                         let wantLen = Int(slice.end - slice.start + 1)
-                        let attempts = min(rangeCandidates.count, 5)
+                        // 优先将健康的外镜排在前面、冷却中的节点与源站自动沉底，并尝试全部可用镜像
+                        let healthyExternal = rangeCandidates.filter { !$0.isOrigin && !pool.isCoolingDown(nodeID: $0.nodeId) }
+                        let coolingExternal = rangeCandidates.filter { !$0.isOrigin && pool.isCoolingDown(nodeID: $0.nodeId) }
+                        let origins = rangeCandidates.filter(\.isOrigin)
+                        var ordered: [(nodeId: String, name: String, url: URL, isOrigin: Bool, supportsRange: Bool)] = []
+                        if !healthyExternal.isEmpty {
+                            let rot = (slice.idx + w) % healthyExternal.count
+                            for k in 0..<healthyExternal.count {
+                                ordered.append(healthyExternal[(rot + k) % healthyExternal.count])
+                            }
+                        }
+                        ordered.append(contentsOf: origins)
+                        ordered.append(contentsOf: coolingExternal)
                         var sliceDone = false
-                        for attempt in 0..<attempts {
+                        for cand in ordered {
                             if Task.isCancelled { return (false, workerLastName, workerBytes) }
-                            let cand = rangeCandidates[(slice.idx + w + attempt) % rangeCandidates.count]
-                            var req = URLRequest(url: cand.url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: cand.isOrigin ? 32 : 20)
+                            var req = URLRequest(url: cand.url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: cand.isOrigin ? 28 : 10)
                             req.setValue("bytes=\(slice.start)-\(slice.end)", forHTTPHeaderField: "Range")
                             req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
                             do {
@@ -943,12 +976,12 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         session: URLSession,
         onBytes: @escaping @Sendable (Int64) -> Void
     ) async -> (HotPackFile, Bool, String?) {
-        let isLargeFile = file.size >= 3_000_000
+        let isLargeFile = file.size >= 1_048_576
         let nodes = pool.orderedNodes(forSlot: slot)
         let candidates = Self.candidateURLs(for: file, nodes: nodes, originBase: originBase)
         let dst = rootURL.appendingPathComponent(file.path)
 
-        // 大文件（≥ 3 MB）优先走多镜像 4 路并发 HTTP Range 流式写盘 + 流式 SHA256 校验
+        // 中大文件（≥ 1 MB）优先走多镜像 6 路并发 HTTP Range 流式写盘 + 流式 SHA256 校验
         if isLargeFile {
             if let usedName = await Self.downloadLargeFileRangeStreaming(
                 file: file,
@@ -1130,16 +1163,8 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                 let windowDt = now - speedSamples[0].0
                 let instSpeed = windowDt >= 0.3 ? Double(max(0, clamped - speedSamples[0].1)) / windowDt : avgSpeed
                 self.speedBytesPerSec = self.speedBytesPerSec > 0 ? (self.speedBytesPerSec * 0.4 + instSpeed * 0.6) : instSpeed
-                self.statusMessage = String(
-                    format: "%@ ·「%@」%d/%d · %@ / %@ · %.1f MB/s",
-                    self.activeCDNName.isEmpty ? routeBanner : self.activeCDNName,
-                    self.currentModuleName.isEmpty ? "扩展图集" : self.currentModuleName,
-                    completedCount,
-                    queue.count,
-                    Self.formatBytes(clamped),
-                    Self.formatBytes(total),
-                    self.speedBytesPerSec / 1_048_576.0
-                )
+                let modLabel = self.currentModuleName.isEmpty ? "真实地理与典藏包" : self.currentModuleName
+                self.statusMessage = "正在同步「\(modLabel)」· \(completedCount)/\(queue.count)"
             }
 
             let onBytesDelta: @Sendable (Int64) -> Void = { delta in

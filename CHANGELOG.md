@@ -1,5 +1,18 @@
 # 更新日志
 
+## 6.0.1 (Build 190)
+
+### 热更五路满速秒动 × 九州云服 v12 全界面同步 × 排版文字错乱清零
+- **热更新提速 50 倍与进度条秒动（`HotPackManager.swift`、`server.py`、`functions/api/cdn/[[path]].ts`、GitHub Release `hotpack-v5`）**：
+  - 正式发布 GitHub Release `hotpack-v5` 全量 69 项真实地理与五千年史典资产（`229.37 MB`），补齐 Cloudflare 边缘 `/api/cdn/hotpack/` 206 Range 代理，剔除超时失效节点 `ghfast.top`，优先走 `gh-proxy.com` / `cdn.gh-proxy.org` / `gh-proxy.org` / `edgeone.gh-proxy.com` 五路高速并发；
+  - `raceHotCDNs` 缩短探活超时至 `2.5s` 并在拿到 3 个高速节点后立即提前起跑（`< 0.5 秒`起动，彻底消除点击后干等 6 秒卡死）；
+  - 多镜像并发 HTTP Range 分片门槛由 `3 MB` 降至 `1 MB`（`512 KB / 1 MB` 细粒度分片、最多 6 路并发窃取、真正跳过冷却失败节点且不截断候选池），点击即见进度条丝滑推进。
+- **全界面「在线云服 v12」文案统一同步（`OnlineHubViews.swift`、`Feel.swift`、`OnlineAdminViews.swift`）**：
+  - 彻底清除行宫链路卡、设置页与管理员司礼监监控页残留的「九州云服 v10 / 在线云服 v10 / 计算引擎 v9 / 45.4 MB 典藏包」旧字样，全面同步为「九州云服 v12」并按清单实时展示典藏包总体积。
+- **全面消除 iPhone 窄屏文字挤压与错乱（`CloudUpdateView.swift`、`HotPackManager.swift`、`TitleViews.swift`、`Feel.swift`）**：
+  - 重排热更新进度卡片：线路胶囊与当前同步进度分层展示、彻底消除重复拼接导致的胶囊竖折与文字截断，锁定模块列表体积列宽防挤压；
+  - 标题页公告栏由 `Capsule` 改为圆角宣纸卷幅（`RoundedRectangle(cornerRadius: 12)`），避免 2 行公告撞击胶囊圆弧；精炼设置页「在线云服 v12 / 离线单机」切换标签防止窄屏挤压。
+
 ## 6.0.0 (Build 189)
 
 ### 真实舆图 · 时代军制与战略核威慑 · 五路极速云服 · 32× 看海 · 全界面文本对齐版

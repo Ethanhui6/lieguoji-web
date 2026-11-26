@@ -239,6 +239,7 @@ struct HotUpdateSheet: View {
                                         }
                                         Spacer(minLength: 8)
                                         EditorialValueText(mod.sizeText, size: 14.5, color: checked ? Theme.ink : Theme.ink2)
+                                            .fixedSize(horizontal: true, vertical: false)
                                     }
                                     .padding(.horizontal, 4)
                                     .padding(.vertical, 10)
@@ -353,19 +354,35 @@ struct HotUpdateSheet: View {
 
             SongProgressRibbon(progress: hotPack.progress)
 
-            HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 5) {
                 if !hotPack.activeCDNName.isEmpty {
-                    Text(hotPack.activeCDNName)
-                        .font(Theme.caption)
-                        .foregroundStyle(Theme.jade)
-                        .padding(.horizontal, 7).padding(.vertical, 2)
-                        .background(Theme.jade.opacity(0.09), in: Capsule())
+                    HStack(spacing: 6) {
+                        Text(hotPack.activeCDNName)
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.jade)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2.5)
+                            .background(Theme.jade.opacity(0.09), in: Capsule())
+                        Spacer(minLength: 4)
+                        if hotPack.updating {
+                            Text("\(Int(hotPack.progress * 100))%")
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.seal)
+                                .monospacedDigit()
+                                .fixedSize()
+                        }
+                    }
                 }
-                Text(hotPack.statusMessage)
-                    .font(Theme.caption)
-                    .foregroundStyle(Theme.ink2)
-                    .monospacedDigit()
-                    .lineLimit(2)
+                if !hotPack.statusMessage.isEmpty {
+                    Text(hotPack.statusMessage)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .monospacedDigit()
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(13)

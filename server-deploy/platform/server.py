@@ -99,17 +99,17 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
-DEFAULT_LATEST_VERSION = "6.0.0"
-DEFAULT_LATEST_BUILD = 189
+DEFAULT_LATEST_VERSION = "6.0.1"
+DEFAULT_LATEST_BUILD = 190
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【九州云服 v12 满血 16 Mbps + 五路推流竞速 × 开局零设置自动秒连】计算服升级至 lieguoji-server/v12（16 Mbps 满速带宽、TCP 443/8765/8443 三端口并发竞速、28ms 超低帧间隔、动态 3 帧滑动窗口与 Linux TCP_QUICKACK）；启动即静默预热全线路，进局零设置自动秒连最快专线，轻点延迟胶囊一键诊断重连。",
-    "【爽看海 32× 极速推演 × 陆海行军 1.42× 疾行 × 钢铁雄心核战与时代兵制】新增 32× 极速档（约 355 日/秒，1 秒 1 年爽看海），陆海行军全面提速 1.42×、攻城与战损节奏更利落；实装全球紧张度、时代兵制、核反应堆建造、核打击闪光与史实/自由叛乱模式。",
-    "【228.54 MB 真实地理与五千年史典热更包 v5（绝不靠图凑数）】新增 Natural Earth 1:10m 全球高精地貌与水文矢量化图集、世界五千年 45 纪元真实历史国界图集（3000 BCE – 2010 CE）及全球 7,342 城双语地理志与历代名将史料全典，支持按模块勾选与多镜像流式断点续传。",
+    "【热更新提速 50 倍 × 69 项 229MB GIS 图集全线上镜】正式发布 GitHub Release hotpack-v5 全量 69 项真实地理图集并剔除超时死节点，接入 gh-proxy.com / cdn.gh-proxy.org / gh-proxy.org / EdgeOne / Cloudflare 五路 HTTP 206 满速分片并发，首包 < 0.5 秒起跑、1 MB 细粒度分片与流式字节回调让进度条丝滑飙升。",
+    "【九州云服 v12 全界面统一显示】修正行宫链路卡、设置页与司礼监监控页残留的旧版 v9/v10 文案，全面同步显示「九州云服 v12（16 Mbps 五路竞速 · 断链自动续连）」及动态典藏热更包总体积。",
+    "【全面消除界面文字挤压与错乱】重排热更新进度卡片线路胶囊与状态行层级、标题页公告栏改为圆角卷幅防圆弧裁切、精炼设置页模式切换标签并锁齐模块体积列宽，iPhone 竖屏零重叠零竖折。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 13,
-    "notice": "v6.0.0 已上线：云服 v12 满血 16Mbps 五路竞速 + 32× 爽看海 + 228MB 真实地理五千年史典热更包 v5",
+    "version": 16,
+    "notice": "v6.0.1 上线：热更五路满速秒动 · 云服 v12 显示同步 · 界面排版零错乱",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16},
     "tuning": {
@@ -162,6 +162,16 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
         "build": DEFAULT_LATEST_BUILD,
         "date": "2026-11-26",
         "lines": list(DEFAULT_RELEASE_NOTES),
+    },
+    {
+        "version": "6.0.0",
+        "build": 189,
+        "date": "2026-11-26",
+        "lines": [
+            "【九州云服 v12 满血 16 Mbps + 五路推流竞速 × 开局零设置自动秒连】计算服升级至 lieguoji-server/v12（16 Mbps 满速带宽、TCP 443/8765/8443 三端口并发竞速、28ms 超低帧间隔、动态 3 帧滑动窗口与 Linux TCP_QUICKACK）；启动即静默预热全线路，进局零设置自动秒连最快专线，轻点延迟胶囊一键诊断重连。",
+            "【爽看海 32× 极速推演 × 陆海行军 1.42× 疾行 × 钢铁雄心核战与时代兵制】新增 32× 极速档（约 355 日/秒，1 秒 1 年爽看海），陆海行军全面提速 1.42×、攻城与战损节奏更利落；实装全球紧张度、时代兵制、核反应堆建造、核打击闪光与史实/自由叛乱模式。",
+            "【229.37 MB 真实地理与五千年史典热更包 v5（绝不靠图凑数）】新增 Natural Earth 1:10m 全球高精地貌与水文矢量化图集、世界五千年 45 纪元真实历史国界图集（3000 BCE – 2010 CE）及全球 7,342 城双语地理志与历代名将史料全典，支持按模块勾选与多镜像流式断点续传。",
+        ],
     },
     {
         "version": "5.8.0",
@@ -799,15 +809,15 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
     direct_download_url = f"http://{PUBLIC_HOST}/api/v1/hotpack/download/{quoted_rel}"
     top_low = top.lower()
 
-    # Hotpack v5 228+ MB GIS & 5000-Year Atlas modules: GitHub Release + EdgeOne + gh-proxy + Cloudflare Edge + Tencent Cloud direct
+    # Hotpack v5 229+ MB GIS & 5000-Year Atlas modules: 实测最快国内多镜像优先（剔除超时死节点）
     if top_low in ("gis-basemaps-10m", "gis-historical-45eras", "gis-cities-encyclopedia"):
         asset_name = urllib.parse.quote(Path(rel).name, safe="")
         gh_release_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/{HOTPACK_V5_RELEASE_TAG}/{asset_name}"
         return [
-            f"https://edgeone.gh-proxy.com/{gh_release_asset}",
+            f"https://gh-proxy.com/{gh_release_asset}",
             f"https://cdn.gh-proxy.org/{gh_release_asset}",
-            f"https://ghfast.top/{gh_release_asset}",
             f"https://gh-proxy.org/{gh_release_asset}",
+            f"https://edgeone.gh-proxy.com/{gh_release_asset}",
             f"https://lieguoji-edge.pages.dev/api/cdn/hotpack/{quoted_rel}",
             gh_release_asset,
             direct_download_url,
@@ -824,10 +834,10 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
         ]
     quoted = urllib.parse.quote(gh_path, safe="/")
     return [
-        f"https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
-        f"https://ghfast.top/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
-        f"https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://cdn.gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://gcore.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
         f"https://lieguoji-edge.pages.dev/api/cdn/raw/{quoted}",
         direct_download_url,
@@ -1903,8 +1913,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
             except Exception:
                 pass
         accept_enc = (self.headers.get("Accept-Encoding") or "").lower()
-        compressible = target.suffix.lower() in (".json", ".js", ".html", ".css", ".txt", ".svg")
-        use_gzip = (not head_only) and compressible and "gzip" in accept_enc and 512 <= size <= 8 * 1024 * 1024
+        compressible = target.suffix.lower() in (".json", ".geojson", ".js", ".html", ".css", ".txt", ".svg")
+        use_gzip = (not head_only) and compressible and "gzip" in accept_enc and 512 <= size <= 48 * 1024 * 1024
         if use_gzip:
             with target.open("rb") as f:
                 payload = gzip.compress(f.read(), compresslevel=6)

@@ -375,12 +375,12 @@ struct HubAdminTabView: View {
         }
     }
 
-    // MARK: 4. 机枢（仅管理员可见的真实服务器硬件、计算服 v9 与安全防护监控）
+    // MARK: 4. 机枢（仅管理员可见的真实服务器硬件、计算服 v12 与安全防护监控）
 
     private var monitorSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let ov = overview {
-                SectionLabel("计算引擎 v9 实时态势")
+                SectionLabel("计算引擎 v12 实时态势")
                 Group2 {
                     Row(label: "计算服链路", value: ov.compute.online ? "在线（\(ov.compute.rttMs ?? 1) ms）" : "离线")
                     Divider2()

@@ -214,7 +214,7 @@ struct RemoteSettings: View {
                             let ok = await model.findComputerNow()
                             busy = false
                             messageGood = ok
-                            message = ok ? "已接通在线服务器（v9 主动推流模式），大地图由服务器全速承担。" : "未发现服务器在线：可填入专属云服务器 IP:8765，或在电脑运行「列国纪远程计算 v9」（配对码 \(NativeHost.activeRoomCode)）。"
+                            message = ok ? "已接通在线服务器（九州云服 v12 满血推流模式），大地图由服务器全速承担。" : "未发现服务器在线：可填入专属云服务器 IP:8765，或在电脑运行「列国纪远程计算 v12」（配对码 \(NativeHost.activeRoomCode)）。"
                             GameFeel.shared.notify(ok ? .success : .warning)
                         }
                     }
@@ -249,11 +249,11 @@ struct RemoteSettings: View {
                 HStack {
                     Text("算力与运行模式").font(Theme.body).foregroundStyle(Theme.ink)
                     Spacer()
-                    Text(model.autoRemote ? "九州云服 v10 · 断链自动续连" : "离线单机 · 本机满帧 0ms")
+                    Text(model.autoRemote ? "九州云服 v12 · 断链自动续连" : "离线单机 · 本机满帧 0ms")
                         .font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 ChipPicker(
-                    items: [(true, "在线云服 v10（默认 · 自动续连）"), (false, "离线单机（纯本机 0ms）")],
+                    items: [(true, "在线云服 v12（自动续连）"), (false, "离线单机（本机 0ms）")],
                     selection: Binding(
                         get: { model.autoRemote },
                         set: { on in
@@ -271,7 +271,7 @@ struct RemoteSettings: View {
                         }
                     )
                 )
-                Text("默认开启「在线云服 v10」，切后台返回或网络波动时自动续连且绝不误踢单机；需离线游玩时可手动切至「离线单机」。")
+                Text("默认开启「在线云服 v12」，切后台返回或网络波动时自动续连且绝不误踢单机；需离线游玩时可手动切至「离线单机」。")
                     .font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 16).padding(.vertical, 11)

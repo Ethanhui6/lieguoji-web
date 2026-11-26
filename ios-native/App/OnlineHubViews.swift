@@ -354,7 +354,7 @@ private struct HubProfileTabView: View {
             let detail = !custom.isEmpty
                 ? custom
                 : ((model.remoteTransport.isEmpty ? "全双工主动推流" : model.remoteTransport) + kb)
-            return ("九州云服 v10 · 实时在线", detail, bars, tone, true)
+            return ("九州云服 v12 · 实时在线", detail, bars, tone, true)
         }
         if model.remoteReconnecting {
             let custom = model.remoteConnectionDetail.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -367,14 +367,14 @@ private struct HubProfileTabView: View {
         if model.state == nil {
             let online = platform.server?.computeOnline == true
             return (
-                online ? "九州云服 v10 · 随时待命" : "云端行宫 · 本机待命",
-                online ? "进入世界自动接入云服，断链自动保活重连" : "云服暂休整，进图默认本机满帧直演",
+                online ? "九州云服 v12 · 随时待命" : "云端行宫 · 本机待命",
+                online ? "进入世界自动接入云服 v12，断链自动保活重连" : "云服暂休整，进图默认本机满帧直演",
                 online ? 3 : 0,
                 online ? Theme.jade : Theme.ink2,
                 false
             )
         }
-        return ("本机演算中 · 可接入云服 v10", "轻点下方按钮即可连接九州云服享受断链续推", 0, Theme.ink2, false)
+        return ("本机演算中 · 可接入云服 v12", "轻点下方按钮即可连接九州云服 v12 享受断链续推", 0, Theme.ink2, false)
     }
 
     private var bestMirrorHint: String {
@@ -862,13 +862,13 @@ private struct HubProfileTabView: View {
                 // 在线云服 / 离线单机清晰切换
                 HStack(spacing: 8) {
                     linkModeChip(
-                        title: "在线云服 v10",
-                        subtitle: "断链自动续连",
+                        title: "在线云服 v12",
+                        subtitle: "16Mbps · 断链自动续连",
                         active: !isOfflineSelected
                     ) {
                         model.autoRemote = true
                         model.reconnectCloudNow()
-                        onToast("已切换至在线云服 v10（断链自动重连）")
+                        onToast("已切换至在线云服 v12（断链自动重连）")
                     }
                     linkModeChip(
                         title: "离线单机",
@@ -1472,10 +1472,11 @@ private struct HubUpdateTabView: View {
         }
     }
 
-    // Card 2: 游戏内免换包热更新（45.4 MB 典藏包）
+    // Card 2: 游戏内免换包热更新（实时读取清单总体积）
     private var hotPackCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionLabel("游戏内免换包热更新（45.4 MB 典藏包）")
+        let totalLabel = hotPack.manifest.map { HotPackManager.formatBytes($0.totalBytes) } ?? "274.8 MB"
+        return VStack(alignment: .leading, spacing: 10) {
+            SectionLabel("游戏内免换包热更新（\(totalLabel) 典藏包）")
             Group2 {
                 Row(
                     label: "资源热更状态",

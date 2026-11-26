@@ -177,7 +177,7 @@ public enum ArmyTactics {
         let pidToIndex: [String: Int]
         let controllers: [String]
         let portPids: Set<String>
-        var unblockedByNation: [String: [Int]] = [:]
+        var unblockedByNation: [String: Set<Int>] = [:]
         var blockadedByPid: [String: Bool] = [:]
         var accessCache: [String: Bool] = [:]
 
@@ -210,7 +210,7 @@ public enum ArmyTactics {
             return v
         }
 
-        mutating func unblockedPorts(_ r: JS, nation: String) -> [Int] {
+        mutating func unblockedPorts(_ r: JS, nation: String) -> Set<Int> {
             if let v = unblockedByNation[nation] { return v }
             let v = MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: nation)
             unblockedByNation[nation] = v
@@ -310,7 +310,6 @@ public enum ArmyTactics {
         guard let bridge = Armies.bridge else { return }
         let space = Armies.space(r)
         var supplyCtx = SupplyContext(r)
-        let provinces = supplyCtx.provinces
         let pidToIndex = supplyCtx.pidToIndex
         var grainHoldingsByNation = [String: Int]()
 

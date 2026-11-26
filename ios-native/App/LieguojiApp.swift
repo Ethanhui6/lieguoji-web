@@ -194,7 +194,7 @@ struct RootView: View {
             } else if platform.server == nil, await CloudConfig.shared.refresh() {
                 await model.applyCloud()
             }
-            _ = await hotPack.checkManifest(autoPrompt: true)
+            _ = await hotPack.checkManifest(autoPrompt: !platform.showUpdateSheet)
         }
         // 新世界由 Swift 在本机建成，网页引擎只在 Swift 建世界失败、读旧版存档时才按需启动（不再开机预热）。
         .task { await model.loadBackdrop() }
@@ -606,6 +606,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("5.6.0", ["【彻底修复旧版点击更新无反应 × 历代更新志补全与云端同步】根除在「史官行宫」内点击客户端更新或热更新时因 SwiftUI 根级双弹窗冲突被系统静默忽略的问题，改为页内直弹并消除启动期双弹窗互抢；标题页右上新增「发现新版 · 满速更新」朱砂直达胶囊；补齐 5.5.0 与 5.6.0 更新志，并自动合并云端最新更新记录，今后任何新版永不缺席。",
+                   "【全网多源满速下载与节点测速仪 × 算力引擎 v9 本机满帧直演】客户端安装包与免换包热更新升级多源并发测速与自动择优，实时展示当前加速节点与 MB/s 速率，支持一键测速与手动切换最快镜像源；默认优先「本机满帧直演（0ms 零延迟看海）」，并可在行宫与设置页一键切换「云端推流 v9（省电挂机）」。",
+                   "【史官行宫全面重铸 · 五大完整云端页签（纯 4.3 极简宣纸风）】全面升级「行宫 / 云档 / 更新 / 驿报 / 史榜（+ 管理员司礼监）」云端中心：行宫首屏集成 2×2 快捷指令格、算力模式直控与实时遥测；新增行宫内置「云档」页签（配额进度、一键上传、展卷载入与删除）；重做「更新」中心（内嵌新版要点、45.4 MB 热更进度、全网节点测速仪与云端平衡参数），全程严守 4.3 宣纸暖白、松烟墨、唯一朱砂红与正楷极简美学。"]),
+        ("5.5.0", ["【疾风破障版 · 云推 v8 微步滑动窗口 × O(N²) 补给瓶颈清除】单步共享预建 SupplyContext 消除 280 州大图每帧 14 万次重复扫描（提速 50 倍以上）；升级云端计算服至 v8 微步滑动窗口架构（MUX_ACK 2 帧背压 + NSCondition 0ms 瞬时唤醒 + 控制指令抢占优先 + 零锁 9 字节 MUX_PING 真实 RTT），彻底根治延迟飙升 1000ms、点击开始等半天再跳七月与队列堆积顽疾。",
+                   "【进图异步脱离上传 × 15–20Hz 像素级丝滑行军】进图与读档存档上传移至后台独立执行，点击开始 0ms 由本机先行丝滑开推、传完无感热切云端；全倍速升级 1/1/2/3/5 日微步高频推送并放开 MapRenderer 55ms 插值下限，千军万马丝滑滑行告别跳格卡顿。",
+                   "【安装包减重超 50%（86 MB → ~40 MB）× 云端按需资源缓存】清理停用视频与未用字体，将原声配乐、54 卷传报画幅与兼容引擎迁至云端按需流式下载并永久本地缓存（首开自动边下边播，亦可游戏内一键热更新全量落盘）；设置页新增「云端极速推流 / 纯本机算力」一键切换。"]),
         ("5.4.0", ["【根治云端推流掉线 × 280 州史诗大图大幅提速】彻底根除后台健康探针每 15 秒误驱逐活跃连接导致显示「待机中」并退回手机本地计算的根本问题；修复换局自动连接 60 秒延迟与漏开主动推流标志；升级腾讯云计算服至 v7 极速推流架构（150+ 州超大图启用智能单帧高效步进与国名重算节流、彻底移除活跃推流期阻塞落盘卡顿），并在顶栏实时展示「云 XXms」推流状态。",
                    "【游戏内免换包资源热更新系统（28MB+ 典藏扩展包）】新增 SHA256 精确差分热更新引擎与 4 路并发断点续传下载，以后更新全新历史剧本（首期即含 12 套新剧本：三国鼎立/盛唐万邦/大明海疆/罗马地中海/九州280州等）、典藏词典、工笔美术、54 卷传报长卷与平衡规则全部在游戏内一键更新即时生效，彻底告别反复换包。",
                    "【回归 4.3 极简宣纸美学 × 御前司礼监管理员中枢 × 全服安全加固】全面重绘登录门扉、史官行宫与热更新界面，清除厚重金框渐变与阴影，实现与原生面板 100% 风格统一与 120fps 顺滑体验；上线管理员专属游戏内控制台（公告/跑马灯/热更平衡参数/版本发布/全服诏书/史官管理/服务器监控），并全面收紧官网公开信息与防爆破防火墙防护。"]),
@@ -1450,21 +1456,60 @@ struct ReleaseNotesSheet: View {
         ("0.9.1", ["固定浅色纸面，不随深色模式变灰；自绘控件；国名描边改为字下圆角描边；启动与界面动画；新地图图标。"]),
         ("0.9.0", ["原生界面 + 网页原引擎：交战、占领、议和、家族等规则与网页完全一致；启动动画、标题生成动画、统一原作字体。"]),
     ]
+    private struct DisplayNote: Identifiable {
+        let id: String
+        let version: String
+        let date: String?
+        let lines: [String]
+        let isCloudNew: Bool
+    }
+    @ObservedObject private var platform = OnlinePlatform.shared
     @State private var showArchive = false
+    private var mergedNotes: [DisplayNote] {
+        let localVersions = Set(Self.notes.map(\.version))
+        var out: [DisplayNote] = []
+        for (idx, entry) in platform.cloudChangelog.enumerated() where !entry.lines.isEmpty && !localVersions.contains(entry.version) {
+            out.append(DisplayNote(
+                id: "cloud-\(idx)-\(entry.version)",
+                version: entry.version,
+                date: entry.date,
+                lines: entry.lines,
+                isCloudNew: true
+            ))
+        }
+        for (idx, item) in Self.notes.enumerated() {
+            out.append(DisplayNote(
+                id: "local-\(idx)-\(item.version)",
+                version: item.version,
+                date: nil,
+                lines: item.lines,
+                isCloudNew: false
+            ))
+        }
+        return out
+    }
     var body: some View {
-        let visible = showArchive ? Self.notes : Array(Self.notes.prefix(4))
-        let hiddenCount = max(0, Self.notes.count - visible.count)
+        let allNotes = mergedNotes
+        let visible = showArchive ? allNotes : Array(allNotes.prefix(5))
+        let hiddenCount = max(0, allNotes.count - visible.count)
+        let currentVer = OnlinePlatform.currentVersionString
+        let hasExactCurrent = allNotes.contains { $0.version == currentVer }
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
                 SheetHeader(title: "本版新增与更新内容", subtitle: AppVersion.text, seal: "记")
-                ForEach(visible, id: \.version) { note in
+                ForEach(visible) { note in
                     VStack(alignment: .leading, spacing: 7) {
                         HStack(spacing: 8) {
                             Text("v" + note.version).font(Theme.kai(19)).foregroundStyle(Theme.seal)
-                            if note.version == Self.notes.first?.version {
+                            if note.isCloudNew {
+                                PaperTag(text: "云端新版", color: Theme.seal, size: 10)
+                            } else if note.version == currentVer || (!hasExactCurrent && note.version == Self.notes.first?.version) {
                                 PaperTag(text: "当前版本", color: Theme.seal, size: 10)
                             }
                             Spacer()
+                            if let d = note.date, !d.isEmpty {
+                                Text(d).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                            }
                         }
                         ForEach(Array(note.lines.enumerated()), id: \.offset) { _, line in
                             HStack(alignment: .top, spacing: 7) {

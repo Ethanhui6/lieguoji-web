@@ -165,9 +165,9 @@ import LieguojiCore
     func notify(_ kind: UINotificationFeedbackGenerator.FeedbackType) { if haptics { notice.notificationOccurred(kind) } }
 }
 
-/// 在线计算服务器与云端存档（v6 真·网游级主动推流架构）：
-/// 支持 ① 专属国内云服务器 / 局域网毫秒级全双工直连推流（2–35 ms，LZ4 精简帧 5–10 KB/帧）、
-/// ② 家用电脑自动配对（同 Wi-Fi UDP 10ms 秒发现、外出走云端单向推流）、③ 退后台无感重连与一键云端存档。
+/// 在线计算服务器与云端存档（v9 真·网游级微步主动推流架构）：
+/// 支持 ① 纯本机满帧直演（默认推荐看海，0ms 零延迟）、
+/// ② 专属国内云服务器 / 局域网毫秒级推流 v9（省电挂机，LZ4 精简帧 5–10 KB/帧）、③ 退后台无感重连与一键云端存档。
 struct RemoteSettings: View {
     @ObservedObject var model: GameModel
     @State private var directAddress = NativeHost.savedDirectAddress
@@ -184,15 +184,15 @@ struct RemoteSettings: View {
             let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.1fKB/帧", model.remoteFrameKB ?? 0) : ""
             return "已连服务器（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
         }
-        if model.remoteReconnecting { return "正在无感续连服务器…" }
-        return model.autoRemote ? "正在待命连接在线服务器" : "本机推演"
+        if model.remoteReconnecting { return "正在无感续连云推 v9 服务器…" }
+        return model.autoRemote ? "正在待命连接云端推流 v9" : "纯本机满帧直演 · 0ms"
     }
     private var statusSubtitle: String {
         if let addr = model.remoteAddress {
-            return "\(addr) · v6 主动推流 + LZ4 压缩 + 抖动缓冲，手机零计算负担"
+            return "\(addr) · v9 主动推流 + LZ4 压缩 + 抖动缓冲，手机零计算负担"
         }
         if model.remoteReconnecting { return "世界仍热保存在服务器内存中，返回前台自动秒连" }
-        return model.autoRemote ? "优先直连专属云服或同 Wi-Fi 电脑（UDP 秒发现），外出自动走云端推流" : "开启后自动将模拟交给专属云服务器或家用电脑，手机只负责 60fps 渲染"
+        return model.autoRemote ? "优先直连专属云服或同 Wi-Fi 电脑（UDP 秒发现），外出自动走云端推流" : "当前由手机本机满帧直演（0ms 零延迟）；开启云端推流 v9 后可将推演卸给服务器省电挂机"
     }
 
     var body: some View {
@@ -214,7 +214,7 @@ struct RemoteSettings: View {
                             let ok = await model.findComputerNow()
                             busy = false
                             messageGood = ok
-                            message = ok ? "已接通在线服务器（主动推流模式），大地图由服务器全速承担。" : "未发现服务器在线：可填入专属云服务器 IP:8765，或在电脑运行「列国纪远程计算 v6」（配对码 \(NativeHost.activeRoomCode)）。"
+                            message = ok ? "已接通在线服务器（v9 主动推流模式），大地图由服务器全速承担。" : "未发现服务器在线：可填入专属云服务器 IP:8765，或在电脑运行「列国纪远程计算 v9」（配对码 \(NativeHost.activeRoomCode)）。"
                             GameFeel.shared.notify(ok ? .success : .warning)
                         }
                     }
@@ -249,14 +249,15 @@ struct RemoteSettings: View {
                 HStack {
                     Text("算力与运行模式").font(Theme.body).foregroundStyle(Theme.ink)
                     Spacer()
-                    Text(model.autoRemote ? "云端优先 · 省电不发热" : "纯本机 · 离线零延迟")
+                    Text(model.autoRemote ? "云端推流 v9 · 省电挂机" : "纯本机满帧 · 0ms 零延迟")
                         .font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 ChipPicker(
-                    items: [(true, "云端极速推流"), (false, "纯本机算力")],
+                    items: [(false, "纯本机满帧（推荐看海 · 0ms）"), (true, "云端推流 v9（省电挂机）")],
                     selection: Binding(
                         get: { model.autoRemote },
                         set: { on in
+                            model.objectWillChange.send()
                             model.autoRemote = on
                             if !on && model.remoteAddress != nil {
                                 Task { await model.disconnectRemote() }
@@ -266,7 +267,7 @@ struct RemoteSettings: View {
                         }
                     )
                 )
-                Text("云端推流（v8 微步滑动窗口）把 280 州大图演算卸给腾讯云，手机仅负责 120Hz 丝滑渲染；地铁/无网环境可随时一键切回本机算力。")
+                Text("默认推荐「纯本机满帧」享 0ms 零延迟丝滑看海；长时挂机或 280 州大图省电不发热，可一键切至「云端推流 v9（微步滑动窗口）」。")
                     .font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 16).padding(.vertical, 11)

@@ -398,10 +398,11 @@ actor NativeHost {
         }
 
         // 关键零卡顿优化：先在 actor 内快速快照世界存档与版本号，再彻底释放 actor 在后台脱离上传 10–15MB 存档！
-        // 上传期间玩家点击「开始游戏」0ms 立刻由本机丝滑响应，绝不假死、绝不跳月；上传完毕后毫秒级热切云端 v8 推流！
+        // 上传期间玩家点击「开始游戏」0ms 立刻由本机丝滑响应，绝不假死；上传完毕后精确追平差值天数再热切云端 v9 推流，严禁回退拉回！
         let startRev = advances.revision
         let startDay = service.engine?.run.world.day.asInt ?? 0
-        let localSave = service.engine?.save()
+        var latestSave = service.engine?.save()
+        let initialSave = latestSave
         let c = try Self.catalogData()
         let catalogs = try JSONSerialization.data(withJSONObject: [
             "traits": c.traits.base64EncodedString(),
@@ -410,12 +411,17 @@ actor NativeHost {
         ])
 
         try await Task.detached(priority: .userInitiated) {
-            let loaded = try await link.call("catalogs", [:], payload: catalogs)
-            guard loaded.ok else { link.cancel(); throw EngineError.message(loaded.reason) }
-            if let save = localSave {
-                let opened = try await link.call("open", [:], payload: save)
-                guard opened.ok else { link.cancel(); throw EngineError.message("服务器载入世界失败：\(opened.reason)") }
-                _ = try? await link.call("enableAppRules", [:], payload: nil)
+            do {
+                let loaded = try await link.call("catalogs", [:], payload: catalogs)
+                guard loaded.ok else { throw EngineError.message(loaded.reason) }
+                if let save = initialSave {
+                    let opened = try await link.call("open", [:], payload: save)
+                    guard opened.ok else { throw EngineError.message("服务器载入世界失败：\(opened.reason)") }
+                    _ = try? await link.call("enableAppRules", [:], payload: nil)
+                }
+            } catch {
+                link.cancel()
+                throw error
             }
         }.value
 
@@ -425,16 +431,85 @@ actor NativeHost {
             throw EngineError.message("世界已切换，已取消旧连接")
         }
 
-        // 若后台上传期间本机已先开始推演了若干天，只需让云端极速补跑差值天数即可无缝衔接（绝不回退或二次上传）。
-        let nowDay = service.engine?.run.world.day.asInt ?? startDay
-        let deltaDays = max(0, min(60, nowDay - startDay))
-        if deltaDays > 0 {
-            _ = try? await Task.detached(priority: .userInitiated) {
-                try await link.call("step", ["days": deltaDays, "slim": true], payload: nil)
-            }.value
+        // 若后台上传期间本机已先推演了若干天，精确追平差值天数或重新快照，严禁截断回退造成军队拉回！
+        if initialSave != nil {
+            var serverDay = startDay
+            var nowDay = service.engine?.run.world.day.asInt ?? startDay
+            var deltaDays = nowDay - serverDay
+
+            if deltaDays > 15 {
+                guard let freshSave = service.engine?.save() else {
+                    link.cancel()
+                    throw EngineError.message("本机世界已变化，已取消自动切换")
+                }
+                let freshDay = service.engine?.run.world.day.asInt ?? nowDay
+                try await Task.detached(priority: .userInitiated) {
+                    do {
+                        let reopened = try await link.call("open", [:], payload: freshSave)
+                        guard reopened.ok else { throw EngineError.message("服务器同步最新世界失败：\(reopened.reason)") }
+                        _ = try? await link.call("enableAppRules", [:], payload: nil)
+                    } catch {
+                        link.cancel()
+                        throw error
+                    }
+                }.value
+                guard advances.revision == startRev else {
+                    link.cancel()
+                    throw EngineError.message("世界已切换，已取消旧连接")
+                }
+                latestSave = freshSave
+                serverDay = freshDay
+                nowDay = service.engine?.run.world.day.asInt ?? serverDay
+                deltaDays = nowDay - serverDay
+                if deltaDays > 15 {
+                    link.cancel()
+                    throw EngineError.message("本机推演推进较快，已取消本次切换以避免进度回退")
+                }
+            }
+
+            if deltaDays > 0 {
+                let step1 = deltaDays
+                try await Task.detached(priority: .userInitiated) {
+                    do {
+                        let r1 = try await link.call("step", ["days": step1, "slim": true], payload: nil)
+                        guard r1.ok else { throw EngineError.message("服务器同步进度失败：\(r1.reason)") }
+                    } catch {
+                        link.cancel()
+                        throw error
+                    }
+                }.value
+                guard advances.revision == startRev else {
+                    link.cancel()
+                    throw EngineError.message("世界已切换，已取消旧连接")
+                }
+                serverDay += step1
+
+                let recheckDay = service.engine?.run.world.day.asInt ?? serverDay
+                let remaining = recheckDay - serverDay
+                if remaining > 15 {
+                    link.cancel()
+                    throw EngineError.message("本机推演推进较快，已取消本次切换以避免进度回退")
+                } else if remaining > 0 {
+                    let step2 = remaining
+                    try await Task.detached(priority: .userInitiated) {
+                        do {
+                            let r2 = try await link.call("step", ["days": step2, "slim": true], payload: nil)
+                            guard r2.ok else { throw EngineError.message("服务器追平进度失败：\(r2.reason)") }
+                        } catch {
+                            link.cancel()
+                            throw error
+                        }
+                    }.value
+                    guard advances.revision == startRev else {
+                        link.cancel()
+                        throw EngineError.message("世界已切换，已取消旧连接")
+                    }
+                    serverDay += step2
+                }
+            }
         }
 
-        if let localSave { lastWorld = localSave }
+        if let latestSave { lastWorld = latestSave }
         remote = link; remoteAddress = label; remoteTransport = finalTransport
         rttBox.reset(rtt); lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
         serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
@@ -553,7 +628,7 @@ actor NativeHost {
         return ms
     }
 
-    /// 配置服务器端推流（v8 启用微步滑动窗口背压 + epoch 防乱序；向下兼容 v6/v5 服务器）。
+    /// 配置服务器端推流（v9 启用微步滑动窗口背压 + 3Mbps 整形 + epoch 防乱序；经由 call() 感知断链并瞬时触发重连）。
     func configureRemoteStream(playing: Bool, days: Int, intervalMs: Int = 80, resetEpoch: Bool = true) async {
         if resetEpoch || !playing {
             streamEpoch &+= 1
@@ -561,14 +636,14 @@ actor NativeHost {
         }
         guard let link = remote, serverSupportsStream else { return }
         let useWindow = (link is RemoteLink) && serverSupportsPush
-        _ = try? await link.call("streamConfig", [
+        _ = await call("streamConfig", [
             "playing": playing,
             "days": max(1, min(32, days)),
             "intervalMs": max(35, min(600, intervalMs)),
             "epoch": Int(streamEpoch),
             "push": serverSupportsPush && playing,
             "window": useWindow
-        ], payload: nil)
+        ])
     }
 
     /// 自动接入：专属云服务器地址 → 局域网 UDP 10ms 秒发现 → 云端中转 LAN 列表 → 云端 WebSocket 推流。
@@ -1046,7 +1121,8 @@ final class RelayLink: EngineLink, @unchecked Sendable {
 }
 
 /// 全双工多路复用直连 TCP 通道（局域网 2–6ms / 国内专属云服务器 15–35ms）：
-/// 握手后自动升级 `enableMux`，同时接收服务器 `MUX_PUSH` 主动压缩推流帧与并发指令回包。
+/// 握手后自动升级 `enableMux`，同时接收服务器 `MUX_PUSH` 主动压缩推流帧与并发指令回包；
+/// 内置请求 12s / 心跳 4s 超时看门狗，弱网抖动绝不永久卡死。
 final class RemoteLink: EngineLink, @unchecked Sendable {
     private let connection: NWConnection
     private let queue = DispatchQueue(label: "lieguoji.remote")
@@ -1054,7 +1130,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
     private var mux = false
     private var closed = false
     private var nextId: UInt32 = 1
-    private var pending: [UInt32: CheckedContinuation<Data, Error>] = [:]
+    private var pending: [UInt32: (cont: CheckedContinuation<Data, Error>, watchdog: DispatchWorkItem)] = [:]
     private var heartbeatTask: Task<Void, Never>?
     var onPushFrame: (@Sendable (UInt32, Data) -> Void)?
     var onRTTMeasured: (@Sendable (Int) -> Void)?
@@ -1098,7 +1174,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         }
     }
 
-    /// 协商升级为 v6 全双工多路复用主动推流模式。
+    /// 协商升级为 v9 非阻塞全双工多路复用主动推流模式。
     func upgradeToMux() async throws -> Bool {
         let r = try await legacyCall("enableMux", [:], payload: nil)
         guard r.ok else { return false }
@@ -1114,7 +1190,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         let reqId = allocId()
         let frame = EngineWire.muxFrame(type: EngineWire.muxPing, id: reqId, body: Data())
         do {
-            _ = try await sendMuxAndWait(id: reqId, frame: frame)
+            _ = try await sendMuxAndWait(id: reqId, frame: frame, timeoutSeconds: 4.0)
             return max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
         } catch {
             return nil
@@ -1135,16 +1211,28 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         pending.removeAll()
         lock.unlock()
         heartbeatTask?.cancel()
-        for (_, cont) in map { cont.resume(throwing: err) }
+        for (_, entry) in map {
+            entry.watchdog.cancel()
+            entry.cont.resume(throwing: err)
+        }
     }
 
     private func startMuxHeartbeat() {
         heartbeatTask = Task.detached(priority: .utility) { [weak self] in
+            var missedPings = 0
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 4_000_000_000)
                 guard let self, self.isMuxActive else { return }
                 if let ms = await self.muxPingRTT() {
+                    missedPings = 0
                     self.onRTTMeasured?(ms)
+                } else {
+                    missedPings += 1
+                    if missedPings >= 2 {
+                        self.failAll(EngineError.message("心跳超时，直连链路已断开"))
+                        self.connection.cancel()
+                        return
+                    }
                 }
             }
         }
@@ -1167,9 +1255,10 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
                         self.onPushFrame?(frameId, body)
                     } else if type == EngineWire.muxReply || type == EngineWire.muxPong {
                         self.lock.lock()
-                        let cont = self.pending.removeValue(forKey: frameId)
+                        let entry = self.pending.removeValue(forKey: frameId)
                         self.lock.unlock()
-                        cont?.resume(returning: body)
+                        entry?.watchdog.cancel()
+                        entry?.cont.resume(returning: body)
                     }
                 }
             } catch {
@@ -1213,23 +1302,34 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         return out
     }
 
-    private func sendMuxAndWait(id: UInt32, frame: Data) async throws -> Data {
+    private func sendMuxAndWait(id: UInt32, frame: Data, timeoutSeconds: Double = 12.0) async throws -> Data {
         try await withCheckedThrowingContinuation { cont in
+            let watchdog = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.lock.lock()
+                let entry = self.pending.removeValue(forKey: id)
+                self.lock.unlock()
+                entry?.cont.resume(throwing: EngineError.message("服务器响应超时，正在重连"))
+            }
+
             lock.lock()
             if closed {
                 lock.unlock()
                 cont.resume(throwing: EngineError.message("直连通道已断开"))
                 return
             }
-            pending[id] = cont
+            pending[id] = (cont, watchdog)
             lock.unlock()
+
+            queue.asyncAfter(deadline: .now() + timeoutSeconds, execute: watchdog)
 
             connection.send(content: frame, completion: .contentProcessed { [weak self] err in
                 if let err, let self {
                     self.lock.lock()
-                    let c = self.pending.removeValue(forKey: id)
+                    let entry = self.pending.removeValue(forKey: id)
                     self.lock.unlock()
-                    c?.resume(throwing: err)
+                    entry?.watchdog.cancel()
+                    entry?.cont.resume(throwing: err)
                 }
             })
         }
@@ -1248,7 +1348,8 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
             let reqId = allocId()
             let inner = EngineWire.request(name, args, payload: payload, compressPayload: true)
             let frame = EngineWire.muxFrame(type: EngineWire.muxRequest, id: reqId, body: inner)
-            let replyBody = try await sendMuxAndWait(id: reqId, frame: frame)
+            let rpcTimeout: Double = (name == "open" || name == "save" || name == "catalogs") ? 35.0 : 12.0
+            let replyBody = try await sendMuxAndWait(id: reqId, frame: frame, timeoutSeconds: rpcTimeout)
             return try decodeWireReply(replyBody)
         }
         return try await legacyCall(name, args, payload: payload)

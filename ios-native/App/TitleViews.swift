@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import CoreText
 import UniformTypeIdentifiers
 import LieguojiCore
@@ -166,6 +167,8 @@ struct TitleView: View {
     @State private var authOpen = false
     @State private var hubOpen = false
     @State private var hubTab = "profile"
+    @State private var updateSheetOpen = false
+    @State private var hotUpdateSheetOpen = false
     /// A line of the classics under the title, changing each launch (merges hot-updated mottos).
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
     @State private var motto = (TitleView.mottos + HotPackManager.shared.extraMottos).randomElement() ?? "天下大势，分久必合，合久必分"
@@ -205,13 +208,34 @@ struct TitleView: View {
                     .padding(.top, 8)
                     .opacity(shown ? 1 : 0).animation(Motion.reveal.delay(0.3), value: shown)
                     Spacer()
-                    TitleOnlineHeader(
-                        platform: platform,
-                        hotPack: hotPack,
-                        onOpenHub: { tab in hubTab = tab; hubOpen = true },
-                        onOpenAuth: { authOpen = true },
-                        onOpenHotUpdate: { hotPack.showHotUpdateSheet = true }
-                    )
+                    VStack(alignment: .trailing, spacing: 6) {
+                        TitleOnlineHeader(
+                            platform: platform,
+                            hotPack: hotPack,
+                            onOpenHub: { tab in hubTab = tab; hubOpen = true },
+                            onOpenAuth: { authOpen = true },
+                            onOpenHotUpdate: { hotUpdateSheetOpen = true }
+                        )
+                        if let upd = platform.updateInfo, upd.hasAppUpdate {
+                            Button {
+                                GameFeel.shared.tap()
+                                updateSheetOpen = true
+                            } label: {
+                                HStack(spacing: 5) {
+                                    PhosphorIcon(glyph: .lightning, size: 11, weight: .fill)
+                                    Text("发现新版 v\(upd.latestVersion) · 满速更新")
+                                        .font(Theme.caption)
+                                        .monospacedDigit()
+                                        .lineLimit(1)
+                                }
+                                .foregroundStyle(Theme.paperLight)
+                                .padding(.horizontal, 10)
+                                .frame(height: 28)
+                                .background(Theme.seal, in: Capsule())
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    }
                     .padding(.trailing, 18)
                     .padding(.top, 8)
                     .opacity(shown ? 1 : 0)
@@ -277,12 +301,12 @@ struct TitleView: View {
         }
         .statusBarHidden()
         .onAppear {
-            model.controller.sheetOpen = (creating || archive || settings || notes || importing || authOpen || hubOpen)
+            model.controller.sheetOpen = (creating || archive || settings || notes || importing || authOpen || hubOpen || updateSheetOpen || hotUpdateSheetOpen)
             shown = false
             withAnimation(Motion.drift.delay(model.controller.reveal < 1 ? 0.9 : 0.1)) { shown = true }
         }
         .onDisappear { model.controller.sheetOpen = false }
-        .onChange(of: creating || archive || settings || notes || importing || authOpen || hubOpen) { _, open in
+        .onChange(of: creating || archive || settings || notes || importing || authOpen || hubOpen || updateSheetOpen || hotUpdateSheetOpen) { _, open in
             model.controller.sheetOpen = open
         }
         .onChange(of: model.tourTitle) { _, name in
@@ -375,6 +399,26 @@ struct TitleView: View {
                 }
             })
             .presentationDetents([.fraction(0.92)])
+            .presentationCornerRadius(Theme.Control.cornerSheet)
+            .presentationBackground { MemorialPaper() }
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $updateSheetOpen) {
+            CloudUpdateSheet(platform: platform)
+                .onReceive(platform.$showUpdateSheet.dropFirst()) { shown in
+                    if !shown { updateSheetOpen = false }
+                }
+                .interactiveDismissDisabled(platform.updateInfo?.forceUpdate == true)
+                .presentationDetents([.fraction(0.88)])
+                .presentationCornerRadius(Theme.Control.cornerSheet)
+                .presentationBackground { MemorialPaper() }
+                .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $hotUpdateSheetOpen) {
+            HotUpdateSheet(hotPack: hotPack) {
+                await model.applyCloud()
+            }
+            .presentationDetents([.fraction(0.86)])
             .presentationCornerRadius(Theme.Control.cornerSheet)
             .presentationBackground { MemorialPaper() }
             .presentationDragIndicator(.hidden)

@@ -30,11 +30,11 @@ struct HubAdminTabView: View {
     @State private var siege = 6.0
     @State private var eagerness = 3.4
     @State private var armyCap = 900
-    @State private var pace1 = 3
-    @State private var pace4 = 12
-    @State private var pace16 = 32
-    @State private var relVersion = "5.4.0"
-    @State private var relBuild = "184"
+    @State private var pace1 = 1
+    @State private var pace4 = 2
+    @State private var pace16 = 5
+    @State private var relVersion = "5.6.0"
+    @State private var relBuild = "186"
     @State private var relForce = false
     @State private var packTag = ""
     @State private var packSummary = ""
@@ -98,7 +98,7 @@ struct HubAdminTabView: View {
                         Task {
                             busy = true
                             let err = await platform.adminPost("/api/v1/admin/notice", body: ["notice": noticeText])
-                            if err == nil { _ = await platform.bootstrap(manual: true) }
+                            if err == nil { _ = await platform.bootstrap(manual: true, autoPrompt: false) }
                             busy = false
                             onToast(err ?? "跑马灯已热更新至全服")
                         }
@@ -129,7 +129,7 @@ struct HubAdminTabView: View {
                             ])
                             if err == nil {
                                 annTitle = ""; annBody = ""
-                                _ = await platform.bootstrap(manual: true)
+                                _ = await platform.bootstrap(manual: true, autoPrompt: false)
                             }
                             busy = false
                             onToast(err ?? "新公告已发布至全服")
@@ -230,16 +230,18 @@ struct HubAdminTabView: View {
                     PaperStepper(title: "军团上限", value: $armyCap, range: 200...1600, unit: "支")
                     Divider2()
                     PaperStepper(title: "1× 倍速步进", value: $pace1, range: 1...10, unit: "日")
-                    PaperStepper(title: "4× 倍速步进", value: $pace4, range: 4...24, unit: "日")
-                    PaperStepper(title: "16× 倍速步进", value: $pace16, range: 12...56, unit: "日")
+                    PaperStepper(title: "4× 倍速步进", value: $pace4, range: 1...24, unit: "日")
+                    PaperStepper(title: "16× 倍速步进", value: $pace16, range: 2...56, unit: "日")
                     SealButton(title: busy ? "推送中…" : "推送全服平衡热更", busy: busy, disabled: busy) {
                         Task {
                             busy = true
+                            let pace2 = max(pace1, (pace1 + pace4) / 2)
+                            let pace8 = max(pace4, (pace4 + pace16) / 2)
                             let err = await platform.adminPost("/api/v1/admin/tuning", body: [
                                 "tuning": ["lethality": lethality, "siege": siege, "warEagerness": eagerness, "armyCap": armyCap],
-                                "pace": ["1": pace1, "2": max(pace1 * 2, 4), "4": pace4, "8": max(pace4 + 6, 18), "16": pace16]
+                                "pace": ["1": pace1, "2": pace2, "4": pace4, "8": pace8, "16": pace16]
                             ])
-                            if err == nil { _ = await platform.bootstrap(manual: true) }
+                            if err == nil { _ = await platform.bootstrap(manual: true, autoPrompt: false) }
                             busy = false
                             onToast(err ?? "平衡与推演节拍已热更推送全服")
                         }
@@ -292,7 +294,7 @@ struct HubAdminTabView: View {
                             busy = true
                             let err = await platform.adminPost("/api/v1/admin/release", body: [
                                 "latestVersion": relVersion,
-                                "latestBuild": Int(relBuild) ?? 184,
+                                "latestBuild": Int(relBuild) ?? 186,
                                 "forceUpdate": relForce
                             ])
                             busy = false
@@ -373,12 +375,12 @@ struct HubAdminTabView: View {
         }
     }
 
-    // MARK: 4. 机枢（仅管理员可见的真实服务器硬件、计算服 v7 与安全防护监控）
+    // MARK: 4. 机枢（仅管理员可见的真实服务器硬件、计算服 v9 与安全防护监控）
 
     private var monitorSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let ov = overview {
-                SectionLabel("计算引擎 v7 实时态势")
+                SectionLabel("计算引擎 v9 实时态势")
                 Group2 {
                     Row(label: "计算服链路", value: ov.compute.online ? "在线（\(ov.compute.rttMs ?? 1) ms）" : "离线")
                     Divider2()

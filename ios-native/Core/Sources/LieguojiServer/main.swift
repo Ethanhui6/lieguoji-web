@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(Dispatch)
+import Dispatch
+#endif
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -11,9 +14,10 @@ import Glibc
 import Darwin
 #endif
 
-// 列国纪在线计算服务器 v6（真·网游级全双工主动推流 + LZ4 高速压缩 + 专属云服/家用电脑双模）：
-// 1. 全双工多路复用直连 TCP（端口 8765，支持 `enableMux` 升级）：服务器按恒定帧率单向主动推送 LZ4 压缩精简帧（5–10 KB/帧），
-//    手机端 0ms 等待并发下发暂停/加速/军令/查面板指令，局域网 2–6 ms、国内云服务器 15–35 ms。
+// 列国纪在线计算服务器 v9（真·非阻塞全双工多路复用推流 + 3Mbps 带宽整形 + LZ4 高速压缩 + 专属云服/家用电脑双模）：
+// 1. v9 非阻塞全双工多路复用直连 TCP（端口 8765，支持 `enableMux` 升级）：TCP 读线程 100% 永不阻塞，
+//    <1ms 瞬回 `MUX_PING`、0ms 消化 `MUX_ACK` 滑动窗口确认，所有业务 `MUX_REQ` 派发至独立串行 RPC 队列；
+//    同时内置 3 Mbps 带宽整形器，彻底杜绝打满链路触发 1000ms TCP Bufferbloat。
 // 2. 云端中转单向推流管道（Cloudflare Pages / Durable Object `/push` -> 手机 WebSocket `MSG_PUSH`）：
 //    外出 4G/5G 省去整趟「手机→中转→PC」请求来回，消除停顿问答感；同时双路长轮询即时处理控制指令。
 // 3. 局域网 UDP 自动发现信标（端口 8766）：同一 Wi-Fi 下无需经过外网中转，10ms 内秒连家用电脑。
@@ -114,17 +118,24 @@ func receiveExactly(_ s: Socket, _ count: Int) -> Data? {
 
 func readU32(_ s: Socket) -> Int? { receiveExactly(s, 4).map { EngineWire.readU32($0, at: 0) } }
 
-final class DirectClient {
+final class DirectClient: @unchecked Sendable {
     let socket: Socket
     let gen: UInt64
     let writeLock = NSLock()
     var mux = false
     var compress = false
     var closed = false
+    private var fdClosed = false
 
     init(socket: Socket, gen: UInt64) {
         self.socket = socket
         self.gen = gen
+    }
+
+    var isClosed: Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        return closed
     }
 
     @discardableResult
@@ -143,11 +154,31 @@ final class DirectClient {
         return sendAll(socket, data)
     }
 
+    /// 幂等标记断开并立即 shutdown(SHUT_RDWR/SD_BOTH) 唤醒阻塞在 recv() 的读线程，不提前释放 fd 避免 accept() 复用竞态。
     func markClosed() {
         writeLock.lock()
+        let already = closed
         closed = true
         writeLock.unlock()
-        closeSocket(socket)
+        if !already {
+            _ = shutdown(socket, 2)
+        }
+    }
+
+    /// 仅由 handleLANClient 退出时的 defer 调用：确保读线程已退出且无在途写操作后，幂等关闭底层 socket fd。
+    func closeDescriptor() {
+        writeLock.lock()
+        let needShutdown = !closed
+        closed = true
+        let shouldClose = !fdClosed
+        fdClosed = true
+        writeLock.unlock()
+        if needShutdown {
+            _ = shutdown(socket, 2)
+        }
+        if shouldClose {
+            closeSocket(socket)
+        }
     }
 }
 
@@ -472,9 +503,12 @@ final class SimStreamer {
                 self.worldLoaded = isOpen
                 self.cond.unlock()
 
+                var wireSec: Double = 0
                 if reply.ok, let rawData = reply.data, !rawData.isEmpty {
                     if doPush {
                         let compressed = WireCodec.compress(rawData)
+                        // v9 3 Mbps 出向带宽整形器（3 Mbps = 375 KB/s，安全水位 260 KB/s，彻底杜绝打满带宽导致 1000ms TCP Bufferbloat）
+                        wireSec = Double(compressed.count) / 260_000.0
                         self.cond.lock()
                         let stillValid = self.playing && self.streamEpoch == epoch
                         var tag: UInt32 = 0
@@ -487,7 +521,7 @@ final class SimStreamer {
                             self.pushedBytes += compressed.count
                             if tickStart.timeIntervalSince(self.statStarted) >= 30 {
                                 let avgKB = Double(self.pushedBytes) / Double(max(1, self.pushedCount)) / 1024.0
-                                print(String(format: "（v8微步推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
+                                print(String(format: "（v9 非阻塞全双工推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
                                 self.pushedCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
                             }
                         }
@@ -512,9 +546,9 @@ final class SimStreamer {
                     }
                 }
 
-                // 精确按目标周期等待（可被新指令或暂停瞬间打断，0ms 浪费）
+                // 精确按目标周期与 3 Mbps 带宽整形等待（可被新指令或暂停瞬间打断，0ms 浪费）
                 let elapsed = Date().timeIntervalSince(tickStart)
-                let remain = doPush ? (period - elapsed) : 0.012
+                let remain = doPush ? (max(period, wireSec * 1.15) - elapsed) : 0.012
                 if remain > 0.002 {
                     self.cond.lock()
                     if self.playing && self.streamEpoch == epoch {
@@ -537,7 +571,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
     if call == "health" {
         let t = streamer.telemetry()
         clientLock.lock()
-        let hasClient = (activeDirect != nil && !(activeDirect?.closed ?? true))
+        let hasClient = (activeDirect != nil && !(activeDirect?.isClosed ?? true))
         clientLock.unlock()
         var r = EngineService.Reply(ok: true, reason: EngineWire.greeting)
         r.text = "online|playing=\(t.playing ? 1 : 0)|stepMs=\(t.stepMs)|provinces=\(t.provinces)|clients=\(hasClient ? 1 : 0)"
@@ -576,7 +610,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         return service.handle("park", args, payload: nil)
     }
     if call == "enableMux" {
-        return EngineService.Reply(ok: true, reason: "mux-v8")
+        return EngineService.Reply(ok: true, reason: "mux-v9")
     }
     let readOnly: Set<String> = [
         "state", "province", "nationInfo", "diplomacyInfo", "tradeInfo",
@@ -828,6 +862,7 @@ func startUDPDiscovery(tcpPort: UInt16, roomCode: String) {
 
 func tuneClientSocket(_ s: Socket) {
     var one: Int32 = 1
+    var sndBuf: Int32 = 98_304
     #if os(Windows)
     withUnsafePointer(to: &one) {
         $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
@@ -835,7 +870,12 @@ func tuneClientSocket(_ s: Socket) {
             _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_KEEPALIVE), ptr, 4)
         }
     }
-    var timeoutMs: DWORD = 60_000
+    withUnsafePointer(to: &sndBuf) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
+            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_SNDBUF), ptr, 4)
+        }
+    }
+    var timeoutMs: DWORD = 90_000
     withUnsafePointer(to: &timeoutMs) {
         $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
             _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_RCVTIMEO), ptr, 4)
@@ -845,15 +885,15 @@ func tuneClientSocket(_ s: Socket) {
     #elseif canImport(Glibc)
     setsockopt(s, Int32(IPPROTO_TCP), TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))
-    var sndBuf: Int32 = 98_304
     setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndBuf, socklen_t(MemoryLayout<Int32>.size))
-    var tv = timeval(tv_sec: 60, tv_usec: 0)
+    var tv = timeval(tv_sec: 90, tv_usec: 0)
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     #else
     setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))
-    var tv = timeval(tv_sec: 60, tv_usec: 0)
+    setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndBuf, socklen_t(MemoryLayout<Int32>.size))
+    var tv = timeval(tv_sec: 90, tv_usec: 0)
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     #endif
@@ -936,7 +976,7 @@ if bound != 0 || listen(listener, 16) != 0 {
 
 startUDPDiscovery(tcpPort: port, roomCode: code)
 
-print("列国纪在线计算服务器 v6（全双工主动推流 + LZ4 压缩 + 局域网自动发现 + 自动热备）已启动")
+print("列国纪在线计算服务器 v9（v9 非阻塞全双工推流 + 3Mbps 带宽整形 + LZ4 压缩 + 局域网自动发现 + 自动热备）已启动")
 print("配对码：\(code)\(disableRelay ? "（纯直连专属云服模式）" : "")")
 print("手机打开游戏即自动接入；同一 Wi-Fi 自动毫秒级直连推流，切后台再返回秒级无感重连。")
 installStartup()
@@ -977,10 +1017,15 @@ func promoteToActiveDirect(_ conn: DirectClient) {
     }
 }
 
+final class MuxRPCStats: @unchecked Sendable {
+    var calls = 0
+    var started = Date()
+}
+
 func handleLANClient(_ conn: DirectClient) {
+    defer { conn.closeDescriptor() }
     let client = conn.socket
     tuneClientSocket(client)
-    var calls = 0, started = Date()
     var promoted = false
 
     // 阶段一：经典 EngineWire 握手（完全兼容 v4/v5/v6；health/ping 探针绝不驱逐活跃手机连接，收到真实业务指令或 enableMux 才接管会话）
@@ -1010,14 +1055,19 @@ func handleLANClient(_ conn: DirectClient) {
         if isMuxUpgrade {
             conn.mux = true
             conn.compress = true
-            print("（直连 TCP [#\(conn.gen)]）已升级至 v8 微步滑动窗口推流 + LZ4 压缩模式")
+            print("（直连 TCP [#\(conn.gen)]）已升级至 v9 非阻塞全双工推流 + 滑动窗口背压 + 3Mbps 带宽整形模式")
             break
         }
         if call == "health" { break }
     }
 
-    // 阶段二：v8 全双工多路复用（服务器按滑动窗口推送 MUX_PUSH，同时零等待响应手机 MUX_REQ、MUX_PING 与 MUX_ACK）
+    // 阶段二：v9 真·非阻塞全双工多路复用：
+    // TCP 读线程永不阻塞在 serve() 上；MUX_PING <1ms 瞬回、MUX_ACK 0ms 释放滑动窗口，
+    // 每条 MUX_REQ 均派发至连接专属串行队列 lieguoji.mux.rpc.<gen> 异步执行与回包。
     if conn.mux {
+        let rpcQueue = DispatchQueue(label: "lieguoji.mux.rpc.\(conn.gen)", qos: .userInitiated)
+        let rpcStats = MuxRPCStats()
+
         while let prefix = receiveExactly(client, 9) {
             let type = prefix[prefix.startIndex]
             let frameId = UInt32(EngineWire.readU32(prefix, at: 1))
@@ -1034,18 +1084,28 @@ func handleLANClient(_ conn: DirectClient) {
                 continue
             }
             if type == EngineWire.muxRequest {
-                guard let req = parseRequestBody(body) else { break }
-                let reply = serve(req.call, req.args, req.payload)
-                if req.call == "open" {
-                    print(reply.ok ? "（v8直连推流）世界已载入，随时高速开推" : "（v8直连推流）世界载入失败：\(reply.reason)")
+                let reqFrameId = frameId
+                let reqBody = body
+                rpcQueue.async {
+                    if conn.isClosed { return }
+                    guard let req = parseRequestBody(reqBody) else {
+                        conn.markClosed()
+                        return
+                    }
+                    let reply = serve(req.call, req.args, req.payload)
+                    if req.call == "open" {
+                        print(reply.ok ? "（v9 非阻塞全双工推流）世界已载入，随时高速开推" : "（v9 非阻塞全双工推流）世界载入失败：\(reply.reason)")
+                    }
+                    if req.call == "park" { print("（v9 非阻塞全双工推流）手机已切入后台，世界热保留并已落盘") }
+                    rpcStats.calls += 1
+                    if Date().timeIntervalSince(rpcStats.started) > 30 {
+                        print("（v9 非阻塞全双工推流）近 30 秒处理 \(rpcStats.calls) 次指令/查询")
+                        rpcStats.calls = 0; rpcStats.started = Date()
+                    }
+                    if !conn.sendMux(type: EngineWire.muxReply, id: reqFrameId, body: EngineWire.reply(reply, compress: true)) {
+                        conn.markClosed()
+                    }
                 }
-                if req.call == "park" { print("（直连推流）手机已切入后台，世界热保留并已落盘") }
-                calls += 1
-                if Date().timeIntervalSince(started) > 30 {
-                    print("（直连推流）近 30 秒处理 \(calls) 次指令/查询")
-                    calls = 0; started = Date()
-                }
-                if !conn.sendMux(type: EngineWire.muxReply, id: frameId, body: EngineWire.reply(reply, compress: true)) { break }
             }
         }
     }

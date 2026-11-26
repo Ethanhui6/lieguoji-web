@@ -967,7 +967,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let previous = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
             var from = [String: SIMD2<Float>](), to = [String: SIMD2<Float>](), fading = Set<String>(), lead = [String: SIMD2<Float>]()
             var nextVel = [String: (vel: SIMD2<Float>, time: CFTimeInterval)]()
-            let newLength = snap ? 0 : max(0.055, tweenDuration * 1.08)
+            let newLength = snap ? 0 : max(0.055, tweenDuration)
             for s in sprites where !s.key.isEmpty {
                 let target = SIMD2(s.x, s.y)
                 if !snap, let sx = s.startX, let sy = s.startY, sx.isFinite, sy.isFinite {
@@ -985,9 +985,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 if s.reorganizing && previous[s.key] != true {
                     from[s.key] = target; to[s.key] = target; fading.insert(s.key)
                 } else {
-                    from[s.key] = p; to[s.key] = target
                     let chord = target - p, along = (chord.x * chord.x + chord.y * chord.y).squareRoot()
-                    if newLength > 0, along.isFinite, along > 0.001 {
+                    if !along.isFinite || along > 120 {
+                        // 军团远距重整/瞬移时直接落位，避免拖出横贯全图的残影。
+                        from[s.key] = target; to[s.key] = target
+                        continue
+                    }
+                    from[s.key] = p; to[s.key] = target
+                    if newLength > 0, along > 0.001 {
                         nextVel[s.key] = (chord / Float(newLength), now)
                     }
                     var carriedPerSec: SIMD2<Float>? = nil
@@ -1001,17 +1006,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     if let vPerSec = carriedPerSec, newLength > 0 {
                         var m = vPerSec * Float(newLength)
                         let k = (m.x * m.x + m.y * m.y).squareRoot()
-                        if along < 0.001 || k < 0.0001 || !along.isFinite || !k.isFinite {
+                        if along < 0.001 || k < 0.0001 || !k.isFinite {
                             m = .zero
                         } else {
                             let cos = (m.x * chord.x + m.y * chord.y) / (k * along)
-                            if !cos.isFinite || cos < 0.65 {
+                            if !cos.isFinite || cos < 0.45 {
                                 m = chord
                             } else {
-                                let w = (cos - 0.65) / 0.35
+                                let w = (cos - 0.45) / 0.55
                                 m = m * w + chord * (1 - w)
                                 let k2 = (m.x * m.x + m.y * m.y).squareRoot()
-                                if k2.isFinite && k2 > along * 0.72 { m *= (along * 0.72) / k2 }
+                                if k2.isFinite && k2 > along * 1.05 { m *= (along * 1.05) / k2 }
                             }
                         }
                         if m.x.isFinite && m.y.isFinite { lead[s.key] = m }

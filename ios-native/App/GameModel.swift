@@ -80,7 +80,7 @@ import LieguojiCore
             remoteReconnecting = false
             UserDefaults.standard.set(address, forKey: "remote.address")
             UserDefaults.standard.set(true, forKey: "remote.auto")
-            if playing { await syncRemoteStream(resetEpoch: true) }
+            if playing { restartPlayForRemoteHandoff() }
             return nil
         } catch { return error.localizedDescription }
     }
@@ -107,6 +107,7 @@ import LieguojiCore
         remoteReconnecting = false
         wasRemoteBeforeBackground = false
         UserDefaults.standard.set(false, forKey: "remote.auto")
+        if playing { restartPlayForRemoteHandoff() }
     }
     func refreshRemoteRTT() async -> Int? {
         let ms = await native.measureRTT()
@@ -120,14 +121,14 @@ import LieguojiCore
             let intervalMs = [1: 150, 2: 160, 4: 180, 8: 210, 16: 240][speed] ?? 150
             return (wanted, intervalMs)
         }
-        // v8 专属云服务器 / 局域网 15–18 Hz 微步极速推流（配合滑动窗口背压 maxInFlight=2）：
-        // 1×=1日/100ms · 2×=1日/55ms · 4×=2日/65ms · 8×=3日/65ms · 16×=5日/75ms，逐日丝滑推进、绝不一下子跳数月！
+        // v9 专属云服务器 / 局域网非阻塞全双工高帧微步推流（配合滑动窗口背压 maxInFlight=2 + 3Mbps 带宽整形）：
+        // 1×=1日/95ms · 2×=1日/50ms · 4×=2日/58ms · 8×=3日/58ms · 16×=5日/66ms，逐日丝滑推进、绝不跳月！
         switch speed {
-        case 1: return (1, 100)
-        case 2: return (1, 55)
-        case 4: return (2, 65)
-        case 8: return (3, 65)
-        default: return (5, 75)
+        case 1: return (1, 95)
+        case 2: return (1, 50)
+        case 4: return (2, 58)
+        case 8: return (3, 58)
+        default: return (5, 66)
         }
     }
     private func syncRemoteStream(resetEpoch: Bool = true) async {
@@ -195,11 +196,27 @@ import LieguojiCore
         }
         if shouldResumePlay && !playing { play() }
     }
-    /// 自动接入: while a world is open, the player's computer is looked for (now and every 60 s) and
-    /// used as soon as it is on, once the player turns this on in 设置 › 远程计算与云端存档.
+    /// 自动接入远程算力：默认关闭（本机 Apple Silicon 0ms 60/120fps 丝滑看海），
+    /// 玩家可在 设置 › 远程计算与云端存档 随时开启 Cloud Compute v9；不影响账号登录、云端存档与更新等在线服务。
     var autoRemote: Bool {
-        get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "remote.autoAll"); if newValue { autoConnect() } }
+        get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? false }
+        set {
+            objectWillChange.send()
+            UserDefaults.standard.set(newValue, forKey: "remote.autoAll")
+            if newValue { autoConnect() }
+        }
+    }
+    /// 云端/本机算力切换时若正在推演，先吊销旧循环与在途本地 `ahead` 任务再以新令牌重启 `play()`，
+    /// 彻底杜绝本地 `ahead` 回包与云端 `MUX_PUSH` 竞态乱序导致军队拉回。
+    private func restartPlayForRemoteHandoff() {
+        guard playing else { return }
+        _ = advanceOwnership.begin(world: worldEpoch)
+        loopToken = nil
+        loop?.cancel()
+        loop = nil
+        playing = false
+        lastApplied = nil
+        play()
     }
     private var autoTask: Task<Void, Never>?
     /// 链路意外中断时的快速自适应重连（若正处后台则静默挂起，等切回前台再秒连）。
@@ -265,10 +282,10 @@ import LieguojiCore
         remoteReconnecting = false
         let msText = found.rttMs.map { " · \($0)ms" } ?? ""
         notice = "已接入在线计算（\(found.transport)\(msText)）"
-        if playing { await syncRemoteStream(resetEpoch: true) }
+        if playing { restartPlayForRemoteHandoff() }
         return true
     }
-    /// 进入新世界或读档后立即接入专属云服务器（零 60 秒等待，并正确开启 v6 主动推流标志）。
+    /// 进入新世界或读档后立即接入专属云服务器（零 60 秒等待，并正确开启 v9 主动推流标志）。
     func ensureCloudConnectedNow() {
         autoConnect()
         guard autoRemote, !appInBackground, !reconnecting, remoteAddress == nil else { return }
@@ -290,7 +307,7 @@ import LieguojiCore
                         self.remotePushActive = await self.native.serverSupportsPush
                         let msText = found.rttMs.map { " · \($0)ms" } ?? ""
                         self.notice = "已接入专属云服（\(found.transport)\(msText)）"
-                        if self.playing { await self.syncRemoteStream(resetEpoch: true) }
+                        if self.playing { self.restartPlayForRemoteHandoff() }
                     } else if let saved = UserDefaults.standard.string(forKey: "remote.address"), !saved.isEmpty, UserDefaults.standard.bool(forKey: "remote.auto"),
                               let a = try? await self.native.connect(saved) {
                         self.remoteAddress = a
@@ -298,7 +315,7 @@ import LieguojiCore
                         self.remoteRTTMs = await self.native.lastRTTMs
                         self.remotePushActive = await self.native.serverSupportsPush
                         self.notice = "已接入在线计算（\(a)）"
-                        if self.playing { await self.syncRemoteStream(resetEpoch: true) }
+                        if self.playing { self.restartPlayForRemoteHandoff() }
                     }
                 }
                 try? await Task.sleep(nanoseconds: 10_000_000_000)
@@ -397,7 +414,14 @@ import LieguojiCore
     /// 上一次建世界所走的路（swift / web）与耗时（秒）。
     private(set) var lastFounding: (path: String, seconds: Double)?
 
-    init() {}
+    init() {
+        // v5.6.0 一次性迁移：升级用户立即默认切回 0ms 本机 Apple Silicon 丝滑引擎看海，无需手动翻找设置；
+        // 玩家仍可随时在设置中打开「云端算力 v9」，且不影响云端登录、云存档与热更新。
+        if !UserDefaults.standard.bool(forKey: "v560.defaultLocalMigrated") {
+            UserDefaults.standard.set(false, forKey: "remote.autoAll")
+            UserDefaults.standard.set(true, forKey: "v560.defaultLocalMigrated")
+        }
+    }
 
     /// The bundled world, used as the title backdrop before a game exists.
     /// The original grid geometry and the ported generators, for worlds built on the device.
@@ -963,14 +987,15 @@ import LieguojiCore
                     ahead = nil
                 }
                 let started = Date()
-                // v6 真·网游级主动推流模式（Jitter Buffer 平滑消费）：
-                // 服务器按固定节拍单向推送 LZ4 精简帧（5–10 KB/帧），后台并发解码排队，主线程匀速出队插值，
+                // v9 真·网游级非阻塞全双工主动推流模式（Jitter Buffer 平滑消费）：
+                // 服务器按固定节拍 + 3Mbps 带宽整形单向推送 LZ4 精简帧（5–10 KB/帧），后台并发解码排队，主线程匀速出队插值，
                 // 彻底消除每步等待 RTT 的停顿感，控制指令零延迟并发直达。
                 var canPush = false
                 if self.remoteAddress != nil {
                     canPush = await self.native.serverSupportsPush
                 }
                 if canPush {
+                    ahead = nil
                     if !self.remotePushActive {
                         self.remotePushActive = true
                         await self.syncRemoteStream(resetEpoch: true)
@@ -990,25 +1015,37 @@ import LieguojiCore
                         guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
                         let spent = Date().timeIntervalSince(started)
                         let basePeriod = Double(p.intervalMs) / 1000.0
-                        // v8 严格匀速消费：就算队列有 2 帧也坚持按 0.88× 恒速逐帧滑出，彻底禁止连续爆发跳月！
+                        // v9 严格匀速消费：就算队列有 2 帧也坚持按 0.88× 恒速逐帧滑出，彻底禁止连续爆发跳月！
                         let targetPeriod: Double = stats.buffered >= 2 ? basePeriod * 0.88 : (stats.buffered == 1 ? basePeriod * 0.96 : basePeriod * 0.55)
                         let rest = max(0.0, targetPeriod - spent)
                         if rest > 0.004 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) }
                         else { await Task.yield() }
                         continue
                     } else {
+                        guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
                         if await self.native.lost { self.remoteLost(); return }
-                        // 推流偶发空窗（如刚切换网络或切回 HTTP 降级）：立即重申推流配置并兜底拉一帧，绝不卡死
-                        await self.syncRemoteStream(resetEpoch: false)
+                        // 推流模式保持单路权威：绝不在 remotePushActive 为真时跌落进 requestStep/ahead 与 MUX_PUSH 双路竞态导致拉回！
+                        var stillPush = false
+                        if self.remoteAddress != nil {
+                            stillPush = await self.native.serverSupportsPush
+                        }
+                        if stillPush {
+                            await self.syncRemoteStream(resetEpoch: false)
+                            guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
+                            if await self.native.lost { self.remoteLost(); return }
+                            try? await Task.sleep(nanoseconds: 25_000_000)
+                            continue
+                        }
+                        self.remotePushActive = false
                     }
                 } else if self.remotePushActive {
                     self.remotePushActive = false
                 }
 
-                // 本机 / 降级轮询统一采用微步匀速节拍（1/1/2/3/5 日），保证本机与云端同样逐日丝滑、绝不一次性狂跳数月。
+                // 本机 0ms 引擎 / 降级轮询统一采用微步匀速节拍（1/1/2/3/5 日），保证看海 60/120fps 逐日丝滑推进。
                 let far = self.remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
                 let wanted = [1: 1, 2: 1, 4: 2, 8: 3, 16: 5][self.speed] ?? 1
-                let stepTime = [1: 0.10, 2: 0.055, 4: 0.065, 8: 0.065, 16: 0.075][self.speed] ?? 0.10
+                let stepTime = [1: 0.095, 2: 0.050, 4: 0.058, 8: 0.058, 16: 0.066][self.speed] ?? 0.095
                 let isRemoteNow = self.remoteAddress != nil
                 let affordable = isRemoteNow ? wanted : max(1, Int((max(0.08, stepTime) * Energy.duty / max(0.004, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
@@ -1113,7 +1150,7 @@ import LieguojiCore
     /// Colour views refresh at most this often while playing (each refresh queues on the engine).
     private var lastViewRefresh: CFTimeInterval = 0
     /// Smoothed time between two applied steps while playing; army icons glide over it.
-    private var stepInterval: Double = 0.2
+    private var stepInterval: Double = 0.095
     private var lastApplied: CFTimeInterval?
     private func apply(step: NativeHost.Step, ticket: AdvanceOwnership.Ticket) async throws {
         let lost = await native.lost, isRemote = await native.isRemote
@@ -1122,15 +1159,20 @@ import LieguojiCore
         // 本机推演直接拿到结构体；远程的 JSON 已在引擎执行器上解码。
         let next = try step.get()
         guard owns(ticket) else { return }
+        // 严格单调日序守卫：推演运行中若收到任何迟到/乱序旧帧，立即静默丢弃，绝不拉回军队或扰动插值节拍！
+        if playing, let cur = state, next.day < cur.day { return }
         if remoteAddress != nil, !isRemote { remoteAddress = nil; remoteTransport = ""; remoteRTTMs = nil }
         if isRemote {
             if let live = native.liveRTTMs { remoteRTTMs = live }
             else { remoteRTTMs = await native.lastRTTMs }
         }
         let now = CACurrentMediaTime()
-        if playing, let last = lastApplied, now - last < 0.85 { stepInterval = stepInterval * 0.65 + (now - last) * 0.35 }
+        if playing, let last = lastApplied {
+            let dt = now - last
+            if dt > 0.005 && dt < 0.85 { stepInterval = stepInterval * 0.78 + dt * 0.22 }
+        }
         lastApplied = playing ? now : nil
-        controller.tween = playing ? min(0.55, max(0.055, stepInterval * 1.08)) : 0.25
+        controller.tween = playing ? min(0.42, max(0.055, stepInterval * 1.03)) : 0.22
         let applying = CACurrentMediaTime()
         apply(next)
         onAdvanceApplied?(next.day)
@@ -1178,6 +1220,9 @@ import LieguojiCore
     func apply(_ next: GameState) {
         if replayActive { return }
         let previous = state
+        // 严格单调日序守卫：推演中绝不允许任何迟到的 ahead / state() / syncRemoteStream / handoff 旧帧把世界和军队拉回！
+        // 仅在暂停态（读档/继续/回溯）或首帧（previous == nil）允许日期回退。
+        if playing, let previous, next.day < previous.day { return }
         state = next
         let dayOfYear = ((max(1, min(12, next.date.month)) - 1) * 30 + max(1, min(30, next.date.day)) - 1) % 360
         controller.seasonPhase = Float(dayOfYear) / 360.0
@@ -1193,38 +1238,76 @@ import LieguojiCore
             }
             if playing { battleHits(previous, next) }
         }
-        guard var world = controller.world ?? map else { return }
-        var changed = false
+        guard let currentWorld = controller.world ?? map else { return }
         // Install territory changes immediately for the conquest animation. Throttle label-only updates.
         if let labels = next.labels { pendingLabels = labels }
         let now = CACurrentMediaTime()
-        let ownerChanged = next.owners.enumerated().contains { $0.offset < world.meta.provinces.count && world.meta.provinces[$0.offset].nation != $0.element }
-        // 推演期间对疆域易主重绘适度合批（常规地图 0.22/0.36s；≥180 州大图 0.28/0.48s），保证 280 州高速推演时手机 GPU 恒定满帧不卡顿；暂停态即时落图。
-        let hugeMap = world.meta.provinces.count >= 180
-        let gateSec: Double = hugeMap ? (speed < 4 ? 0.28 : 0.48) : (speed < 4 ? 0.22 : 0.36)
+        let provinces = currentWorld.meta.provinces
+        let ownerChanged = next.owners.enumerated().contains { $0.offset < provinces.count && provinces[$0.offset].nation != $0.element }
+        let labelsChanged: Bool = {
+            guard let labels = pendingLabels else { return false }
+            return currentWorld.meta.labels != labels
+        }()
+        // 推演期间疆域易主重绘保持丝滑灵敏（常规地图 0.18/0.32s；≥180 州大图 0.24/0.38s），
+        // 且仅在 owners / labels / nation 元数据真实变化时才写回 controller.world，彻底消除无意义 WorldMap 拷贝！
+        let hugeMap = provinces.count >= 180
+        let gateSec: Double = hugeMap ? (speed < 4 ? 0.24 : 0.38) : (speed < 4 ? 0.18 : 0.32)
         let ownerGate = (!playing || now - lastMapUpdate >= gateSec)
-        if (ownerChanged && ownerGate) || !playing || now - lastMapUpdate >= 0.55 {
-            for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
-                world.meta.provinces[i].nation = owner; changed = true
-            }
-            if let labels = pendingLabels {
-                if world.meta.labels != labels { world.meta.labels = labels; changed = true }
-                pendingLabels = nil
-            }
-            if changed { lastMapUpdate = now }
-        }
+        let shouldApplyTerritory = (ownerChanged && ownerGate) || (labelsChanged && (!playing || now - lastMapUpdate >= 0.45))
+
         // States founded by rebellion or civil war, and renamed states, join the legend.
-        var legend = false
+        let existingNations = currentWorld.meta.nations
+        var legendChanged = false
         for (i, s) in next.nations.enumerated() {
-            guard let id = s.id, let name = s.name, let color = s.color else { continue }
-            let entry = WorldMeta.Nation(id: id, name: name, color: color, line: s.line ?? color, capital: s.capital ?? -1, culture: s.culture ?? "", polity: s.polity ?? "", religion: s.religion ?? "")
-            if i < world.meta.nations.count {
-                let old = world.meta.nations[i]
-                if old.name != name || old.color != color || old.polity != entry.polity || old.capital != entry.capital { world.meta.nations[i] = entry; legend = true }
-            } else { world.meta.nations.append(entry); legend = true }
+            guard s.id != nil, let name = s.name, let color = s.color else { continue }
+            let capital = s.capital ?? -1
+            let polity = s.polity ?? ""
+            if i < existingNations.count {
+                let old = existingNations[i]
+                if old.name != name || old.color != color || old.polity != polity || old.capital != capital {
+                    legendChanged = true
+                    break
+                }
+            } else {
+                legendChanged = true
+                break
+            }
         }
-        if legend { changed = true; map?.meta.nations = world.meta.nations }
-        if changed { controller.world = world }
+
+        if shouldApplyTerritory || legendChanged {
+            var world = currentWorld
+            var changed = false
+            if shouldApplyTerritory {
+                if ownerChanged {
+                    for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
+                        world.meta.provinces[i].nation = owner; changed = true
+                    }
+                }
+                if let labels = pendingLabels {
+                    if world.meta.labels != labels { world.meta.labels = labels; changed = true }
+                    pendingLabels = nil
+                }
+                if changed { lastMapUpdate = now }
+            }
+            if legendChanged {
+                for (i, s) in next.nations.enumerated() {
+                    guard let id = s.id, let name = s.name, let color = s.color else { continue }
+                    let entry = WorldMeta.Nation(id: id, name: name, color: color, line: s.line ?? color, capital: s.capital ?? -1, culture: s.culture ?? "", polity: s.polity ?? "", religion: s.religion ?? "")
+                    if i < world.meta.nations.count {
+                        let old = world.meta.nations[i]
+                        if old.name != name || old.color != color || old.polity != entry.polity || old.capital != entry.capital {
+                            world.meta.nations[i] = entry; changed = true
+                        }
+                    } else {
+                        world.meta.nations.append(entry); changed = true
+                    }
+                }
+                map?.meta.nations = world.meta.nations
+            }
+            if changed { controller.world = world }
+        } else if !labelsChanged {
+            pendingLabels = nil
+        }
         let ports = (next.ports ?? []).map { SIMD2<Float>($0.x, $0.y) }
         if ports != controller.seaPorts { controller.seaPorts = ports }
         let changedForts = next.forts != previous?.forts ? next.forts : nil
@@ -1257,7 +1340,7 @@ import LieguojiCore
         }
         // 同步活跃四季天气与灾丰州郡至 GPU 着色缓冲与 60fps 大气粒子层。
         if let meta = map?.meta {
-            let baseRadius = max(22, Float(min(world.width, world.height)) * 0.058)
+            let baseRadius = max(22, Float(min(currentWorld.width, currentWorld.height)) * 0.058)
             var uiZones: [WeatherOverlayView.Zone] = []
             var gpuZones: [(x: Float, y: Float, radius: Float, kind: Float)] = []
             for wz in (next.weatherZones ?? []) where meta.provinces.indices.contains(wz.province) {

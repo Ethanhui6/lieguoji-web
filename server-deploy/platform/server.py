@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-列国纪 · 云端行宫平台服务器 v2.0（安全加固 · ethanhui 管理员中枢 · 20MB+ 游戏内免换包热更引擎）
+列国纪 · 云端行宫平台服务器 v4.0（Cloudflare 满速边缘 CDN · 8 路分块镜像 · 实时版本更新志 · 管理员中枢）
 零第三方依赖（纯 Python 3.12 标准库 + SQLite WAL）：
-1. 启动版本检测 + 免换包游戏内差分热更资源包服务器（/api/v1/hotpack/manifest & /file/<path>）
+1. 启动版本检测 + 多镜像满速 IPA 调度 + 实时版本更新日志（/api/v1/changelog）+ 免换包热更资源包服务器
 2. 完整账号系统（注册/登录/游客/转正/御印/scrypt/90天令牌）+ ethanhui 专属管理员 RBAC
 3. 游戏内管理员控制台 API（公告/跑马灯/热更参数/版本发布/全服邮件/用户管理/维护模式/主机监控）
-4. 账号绑定高速云存档库 + 每日签到品秩 + 天下史榜 + 无侵入式计算服 v7 健康探针
-5. 极简安全公开官网（隐藏全部内部端口/用户数/运维指标）+ 防暴力破解 IP 封锁 + 扫描器陷阱
+4. 账号绑定高速云存档库 + 每日签到品秩 + 天下史榜 + 无侵入式计算服 v8 健康探针
+5. 极简安全公开官网（Cloudflare 边缘主链 + 腾讯云/GitHub 双备用 · 零内部运维泄露）+ 防暴力破解 IP 封锁
 """
 
 from __future__ import annotations
@@ -96,8 +96,8 @@ RANKS = [
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 9,
-    "notice": "v5.5.0 已上线：云端 v8 极速微步推流（零跳月丝滑行军）+ 极轻客户端",
+    "version": 10,
+    "notice": "v5.6.0 已上线：Cloudflare 边缘全速分发 + 8 路并行分块极速更新 + 实时版本更新志",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 3, "16": 5},
     "tuning": {
@@ -128,27 +128,82 @@ def compute_hotpatch_sha(cfg: dict[str, Any]) -> str:
     return hashlib.sha256(raw).hexdigest()[:16]
 
 
+def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
+    v = str(version or "5.6.0").lstrip("v")
+    b = int(build or 186)
+    fname = f"lieguoji-{v}-build{b}-unsigned.ipa"
+    return [
+        f"https://lieguoji-edge.pages.dev/api/cdn/ipa/v{v}/{fname}",
+        f"https://lieguoji-web.pages.dev/api/cdn/ipa/v{v}/{fname}",
+        f"https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
+        f"https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
+        f"http://{PUBLIC_HOST}/downloads/lieguoji-latest.ipa",
+    ]
+
+
+CHANGELOG_HISTORY: list[dict[str, Any]] = [
+    {
+        "version": "5.6.0",
+        "build": 186,
+        "date": "2026-11-26",
+        "lines": [
+            "【满速边缘 CDN 分发】新增 Cloudflare Pages 高速流式代理（/api/cdn/ipa 与 /api/cdn/raw），完整透传 HTTP Range 206，彻底告别 3 Mbps 源站限速。",
+            "【8 路并行分块极速更新】客户端内置 8 线程 HTTP Range 分块下载器与实时节点测速择优，支持 1 键切换加速镜像、实时显示 MB/s 速率与断点容错切换。",
+            "【12 路自适应热更新引擎】热更新启动前 1.5 秒并行竞速并自动剔除失效 CDN，支持 12 路并发拉取与大文件（≥3 MB）4 路 Range 分片并发校验。",
+            "【旧版更新修复 × 实时版本更新志】根治停留在旧版本点击更新无响应的问题，云端实时同步多版本更新志并在客户端与下载页直览。",
+        ],
+    },
+    {
+        "version": "5.5.0",
+        "build": 185,
+        "date": "2026-11-26",
+        "lines": [
+            "【云端 v8 微步滑动窗口】全链路实行 2 帧滑动窗口背压（MUX_ACK）+ 零锁纯网延迟探针 + 50ms 微步切片，实测纯网延迟压至 25–40 ms。",
+            "【军队 20Hz 丝滑滑行 · 点击开始 0ms 响应】修复 O(N²) 补给/合围计算黑洞（提速 50×），大档上传脱离主轴在后台执行，本机零延迟开推后无感热切云端。",
+            "【极轻客户端（86 MB → ~40 MB）】将原声配乐与 54 卷传报画幅迁移至云端按需流式缓存，并支持一键在「云端极速推流 / 纯本机算力」间自由切换。",
+        ],
+    },
+    {
+        "version": "5.4.0",
+        "build": 184,
+        "date": "2026-11-26",
+        "lines": [
+            "【20 MB+ 免换包游戏内热更新】引入 SHA256 精确差分资源引擎，12 套精选历史剧本、典藏美术、词典与平衡规则免换包一键拉取即刻生效。",
+            "【御前司礼监管理员中枢】新增游戏内管理员控制台，支持实时发布全服公告、跑马灯通告、全服邮件、平衡参数热更与主机健康监控。",
+            "【安全加固】全面收口公开页内部运维信息、新增防暴力破解 IP 封锁与扫描器陷阱。",
+        ],
+    },
+    {
+        "version": "5.3.0",
+        "build": 183,
+        "date": "2026-11-25",
+        "lines": [
+            "【列国纪云端行宫上线】推出完整史官账号体系（注册 / 登录 / 游客入世 / 转正绑定 / 定制朱砂御印 / 每日临朝签到品秩 / 天下史榜）。",
+            "【账号绑定高速云存档】支持单档 24 MB 压缩卷宗跨设备上传、展卷与云端管理，不再依赖临时配对码。",
+            "【九州一区 24h 专属云服】国内直连 20–40 ms，自动发现并实时展示服务器健康与在线态势。",
+        ],
+    },
+]
+
+
 DEFAULT_RELEASE: dict[str, Any] = {
-    "latestVersion": "5.5.0",
-    "latestBuild": 185,
+    "latestVersion": "5.6.0",
+    "latestBuild": 186,
     "minSupportedBuild": 180,
     "forceUpdate": False,
     "maintenance": False,
     "maintenanceMessage": "九州云服正在例行修缮，稍候片刻即可重登。",
     "releaseDate": "2026-11-26",
-    "ipaSizeMB": 40.0,
+    "ipaSizeMB": 42.5,
     "downloadUrl": "https://github.com/Ethanhui6/lieguoji-web/releases/latest",
-    "directIpaUrl": "",
+    "directIpaUrl": "https://lieguoji-edge.pages.dev/api/cdn/ipa/v5.6.0/lieguoji-5.6.0-build186-unsigned.ipa",
+    "ipaMirrors": build_default_ipa_mirrors("5.6.0", 186),
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
-    "releaseNotes": [
-        "【终极延迟革命 · 云端 v8 微步滑动窗口】根治 1000ms 队列阻塞与一月瞬移七月：全链路实行 2 帧滑动窗口背压（MUX_ACK）+ 零锁纯网络延迟探针 + 50ms 自适应微步切片，实测纯网延迟压至 25–40 ms。",
-        "【军队 15–20 Hz 丝滑滑行 · 点击开始 0ms 响应】修复 O(N²) 补给/合围计算黑洞（提速 50×）与进图同步上传锁死问题；上传期间本机先零延迟开推，传完无感热切云端，军队行军不再跳格卡顿。",
-        "【本地安装包直降一半（86 MB → ~40 MB）× 云端按需资源】将 28.3 MB 原声音乐、11.5 MB 废弃旧视频、3.3 MB 未用字库与 2.8 MB 旧网页引擎全面瘦身或迁至腾讯云按需流式下载缓存，并支持一键在「云端极速推流 / 纯本机算力」间自由切换。",
-    ],
+    "releaseNotes": list(CHANGELOG_HISTORY[0]["lines"]),
     "hotpatch": {
-        "patchVersion": 9,
+        "patchVersion": 10,
         "updatedAt": int(time.time() * 1000),
-        "summary": "云端 v8 极速微步推流与滑动窗口流控参数",
+        "summary": "v5.6.0 全速 Cloudflare 边缘分发与多节点热更参数",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -472,10 +527,24 @@ def get_release_config() -> dict[str, Any]:
     cfg = json.loads(row["v"]) if row else json.loads(json.dumps(DEFAULT_RELEASE))
     cfg.setdefault("maintenance", False)
     cfg.setdefault("maintenanceMessage", "九州云服正在例行修缮，稍候片刻即可重登。")
+    ver = str(cfg.get("latestVersion") or DEFAULT_RELEASE["latestVersion"])
+    build = int(cfg.get("latestBuild") or DEFAULT_RELEASE["latestBuild"])
+    mirrors = cfg.get("ipaMirrors")
+    if not isinstance(mirrors, list) or not [m for m in mirrors if isinstance(m, str) and m.strip()]:
+        mirrors = build_default_ipa_mirrors(ver, build)
+    else:
+        mirrors = [str(m).strip() for m in mirrors if isinstance(m, str) and m.strip()]
+    local_ipa_url = f"http://{PUBLIC_HOST}/downloads/lieguoji-latest.ipa"
     latest_ipa = DOWNLOADS_DIR / "lieguoji-latest.ipa"
     if latest_ipa.exists() and latest_ipa.stat().st_size > 1_000_000:
-        cfg["directIpaUrl"] = f"http://{PUBLIC_HOST}/downloads/lieguoji-latest.ipa"
-        cfg["ipaSizeMB"] = round(latest_ipa.stat().st_size / (1024 * 1024), 1)
+        if local_ipa_url not in mirrors:
+            mirrors.append(local_ipa_url)
+        if not cfg.get("ipaSizeMB"):
+            cfg["ipaSizeMB"] = round(latest_ipa.stat().st_size / (1024 * 1024), 1)
+    cfg["ipaMirrors"] = mirrors
+    if not cfg.get("directIpaUrl") or str(cfg.get("directIpaUrl")).strip() == local_ipa_url:
+        # 优先分配 Cloudflare 边缘满速直链（兼容旧版本客户端单流直下，避免 3 Mbps 源站限速）
+        cfg["directIpaUrl"] = mirrors[0] if mirrors else local_ipa_url
     if not cfg.get("webDownloadUrl"):
         cfg["webDownloadUrl"] = f"http://{PUBLIC_HOST}/download"
     return cfg
@@ -543,8 +612,10 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
         return []
     quoted = urllib.parse.quote(gh_path, safe="/")
     return [
-        f"https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
+        f"https://lieguoji-edge.pages.dev/api/cdn/raw/{quoted}",
+        f"https://lieguoji-web.pages.dev/api/cdn/raw/{quoted}",
         f"https://fastly.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
+        f"https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
     ]
 
 
@@ -769,8 +840,8 @@ def get_admin_server_overview() -> dict[str, Any]:
         "hotpackBytes": hp["totalBytes"],
         "hotpackFiles": len(hp["files"]),
         "notice": str(rel.get("hotpatch", {}).get("config", {}).get("notice", "")),
-        "latestVersion": rel.get("latestVersion", "5.4.0"),
-        "latestBuild": int(rel.get("latestBuild", 184)),
+        "latestVersion": rel.get("latestVersion", "5.6.0"),
+        "latestBuild": int(rel.get("latestBuild", 186)),
         "forceUpdate": bool(rel.get("forceUpdate", False)),
         "tuning": rel.get("hotpatch", {}).get("config", {}).get("tuning", {}),
         "pace": rel.get("hotpatch", {}).get("config", {}).get("pace", {}),
@@ -893,12 +964,12 @@ def compare_version(cur_ver: str, cur_build: int, latest_ver: str, latest_build:
 
 def render_public_landing_page() -> str:
     rel = get_release_config()
-    ver = html.escape(str(rel.get("latestVersion", "5.4.0")))
+    ver = html.escape(str(rel.get("latestVersion", "5.6.0")))
     rel_date = html.escape(str(rel.get("releaseDate", "")))
-    size_mb = rel.get("ipaSizeMB", 86.0)
-    direct_url = "/downloads/lieguoji-latest.ipa" if (DOWNLOADS_DIR / "lieguoji-latest.ipa").is_file() else ""
+    size_mb = rel.get("ipaSizeMB", 42.5)
+    cf_edge_url = "https://lieguoji-edge.pages.dev/api/cdn/ipa/latest"
+    tencent_backup_url = "/downloads/lieguoji-latest.ipa"
     gh_url = str(rel.get("downloadUrl") or "https://github.com/Ethanhui6/lieguoji-web/releases/latest")
-    primary_url = html.escape(direct_url if direct_url else gh_url)
     notes_html = "".join(f"<li>{html.escape(str(n))}</li>" for n in rel.get("releaseNotes", [])[:5])
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
@@ -956,9 +1027,10 @@ def render_public_landing_page() -> str:
       <div class="seal" aria-hidden="true">龙</div>
     </header>
     <section class="hero">
-      <div class="meta">当前版本 <strong>v{ver}</strong> · {size_mb} MB · {rel_date} · 支持游戏内免换包热更新</div>
-      <a class="btn" href="{primary_url}">下载 iOS 安装包</a>
-      {"<a class='btn sec' href='" + html.escape(gh_url) + "'>备用发布页（GitHub）</a>" if direct_url else ""}
+      <div class="meta">当前版本 <strong>v{ver}</strong> · {size_mb} MB · {rel_date} · 支持 8 路分块满速下载与免换包热更新</div>
+      <a class="btn" href="{html.escape(cf_edge_url)}">Cloudflare 边缘满速直链下载（推荐）</a>
+      <a class="btn sec" href="{html.escape(tencent_backup_url)}">腾讯云国内备用直链</a>
+      <a class="btn sec" href="{html.escape(gh_url)}">GitHub 官方源</a>
     </section>
     <section class="sec-block">
       <h2 class="sec-title">本版更新志</h2>
@@ -1141,6 +1213,10 @@ class PlatformHandler(BaseHTTPRequestHandler):
 
         if path in ("/api/v1/bootstrap", "/api/v1/version"):
             self.handle_bootstrap(qs)
+            return
+
+        if path == "/api/v1/changelog":
+            self.send_json({"ok": True, "changelog": CHANGELOG_HISTORY})
             return
 
         if path == "/api/v1/hotpatch":
@@ -1401,6 +1477,36 @@ class PlatformHandler(BaseHTTPRequestHandler):
         except Exception:
             self.send_json({"ok": False, "error": "非法路径"}, 400)
             return
+        size = target.stat().st_size
+        rng = self.headers.get("Range")
+        if rng and rng.startswith("bytes=") and size > 0:
+            try:
+                s_str, e_str = rng[6:].split(",")[0].strip().split("-", 1)
+                start = int(s_str) if s_str else 0
+                end = min(size - 1, int(e_str)) if e_str else size - 1
+                if 0 <= start <= end < size:
+                    length = end - start + 1
+                    self.send_response(206)
+                    self._security_headers()
+                    self.send_header("Content-Type", "application/octet-stream")
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+                    self.send_header("Content-Length", str(length))
+                    self.send_header("Cache-Control", "public, max-age=86400")
+                    self.send_header("Connection", "keep-alive")
+                    self.end_headers()
+                    with target.open("rb") as f:
+                        f.seek(start)
+                        rem = length
+                        while rem > 0:
+                            chunk = f.read(min(256 * 1024, rem))
+                            if not chunk:
+                                break
+                            self.wfile.write(chunk)
+                            rem -= len(chunk)
+                    return
+            except Exception:
+                pass
         data = target.read_bytes()
         accept_enc = (self.headers.get("Accept-Encoding") or "").lower()
         compressible = target.suffix.lower() in (".json", ".js", ".html", ".css", ".txt", ".svg")
@@ -1409,6 +1515,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self._security_headers()
         self.send_header("Content-Type", "application/octet-stream")
+        self.send_header("Accept-Ranges", "bytes")
         if use_gzip:
             self.send_header("Content-Encoding", "gzip")
             self.send_header("Vary", "Accept-Encoding")
@@ -1432,8 +1539,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
             cur_patch = 0
 
         rel = get_release_config()
-        latest_ver = str(rel.get("latestVersion", "5.4.0"))
-        latest_build = int(rel.get("latestBuild", 184))
+        latest_ver = str(rel.get("latestVersion", "5.6.0"))
+        latest_build = int(rel.get("latestBuild", 186))
         min_build = int(rel.get("minSupportedBuild", 0))
         has_app_update = compare_version(cur_ver, cur_build, latest_ver, latest_build)
         force_update = bool(rel.get("forceUpdate", False)) or (cur_build > 0 and cur_build < min_build)
@@ -1475,12 +1582,14 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     "latestVersion": latest_ver,
                     "latestBuild": latest_build,
                     "releaseDate": rel.get("releaseDate", ""),
-                    "ipaSizeMB": rel.get("ipaSizeMB", 86.0),
+                    "ipaSizeMB": rel.get("ipaSizeMB", 42.5),
                     "downloadUrl": rel.get("downloadUrl", ""),
                     "directIpaUrl": rel.get("directIpaUrl", ""),
+                    "ipaMirrors": rel.get("ipaMirrors", []),
                     "webDownloadUrl": rel.get("webDownloadUrl", f"http://{PUBLIC_HOST}/download"),
                     "releaseNotes": rel.get("releaseNotes", []),
                 },
+                "changelog": CHANGELOG_HISTORY,
                 "hotpatch": {
                     "hasPatchUpdate": has_patch,
                     "patchVersion": patch_ver,
@@ -2133,9 +2242,21 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if body is None:
             return
         cur = get_release_config()
-        for k in ("latestVersion", "latestBuild", "minSupportedBuild", "forceUpdate", "maintenance", "maintenanceMessage", "releaseDate", "ipaSizeMB", "downloadUrl", "directIpaUrl", "webDownloadUrl", "releaseNotes"):
+        prev_ver = str(cur.get("latestVersion") or DEFAULT_RELEASE["latestVersion"])
+        prev_build = int(cur.get("latestBuild") or DEFAULT_RELEASE["latestBuild"])
+        for k in ("latestVersion", "latestBuild", "minSupportedBuild", "forceUpdate", "maintenance", "maintenanceMessage", "releaseDate", "ipaSizeMB", "downloadUrl", "directIpaUrl", "ipaMirrors", "webDownloadUrl", "releaseNotes"):
             if k in body:
-                cur[k] = body[k]
+                if k == "ipaMirrors":
+                    if isinstance(body[k], list):
+                        cur[k] = [str(x).strip() for x in body[k] if isinstance(x, str) and str(x).strip()]
+                else:
+                    cur[k] = body[k]
+        new_ver = str(cur.get("latestVersion") or prev_ver)
+        new_build = int(cur.get("latestBuild") or prev_build)
+        if (new_ver != prev_ver or new_build != prev_build) and "ipaMirrors" not in body:
+            cur["ipaMirrors"] = build_default_ipa_mirrors(new_ver, new_build)
+            if "directIpaUrl" not in body:
+                cur["directIpaUrl"] = cur["ipaMirrors"][0]
         if "hotpatch" in body and isinstance(body["hotpatch"], dict):
             hp = cur.get("hotpatch", {})
             hp.update(body["hotpatch"])
@@ -2192,7 +2313,7 @@ def main() -> None:
     start_probe_thread()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), PlatformHandler)
     server.daemon_threads = True
-    print(f"列国纪云端行宫平台服务器 v2.0 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
+    print(f"列国纪云端行宫平台服务器 v4.0 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
     server.serve_forever()
 
 

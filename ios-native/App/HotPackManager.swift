@@ -79,8 +79,8 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         private var inflight: [String: Task<URL?, Never>] = [:]
         private let session: URLSession = {
             let cfg = URLSessionConfiguration.default
-            cfg.httpMaximumConnectionsPerHost = 6
-            cfg.timeoutIntervalForRequest = 20
+            cfg.httpMaximumConnectionsPerHost = 12
+            cfg.timeoutIntervalForRequest = 16
             cfg.timeoutIntervalForResource = 120
             return URLSession(configuration: cfg)
         }()
@@ -114,19 +114,26 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                             : (top == "Content" ? "server-deploy/platform/hotpack-content/\(rest)" : nil)
                         if let ghPath {
                             let ghEnc = ghPath.split(separator: "/").map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }.joined(separator: "/")
-                            if let u1 = URL(string: "https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/\(ghEnc)") { candidates.append(u1) }
+                            if let u0 = URL(string: "https://lieguoji-edge.pages.dev/api/cdn/raw/\(ghEnc)") { candidates.append(u0) }
+                            if let u1 = URL(string: "https://lieguoji-web.pages.dev/api/cdn/raw/\(ghEnc)") { candidates.append(u1) }
                             if let u2 = URL(string: "https://fastly.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/\(ghEnc)") { candidates.append(u2) }
+                            if let u3 = URL(string: "https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/\(ghEnc)") { candidates.append(u3) }
                         }
                     }
                     if let origin = URL(string: "\(OnlinePlatform.apiBase)/api/v1/hotpack/file/\(encoded)") {
                         candidates.append(origin)
                     }
                     for url in candidates {
-                        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: url.host?.contains("jsdelivr") == true ? 9 : 25)
+                        let host = url.host ?? ""
+                        let isEdgeOrCDN = host.contains("pages.dev") || host.contains("jsdelivr")
+                        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: isEdgeOrCDN ? 8 : 25)
                         req.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
                         if let (data, resp) = try? await s.data(for: req),
-                           (resp as? HTTPURLResponse)?.statusCode == 200,
+                           let http = resp as? HTTPURLResponse,
+                           http.statusCode == 200,
                            !data.isEmpty {
+                            let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+                            if ct.contains("text/html") { continue }
                             do {
                                 try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
                                 try data.write(to: dst, options: .atomic)
@@ -145,7 +152,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         }
     }
 
-    private static let onDemandBox = OnDemandFlightBox()
+    nonisolated private static let onDemandBox = OnDemandFlightBox()
 
     /// 云端按需静默拉取并永久缓存资源（用于瘦身后移至云端的原声音乐、54 卷传报画幅与旧版引擎），并发自动去重。
     nonisolated static func fetchOnDemand(path: String) async -> URL? {
@@ -164,6 +171,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
     @Published private(set) var progress: Double = 0
     @Published private(set) var downloadedBytes: Int64 = 0
     @Published private(set) var speedBytesPerSec: Double = 0
+    @Published private(set) var activeCDNName: String = ""
     @Published private(set) var currentModuleName: String = ""
     @Published private(set) var statusMessage: String = ""
     @Published private(set) var errorMessage: String?
@@ -179,8 +187,8 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
 
     private let session: URLSession = {
         let cfg = URLSessionConfiguration.default
-        cfg.httpMaximumConnectionsPerHost = 6
-        cfg.timeoutIntervalForRequest = 20
+        cfg.httpMaximumConnectionsPerHost = 12
+        cfg.timeoutIntervalForRequest = 16
         cfg.timeoutIntervalForResource = 180
         return URLSession(configuration: cfg)
     }()
@@ -226,7 +234,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         defer { checking = false }
 
         guard let url = URL(string: OnlinePlatform.apiBase + "/api/v1/hotpack/manifest") else { return false }
-        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
+        let req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         do {
             let (data, resp) = try await session.data(for: req)
             guard (resp as? HTTPURLResponse)?.statusCode == 200 else { return false }
@@ -279,40 +287,207 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         showHotUpdateSheet = false
     }
 
-    nonisolated private static func downloadOne(_ file: HotPackFile, base: String, session: URLSession) async -> (HotPackFile, Bool) {
-        let encodedPath = file.path
-            .split(separator: "/")
-            .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
-            .joined(separator: "/")
-        var urls: [URL] = []
-        for raw in (file.cdnUrls ?? []) {
-            if let u = URL(string: raw) { urls.append(u) }
+    private struct HotCDNNode: Sendable {
+        enum Kind: Sendable {
+            case rawProxy
+            case origin
         }
-        if let origin = URL(string: "\(base)/api/v1/hotpack/file/\(encodedPath)") {
-            urls.append(origin)
+        let id: String
+        let name: String
+        let kind: Kind
+        let prefix: String
+        let supportsRange: Bool
+    }
+
+    nonisolated private static func defaultHotCDNs(base: String) -> [HotCDNNode] {
+        let cleanBase = base.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return [
+            HotCDNNode(id: "cf-edge", name: "Cloudflare 极速边缘", kind: .rawProxy, prefix: "https://lieguoji-edge.pages.dev/api/cdn/raw/", supportsRange: true),
+            HotCDNNode(id: "cf-web", name: "Cloudflare 主站边缘", kind: .rawProxy, prefix: "https://lieguoji-web.pages.dev/api/cdn/raw/", supportsRange: true),
+            HotCDNNode(id: "fastly", name: "Fastly 全球节点", kind: .rawProxy, prefix: "https://fastly.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/", supportsRange: true),
+            HotCDNNode(id: "jsdelivr", name: "jsDelivr 节点", kind: .rawProxy, prefix: "https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/", supportsRange: true),
+            HotCDNNode(id: "tencent", name: "腾讯云兜底源", kind: .origin, prefix: "\(cleanBase)/api/v1/hotpack/file/", supportsRange: true)
+        ]
+    }
+
+    nonisolated private static func urlForPath(_ path: String, on node: HotCDNNode) -> URL? {
+        switch node.kind {
+        case .origin:
+            let encodedPath = path
+                .split(separator: "/")
+                .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+                .joined(separator: "/")
+            return URL(string: node.prefix + encodedPath)
+        case .rawProxy:
+            let parts = path.split(separator: "/", maxSplits: 1)
+            guard parts.count == 2 else { return nil }
+            let top = String(parts[0])
+            let rest = String(parts[1])
+            let ghPath: String
+            if ["Music", "Art", "Video", "Engine", "Catalog", "World"].contains(top) {
+                ghPath = "ios-native/Resources/\(top)/\(rest)"
+            } else if top == "Content" {
+                ghPath = "server-deploy/platform/hotpack-content/\(rest)"
+            } else {
+                return nil
+            }
+            let ghEnc = ghPath
+                .split(separator: "/")
+                .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+                .joined(separator: "/")
+            return URL(string: node.prefix + ghEnc)
         }
-        for url in urls {
-            let isCDN = url.host?.contains("jsdelivr") == true
-            var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: isCDN ? 10 : 30)
+    }
+
+    /// 1.5 秒并行竞速 5 路节点：按真实响应延迟排序，并直接剔除失效/超时 CDN，避免每个文件重复浪费 10 秒超时。
+    nonisolated private static func raceHotCDNs(probeFile: HotPackFile, base: String, session: URLSession) async -> [HotCDNNode] {
+        let all = defaultHotCDNs(base: base)
+        let probePath = probeFile.path
+        var results: [(HotCDNNode, Double)] = []
+
+        await withTaskGroup(of: (HotCDNNode, Double?).self) { group in
+            for node in all {
+                group.addTask {
+                    guard let url = Self.urlForPath(probePath, on: node) else { return (node, nil) }
+                    var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 1.5)
+                    req.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
+                    let t0 = CFAbsoluteTimeGetCurrent()
+                    do {
+                        let (data, resp) = try await session.data(for: req)
+                        guard let http = resp as? HTTPURLResponse, http.statusCode == 200, !data.isEmpty else {
+                            return (node, nil)
+                        }
+                        let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+                        if ct.contains("text/html") { return (node, nil) }
+                        return (node, CFAbsoluteTimeGetCurrent() - t0)
+                    } catch {
+                        return (node, nil)
+                    }
+                }
+            }
+            for await (node, dt) in group {
+                if let dt {
+                    results.append((node, dt))
+                }
+            }
+        }
+
+        if results.isEmpty {
+            // 极端弱网下 1.5s 全部未及返回时，保留 Cloudflare 边缘与腾讯云兜底，不直接放弃更新
+            return all.filter { $0.id == "cf-edge" || $0.id == "cf-web" || $0.id == "tencent" }
+        }
+
+        results.sort { $0.1 < $1.1 }
+        var ranked = results.map(\.0)
+        // 始终保留源站兜底于队尾（防止管理员刚热更 hot-rules.json 导致镜像 SHA 未同步时单文件无法回源）
+        if !ranked.contains(where: { $0.kind == .origin }), let origin = all.first(where: { $0.kind == .origin }) {
+            ranked.append(origin)
+        }
+        return ranked
+    }
+
+    /// 大文件（≥ 3 MB，例如 11.7 MB 史诗配乐）4 路并发 HTTP Range 分片下载并严格 SHA256 校验。
+    nonisolated private static func downloadRange4Streams(url: URL, expectedSize: Int64, expectedSHA: String, session: URLSession) async -> Data? {
+        guard expectedSize >= 3_000_000 else { return nil }
+        let streamCount = 4
+        let partSize = (expectedSize + Int64(streamCount) - 1) / Int64(streamCount)
+        var slices: [(Int, Int64, Int64)] = []
+        var offset: Int64 = 0
+        var idx = 0
+        while offset < expectedSize {
+            let end = min(expectedSize - 1, offset + partSize - 1)
+            slices.append((idx, offset, end))
+            offset = end + 1
+            idx += 1
+        }
+        guard slices.count >= 2 else { return nil }
+
+        var parts = Array<Data?>(repeating: nil, count: slices.count)
+        let okAll = await withTaskGroup(of: (Int, Data?).self, returning: Bool.self) { group in
+            for (i, start, end) in slices {
+                let wantLen = Int(end - start + 1)
+                group.addTask {
+                    var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 22)
+                    req.setValue("bytes=\(start)-\(end)", forHTTPHeaderField: "Range")
+                    req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+                    do {
+                        let (data, resp) = try await session.data(for: req)
+                        guard let http = resp as? HTTPURLResponse,
+                              http.statusCode == 206,
+                              data.count == wantLen else {
+                            return (i, nil)
+                        }
+                        return (i, data)
+                    } catch {
+                        return (i, nil)
+                    }
+                }
+            }
+            var success = true
+            for await (i, data) in group {
+                if let data {
+                    parts[i] = data
+                } else {
+                    success = false
+                    group.cancelAll()
+                }
+            }
+            return success
+        }
+        guard okAll else { return nil }
+
+        var combined = Data(capacity: Int(expectedSize))
+        for p in parts {
+            guard let p else { return nil }
+            combined.append(p)
+        }
+        guard Int64(combined.count) == expectedSize else { return nil }
+        let digest = SHA256.hash(data: combined).map { String(format: "%02x", $0) }.joined()
+        guard digest == expectedSHA else { return nil }
+        return combined
+    }
+
+    nonisolated private static func downloadOne(_ file: HotPackFile, nodes: [HotCDNNode], session: URLSession) async -> (HotPackFile, Bool, String?) {
+        let isLargeFile = file.size >= 3_000_000
+        for (idx, node) in nodes.enumerated() {
+            if Task.isCancelled { return (file, false, nil) }
+            guard let url = Self.urlForPath(file.path, on: node) else { continue }
+
+            // 大文件优先在优胜边缘节点上走 4 路 HTTP Range 并行拉取
+            if isLargeFile && node.supportsRange && idx == 0 {
+                if let rangedData = await Self.downloadRange4Streams(url: url, expectedSize: file.size, expectedSHA: file.sha256, session: session) {
+                    do {
+                        let dst = rootURL.appendingPathComponent(file.path)
+                        try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
+                        try rangedData.write(to: dst, options: .atomic)
+                        return (file, true, node.name)
+                    } catch {
+                        return (file, false, nil)
+                    }
+                }
+            }
+
+            let timeout: TimeInterval = node.kind == .origin ? 30 : (isLargeFile ? 25 : 10)
+            var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
             req.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
             do {
                 let (data, resp) = try await session.data(for: req)
-                guard (resp as? HTTPURLResponse)?.statusCode == 200 else { continue }
+                guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else { continue }
                 let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
                 guard digest == file.sha256 else { continue }
                 let dst = rootURL.appendingPathComponent(file.path)
                 try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try data.write(to: dst, options: .atomic)
-                return (file, true)
+                return (file, true, node.name)
             } catch {
-                if Task.isCancelled { return (file, false) }
+                if Task.isCancelled { return (file, false, nil) }
                 continue
             }
         }
-        return (file, false)
+        return (file, false, nil)
     }
 
-    /// 启动 6 路连续流水线高速热更新（多 CDN 边缘节点优先 3–15 MB/s + 腾讯云 Gzip 兜底 + SHA256 严格校验 + 断点续传）。
+    /// 启动 12 路自适应竞速流水线满速热更新（1.5s 边缘竞速剔除死节点 + 12 路并发 + 大文件 4 路 Range 分片 + SHA256 严格校验）。
     func startHotUpdate(onApplied: (() async -> Void)? = nil) {
         guard !updating, let m = manifest, !pendingFiles.isEmpty else { return }
         updating = true
@@ -320,6 +495,8 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         progress = 0
         downloadedBytes = 0
         speedBytesPerSec = 0
+        activeCDNName = ""
+        statusMessage = "正在 1.5s 竞速择优边缘 CDN 节点…"
         // 优先下载轻量核心包（剧本/规则/词典/传报画幅），再并行拉取大体积美术与原声音乐
         let priority: [String: Int] = ["content": 0, "catalog": 1, "world": 2, "video": 3, "engine": 4, "art": 5, "music": 6]
         let queue = pendingFiles.sorted {
@@ -330,45 +507,77 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         let total = max(1, pendingBytes)
         let moduleNames = Dictionary(uniqueKeysWithValues: m.modules.map { ($0.id, $0.name) })
         let base = OnlinePlatform.apiBase
+        let probeCandidate = m.files.first(where: { $0.path == "Content/hot-rules.json" }) ?? queue.first
 
         updateTask?.cancel()
         updateTask = Task { [weak self] in
             guard let self else { return }
-            let startTime = Date()
+            let dlSession = self.session
+
+            let rankedNodes: [HotCDNNode]
+            if let probe = probeCandidate {
+                rankedNodes = await Self.raceHotCDNs(probeFile: probe, base: base, session: dlSession)
+            } else {
+                rankedNodes = Self.defaultHotCDNs(base: base)
+            }
+
+            if Task.isCancelled {
+                self.updating = false
+                self.statusMessage = "已暂停热更新（已完成部分已自动保存，随时可续传）"
+                return
+            }
+
+            let winningNodeName = rankedNodes.first?.name ?? "腾讯云兜底源"
+            self.activeCDNName = winningNodeName
+            self.statusMessage = "已锁定极速节点「\(winningNodeName)」，正在 12 路并发下载…"
+
+            let startTime = CFAbsoluteTimeGetCurrent()
             var completedCount = 0
             var completedBytes: Int64 = 0
             var failed = 0
             var nextIdx = 0
-            let maxWorkers = 6
-            let dlSession = self.session
+            let maxWorkers = 12
+            var speedSamples: [(Double, Int64)] = [(startTime, 0)]
 
-            await withTaskGroup(of: (HotPackFile, Bool).self) { group in
+            await withTaskGroup(of: (HotPackFile, Bool, String?).self) { group in
                 let initial = min(maxWorkers, queue.count)
                 for _ in 0..<initial {
                     let f = queue[nextIdx]
                     nextIdx += 1
-                    group.addTask { await Self.downloadOne(f, base: base, session: dlSession) }
+                    group.addTask { await Self.downloadOne(f, nodes: rankedNodes, session: dlSession) }
                 }
                 var lastPersistCount = 0
-                for await (file, ok) in group {
+                for await (file, ok, usedNode) in group {
                     if ok {
                         self.installedHashes[file.path] = file.sha256
                         completedCount += 1
                         completedBytes += file.size
                         self.currentModuleName = moduleNames[file.module] ?? file.module
+                        if let usedNode, !usedNode.isEmpty {
+                            self.activeCDNName = usedNode
+                        }
                     } else {
                         failed += 1
                     }
-                    if completedCount - lastPersistCount >= 6 || nextIdx >= queue.count {
+                    if completedCount - lastPersistCount >= 8 || nextIdx >= queue.count {
                         self.saveInstalledIndex()
                         lastPersistCount = completedCount
                     }
                     self.downloadedBytes = completedBytes
                     self.progress = min(1.0, Double(completedBytes) / Double(total))
-                    let elapsed = max(0.12, Date().timeIntervalSince(startTime))
-                    self.speedBytesPerSec = Double(completedBytes) / elapsed
+                    let now = CFAbsoluteTimeGetCurrent()
+                    speedSamples.append((now, completedBytes))
+                    while speedSamples.count > 2 && (now - speedSamples[0].0) > 3.0 {
+                        speedSamples.removeFirst()
+                    }
+                    let totalElapsed = max(0.12, now - startTime)
+                    let avgSpeed = Double(completedBytes) / totalElapsed
+                    let windowDt = now - speedSamples[0].0
+                    let instSpeed = windowDt >= 0.3 ? Double(completedBytes - speedSamples[0].1) / windowDt : avgSpeed
+                    self.speedBytesPerSec = self.speedBytesPerSec > 0 ? (self.speedBytesPerSec * 0.4 + instSpeed * 0.6) : instSpeed
                     self.statusMessage = String(
-                        format: "正在高速更新「%@」%d/%d · %@ / %@ · %.1f MB/s",
+                        format: "%@ ·「%@」%d/%d · %@ / %@ · %.1f MB/s",
+                        self.activeCDNName.isEmpty ? winningNodeName : self.activeCDNName,
                         self.currentModuleName,
                         completedCount,
                         queue.count,
@@ -379,7 +588,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                     if nextIdx < queue.count && !Task.isCancelled {
                         let f = queue[nextIdx]
                         nextIdx += 1
-                        group.addTask { await Self.downloadOne(f, base: base, session: dlSession) }
+                        group.addTask { await Self.downloadOne(f, nodes: rankedNodes, session: dlSession) }
                     }
                 }
             }

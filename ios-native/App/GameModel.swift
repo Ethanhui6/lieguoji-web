@@ -58,7 +58,13 @@ import LieguojiCore
         objectWillChange.send()
     }
     @Published private(set) var playing = false
-    @Published var speed = 1
+    @Published var speed = 1 {
+        didSet {
+            if oldValue != speed, remoteAddress != nil, playing {
+                Task { [weak self] in await self?.syncRemoteStream(resetEpoch: false) }
+            }
+        }
+    }
     /// 远程计算: the computer simulating this world (nil: the phone does).
     @Published private(set) var remoteAddress: String?
     /// 当前远程链路形态（局域网直连推流 / 专属云服推流 / 云端推流 / 云端中转）。
@@ -77,6 +83,14 @@ import LieguojiCore
     @Published private(set) var remoteOfflineManual: Bool = false
     /// 简短在线链路状态说明（如「九州云服直连」/「网络切换重连中」/「已手动切至离线」）。
     @Published private(set) var remoteConnectionDetail: String = ""
+    /// 5 条内置推流专线实时测速与活跃状态（443 运营商防限速 / 8765 原生主线 / 8443 容灾专线 / 局域网 / Cloudflare 边缘）。
+    @Published var computeRoutes: [ComputeRouteInfo] = ComputeRouteInfo.builtInRoutes
+    /// 是否正在并发竞速探测全 5 条推流专线延迟。
+    @Published var probingRoutes = false
+    /// 最近一次已触发地图核爆闪光的模拟天数与目标州（世界切换时重置为 -1）。
+    @Published var lastHandledNukeDay: Int = -1
+    private var lastHandledNukeProvince: Int = -1
+    private var routeProbeTask: Task<Void, Never>? { didSet { lifecycle.setRouteProbeTask(routeProbeTask) } }
     private var wasPlayingBeforeBackground = false
     private var wasRemoteBeforeBackground = false
     private var pendingResumePlayAfterReconnect = false
@@ -94,15 +108,212 @@ import LieguojiCore
         return "九州云服直连"
     }
 
+    private func syncActiveRouteState(activeId: String?, rttMs: Int? = nil) {
+        let cleanActive: String? = (activeId?.isEmpty == false) ? activeId : nil
+        var next = computeRoutes
+        for i in next.indices {
+            let isMatch = (cleanActive != nil && next[i].id == cleanActive)
+            next[i].active = isMatch
+            if isMatch, let rttMs {
+                next[i].rttMs = rttMs
+            }
+        }
+        computeRoutes = next
+    }
+
+    /// App 启动时即刻并行预热 5 路推流线路测速，玩家进入任意世界前最优线路即已就绪。
+    func prewarmCloudRoutes() {
+        guard !probingRoutes else { return }
+        routeProbeTask?.cancel()
+        routeProbeTask = Task { @MainActor [weak self] in
+            await self?.probeAllRoutes()
+        }
+    }
+
+    /// 并行竞速测速全部 5 条推流专线（1.4s 超时），回填每条线路实时 `rttMs` 并将最快直连与局域网节点注入 `NativeHost`。
+    func probeAllRoutes() async {
+        guard !probingRoutes else { return }
+        probingRoutes = true
+        defer { probingRoutes = false }
+
+        let roomCode = NativeHost.activeRoomCode
+        let currentActiveId = await native.activeRouteId
+        let currentConnected = (remoteAddress != nil)
+
+        struct ProbeResult: Sendable {
+            let id: String
+            let rttMs: Int?
+            let addressOverride: String?
+        }
+
+        let results: [ProbeResult] = await withTaskGroup(of: ProbeResult.self) { group in
+            for route in ComputeRouteInfo.builtInRoutes {
+                group.addTask {
+                    switch route.id {
+                    case "tencent-443", "tencent-8765", "tencent-8443":
+                        let rtt = await NativeHost.probeDirectTCP(route.address, timeout: 1.4)
+                        return ProbeResult(id: route.id, rttMs: rtt, addressOverride: nil)
+                    case "lan-udp":
+                        if let lanAddr = await LANDiscovery.discover(roomCode: roomCode, timeoutSeconds: 0.95) {
+                            let rtt = await NativeHost.probeDirectTCP(lanAddr, timeout: 0.9)
+                            return ProbeResult(id: route.id, rttMs: rtt, addressOverride: lanAddr)
+                        }
+                        return ProbeResult(id: route.id, rttMs: nil, addressOverride: nil)
+                    case "cf-relay":
+                        let rtt = await NativeHost.probeRelayRoute(roomCode: roomCode, timeout: 1.4)
+                        return ProbeResult(id: route.id, rttMs: rtt, addressOverride: nil)
+                    default:
+                        return ProbeResult(id: route.id, rttMs: nil, addressOverride: nil)
+                    }
+                }
+            }
+            var out: [ProbeResult] = []
+            for await item in group { out.append(item) }
+            return out
+        }
+
+        var byId: [String: ProbeResult] = [:]
+        for r in results { byId[r.id] = r }
+
+        var updated: [ComputeRouteInfo] = []
+        updated.reserveCapacity(ComputeRouteInfo.builtInRoutes.count)
+        for base in ComputeRouteInfo.builtInRoutes {
+            let probed = byId[base.id]
+            let addr = probed?.addressOverride ?? base.address
+            let isActive = currentConnected && !currentActiveId.isEmpty && base.id == currentActiveId
+            let rtt = probed?.rttMs ?? (isActive ? remoteRTTMs : nil)
+            updated.append(ComputeRouteInfo(
+                id: base.id,
+                name: base.name,
+                address: addr,
+                tag: base.tag,
+                rttMs: rtt,
+                active: isActive
+            ))
+        }
+        computeRoutes = updated
+
+        let directCandidates = updated.filter { ["tencent-443", "tencent-8765", "tencent-8443"].contains($0.id) && $0.rttMs != nil }
+        let fastestDirect = directCandidates.min(by: { ($0.rttMs ?? Int.max) < ($1.rttMs ?? Int.max) })?.address
+        let lanFound = byId["lan-udp"]?.addressOverride
+        await native.setRouteProbeHints(fastestDirect: fastestDirect, lanAddress: lanFound)
+
+        if currentConnected, let activeRow = updated.first(where: { $0.active }), let ms = activeRow.rttMs {
+            remoteRTTMs = ms
+        }
+    }
+
+    /// 手动或自动切换至指定 ID 的推流专线（`tencent-443` / `tencent-8765` / `tencent-8443` / `lan-udp` / `cf-relay`）。
+    func switchComputeRoute(_ routeId: String) async {
+        remoteOfflineManual = false
+        UserDefaults.standard.set(false, forKey: "remote.offlineManual")
+        UserDefaults.standard.set(true, forKey: "remote.auto")
+        UserDefaults.standard.set(true, forKey: "remote.autoAll")
+
+        let target = computeRoutes.first(where: { $0.id == routeId })
+            ?? ComputeRouteInfo.builtInRoutes.first(where: { $0.id == routeId })
+        guard let target else { return }
+
+        switch routeId {
+        case "tencent-443", "tencent-8765", "tencent-8443":
+            UserDefaults.standard.set(false, forKey: "remote.directAddressCleared")
+            UserDefaults.standard.set(target.address, forKey: "remote.directAddress")
+            let err = await connectRemote(target.address)
+            if let err {
+                notice = "切换「\(target.name)」失败：\(err)"
+            } else {
+                syncActiveRouteState(activeId: routeId, rttMs: remoteRTTMs)
+                let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
+                notice = "已切换至「\(target.name)」\(msText)"
+            }
+        case "lan-udp":
+            var lanAddr = await native.cachedLANAddress()
+            if lanAddr == nil, target.address.contains(":") {
+                lanAddr = target.address
+            }
+            if lanAddr == nil {
+                lanAddr = await LANDiscovery.discover(roomCode: NativeHost.activeRoomCode, timeoutSeconds: 1.2)
+            }
+            guard let lanAddr, !lanAddr.isEmpty else {
+                notice = "当前局域网未发现列国纪计算端"
+                return
+            }
+            await native.setRouteProbeHints(fastestDirect: nil, lanAddress: lanAddr)
+            let err = await connectRemote(lanAddr)
+            if let err {
+                notice = "局域网直连失败：\(err)"
+            } else {
+                syncActiveRouteState(activeId: "lan-udp", rttMs: remoteRTTMs)
+                let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
+                notice = "已切换至局域网毫秒直连\(msText)"
+            }
+        case "cf-relay":
+            let err = await connectRemote(NativeHost.activeRoomCode)
+            if let err {
+                notice = "Cloudflare 边缘推流连接失败：\(err)"
+            } else {
+                syncActiveRouteState(activeId: "cf-relay", rttMs: remoteRTTMs)
+                let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
+                notice = "已切换至 Cloudflare 全球边缘推流\(msText)"
+            }
+        default:
+            break
+        }
+    }
+
+    /// 玩家点击顶栏延迟胶囊或「一键重连」时触发：立即清除离线态、并发竞速选出最快可用线路并秒连！
+    func reconnectFastestRoute() {
+        remoteOfflineManual = false
+        UserDefaults.standard.set(false, forKey: "remote.offlineManual")
+        UserDefaults.standard.set(true, forKey: "remote.auto")
+        UserDefaults.standard.set(true, forKey: "remote.autoAll")
+
+        guard phase == .playing else {
+            prewarmCloudRoutes()
+            return
+        }
+        guard !appInBackground else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if self.computeRoutes.allSatisfy({ $0.rttMs == nil }) {
+                await self.probeAllRoutes()
+            }
+            let ranked = self.computeRoutes
+                .filter { $0.rttMs != nil }
+                .sorted { a, b in
+                    // 同局域网 <40ms 绝对优先，其次 443/8765/8443 直连优于中继
+                    let penaltyA = a.id == "cf-relay" ? 60 : 0
+                    let penaltyB = b.id == "cf-relay" ? 60 : 0
+                    return ((a.rttMs ?? Int.max) + penaltyA) < ((b.rttMs ?? Int.max) + penaltyB)
+                }
+            if let best = ranked.first {
+                let curId = await self.native.activeRouteId
+                if self.remoteAddress != nil && curId == best.id {
+                    let ms = await self.refreshRemoteRTT()
+                    if ms != nil {
+                        self.syncActiveRouteState(activeId: best.id, rttMs: ms)
+                        return
+                    }
+                }
+                await self.switchComputeRoute(best.id)
+                if self.remoteAddress != nil { return }
+            }
+            self.reconnectCloudNow(detail: "正在竞速重连最优专线")
+        }
+    }
+
     func connectRemote(_ address: String) async -> String? {
         reconnectTask?.cancel()
         reconnectTask = nil
         reconnecting = false
         remoteOfflineManual = false
+        UserDefaults.standard.set(false, forKey: "remote.offlineManual")
         remoteConnectionDetail = "正在连接九州云服"
         do {
             let a = try await native.connect(address)
             let transport = await native.remoteTransport
+            let routeId = await native.activeRouteId
             let liveRtt = native.liveRTTMs
             let lastRtt = await native.lastRTTMs
             let pushCapable = await native.serverSupportsPush
@@ -117,11 +328,13 @@ import LieguojiCore
             wasRemoteBeforeBackground = false
             pendingResumePlayAfterReconnect = false
             remoteConnectionDetail = connectionDetailForTransport(transport)
+            syncActiveRouteState(activeId: routeId.isEmpty ? NativeHost.routeId(forAddress: address, transport: transport) : routeId, rttMs: remoteRTTMs)
             if let resumedData, let fresh = await Self.decode(GameState.self, from: resumedData) {
                 apply(fresh)
             }
             UserDefaults.standard.set(address, forKey: "remote.address")
             UserDefaults.standard.set(true, forKey: "remote.auto")
+            UserDefaults.standard.set(true, forKey: "remote.autoAll")
             if playing { restartPlayForRemoteHandoff() }
             return nil
         } catch {
@@ -132,10 +345,12 @@ import LieguojiCore
     /// 绑定并连接专属云服务器或固定局域网地址（永久记住，打开游戏优先毫秒直连，跳过海外中转）。
     func connectDirectServer(_ address: String) async -> String? {
         let clean = address.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty else { return "请输入服务器地址（例如 192.168.1.5:8765 或 云服务器IP:8765）" }
+        guard !clean.isEmpty else { return "请输入服务器地址（例如 192.168.1.5:8765 或 云服务器IP:443）" }
         UserDefaults.standard.set(false, forKey: "remote.directAddressCleared")
         UserDefaults.standard.set(clean, forKey: "remote.directAddress")
+        UserDefaults.standard.set(true, forKey: "remote.auto")
         UserDefaults.standard.set(true, forKey: "remote.autoAll")
+        UserDefaults.standard.set(false, forKey: "remote.offlineManual")
         remoteOfflineManual = false
         return await connectRemote(clean)
     }
@@ -159,7 +374,9 @@ import LieguojiCore
         remotePushActive = false
         wasRemoteBeforeBackground = false
         remoteConnectionDetail = "已手动切至离线"
+        syncActiveRouteState(activeId: nil)
         UserDefaults.standard.set(false, forKey: "remote.auto")
+        UserDefaults.standard.set(true, forKey: "remote.offlineManual")
         if playing { restartPlayForRemoteHandoff() }
     }
     /// 立即取消退避休眠并立刻重连云服（同时清除手动离线标记）。
@@ -168,6 +385,9 @@ import LieguojiCore
     }
     private func reconnectCloudNow(detail: String) {
         remoteOfflineManual = false
+        UserDefaults.standard.set(false, forKey: "remote.offlineManual")
+        UserDefaults.standard.set(true, forKey: "remote.auto")
+        UserDefaults.standard.set(true, forKey: "remote.autoAll")
         guard phase == .playing, !appInBackground else { return }
         if remoteAddress != nil {
             Task { @MainActor [weak self] in
@@ -198,6 +418,8 @@ import LieguojiCore
         remoteReconnecting = false
         remoteReconnectAttempt = 0
         remoteOfflineManual = true
+        UserDefaults.standard.set(true, forKey: "remote.offlineManual")
+        UserDefaults.standard.set(false, forKey: "remote.auto")
         remoteAddress = nil
         remoteTransport = ""
         remoteRTTMs = nil
@@ -206,6 +428,7 @@ import LieguojiCore
         wasRemoteBeforeBackground = false
         remoteConnectionDetail = "已手动切至离线"
         pendingResumePlayAfterReconnect = false
+        syncActiveRouteState(activeId: nil)
         Task { @MainActor [weak self] in
             guard let self else { return }
             if wasConnected {
@@ -216,7 +439,7 @@ import LieguojiCore
             if let data = await self.native.state(), let next = await Self.decode(GameState.self, from: data) {
                 self.apply(next)
             }
-            self.notice = "已手动切至本地离线演算，随时可一键重连云服"
+            self.notice = "已手动切至本地离线演算，随时可点顶栏重连云服"
             if shouldResume && !self.playing && self.phase == .playing {
                 self.play()
             }
@@ -236,6 +459,8 @@ import LieguojiCore
                     self.remoteLost(resumePlay: self.playing)
                 } else if let ms {
                     self.remoteRTTMs = ms
+                    let curId = await self.native.activeRouteId
+                    self.syncActiveRouteState(activeId: curId, rttMs: ms)
                 }
             }
         }
@@ -243,28 +468,34 @@ import LieguojiCore
     func refreshRemoteRTT() async -> Int? {
         let ms = await native.measureRTT()
         remoteRTTMs = ms
+        if let ms {
+            let curId = await native.activeRouteId
+            syncActiveRouteState(activeId: curId, rttMs: ms)
+        }
         return ms
     }
     private func streamParams() -> (days: Int, intervalMs: Int) {
         let farRelay = remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
         let base: (days: Int, intervalMs: Int)
         if farRelay {
-            let wanted = [1: 2, 2: 4, 4: 8, 8: 14, 16: 22][speed] ?? 2
-            let intervalMs = [1: 150, 2: 160, 4: 180, 8: 210, 16: 240][speed] ?? 150
+            let wanted = [1: 2, 2: 4, 4: 8, 8: 14, 16: 22, 32: 32][speed] ?? 2
+            let intervalMs = [1: 120, 2: 125, 4: 135, 8: 150, 16: 165, 32: 180][speed] ?? 120
             base = (wanted, intervalMs)
         } else {
-            // v11 专属云服务器 / 局域网非阻塞全双工差量推流（配合滑动窗口背压 maxInFlight=2 + 3Mbps 带宽整形）：
-            // 1×=1日/95ms · 2×=1日/50ms · 4×=2日/58ms · 8×=3日/58ms · 16×=5日/66ms，逐日丝滑推进、绝不跳月！
+            // v12 满血 16 Mbps 专属云服 / 局域网全双工推流（配合动态 3 帧滑动窗口 + 32× 爽看海）：
+            // 1×=1日/68ms (~15日/秒) · 2×=1日/36ms (~28日/秒) · 4×=2日/38ms (~52日/秒) ·
+            // 8×=4日/40ms (~100日/秒) · 16×=8日/42ms (~190日/秒) · 32×=16日/45ms (~355日/秒，1秒推演整年！)
             switch speed {
-            case 1: base = (1, 95)
-            case 2: base = (1, 50)
-            case 4: base = (2, 58)
-            case 8: base = (3, 58)
-            default: base = (5, 66)
+            case 1: base = (1, 68)
+            case 2: base = (1, 36)
+            case 4: base = (2, 38)
+            case 8: base = (4, 40)
+            case 16: base = (8, 42)
+            default: base = (16, 45)
             }
         }
         if let rtt = remoteRTTMs, rtt > 300 {
-            let factor = rtt > 600 ? 1.50 : 1.28
+            let factor = rtt > 600 ? 1.45 : 1.25
             let adapted = min(850, Int((Double(base.intervalMs) * factor).rounded()))
             return (base.days, adapted)
         }
@@ -353,6 +584,7 @@ import LieguojiCore
             let res = await native.resumeFromForeground()
             if res.connected, let label = res.label {
                 let pushCapable = await native.serverSupportsPush
+                let activeId = await native.activeRouteId
                 remoteAddress = label
                 remoteTransport = res.transport
                 remoteRTTMs = res.rttMs
@@ -363,6 +595,7 @@ import LieguojiCore
                 wasRemoteBeforeBackground = false
                 pendingResumePlayAfterReconnect = false
                 remoteConnectionDetail = connectionDetailForTransport(res.transport)
+                syncActiveRouteState(activeId: activeId.isEmpty ? NativeHost.routeId(forAddress: label, transport: res.transport) : activeId, rttMs: res.rttMs)
                 if let data = res.state, let fresh = await Self.decode(GameState.self, from: data) {
                     apply(fresh)
                 }
@@ -384,14 +617,19 @@ import LieguojiCore
         }
         if shouldResumePlay && !playing { play() }
     }
-    /// 自动接入在线计算：真网游默认开启，断线持续自动重连，仅在玩家主动切换离线模式时退回本机。
+    /// 自动接入在线计算：真网游零配置默认开启，断线持续自动重连，仅在玩家主动切换离线模式时退回本机。
     var autoRemote: Bool {
-        get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true }
+        get {
+            if remoteOfflineManual { return false }
+            return UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true
+        }
         set {
             objectWillChange.send()
             UserDefaults.standard.set(newValue, forKey: "remote.autoAll")
+            UserDefaults.standard.set(newValue, forKey: "remote.auto")
+            UserDefaults.standard.set(!newValue, forKey: "remote.offlineManual")
+            remoteOfflineManual = !newValue
             if newValue {
-                remoteOfflineManual = false
                 autoConnect()
             }
         }
@@ -419,6 +657,7 @@ import LieguojiCore
         remoteRTTMs = nil
         remoteFrameKB = nil
         remotePushActive = false
+        syncActiveRouteState(activeId: nil)
         if remoteOfflineManual {
             reconnectTask?.cancel()
             reconnectTask = nil
@@ -495,6 +734,7 @@ import LieguojiCore
                 if let label = await self.native.reattach() {
                     guard !Task.isCancelled, !self.remoteOfflineManual, self.phase == .playing else { return }
                     let transport = await self.native.remoteTransport
+                    let routeId = await self.native.activeRouteId
                     let liveRtt = self.native.liveRTTMs
                     let lastRtt = await self.native.lastRTTMs
                     let pushCapable = await self.native.serverSupportsPush
@@ -509,6 +749,7 @@ import LieguojiCore
                     self.remoteReconnecting = false
                     self.wasRemoteBeforeBackground = false
                     self.remoteConnectionDetail = self.connectionDetailForTransport(transport)
+                    self.syncActiveRouteState(activeId: routeId.isEmpty ? NativeHost.routeId(forAddress: label, transport: transport) : routeId, rttMs: self.remoteRTTMs)
 
                     let stateData: Data?
                     if let resumedData {
@@ -550,12 +791,14 @@ import LieguojiCore
     func findComputerNow() async -> Bool {
         guard remoteAddress == nil else { return true }
         remoteOfflineManual = false
-        remoteConnectionDetail = "正在连接九州云服"
+        UserDefaults.standard.set(false, forKey: "remote.offlineManual")
+        remoteConnectionDetail = "正在并发竞速连接九州云服"
         guard let found = await native.connectAuto() else {
             if !remoteReconnecting { remoteConnectionDetail = "云服待命重连中" }
             return false
         }
         let pushCapable = await native.serverSupportsPush
+        let routeId = await native.activeRouteId
         let resumedData = await native.consumeResumedState()
         reconnectTask?.cancel()
         reconnectTask = nil
@@ -567,6 +810,7 @@ import LieguojiCore
         remoteReconnecting = false
         remoteReconnectAttempt = 0
         remoteConnectionDetail = connectionDetailForTransport(found.transport)
+        syncActiveRouteState(activeId: routeId.isEmpty ? NativeHost.routeId(forAddress: found.label, transport: found.transport) : routeId, rttMs: found.rttMs)
         if let resumedData, let fresh = await Self.decode(GameState.self, from: resumedData) {
             apply(fresh)
         }
@@ -575,10 +819,10 @@ import LieguojiCore
         if playing { restartPlayForRemoteHandoff() }
         return true
     }
-    /// 进入新世界或读档后立即接入专属云服务器（零等待，并正确开启 v10 主动推流标志）。
+    /// 进入新世界、读档或展卷后立即在后台自动竞速接入最快云服线路（零配置、无需手动开启，仅尊重主动离线）。
     func ensureCloudConnectedNow() {
         autoConnect()
-        guard autoRemote, !remoteOfflineManual, !appInBackground, !reconnecting, remoteAddress == nil else { return }
+        guard !remoteOfflineManual, !appInBackground, !reconnecting, remoteAddress == nil else { return }
         Task { @MainActor [weak self] in
             guard let self, self.phase == .playing, !self.remoteOfflineManual, self.remoteAddress == nil else { return }
             _ = await self.findComputerNow()
@@ -592,6 +836,7 @@ import LieguojiCore
                 if self.autoRemote, !self.remoteOfflineManual, !self.appInBackground, !self.reconnecting, self.remoteAddress == nil, self.phase == .playing {
                     if let found = await self.native.connectAuto() {
                         let pushCapable = await self.native.serverSupportsPush
+                        let routeId = await self.native.activeRouteId
                         let resumedData = await self.native.consumeResumedState()
                         self.remoteAddress = found.label
                         self.remoteTransport = found.transport
@@ -600,6 +845,7 @@ import LieguojiCore
                         self.remoteReconnecting = false
                         self.remoteReconnectAttempt = 0
                         self.remoteConnectionDetail = self.connectionDetailForTransport(found.transport)
+                        self.syncActiveRouteState(activeId: routeId.isEmpty ? NativeHost.routeId(forAddress: found.label, transport: found.transport) : routeId, rttMs: found.rttMs)
                         if let resumedData, let fresh = await Self.decode(GameState.self, from: resumedData) {
                             self.apply(fresh)
                         }
@@ -609,6 +855,7 @@ import LieguojiCore
                     } else if let saved = UserDefaults.standard.string(forKey: "remote.address"), !saved.isEmpty, UserDefaults.standard.bool(forKey: "remote.auto"),
                               let a = try? await self.native.connect(saved) {
                         let transport = await self.native.remoteTransport
+                        let routeId = await self.native.activeRouteId
                         let liveRtt = self.native.liveRTTMs
                         let lastRtt = await self.native.lastRTTMs
                         let pushCapable = await self.native.serverSupportsPush
@@ -620,6 +867,7 @@ import LieguojiCore
                         self.remoteReconnecting = false
                         self.remoteReconnectAttempt = 0
                         self.remoteConnectionDetail = self.connectionDetailForTransport(transport)
+                        self.syncActiveRouteState(activeId: routeId.isEmpty ? NativeHost.routeId(forAddress: saved, transport: transport) : routeId, rttMs: self.remoteRTTMs)
                         if let resumedData, let fresh = await Self.decode(GameState.self, from: resumedData) {
                             self.apply(fresh)
                         }
@@ -656,6 +904,8 @@ import LieguojiCore
             lastRouteQueryKey = ""
             pendingLabels = nil
             lastMapUpdate = 0
+            lastHandledNukeDay = -1
+            lastHandledNukeProvince = -1
             controller.weatherZones = []
             controller.weatherGPUZones = []
             controller.weatherRevision &+= 1
@@ -722,6 +972,7 @@ import LieguojiCore
         private var loop: Task<Void, Never>?
         private var heraldTask: Task<Void, Never>?
         private var routeTask: Task<Void, Never>?
+        private var routeProbeTask: Task<Void, Never>?
         private var replayTimer: Task<Void, Never>?
         private var pathWatcher: NetworkPathWatcher?
 
@@ -730,14 +981,15 @@ import LieguojiCore
         func setLoop(_ t: Task<Void, Never>?) { lock.lock(); loop = t; lock.unlock() }
         func setHeraldTask(_ t: Task<Void, Never>?) { lock.lock(); heraldTask = t; lock.unlock() }
         func setRouteTask(_ t: Task<Void, Never>?) { lock.lock(); routeTask = t; lock.unlock() }
+        func setRouteProbeTask(_ t: Task<Void, Never>?) { lock.lock(); routeProbeTask = t; lock.unlock() }
         func setReplayTimer(_ t: Task<Void, Never>?) { lock.lock(); replayTimer = t; lock.unlock() }
         func setPathWatcher(_ w: NetworkPathWatcher?) { lock.lock(); pathWatcher = w; lock.unlock() }
 
         func cancelAll() {
             lock.lock()
-            let tasks = [autoTask, reconnectTask, loop, heraldTask, routeTask, replayTimer]
+            let tasks = [autoTask, reconnectTask, loop, heraldTask, routeTask, routeProbeTask, replayTimer]
             let watcher = pathWatcher
-            autoTask = nil; reconnectTask = nil; loop = nil; heraldTask = nil; routeTask = nil; replayTimer = nil
+            autoTask = nil; reconnectTask = nil; loop = nil; heraldTask = nil; routeTask = nil; routeProbeTask = nil; replayTimer = nil
             pathWatcher = nil
             lock.unlock()
             for t in tasks { t?.cancel() }
@@ -765,11 +1017,23 @@ import LieguojiCore
     private(set) var lastFounding: (path: String, seconds: Double)?
 
     init() {
-        // v5.7.0 一次性迁移：回归真网游默认架构，自动接入专属云服推流，断线自动重连绝不静默切本地。
-        if !UserDefaults.standard.bool(forKey: "v570.defaultOnlineRestored") {
-            UserDefaults.standard.set(true, forKey: "remote.autoAll")
+        // v6.0.0 零配置直连默认策略：除非玩家曾主动点击「离线单机」，否则自动开启 remote.auto / remote.autoAll 并一进游戏即刻竞速直连！
+        if !UserDefaults.standard.bool(forKey: "v600.defaultAutoConnect") {
+            let manualOff = UserDefaults.standard.bool(forKey: "remote.offlineManual")
+            if !manualOff {
+                UserDefaults.standard.set(true, forKey: "remote.auto")
+                UserDefaults.standard.set(true, forKey: "remote.autoAll")
+            }
             UserDefaults.standard.set(true, forKey: "v570.defaultOnlineRestored")
+            UserDefaults.standard.set(true, forKey: "v600.defaultAutoConnect")
         }
+        if UserDefaults.standard.object(forKey: "remote.auto") == nil {
+            UserDefaults.standard.set(true, forKey: "remote.auto")
+        }
+        if UserDefaults.standard.object(forKey: "remote.autoAll") == nil {
+            UserDefaults.standard.set(true, forKey: "remote.autoAll")
+        }
+        remoteOfflineManual = UserDefaults.standard.bool(forKey: "remote.offlineManual")
         let watcher = NetworkPathWatcher { [weak self] interfaceSig in
             Task { @MainActor [weak self] in
                 self?.handleNetworkPathRecovered(interfaceSig: interfaceSig)
@@ -867,7 +1131,7 @@ import LieguojiCore
             let world: WorldMap
             switch founded {
             case .native(let made):
-                world = try await adoptNative(made)
+                world = try await adoptNative(made, rebelMode: o.rebelMode)
                 controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
             case .web(let built):
                 world = try await open(built)
@@ -875,7 +1139,7 @@ import LieguojiCore
                 // The engine's world (rivers, cities, names) replaces the drawn preview in place.
                 controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
                 controller.foundingStage = 3
-                try await handOver(applyNewWorldRules: true)
+                try await handOver(applyNewWorldRules: true, rebelMode: o.rebelMode)
             }
             guard epoch == worldEpoch else { return }
             let wait = 2.6 - Date().timeIntervalSince(settled)
@@ -982,6 +1246,8 @@ import LieguojiCore
         var relations = "peace"; var naming = "historical-names"
         var climate = ClimateSettings()
         var cultures: Set<String> = Set(Names.cultureIds)
+        /// 叛乱规则模式（`"off"` 关闭叛乱 / `"historical"` 历史拟真默认 / `"classic"` 经典乱世）。
+        var rebelMode: String = "historical"
         /// 真实历史剧本或创意工坊自定义地图（非空时跳过随机模板并直接按剧本山河/列国开局）。
         var historicalScenario: HistoricalScenario? = nil
         /// One city per province; the web engine (native-bridge generate) clamps to nations…480.
@@ -992,6 +1258,7 @@ import LieguojiCore
     func generateHistorical(_ scenario: HistoricalScenario) async {
         var nw = NewWorld()
         nw.historicalScenario = scenario
+        nw.rebelMode = scenario.rebelMode ?? "historical"
         nw.nations = max(2, min(24, scenario.nations.count))
         nw.provinces = String(max(nw.nations, min(480, scenario.provinceCount)))
         await generate(nw)
@@ -1044,7 +1311,7 @@ import LieguojiCore
                     MapLabelsView.clearImages()
                     BundleArt.clearCache()
                     InkPlayerHostView.clearCache()
-                    let loaded = try await decodeFinalNative(created, epoch: epoch, prepareLayers: true)
+                    let loaded = try await decodeFinalNative(created, epoch: epoch, prepareLayers: true, rebelMode: options.rebelMode)
                     guard epoch == worldEpoch else { return }
                     CrashBreadcrumb.mark("gen.decoded")
                     if let layers = loaded.layers { MapRenderer.prepared = layers }
@@ -1067,7 +1334,7 @@ import LieguojiCore
                     world = try await open(built)
                     try checkWorld(epoch)
                     controller.foundingStage = 3
-                    try await handOver(applyNewWorldRules: true)
+                    try await handOver(applyNewWorldRules: true, rebelMode: options.rebelMode)
                     guard epoch == worldEpoch else { return }
                     generationNote = ""
                 }
@@ -1200,9 +1467,9 @@ import LieguojiCore
         try checkWorld(epoch)
         return show(loaded.0, loaded.1, layers: loaded.2)
     }
-    /// 先启用云端调校与本作规则（NameVariety / NationColors / 兵种），再将最终国名与国色写入 WorldMap，
+    /// 先启用云端调校与本作规则（NameVariety / NationColors / 兵种 / 叛乱模式），再将最终国名与国色写入 WorldMap，
     /// 保证开卷前后的国家名称与颜色 100% 统一，绝不中途跳变。
-    private func decodeFinalNative(_ made: NativeHost.Made, epoch: Int, prepareLayers: Bool) async throws -> (world: WorldMap, state: GameState, layers: MapLayers.Prepared?) {
+    private func decodeFinalNative(_ made: NativeHost.Made, epoch: Int, prepareLayers: Bool, rebelMode: String? = nil) async throws -> (world: WorldMap, state: GameState, layers: MapLayers.Prepared?) {
         guard let mapData = made.map else { throw EngineError.message("新世界缺少地图") }
         nativeRevision = made.revision
         await applyCloud()
@@ -1210,7 +1477,12 @@ import LieguojiCore
         await native.enableAppRules()
         try checkWorld(epoch)
         try await applyNewWorldWarRules(epoch)
-        let finalStateData = await native.state() ?? made.state
+        if let rebelMode, !rebelMode.isEmpty {
+            _ = await native.setRebelMode(rebelMode)
+            try checkWorld(epoch)
+        }
+        let fetchedState = await native.state()
+        let finalStateData = fetchedState ?? made.state
         try checkWorld(epoch)
         return try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared?) in
             try autoreleasepool {
@@ -1235,10 +1507,10 @@ import LieguojiCore
         }.value
     }
     /// 本机 Swift 建好的世界（NativeHost.create）：先完成规则生效与国名国色同步，再一次性呈现在地图上。
-    private func adoptNative(_ made: NativeHost.Made) async throws -> WorldMap {
+    private func adoptNative(_ made: NativeHost.Made, rebelMode: String? = nil) async throws -> WorldMap {
         let epoch = worldEpoch
         let keeps = phase == .founding
-        let loaded = try await decodeFinalNative(made, epoch: epoch, prepareLayers: !keeps)
+        let loaded = try await decodeFinalNative(made, epoch: epoch, prepareLayers: !keeps, rebelMode: rebelMode)
         try checkWorld(epoch)
         controller.snapArmies = true
         state = nil
@@ -1436,14 +1708,14 @@ import LieguojiCore
                     self.remotePushActive = false
                 }
 
-                // 本机 0ms 引擎 / 降级轮询统一采用微步匀速节拍（1/1/2/3/5 日），保证看海 60/120fps 逐日丝滑推进。
+                // 本机 0ms 引擎 / 降级轮询同比提速并支持 32× 爽看海（1/1/2/4/8/16 日），云端与本机一样丝滑轻快。
                 let far = self.remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
-                let wanted = [1: 1, 2: 1, 4: 2, 8: 3, 16: 5][self.speed] ?? 1
-                let stepTime = [1: 0.095, 2: 0.050, 4: 0.058, 8: 0.058, 16: 0.066][self.speed] ?? 0.095
+                let wanted = [1: 1, 2: 1, 4: 2, 8: 4, 16: 8, 32: 16][self.speed] ?? 1
+                let stepTime = [1: 0.068, 2: 0.036, 4: 0.038, 8: 0.040, 16: 0.042, 32: 0.045][self.speed] ?? 0.068
                 let isRemoteNow = self.remoteAddress != nil
-                let affordable = isRemoteNow ? wanted : max(1, Int((max(0.08, stepTime) * Energy.duty / max(0.004, self.dayCost)).rounded(.down)))
+                let affordable = isRemoteNow ? wanted : max(1, Int((max(0.068, stepTime) * Energy.duty / max(0.003, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
-                let days = far ? min(12, pace * 2) : pace
+                let days = far ? min(32, pace * 2) : pace
                 self.lastDays = days
                 do {
                     let activeAhead = ahead ?? self.requestStep(days: days, ticket: ticket, revision: revision)
@@ -1491,8 +1763,7 @@ import LieguojiCore
         if saving, was, let day = state?.day { save(); lastSavedDay = day }
     }
     func cycleSpeed() {
-        speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : 1
-        if remoteAddress != nil && playing { Task { [weak self] in await self?.syncRemoteStream(resetEpoch: false) } }
+        speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : speed == 16 ? 32 : 1
     }
     func stepOnce() {
         guard !replayActive, !playing, phase == .playing, state != nil else { return }
@@ -1510,7 +1781,7 @@ import LieguojiCore
     }
 
     /// The web engine's world goes to the Swift engine, which runs it from now on.
-    private func handOver(applyNewWorldRules: Bool = false) async throws {
+    private func handOver(applyNewWorldRules: Bool = false, rebelMode: String? = nil) async throws {
         let epoch = worldEpoch
         let webHost = ensureLegacyEngine()
         await Task.yield()
@@ -1519,15 +1790,19 @@ import LieguojiCore
         let opened = try await native.open(Data(text.utf8), world: epoch)
         try checkWorld(epoch)
         nativeRevision = opened.revision
-        try await finishHandOver(epoch, applyNewWorldRules: applyNewWorldRules)
+        try await finishHandOver(epoch, applyNewWorldRules: applyNewWorldRules, rebelMode: rebelMode)
     }
     /// 交接的后半段（网页世界交给 Swift 之后，或 Swift 建好之后）：云端调校、本作规则与 Swift 引擎的首个状态。
-    private func finishHandOver(_ epoch: Int, applyNewWorldRules: Bool) async throws {
+    private func finishHandOver(_ epoch: Int, applyNewWorldRules: Bool, rebelMode: String? = nil) async throws {
         await applyCloud()
         try checkWorld(epoch)
         await native.enableAppRules()
         try checkWorld(epoch)
         if applyNewWorldRules { try await applyNewWorldWarRules(epoch) }
+        if let rebelMode, !rebelMode.isEmpty {
+            _ = await native.setRebelMode(rebelMode)
+            try checkWorld(epoch)
+        }
         // The Swift engine's own first state (its army points, the arms by culture) replaces the web
         // engine's at once: otherwise the first step after 开始 slid every army from the web's
         // points to the engine's, a burst of "teleport" walks before the game began.
@@ -1569,7 +1844,7 @@ import LieguojiCore
             if dt > 0.005 && dt < 0.85 { stepInterval = stepInterval * 0.78 + dt * 0.22 }
         }
         lastApplied = playing ? now : nil
-        controller.tween = playing ? min(0.42, max(0.055, stepInterval * 1.03)) : 0.22
+        controller.tween = playing ? min(0.42, max(0.032, stepInterval * 1.03)) : 0.22
         let applying = CACurrentMediaTime()
         apply(next, fromSlimStream: isRemote && (remotePushActive || lz4Slim))
         onAdvanceApplied?(next.day)
@@ -1650,6 +1925,13 @@ import LieguojiCore
             native.streamBuffer.seedBaselineOwners(next.owners)
         }
         state = next
+        if let nukeProv = next.lastNukeProvince, nukeProv >= 0,
+           let nukeDay = next.lastNukeDay,
+           (nukeDay > lastHandledNukeDay || (nukeDay == lastHandledNukeDay && nukeProv != lastHandledNukeProvince)) {
+            lastHandledNukeDay = nukeDay
+            lastHandledNukeProvince = nukeProv
+            controller.nukeFlash = (id: UUID(), province: nukeProv)
+        }
         let dayOfYear = ((max(1, min(12, next.date.month)) - 1) * 30 + max(1, min(30, next.date.day)) - 1) % 360
         controller.seasonPhase = Float(dayOfYear) / 360.0
         var newEvents: [GameState.Event] = []
@@ -1677,7 +1959,7 @@ import LieguojiCore
         // 推演期间疆域易主重绘保持丝滑灵敏（常规地图 0.18/0.32s；≥180 州大图 0.24/0.38s），
         // 且仅在 owners / labels / nation 元数据真实变化时才写回 controller.world，彻底消除无意义 WorldMap 拷贝！
         let hugeMap = provinces.count >= 180
-        let gateSec: Double = hugeMap ? (speed < 4 ? 0.24 : 0.38) : (speed < 4 ? 0.18 : 0.32)
+        let gateSec: Double = hugeMap ? (speed < 4 ? 0.22 : (speed >= 16 ? 0.28 : 0.34)) : (speed < 4 ? 0.16 : (speed >= 16 ? 0.22 : 0.28))
         let ownerGate = (!playing || now - lastMapUpdate >= gateSec)
         let shouldApplyTerritory = (ownerChanged && ownerGate) || (labelsChanged && (!playing || now - lastMapUpdate >= 0.45))
 
@@ -2959,6 +3241,33 @@ import LieguojiCore
 
     func provinceInfo(_ index: Int) async -> ProvinceInfo? {
         await query(ProvinceInfo.self) { await native.province(index) }
+    }
+
+    // MARK: v6.0.0 HOI4 战略核武 · 工业动员 · 叛乱模式 · 时代军制
+    func nuclearInfo(nation: Int) async -> Data? {
+        await native.nuclearInfo(nation)
+    }
+    func buildReactor(nation: Int) async -> String? {
+        finish(await native.buildReactor(nation))
+    }
+    func nuclearStrike(attacker: Int, province: Int) async -> String? {
+        let beforeFlashID = controller.nukeFlash?.id
+        let err = finish(await native.nuclearStrike(attacker: attacker, province: province))
+        if err == nil && controller.nukeFlash?.id == beforeFlashID {
+            lastHandledNukeDay = state?.lastNukeDay ?? lastHandledNukeDay
+            lastHandledNukeProvince = province
+            controller.nukeFlash = (id: UUID(), province: province)
+        }
+        return err
+    }
+    func mobilizeIndustry(nation: Int, level: String) async -> String? {
+        finish(await native.mobilizeIndustry(nation, level: level))
+    }
+    func setRebelMode(_ mode: String) async -> String? {
+        finish(await native.setRebelMode(mode))
+    }
+    func eraMilitaryInfo(nation: Int) async -> Data? {
+        await native.eraMilitaryInfo(nation)
     }
 }
 

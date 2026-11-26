@@ -1,4 +1,9 @@
 import Foundation
+#if canImport(Glibc)
+import Glibc
+#elseif canImport(Darwin)
+import Darwin
+#endif
 
 /// 历史剧本中的地理锚点：用于在真实底图上将周边州郡归属到对应国家并赋予真实历史州郡名。
 public struct HistoricalAnchor: Codable, Equatable, Sendable {
@@ -122,6 +127,10 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
     public var openingWars: [HistoricalWarSpec]
     public var openingAlliances: [HistoricalAllianceSpec]
     public var tags: [String]
+    /// 叛乱模式：`"off"`（禁止叛乱）/ `"historical"`（史实克制，官方默认）/ `"classic"`（经典沙盒）。
+    public var rebelMode: String?
+    /// 显式锁定历史时代：`"antiquity"` / `"medieval"` / `"gunpowder"` / `"ww1"` / `"ww2"` / `"modern"`。
+    public var eraOverride: String?
 
     public init(
         id: String,
@@ -139,7 +148,9 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
         nations: [HistoricalNationSpec],
         openingWars: [HistoricalWarSpec] = [],
         openingAlliances: [HistoricalAllianceSpec] = [],
-        tags: [String] = []
+        tags: [String] = [],
+        rebelMode: String? = nil,
+        eraOverride: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -157,6 +168,8 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
         self.openingWars = openingWars
         self.openingAlliances = openingAlliances
         self.tags = tags
+        self.rebelMode = rebelMode
+        self.eraOverride = eraOverride
     }
 
     public var yearDisplayText: String {
@@ -215,7 +228,7 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-/// 官方 8 大真实历史剧本库、历史版图/州郡自动布局与整局状态覆写引擎。
+/// 官方 10 大真实历史剧本库、国界锁定布局、4,200 城零假名地理命名与整局历史状态覆写引擎。
 public enum HistoricalScenarios {
     public static func encodeHeights(_ heights: [UInt8]) -> String {
         HistoricalScenario.encodeHeights(heights)
@@ -233,9 +246,386 @@ public enum HistoricalScenarios {
         officialScenarios.filter { $0.region == region }
     }
 
-    // MARK: - 1. 历史版图与真实州郡命名布局
+    // MARK: - 1. 零假名历史地理地名词典（先秦/两汉/三国/隋唐/宋金 240+ 真实州郡 + 日本战国 125+ 令制国城下町 + 全球 4200 真实城市库）
 
-    /// 按历史剧本中各国的都城与地理锚点，将底图上的全部州郡划归对应历史势力并赋予地道历史州郡名。
+    private static let ancientChinaCities: [(name: String, lon: Double, lat: Double)] = [
+        // 关中・秦陇・河西・巴蜀・汉中
+        ("咸阳", 108.71, 34.33), ("长安", 108.94, 34.27), ("雍城", 107.39, 34.52), ("栎阳", 109.25, 34.65),
+        ("蓝田", 109.32, 34.15), ("陈仓", 107.14, 34.36), ("凤翔", 107.40, 34.52), ("同州", 109.94, 34.80),
+        ("华州", 109.77, 34.51), ("潼关", 110.25, 34.55), ("邠州", 108.08, 35.03), ("泾州", 107.36, 35.33),
+        ("延州", 109.49, 36.59), ("绥州", 110.26, 37.51), ("上郡", 109.73, 38.29), ("麟州", 110.49, 38.84),
+        ("丰州", 107.98, 40.76), ("胜州", 111.22, 40.25), ("朔方", 108.95, 38.01), ("夏州", 108.88, 38.00),
+        ("灵州", 106.34, 38.10), ("兴庆府", 106.27, 38.47), ("天水", 105.72, 34.58), ("秦州", 105.70, 34.59),
+        ("陇西", 104.63, 35.00), ("金城", 103.83, 36.06), ("临洮", 103.86, 35.38), ("河州", 103.21, 35.60),
+        ("湟中", 101.78, 36.62), ("临羌", 101.24, 36.69), ("凉州", 102.64, 37.93), ("武威", 102.63, 37.92),
+        ("张掖", 100.45, 38.93), ("酒泉", 98.49, 39.73), ("玉门", 97.04, 40.29), ("敦煌", 94.66, 40.14),
+        ("汉中", 107.03, 33.07), ("南郑", 106.94, 33.00), ("阳平", 106.15, 33.15), ("兴元", 107.02, 33.08),
+        ("成州", 105.73, 33.74), ("利州", 105.84, 32.44), ("剑州", 105.52, 32.29), ("阆中", 105.97, 31.56),
+        ("梓潼", 105.16, 31.63), ("绵竹", 104.22, 31.34), ("成都", 104.07, 30.67), ("益州", 104.06, 30.66),
+        ("眉州", 103.85, 30.08), ("嘉州", 103.77, 29.56), ("雅州", 103.00, 29.98), ("邛州", 103.46, 30.41),
+        ("梓州", 105.09, 31.10), ("遂州", 105.59, 30.53), ("果州", 106.11, 30.80), ("合州", 106.28, 29.97),
+        ("江州", 106.55, 29.56), ("渝州", 106.56, 29.57), ("巴州", 106.76, 31.86), ("达州", 107.50, 31.21),
+        ("忠州", 108.04, 30.30), ("万州", 108.41, 30.81), ("夔州", 109.47, 31.02), ("永安", 109.52, 31.04),
+        ("泸州", 105.44, 28.87), ("戎州", 104.64, 28.75), ("邛都", 102.26, 27.90), ("松州", 103.60, 32.64),
+        // 山西・河北・燕赵・塞北・辽东
+        ("邯郸", 114.49, 36.61), ("邺城", 114.47, 36.26), ("相州", 114.35, 36.10), ("邢州", 114.50, 37.07),
+        ("巨鹿", 115.03, 37.22), ("赵州", 114.78, 37.76), ("恒山", 114.57, 38.14), ("定州", 114.99, 38.52),
+        ("中山", 115.00, 38.51), ("瀛州", 116.10, 38.44), ("沧州", 116.86, 38.30), ("冀州", 115.58, 37.54),
+        ("贝州", 115.67, 37.07), ("魏州", 115.15, 36.29), ("博州", 115.98, 36.45), ("德州", 116.36, 37.44),
+        ("晋阳", 112.50, 37.71), ("太原", 112.55, 37.87), ("上党", 113.12, 36.20), ("长平", 112.92, 35.80),
+        ("平阳", 111.52, 36.09), ("安邑", 111.00, 35.14), ("河东", 110.45, 34.86), ("蒲州", 110.29, 34.85),
+        ("绛州", 111.22, 35.62), ("汾州", 111.79, 37.26), ("石州", 111.14, 37.52), ("忻州", 112.73, 38.42),
+        ("雁门", 112.96, 39.07), ("代郡", 114.57, 39.84), ("马邑", 112.43, 39.33), ("云中", 111.83, 40.38),
+        ("大同", 113.30, 40.08), ("定襄", 111.85, 40.23), ("阴山", 110.05, 40.95), ("五原", 108.27, 41.10),
+        ("蓟城", 116.39, 39.90), ("幽州", 116.40, 39.91), ("燕京", 116.38, 39.89), ("涿郡", 115.97, 39.48),
+        ("易州", 115.50, 39.35), ("渔阳", 117.40, 40.05), ("檀州", 116.84, 40.38), ("平州", 118.88, 39.88),
+        ("右北平", 118.70, 40.95), ("辽西", 120.45, 41.58), ("营州", 120.45, 41.57), ("锦州", 121.13, 41.11),
+        ("襄平", 123.17, 41.27), ("辽东", 123.18, 41.28), ("沈阳", 123.43, 41.80), ("玄菟", 124.95, 41.90),
+        ("安东", 124.35, 40.00), ("扶余", 124.82, 45.18), ("上京", 126.97, 45.54), ("会宁府", 126.98, 45.55),
+        ("乐浪", 125.75, 39.02), ("平壤", 125.76, 39.03), ("开京", 126.56, 37.97), ("汉城", 126.98, 37.57),
+        // 河南・中原・山东・淮海
+        ("洛阳", 112.45, 34.62), ("大梁", 114.31, 34.80), ("汴京", 114.32, 34.79), ("陈留", 114.51, 34.74),
+        ("许昌", 113.85, 34.04), ("新郑", 113.74, 34.40), ("阳翟", 113.47, 34.16), ("宜阳", 112.18, 34.52),
+        ("郑州", 113.65, 34.76), ("荥阳", 113.38, 34.79), ("虎牢", 113.20, 34.82), ("朝歌", 114.20, 35.61),
+        ("怀州", 112.94, 35.09), ("孟州", 112.79, 34.91), ("陕州", 111.20, 34.77), ("滑州", 114.52, 35.58),
+        ("濮阳", 115.03, 35.76), ("宋州", 115.65, 34.41), ("睢阳", 115.66, 34.42), ("陈州", 114.88, 33.73),
+        ("蔡州", 114.36, 33.01), ("颍州", 115.81, 32.89), ("亳州", 115.78, 33.85), ("宿州", 116.96, 33.65),
+        ("宛城", 112.53, 33.00), ("南阳", 112.52, 32.99), ("邓州", 112.09, 32.69), ("唐州", 112.83, 32.69),
+        ("汝州", 112.84, 34.17), ("申州", 114.07, 32.13), ("光州", 115.05, 32.13),
+        ("临淄", 118.31, 36.82), ("青州", 118.48, 36.69), ("即墨", 120.45, 36.39), ("胶东", 120.02, 36.86),
+        ("登州", 120.76, 37.81), ("莱州", 119.94, 37.18), ("东阿", 116.25, 36.34), ("济北", 116.45, 36.29),
+        ("济南", 117.00, 36.67), ("博昌", 118.12, 37.15), ("棣州", 117.50, 37.49), ("郓州", 116.46, 35.93),
+        ("兖州", 116.83, 35.55), ("曲阜", 116.99, 35.60), ("曹州", 115.48, 35.23), ("濮州", 115.45, 35.75),
+        ("密州", 119.40, 35.99), ("琅琊", 118.35, 35.05), ("沂州", 118.36, 35.06), ("徐州", 117.18, 34.26),
+        ("彭城", 117.19, 34.27), ("下邳", 117.95, 34.12), ("海州", 119.16, 34.57), ("泗州", 118.50, 33.00),
+        ("楚州", 119.14, 33.50), ("濠州", 117.56, 32.87), ("寿春", 116.78, 32.58), ("滁州", 118.32, 32.30),
+        ("和州", 118.35, 31.74), ("庐州", 117.28, 31.86), ("合淝", 117.29, 31.87), ("濡须", 117.96, 31.48),
+        ("舒州", 116.57, 30.63), ("广陵", 119.42, 32.39), ("扬州", 119.41, 32.40), ("泰州", 119.92, 32.46),
+        // 荆楚・湖湘・江西・吴越・闽广・交趾・滇黔・吐蕃・西域
+        ("襄阳", 112.14, 32.04), ("樊城", 112.14, 32.06), ("随州", 113.38, 31.69), ("安州", 113.69, 31.26),
+        ("郢都", 112.19, 30.42), ("江陵", 112.24, 30.33), ("荆州", 112.23, 30.34), ("夷陵", 111.29, 30.70),
+        ("归州", 110.97, 30.83), ("峡州", 111.30, 30.71), ("复州", 113.17, 30.66), ("江夏", 114.31, 30.54),
+        ("夏口", 114.29, 30.56), ("鄂州", 114.89, 30.40), ("黄州", 114.87, 30.45), ("蕲州", 115.44, 30.03),
+        ("岳州", 113.13, 29.37), ("朗州", 111.69, 29.03), ("武陵", 111.68, 29.04), ("澧州", 111.76, 29.63),
+        ("长沙", 112.94, 28.23), ("潭州", 112.95, 28.22), ("衡州", 112.61, 26.89), ("邵州", 111.47, 27.24),
+        ("永州", 111.61, 26.42), ("零陵", 111.62, 26.22), ("道州", 111.59, 25.53), ("郴州", 113.03, 25.79),
+        ("桂阳", 112.73, 25.75), ("辰州", 110.40, 28.45),
+        ("建业", 118.79, 32.06), ("金陵", 118.78, 32.05), ("润州", 119.45, 32.20), ("常州", 119.97, 31.81),
+        ("姑苏", 120.62, 31.30), ("吴郡", 120.61, 31.31), ("苏州", 120.63, 31.30), ("松江", 121.23, 31.03),
+        ("湖州", 120.09, 30.89), ("宣州", 118.76, 30.94), ("歙州", 118.43, 29.87), ("临安", 120.15, 30.28),
+        ("杭州", 120.16, 30.27), ("会稽", 120.58, 30.00), ("越州", 120.59, 30.01), ("明州", 121.55, 29.87),
+        ("台州", 121.12, 28.85), ("婺州", 119.65, 29.08), ("衢州", 118.87, 28.94), ("处州", 119.92, 28.45),
+        ("温州", 120.70, 28.00), ("柴桑", 115.99, 29.71), ("江州九江", 115.98, 29.70), ("豫章", 115.86, 28.68),
+        ("洪州", 115.87, 28.69), ("饶州", 116.67, 29.00), ("抚州", 116.36, 27.95), ("吉州", 114.99, 27.11),
+        ("袁州", 114.39, 27.80), ("虔州", 114.93, 25.85),
+        ("建安", 118.32, 27.04), ("福州", 119.30, 26.07), ("东冶", 119.31, 26.08), ("泉州", 118.68, 24.87),
+        ("漳州", 117.65, 24.51), ("汀州", 116.36, 25.83), ("夷洲", 120.97, 23.80), ("淡水", 121.44, 25.17),
+        ("潮州", 116.62, 23.66), ("循州", 114.42, 23.11), ("韶州", 113.60, 24.81), ("番禺", 113.26, 23.13),
+        ("广州", 113.27, 23.12), ("端州", 112.46, 23.05), ("封州", 111.50, 23.43), ("梧州", 111.28, 23.48),
+        ("桂林", 110.29, 25.27), ("柳州", 109.41, 24.33), ("藤州", 110.91, 23.38), ("容州", 110.55, 22.86),
+        ("邕州", 108.37, 22.82), ("象郡", 108.35, 22.81), ("廉州", 109.20, 21.66), ("合浦", 109.21, 21.67),
+        ("雷州", 110.10, 20.91), ("琼州", 110.35, 20.02), ("崖州", 109.17, 18.36), ("交趾", 105.85, 21.03),
+        ("升龙", 105.84, 21.02), ("九真", 105.78, 19.81), ("日南", 107.59, 16.46),
+        ("滇池", 102.71, 25.04), ("拓东", 102.72, 25.05), ("建宁", 103.80, 25.50), ("大理", 100.23, 25.60),
+        ("太和城", 100.22, 25.59), ("永昌", 99.16, 25.11), ("蒙舍", 100.31, 25.23), ("夜郎", 106.71, 26.57),
+        ("牂牁", 107.52, 26.26), ("逻些", 91.13, 29.65), ("日喀则", 88.88, 29.27), ("昌都", 97.17, 31.14),
+        ("阿里", 80.10, 32.50), ("那曲", 92.05, 31.48), ("玉树", 97.01, 33.00), ("甘孜", 99.99, 31.62),
+        ("安西", 82.96, 41.72), ("龟兹", 82.95, 41.71), ("疏勒", 75.99, 39.47), ("于阗", 79.93, 37.11),
+        ("高昌", 89.53, 42.85), ("庭州", 89.18, 44.00), ("伊州", 93.51, 42.82), ("碎叶", 75.20, 42.80),
+        ("头曼城", 109.84, 41.20), ("弹汗山", 114.20, 42.40), ("鄂尔浑", 102.84, 47.20), ("和林", 102.83, 47.21),
+        ("斡难河", 111.50, 49.00), ("库伦", 106.91, 47.92), ("居延", 101.07, 42.00), ("阴山城", 111.67, 40.84),
+    ]
+
+    private static let sengokuJapanCities: [(name: String, lon: Double, lat: Double)] = [
+        // 尾张・美浓・三河・远江・骏河・甲斐・信浓・越后・北陆
+        ("清洲", 136.85, 35.21), ("那古野", 136.91, 35.18), ("犬山", 136.94, 35.38), ("津岛", 136.73, 35.18),
+        ("稻叶山", 136.78, 35.43), ("岐阜", 136.76, 35.42), ("大垣", 136.61, 35.36), ("郡上八幡", 136.96, 35.75),
+        ("高山", 137.25, 36.15), ("冈崎", 137.16, 34.95), ("吉田", 137.39, 34.77), ("滨松", 137.73, 34.71),
+        ("挂川", 138.01, 34.77), ("曳马", 137.72, 34.72), ("骏府", 138.38, 34.98), ("沼津", 138.86, 35.10),
+        ("韮山", 138.96, 35.05), ("踯躅崎馆", 138.58, 35.69), ("甲府", 138.57, 35.66), ("岩殿", 138.95, 35.62),
+        ("诹访", 138.11, 36.04), ("高远", 138.06, 35.83), ("松本", 137.97, 36.24), ("上田", 138.25, 36.40),
+        ("海津", 138.20, 36.56), ("小诸", 138.42, 36.33), ("饭田", 137.82, 35.51),
+        ("春日山", 138.20, 37.14), ("直江津", 138.24, 37.17), ("新发田", 139.33, 37.95), ("长冈", 138.85, 37.45),
+        ("村上", 139.48, 38.22), ("佐渡相川", 138.24, 38.04), ("富山", 137.21, 36.70), ("鱼津", 137.40, 36.82),
+        ("七尾", 136.97, 37.04), ("金泽", 136.66, 36.56), ("小松", 136.45, 36.41), ("一乘谷", 136.30, 36.00),
+        ("敦贺", 136.07, 35.65), ("小滨", 135.75, 35.50), ("北庄", 136.22, 36.06),
+        // 关东・奥羽・虾夷
+        ("小田原", 139.15, 35.25), ("镰仓", 139.55, 35.32), ("江户", 139.75, 35.69), ("川越", 139.49, 35.92),
+        ("钵形", 139.20, 36.11), ("忍城", 139.45, 36.14), ("馆山", 139.87, 34.99), ("久留里", 140.08, 35.29),
+        ("佐仓", 140.22, 35.72), ("古河", 139.70, 36.19), ("水户", 140.47, 36.37), ("太田", 140.53, 36.54),
+        ("宇都宫", 139.88, 36.56), ("箕轮", 138.96, 36.40), ("厩桥", 139.06, 36.39), ("沼田", 139.04, 36.64),
+        ("会津若松", 139.93, 37.49), ("白河", 140.21, 37.13), ("二本松", 140.43, 37.59), ("米泽", 140.11, 37.92),
+        ("山形", 140.34, 38.25), ("庄内", 139.83, 38.73), ("酒田", 139.84, 38.91), ("仙台", 140.87, 38.27),
+        ("岩出山", 140.87, 38.65), ("白石", 140.62, 38.00), ("石卷", 141.30, 38.43), ("盛冈", 141.15, 39.70),
+        ("花卷", 141.12, 39.39), ("八户", 141.49, 40.51), ("弘前", 140.46, 40.60), ("浪冈", 140.59, 40.71),
+        ("秋田", 140.10, 39.72), ("桧山", 140.08, 40.18), ("横手", 140.55, 39.31), ("松前", 140.11, 41.43),
+        ("箱馆", 140.73, 41.77), ("札幌", 141.35, 43.06), ("旭川", 142.37, 43.77), ("钏路", 144.38, 42.98),
+        // 畿内・近江・伊势・纪伊・丹波・播磨
+        ("京都", 135.77, 35.01), ("二条", 135.75, 35.01), ("伏见", 135.77, 34.94), ("大坂", 135.53, 34.69),
+        ("堺", 135.48, 34.57), ("岸和田", 135.37, 34.46), ("尼崎", 135.42, 34.72), ("伊丹", 135.41, 34.78),
+        ("姬路", 134.69, 34.84), ("赤穗", 134.39, 34.75), ("三木", 134.99, 34.80), ("奈良", 135.83, 34.68),
+        ("筒井", 135.78, 34.61), ("多闻山", 135.83, 34.69), ("高取", 135.83, 34.43), ("和歌山", 135.17, 34.23),
+        ("杂贺", 135.15, 34.21), ("新宫", 135.99, 33.72), ("大津", 135.87, 35.00), ("观音寺", 136.16, 35.15),
+        ("安土", 136.14, 35.16), ("小谷", 136.28, 35.46), ("长滨", 136.26, 35.38), ("津城", 136.51, 34.72),
+        ("松坂", 136.53, 34.58), ("桑名", 136.69, 35.06), ("上野伊贺", 136.13, 34.77), ("龟山", 135.58, 35.01),
+        ("福知山", 135.13, 35.30), ("宫津", 135.20, 35.53), ("竹田", 134.83, 35.30),
+        // 中国地方・四国・九州
+        ("鸟取", 134.24, 35.50), ("米子", 133.33, 35.43), ("月山富田", 133.19, 35.36), ("松江", 133.05, 35.47),
+        ("津山", 134.00, 35.07), ("冈山", 133.93, 34.66), ("备中高松", 133.82, 34.69), ("福山", 133.36, 34.49),
+        ("尾道", 133.20, 34.41), ("吉田郡山", 132.71, 34.67), ("广岛", 132.46, 34.39), ("严岛", 132.32, 34.30),
+        ("岩国", 132.18, 34.17), ("山口", 131.47, 34.18), ("萩城", 131.38, 34.41), ("下关", 130.94, 33.96),
+        ("德岛", 134.55, 34.07), ("胜瑞", 134.53, 34.13), ("高松", 134.05, 34.35), ("丸龟", 133.80, 34.29),
+        ("松山", 132.77, 33.84), ("汤筑", 132.79, 33.85), ("宇和岛", 132.56, 33.22), ("今治", 133.00, 34.07),
+        ("冈丰", 133.62, 33.60), ("高知", 133.53, 33.56), ("中村", 132.93, 32.99),
+        ("博多", 130.40, 33.59), ("立花山", 130.47, 33.68), ("久留米", 130.51, 33.32), ("柳川", 130.40, 33.16),
+        ("小仓", 130.88, 33.88), ("佐贺", 130.30, 33.26), ("平户", 129.55, 33.37), ("长崎", 129.87, 32.75),
+        ("岛原", 130.37, 32.79), ("熊本", 130.71, 32.80), ("八代", 130.60, 32.51), ("人吉", 130.77, 32.21),
+        ("府内", 131.61, 33.24), ("臼杵", 131.80, 33.12), ("中津", 131.19, 33.60), ("佐伯", 131.90, 32.96),
+        ("延冈", 131.66, 32.58), ("佐土原", 131.47, 32.05), ("都城", 131.06, 31.72), ("鹿儿岛", 130.56, 31.60),
+        ("内城", 130.57, 31.61), ("伊集院", 130.40, 31.63), ("对马", 129.29, 34.20), ("那霸", 127.68, 26.21),
+    ]
+
+    /// 在严格国界锁定的 `owners` 数组中，为每个历史国家选出最接近其都城坐标的所属州郡作为首都 seed。
+    public static func pickSeedsForLockedOwners(
+        scenario: HistoricalScenario,
+        regions: [Regions.Region],
+        owners: inout [Int],
+        width: Double,
+        height: Double
+    ) -> [Int] {
+        guard !regions.isEmpty, !scenario.nations.isEmpty else { return [] }
+        let nationCount = min(scenario.nations.count, regions.count)
+        var seeds = [Int](repeating: 0, count: nationCount)
+        var usedSeeds = Set<Int>()
+        for ni in 0..<nationCount {
+            let spec = scenario.nations[ni]
+            let cap = HistoricalBasemaps.project(lon: spec.capitalLon, lat: spec.capitalLat, region: scenario.region, width: width, height: height)
+            var bestIdx = -1
+            var bestD2 = Double.infinity
+            // 第一优先：只在本国实际拥有的州郡内选择距都城坐标最近者
+            for (ri, reg) in regions.enumerated() where owners.indices.contains(ri) && owners[ri] == ni && !usedSeeds.contains(ri) {
+                let dx = reg.center.0 - cap.x, dy = reg.center.1 - cap.y
+                let d2 = dx * dx + dy * dy
+                if d2 < bestD2 { bestD2 = d2; bestIdx = ri }
+            }
+            // 防御兜底：若极端情形下该国未分得任何州，取距其都城最近的非首府州并改归该国
+            if bestIdx < 0 {
+                for (ri, reg) in regions.enumerated() where !usedSeeds.contains(ri) {
+                    let dx = reg.center.0 - cap.x, dy = reg.center.1 - cap.y
+                    let d2 = dx * dx + dy * dy
+                    if d2 < bestD2 { bestD2 = d2; bestIdx = ri }
+                }
+                if bestIdx >= 0 && owners.indices.contains(bestIdx) {
+                    owners[bestIdx] = ni
+                }
+            }
+            if bestIdx < 0 {
+                bestIdx = regions.indices.first(where: { !usedSeeds.contains($0) }) ?? 0
+            }
+            seeds[ni] = bestIdx
+            usedSeeds.insert(bestIdx)
+        }
+        return seeds
+    }
+
+    /// 零假名真实地理命名引擎：
+    /// 1) 各国首府州郡锁定史实都城名；
+    /// 2) 距剧本自定义地理锚点 ≤ 2.5° 优先匹配锚点真实地名；
+    /// 3) 按时代匹配 `ancientChinaCities` / `sengokuJapanCities` 或全球 4,200 城 `HistoricalBasemaps.globalCities()`；
+    /// 4) 彻底杜绝任何「东/西/南/北/上/下」机械方位拼接假名！
+    public static func assignProvinceNames(
+        scenario: HistoricalScenario,
+        regions: [Regions.Region],
+        owners: [Int],
+        seeds: [Int],
+        width: Double,
+        height: Double
+    ) -> [String] {
+        guard !regions.isEmpty else { return [] }
+        let nationCount = min(scenario.nations.count, seeds.count)
+        let activeSpecs = Array(scenario.nations.prefix(nationCount))
+        let globalCities = HistoricalBasemaps.globalCities()
+
+        var usedNames = Set<String>()
+        var finalNames = [String](repeating: "", count: regions.count)
+        var seedSet = Set<Int>()
+
+        // 1. 反投影每个州郡中心到真实经纬度
+        var provGeo = [(lon: Double, lat: Double)]()
+        provGeo.reserveCapacity(regions.count)
+        for reg in regions {
+            provGeo.append(HistoricalBasemaps.unproject(x: reg.center.0, y: reg.center.1, region: scenario.region, width: width, height: height))
+        }
+
+        @inline(__always)
+        func geoDist(_ lon1: Double, _ lat1: Double, _ lon2: Double, _ lat2: Double) -> Double {
+            let midLat = (lat1 + lat2) * 0.5
+            let cLat = max(0.25, cos(midLat * Double.pi / 180.0))
+            let dx = (lon1 - lon2) * cLat
+            let dy = lat1 - lat2
+            return hypot(dx, dy)
+        }
+
+        // 2. 锁定全部各国都城原名
+        for ni in 0..<nationCount {
+            let s = seeds[ni]
+            guard regions.indices.contains(s) else { continue }
+            seedSet.insert(s)
+            let cap = activeSpecs[ni].capitalName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !cap.isEmpty && usedNames.insert(cap).inserted {
+                finalNames[s] = cap
+            }
+        }
+
+        // 3. 剧本自定义地理锚点匹配（距锚点 ≤ 2.5°，按由近及远分配，避免远州抢占近州真名）
+        struct GeoAnchorEntry {
+            let nationIndex: Int
+            let lon: Double
+            let lat: Double
+            let name: String
+        }
+        var anchorEntries = [GeoAnchorEntry]()
+        for (ni, spec) in activeSpecs.enumerated() {
+            for a in spec.anchors {
+                let nm = a.provinceName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !nm.isEmpty {
+                    anchorEntries.append(GeoAnchorEntry(nationIndex: ni, lon: a.lon, lat: a.lat, name: nm))
+                }
+            }
+        }
+
+        var anchorCandidates = [(ri: Int, name: String, dist: Double)]()
+        for ri in regions.indices where finalNames[ri].isEmpty {
+            let g = provGeo[ri]
+            let own = owners.indices.contains(ri) ? owners[ri] : -1
+            var bestName = ""
+            var bestDist = Double.infinity
+            for a in anchorEntries {
+                let d = geoDist(g.lon, g.lat, a.lon, a.lat)
+                // 本国锚点享有轻微优先（等价 −0.35°），保证同国名城优先落在本国境内
+                let adj = a.nationIndex == own ? d : (d + 0.35)
+                if d <= 2.5 && adj < bestDist {
+                    bestDist = adj
+                    bestName = a.name
+                }
+            }
+            if !bestName.isEmpty {
+                anchorCandidates.append((ri, bestName, bestDist))
+            }
+        }
+        anchorCandidates.sort { a, b in a.dist != b.dist ? a.dist < b.dist : a.ri < b.ri }
+        for cand in anchorCandidates where finalNames[cand.ri].isEmpty {
+            if usedNames.insert(cand.name).inserted {
+                finalNames[cand.ri] = cand.name
+            }
+        }
+
+        // 4. 判定时代匹配词典（古代中国 / 日本战国 / 全球 4,200 真城库）
+        let isAncientChina = ["zhanguo_260bce", "sanguo_208", "tang_755", "song_jin_1142"].contains(scenario.id)
+            || (scenario.year < 1800 && (scenario.region == .china || scenario.region == .huaxia))
+        let isSengokuJapan = scenario.id == "sengoku_1560"
+            || (scenario.year < 1850 && scenario.region == .japanDetail)
+
+        func pickNearestFromCurated(_ list: [(name: String, lon: Double, lat: Double)], lon: Double, lat: Double, maxDeg: Double) -> String? {
+            var bestName: String? = nil
+            var bestDist = maxDeg
+            for item in list where !usedNames.contains(item.name) {
+                let d = geoDist(lon, lat, item.lon, item.lat)
+                if d < bestDist {
+                    bestDist = d
+                    bestName = item.name
+                }
+            }
+            return bestName
+        }
+
+        func pickNearestGlobal(lon: Double, lat: Double) -> String? {
+            guard !globalCities.isEmpty else { return nil }
+            var bestName: String? = nil
+            var bestScore = Double.infinity
+            for c in globalCities {
+                guard !c.n.isEmpty, !usedNames.contains(c.n) else { continue }
+                let d = geoDist(lon, lat, c.lon, c.lat)
+                let score: Double
+                if d <= 6.0 {
+                    // 6° 内对大都市/首都给予温和加权（≤ 0.24°），确保名城压过近郊小镇且绝不跨区抢名
+                    let popBoost = max(0.0, log10(max(1000.0, c.pop)) - 3.0) * 0.045
+                    let capBoost = c.cap > 0 ? 0.10 : 0.0
+                    score = d - min(0.24, popBoost + capBoost)
+                } else {
+                    score = d
+                }
+                if score < bestScore {
+                    bestScore = score
+                    bestName = c.n
+                }
+            }
+            return bestName
+        }
+
+        var extraByCulture = [String: [String]]()
+        var allExtra = [String]()
+        for entry in CreationNames.extraPlaces {
+            extraByCulture[entry.culture] = entry.names
+            allExtra.append(contentsOf: entry.names)
+        }
+        var extraCursor = [String: Int]()
+        var allExtraCursor = 0
+
+        // 逐州赋名（包含未锁定重名首都的兜底情况）
+        for ri in regions.indices where finalNames[ri].isEmpty {
+            let g = provGeo[ri]
+            var picked: String? = nil
+
+            if isAncientChina {
+                picked = pickNearestFromCurated(ancientChinaCities, lon: g.lon, lat: g.lat, maxDeg: 3.8)
+            } else if isSengokuJapan {
+                picked = pickNearestFromCurated(sengokuJapanCities, lon: g.lon, lat: g.lat, maxDeg: 2.4)
+            }
+
+            if picked == nil {
+                picked = pickNearestGlobal(lon: g.lon, lat: g.lat)
+            }
+
+            // 仅当离线 cities_zh.json 未加载（如独立单测未调用 loadAtlasDirectory）时使用真实历史地名词池回退，绝不拼接方位假名！
+            if picked == nil && isAncientChina {
+                picked = pickNearestFromCurated(ancientChinaCities, lon: g.lon, lat: g.lat, maxDeg: Double.infinity)
+            }
+            if picked == nil && isSengokuJapan {
+                picked = pickNearestFromCurated(sengokuJapanCities, lon: g.lon, lat: g.lat, maxDeg: Double.infinity)
+            }
+            if picked == nil {
+                let own = owners.indices.contains(ri) ? owners[ri] : 0
+                let culture = activeSpecs.indices.contains(own) ? activeSpecs[own].culture : "chinese"
+                if let pool = extraByCulture[culture] {
+                    var idx = extraCursor[culture] ?? 0
+                    while idx < pool.count {
+                        let cand = pool[idx]; idx += 1
+                        if !usedNames.contains(cand) { picked = cand; break }
+                    }
+                    extraCursor[culture] = idx
+                }
+            }
+            if picked == nil {
+                while allExtraCursor < allExtra.count {
+                    let cand = allExtra[allExtraCursor]; allExtraCursor += 1
+                    if !usedNames.contains(cand) { picked = cand; break }
+                }
+            }
+
+            if let name = picked, usedNames.insert(name).inserted {
+                finalNames[ri] = name
+            } else {
+                var n = ri + 1
+                while !usedNames.insert("郡\(n)").inserted { n += 1 }
+                finalNames[ri] = "郡\(n)"
+            }
+        }
+
+        return finalNames
+    }
+
+    /// 兼容回退布局（用于无 `scenarios_gis.bin` 的玩家自绘历史剧本或单测）：按加权锚点归属国家并调用零假名地名引擎。
     public static func buildLayout(
         scenario: HistoricalScenario,
         regions: [Regions.Region],
@@ -246,7 +636,6 @@ public enum HistoricalScenarios {
         let nationCount = min(scenario.nations.count, regions.count)
         let activeSpecs = Array(scenario.nations.prefix(nationCount))
 
-        // 1. 为每个国家在最近且未占用的州郡上落定都城（seed）
         var seeds = [Int](repeating: 0, count: nationCount)
         var usedSeeds = Set<Int>()
         var capitalCoords = [(Double, Double)]()
@@ -273,248 +662,179 @@ public enum HistoricalScenarios {
             usedSeeds.insert(bestIdx)
         }
 
-        // 2. 展开各国全部加权地理锚点（都城 + 历史重镇锚点）
         struct ProjectedAnchor {
             let nationIndex: Int
             let x: Double
             let y: Double
-            let name: String
             let invWeightSq: Double
-            let isCapital: Bool
         }
         var allAnchors = [ProjectedAnchor]()
         allAnchors.reserveCapacity(nationCount * 8)
         for (ni, spec) in activeSpecs.enumerated() {
             let cap = capitalCoords[ni]
             let capWeight = 1.25
-            allAnchors.append(ProjectedAnchor(
-                nationIndex: ni,
-                x: cap.0,
-                y: cap.1,
-                name: spec.capitalName,
-                invWeightSq: 1.0 / (capWeight * capWeight),
-                isCapital: true
-            ))
+            allAnchors.append(ProjectedAnchor(nationIndex: ni, x: cap.0, y: cap.1, invWeightSq: 1.0 / (capWeight * capWeight)))
             for a in spec.anchors {
                 let pt = HistoricalBasemaps.project(lon: a.lon, lat: a.lat, region: scenario.region, width: width, height: height)
                 let w = max(0.2, a.weight)
-                allAnchors.append(ProjectedAnchor(
-                    nationIndex: ni,
-                    x: pt.0,
-                    y: pt.1,
-                    name: a.provinceName,
-                    invWeightSq: 1.0 / (w * w),
-                    isCapital: false
-                ))
+                allAnchors.append(ProjectedAnchor(nationIndex: ni, x: pt.0, y: pt.1, invWeightSq: 1.0 / (w * w)))
             }
         }
 
-        // 3. 逐州郡按加权平方距离归属国家并选取最近锚点名称
         var seedToNation = [Int: Int]()
         for (ni, s) in seeds.enumerated() { seedToNation[s] = ni }
 
         var owners = [Int](repeating: 0, count: regions.count)
-        var rawNames = [String](repeating: "", count: regions.count)
-        var anchorDelta = [(dx: Double, dy: Double, distSq: Double)](repeating: (0, 0, 0), count: regions.count)
-
         for (ri, reg) in regions.enumerated() {
             if let ni = seedToNation[ri] {
                 owners[ri] = ni
-                rawNames[ri] = activeSpecs[ni].capitalName
-                anchorDelta[ri] = (0, 0, 0)
                 continue
             }
             var bestNation = 0
-            var bestName = activeSpecs[0].capitalName
             var bestScore = Double.infinity
-            var bestDx = 0.0, bestDy = 0.0, bestRawDistSq = Double.infinity
-
             for anchor in allAnchors {
                 let dx = reg.center.0 - anchor.x
                 let dy = reg.center.1 - anchor.y
-                let d2 = dx * dx + dy * dy
-                let score = d2 * anchor.invWeightSq
+                let score = (dx * dx + dy * dy) * anchor.invWeightSq
                 if score < bestScore {
                     bestScore = score
                     bestNation = anchor.nationIndex
-                    bestName = anchor.name
-                    bestDx = dx
-                    bestDy = dy
-                    bestRawDistSq = d2
                 }
             }
             owners[ri] = bestNation
-            rawNames[ri] = bestName
-            anchorDelta[ri] = (bestDx, bestDy, bestRawDistSq)
         }
+        for (ni, s) in seeds.enumerated() { owners[s] = ni }
 
-        // 保底校验：确保每个国家至少控制其都城州郡
-        for (ni, s) in seeds.enumerated() {
-            owners[s] = ni
-            rawNames[s] = activeSpecs[ni].capitalName
-        }
-
-        // 4. 州郡名去重：都城优先保留原名，其余同名重镇按最近者取本名，周边州郡加方位后缀或文化历史城池补全
-        var usedNames = Set<String>()
-        var finalNames = [String](repeating: "", count: regions.count)
-
-        // 先锁定全部都城原名
-        for (ni, s) in seeds.enumerated() {
-            let base = activeSpecs[ni].capitalName
-            if usedNames.insert(base).inserted {
-                finalNames[s] = base
-            } else {
-                let unique = "\(activeSpecs[ni].shortName)\(base)"
-                usedNames.insert(unique)
-                finalNames[s] = unique
-            }
-        }
-
-        // 构建文化备选历史地名池（按文化分组，用于方位变体用尽时补足，保证零重名）
-        var extraByCulture = [String: [String]]()
-        for entry in CreationNames.extraPlaces {
-            extraByCulture[entry.culture] = entry.names
-        }
-        var extraCursor = [String: Int]()
-
-        // 按距离锚点由近及远排序，确保最贴近历史重镇坐标的州郡获得纯正原名
-        let nonSeeds = regions.indices
-            .filter { seedToNation[$0] == nil }
-            .sorted { a, b in
-                if anchorDelta[a].distSq != anchorDelta[b].distSq {
-                    return anchorDelta[a].distSq < anchorDelta[b].distSq
-                }
-                return a < b
-            }
-
-        func directionalCandidates(base: String, dx: Double, dy: Double) -> [String] {
-            // 画布 y 向下增大，故 dy < 0 为北、dy > 0 为南
-            let primary: String
-            let ax = abs(dx), ay = abs(dy)
-            if ax > ay * 1.4 {
-                primary = dx >= 0 ? "东" : "西"
-            } else if ay > ax * 1.4 {
-                primary = dy <= 0 ? "北" : "南"
-            } else {
-                primary = (dy <= 0 ? "北" : "南") + (dx >= 0 ? "东" : "西")
-            }
-            let ordered = [primary, "东", "西", "南", "北", "上", "下", "内", "外", "中", "前", "后"]
-            var seen = Set<String>()
-            var result = [String]()
-            for dir in ordered where seen.insert(dir).inserted {
-                result.append("\(base)\(dir)")
-            }
-            return result
-        }
-
-        for ri in nonSeeds {
-            let base = rawNames[ri].isEmpty ? activeSpecs[owners[ri]].capitalName : rawNames[ri]
-            if usedNames.insert(base).inserted {
-                finalNames[ri] = base
-                continue
-            }
-            let d = anchorDelta[ri]
-            var picked: String? = nil
-            for cand in directionalCandidates(base: base, dx: d.dx, dy: d.dy) {
-                if usedNames.insert(cand).inserted {
-                    picked = cand
-                    break
-                }
-            }
-            if picked == nil {
-                let culture = activeSpecs[owners[ri]].culture
-                if let pool = extraByCulture[culture], !pool.isEmpty {
-                    var idx = extraCursor[culture] ?? 0
-                    while idx < pool.count {
-                        let cand = pool[idx]
-                        idx += 1
-                        if usedNames.insert(cand).inserted {
-                            picked = cand
-                            break
-                        }
-                    }
-                    extraCursor[culture] = idx
-                }
-            }
-            if let picked {
-                finalNames[ri] = picked
-            } else {
-                var n = 2
-                while !usedNames.insert("\(base)\(n)").inserted { n += 1 }
-                finalNames[ri] = "\(base)\(n)"
-            }
-        }
-
+        let finalNames = assignProvinceNames(scenario: scenario, regions: regions, owners: owners, seeds: seeds, width: width, height: height)
         return (seeds, owners, finalNames)
     }
 
-    // MARK: - 2. 整局历史设定覆写（国名、版图文化信仰、细分政体、真实领袖、纪年、同盟与开局战事）
+    // MARK: - 2. 整局历史设定覆写（纯净纪年、真实人口工业密度、国名政体、历史名臣名将注入、开局同盟与战事）
 
     /// 将历史剧本的真实设定覆写到新建的 `run` 中：
-    /// 包括世界标题、历史纪年、州郡城名、国名与色号、文化与国教、细分政体、真实开国领袖四维与特质、历史同盟与开局战事。
+    /// 不提前采样回放第 0 帧；调用 `HistoricalRoster.apply` 注入真实名将内阁世家与舰队；重写开篇史册消除任何通用旧名。
     public static func applyOverrides(
         run r: JS,
         scenario: HistoricalScenario,
         provinceNames: [String],
+        popDensities: [UInt8]? = nil,
         engine: DeclarationEngine? = nil
     ) {
-        Regimes.enable(r)
+        // 初始化 regimes 容器而不提前触发 ReplayEngine.capture（彻底根治回放第 0 帧错国 bug！）
+        if r.regimes.isNull {
+            let o = JS.object()
+            o.nations = JS.object()
+            o.month = JS(-1)
+            r.regimes = o
+        }
+        r.regimes.enabled = JS(true)
+        r.regimes.replay = .null
 
-        // 1. 世界标题、真实历史纪年与防随机覆写保护标记
+        // 若尚未初始化 offices47 骨架，预先准备以便 HistoricalRoster.apply 写入真实内阁与元帅
+        if r.offices47.isNull {
+            let books = JS.object()
+            for n in r.world.nations.asArray {
+                let b = JS.object()
+                b.assignments = .array()
+                b.reviewYear = JS(-1)
+                books[n.id.asString] = b
+            }
+            let off = JS.object()
+            off.version = JS(1)
+            off.rule = JS("original-government-office-v1")
+            off.revision = JS(0)
+            off.wars = JS(1)
+            off.nations = books
+            r.offices47 = off
+        }
+
+        // 1. 世界标题、纯净历史时间时钟（calendar.era 置空，绝不把地图名塞进左上角时钟）、历史时代与叛乱模式
         if !r.world.isNull && !r.world.custom.isNull {
             r.world.custom.name = JS(scenario.title)
         }
+        let yearOffset = scenario.year - 1
         let cal = JS.object()
-        cal.era = JS(scenario.eraName)
-        cal.offset = JS(scenario.year - 1)
+        cal.era = JS("")
+        cal.offset = JS(yearOffset)
         r.regimes.calendar = cal
-        r.regimes.era = JS(scenario.eraName)
-        r.regimes.yearOffset = JS(scenario.year - 1)
+        r.regimes.era = JS("")
+        r.regimes.yearOffset = JS(yearOffset)
         r.regimes.historicalScenarioId = JS(scenario.id)
+        r.regimes.historicalEra = JS(scenario.eraOverride ?? HistoricalEra.from(year: scenario.year).rawValue)
+        if r.regimes.world.isNull { r.regimes.world = JS.object() }
+        let rebelMode = scenario.rebelMode ?? "historical"
+        r.regimes.world.rebelMode = JS(rebelMode)
+        if rebelMode == "off" {
+            r.regimes.world.rebel = JS(0)
+        }
         r.regimes.namesVaried = JS(true)
         r.regimes.distinctColors = JS(true)
         r.regimes.faithReady = JS(true)
         if r.regimes.faith.isNull { r.regimes.faith = JS.object() }
         if r.regimes.style.isNull { r.regimes.style = JS.object() }
 
-        // 2. 覆写全部州郡与城池的历史地名
+        // 2. 覆写全部州郡与城池的真实历史地名 + 真实 GIS 人口/工业密度缩放
         let provinces = r.world.provinces.asArray
         let cities = r.world.cities.asArray
         var cityByProvince = [String: JS]()
         for c in cities {
             if let pid = c.provinceId.optionalString { cityByProvince[pid] = c }
         }
-        for (i, p) in provinces.enumerated() where i < provinceNames.count {
-            let pname = provinceNames[i]
-            guard !pname.isEmpty else { continue }
-            p.name = JS(pname)
-            let city: JS? = (i < cities.count && cities[i].provinceId.optionalString == p.id.optionalString)
-                ? cities[i]
-                : cityByProvince[p.id.asString]
-            if let city {
-                city.name = JS(pname)
-                let cid = city.id.asString
-                let civCity = r.civilization.cities[cid]
-                if !civCity.isNull {
-                    civCity.name.value = JS(pname)
-                    civCity.name.custom = JS(pname)
+        var statecraftByPid = [String: JS]()
+        if !r.world.statecraft.isNull && !r.world.statecraft.provinces.isNull {
+            for sp in r.world.statecraft.provinces.asArray {
+                if let pid = sp.provinceId.optionalString { statecraftByPid[pid] = sp }
+            }
+        }
+        for (i, p) in provinces.enumerated() {
+            let pid = p.id.asString
+            if i < provinceNames.count {
+                let pname = provinceNames[i]
+                if !pname.isEmpty {
+                    p.name = JS(pname)
+                    let city: JS? = (i < cities.count && cities[i].provinceId.optionalString == p.id.optionalString)
+                        ? cities[i]
+                        : cityByProvince[pid]
+                    if let city {
+                        city.name = JS(pname)
+                        let cid = city.id.asString
+                        let civCity = r.civilization.cities[cid]
+                        if !civCity.isNull {
+                            civCity.name.value = JS(pname)
+                            civCity.name.custom = JS(pname)
+                        }
+                    }
+                }
+            }
+            if let densities = popDensities, i < densities.count {
+                let d = Double(max(10, Int(densities[i])))
+                let factor = 0.22 + pow(d / 128.0, 1.35) * 1.15
+                var maxCap = 60_000.0
+                if !r.finance.isNull && !r.finance.provinces.isNull && !r.finance.provinces[pid].isNull {
+                    let oldMax = max(5000.0, r.finance.provinces[pid].maxPopulation.optionalNumber ?? 40_000.0)
+                    maxCap = max(4000.0, (oldMax * factor).rounded())
+                    r.finance.provinces[pid].maxPopulation = JS(maxCap)
+                }
+                if let sp = statecraftByPid[pid] {
+                    let oldPop = max(3000.0, sp.population.optionalNumber ?? 25_000.0)
+                    let scaledPop = min(maxCap, max(2500.0, (oldPop * factor).rounded()))
+                    sp.population = JS(scaledPop)
+                    sp.grain = JS((scaledPop * 20.0).rounded())
+                    if !r.governmentOpening.isNull && !r.governmentOpening.population.isNull {
+                        r.governmentOpening.population[pid] = JS(scaledPop)
+                    }
                 }
             }
         }
 
-        // 3. 逐国覆写国名、配色、文化、宗教、政体细分与真实历史领袖
+        // 3. 逐国覆写国名、配色、文化、宗教、政体细分与基础领袖
         let nations = r.world.nations.asArray
-        var specIdToNationId = [String: String]()
-        var nationIdToSpec = [String: HistoricalNationSpec]()
         let validCultures = Set(NativeCreation.cultureIds)
 
         for (i, n) in nations.enumerated() where i < scenario.nations.count {
             let spec = scenario.nations[i]
             let nid = n.id.asString
-            specIdToNationId[spec.id] = nid
-            nationIdToSpec[nid] = spec
 
-            // 校验 style 严格存在于 Regimes.styles / PolitySystem.styleProfiles
             let resolvedStyle = Regimes.styles.first(where: { $0.id == spec.style && Regimes.styleProfiles[$0.id] != nil })
                 ?? Regimes.styles.first(where: { $0.id == spec.style })
                 ?? Regimes.styles.first(where: { $0.base == spec.polity })
@@ -539,7 +859,6 @@ public enum HistoricalScenarios {
                 r.upperCombat.nations[nid].polity = JS(validPolity)
             }
 
-            // 写入 regimes.nations[nid].style（引擎真实读取路径）及 regimes.style[nid]
             let book = Regimes.book(r, nid)
             book.style = JS(resolvedStyle.id)
             book.history = .array([JS(validPolity)])
@@ -547,7 +866,6 @@ public enum HistoricalScenarios {
             book.parties = .null
             r.regimes.style[nid] = JS(resolvedStyle.id)
 
-            // 同步本国控制州郡的地图文化与地方信仰
             for p in provinces where p.controller.optionalString == nid {
                 let pid = p.id.asString
                 r.regimes.faith[pid] = JS(validReligion)
@@ -560,7 +878,6 @@ public enum HistoricalScenarios {
                 }
             }
 
-            // 同步国内世家与宗族的文化、宗教
             if !r.nobility.isNull && !r.nobility.families.isNull {
                 for (fkey, fam) in r.nobility.families.objectEntries where fam.nationId.optionalString == nid {
                     fam.religionId = JS(validReligion)
@@ -577,7 +894,6 @@ public enum HistoricalScenarios {
                 }
             }
 
-            // 覆写开国领袖（chronicle.leaders / civilization.rulers / people.persons / kin.persons / 开篇史册）
             applyRulerOverride(
                 run: r,
                 nationId: nid,
@@ -589,7 +905,7 @@ public enum HistoricalScenarios {
             )
         }
 
-        // 同步开局军团番号与真实州郡名
+        // 4. 同步开局军团番号与初始水师母港名
         var provinceNameById = [String: String]()
         for p in provinces { provinceNameById[p.id.asString] = p.name.asString }
         for army in r.world.armies.asArray where army.troops.asNumber > 0 && army.status.asString != "destroyed" {
@@ -601,15 +917,108 @@ public enum HistoricalScenarios {
                 army.name = JS("\(pname)\(unitName)")
             }
         }
+        if !r.navy.isNull && !r.navy.fleets.isNull && !r.harbors.isNull && !r.harbors.sites.isNull {
+            var harborProvById = [String: String]()
+            for site in r.harbors.sites.asArray {
+                if let sid = site.id.optionalString, let pid = site.provinceId.optionalString {
+                    harborProvById[sid] = pid
+                }
+            }
+            for fl in r.navy.fleets.asArray {
+                if let dockId = fl.dockId.optionalString,
+                   let pid = harborProvById[dockId],
+                   let pname = provinceNameById[pid], !pname.isEmpty {
+                    fl.name = JS("\(pname)港水师")
+                }
+            }
+        }
 
-        // 4. 缔结历史既定同盟（先建同盟再宣战，使开局战事自然形成同盟阵营联动）
-        applyOpeningAlliances(run: r, scenario: scenario, specIdToNationId: specIdToNationId)
+        // 5. 注入史实名君年龄保护、历史顺位继承人、名将元帅/海军上将/内阁大臣、政党世家、时代科技、工业产能与主力舰队
+        HistoricalRoster.apply(run: r, scenarioId: scenario.id)
 
-        // 5. 发动历史既定开局战争
-        applyOpeningWars(run: r, scenario: scenario, specIdToNationId: specIdToNationId, engine: engine ?? Session.engine)
+        // 6. 覆写全部开篇史册条目与开局系统事件，确保彻底清除 Creation.base 遗留的随机旧国名与旧君主名
+        rewriteOpeningChronicle(run: r, scenario: scenario)
 
-        // 6. 写入世家开局关系
+        // 7. 兼容旧调用方（显式传入 engine 时即时缔结开局同盟与战事；NativeCreation 流程中由 applyDiplomacy 在建好 statics 后调用）
+        if let engine {
+            applyDiplomacy(run: r, scenario: scenario, engine: engine)
+        }
+
+        // 8. 写入世家开局关系，并确保回放箱保持清空等待开局最终首帧采集
         FamilyPolitics.seedOpeningRelations(r, seed: r.world.custom.seed.optionalString ?? scenario.id)
+        r.regimes.replay = .null
+    }
+
+    /// 缔结历史剧本的开局同盟与开局战事（须在 `CreationStatics.build` 与引擎 `install()` 完成后调用）。
+    public static func applyDiplomacy(
+        run r: JS,
+        scenario: HistoricalScenario,
+        engine: DeclarationEngine?
+    ) {
+        let nations = r.world.nations.asArray
+        var specIdToNationId = [String: String]()
+        for (i, n) in nations.enumerated() where i < scenario.nations.count {
+            specIdToNationId[scenario.nations[i].id] = n.id.asString
+        }
+        applyOpeningAlliances(run: r, scenario: scenario, specIdToNationId: specIdToNationId)
+        applyOpeningWars(run: r, scenario: scenario, specIdToNationId: specIdToNationId, engine: engine ?? Session.engine)
+    }
+
+    /// 在全部历史覆写与 `HistoricalRoster.apply` 完成后，统一重写开篇登基史册与开局事件，彻底消除随机旧名。
+    private static func rewriteOpeningChronicle(run r: JS, scenario: HistoricalScenario) {
+        let nations = r.world.nations.asArray
+        var nationNameById = [String: String]()
+        var specByNationId = [String: HistoricalNationSpec]()
+        for (i, n) in nations.enumerated() {
+            let nid = n.id.asString
+            nationNameById[nid] = n.name.asString
+            if i < scenario.nations.count { specByNationId[nid] = scenario.nations[i] }
+        }
+
+        if !r.chronicle.isNull && !r.chronicle.entries.isNull {
+            for entry in r.chronicle.entries.asArray where entry.kind.optionalString == "accession" {
+                guard let nid = entry.nationIds.asArray.first?.optionalString,
+                      let nationName = nationNameById[nid] else { continue }
+                let spec = specByNationId[nid]
+                var rulerName = spec?.rulerName ?? ""
+                var rulerTitle = spec?.rulerTitle ?? ""
+                var rulerId = "ruler-\(nid)-1"
+                var regnal = ""
+                if !r.chronicle.leaders[nid].isNull && r.chronicle.leaders[nid].length > 0 {
+                    let lead = r.chronicle.leaders[nid][0]
+                    if let lid = lead.id.optionalString, !lid.isEmpty { rulerId = lid }
+                    if let nm = lead.name.optionalString, !nm.isEmpty { rulerName = nm }
+                    if let rg = lead.regnalName.optionalString, !rg.isEmpty { regnal = rg }
+                }
+                let civRuler = r.civilization.rulers[rulerId]
+                if !civRuler.isNull {
+                    if let t = civRuler.titleAtAccession.optionalString, !t.isEmpty { rulerTitle = t }
+                    if rulerName.isEmpty, let nm = civRuler.name.optionalString { rulerName = nm }
+                    if regnal.isEmpty, let g = civRuler.given.optionalString { regnal = g }
+                }
+                if !rulerName.isEmpty {
+                    let titlePrefix = rulerTitle.isEmpty ? "" : rulerTitle
+                    entry.text = JS("\(nationName)开篇：\(titlePrefix)\(rulerName)主政（\(scenario.yearDisplayText)）")
+                    entry.reason = JS("历史剧本「\(scenario.title)」开局设定：按真实历史疆界、政体与史实人物开局推演。")
+                    for p in entry.people.asArray {
+                        p.name = JS(rulerName)
+                        if !regnal.isEmpty { p.regnalName = JS(regnal) }
+                    }
+                }
+            }
+        }
+
+        // 清理 Creation.base / OpeningGovernment / CreationForces 留下的旧随机名开局事件，写入干净的历史开篇纪事
+        if !r.world.isNull && !r.world.events.isNull {
+            let e = JS.object()
+            e.id = JS(1)
+            e.day = JS(0)
+            e.kind = JS("system")
+            e.text = JS("历史剧本「\(scenario.title)」开局（\(scenario.yearDisplayText)）")
+            e.reason = JS(scenario.description)
+            r.world.events = .array([e])
+            r.world.nextEventId = JS(2)
+        }
     }
 
     private static func splitRulerName(_ fullName: String, culture: String) -> (given: String, house: String) {
@@ -950,45 +1359,47 @@ public enum HistoricalScenarios {
         return true
     }
 
-    // MARK: - 3. 官方精选 8 大真实历史剧本库
+    // MARK: - 3. 官方精选 10 大真实历史剧本库（与 scenarios_gis.bin 严格逐位对齐）
 
     public static let officialScenarios: [HistoricalScenario] = [
         zhanguo260BCE,
         sanguo208,
         tang755,
+        songJin1142,
         sengoku1560,
         napoleon1812,
         ww1_1914,
         ww2Europe1939,
         ww2Asia1941,
+        coldwar1950,
     ]
 
-    // 剧本 1：战国七雄（公元前 260 年 · 长平决战前夜）
+    // 剧本 1：战国七雄（公元前 260 年 · 长平决战前夜 · 华夏精图 · 10 国）
     private static let zhanguo260BCE = HistoricalScenario(
         id: "zhanguo_260bce",
         title: "战国七雄",
         subtitle: "长平决战 · 合纵连横",
-        region: .china,
+        region: .huaxia,
         year: -260,
         eraName: "周赧王五十五年",
-        description: "公元前260年，秦昭襄王远交近攻、白起陈兵上党，与赵国爆发决定天下命运的长平之战。三晋合纵岌岌可危，齐楚燕虎视关东，漠北匈奴与岭南百越各据一方。",
+        description: "公元前260年，秦昭襄王远交近攻、白起陈兵上党，与赵国爆发决定天下命运的长平之战。三晋合纵岌岌可危，齐楚燕虎视关东，漠北匈奴、岭南百越与西陲羌戎各据一方。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 115,
+        provinceCount: 125,
         nations: [
             HistoricalNationSpec(
                 id: "qin", name: "秦国", shortName: "秦", color: "#363E4A",
                 culture: "chinese", religion: "confucian", polity: "Empire", style: "despotism",
                 capitalLon: 108.7, capitalLat: 34.3, capitalName: "咸阳",
                 anchors: [
-                    HistoricalAnchor(lon: 107.2, lat: 34.4, provinceName: "关中", weight: 1.2),
-                    HistoricalAnchor(lon: 104.1, lat: 30.7, provinceName: "巴蜀", weight: 1.35),
-                    HistoricalAnchor(lon: 106.5, lat: 29.6, provinceName: "巴郡", weight: 1.1),
+                    HistoricalAnchor(lon: 107.2, lat: 34.4, provinceName: "雍城", weight: 1.2),
+                    HistoricalAnchor(lon: 104.1, lat: 30.7, provinceName: "成都", weight: 1.35),
+                    HistoricalAnchor(lon: 106.5, lat: 29.6, provinceName: "江州", weight: 1.1),
                     HistoricalAnchor(lon: 107.0, lat: 33.1, provinceName: "汉中", weight: 1.15),
-                    HistoricalAnchor(lon: 110.9, lat: 35.1, provinceName: "河东", weight: 0.95),
-                    HistoricalAnchor(lon: 109.7, lat: 37.8, provinceName: "上郡", weight: 1.05),
-                    HistoricalAnchor(lon: 104.0, lat: 35.4, provinceName: "陇西", weight: 1.25),
-                    HistoricalAnchor(lon: 112.1, lat: 31.8, provinceName: "南郡", weight: 1.0),
+                    HistoricalAnchor(lon: 110.5, lat: 34.9, provinceName: "河东", weight: 0.95),
+                    HistoricalAnchor(lon: 109.7, lat: 38.0, provinceName: "上郡", weight: 1.05),
+                    HistoricalAnchor(lon: 104.6, lat: 35.0, provinceName: "陇西", weight: 1.25),
+                    HistoricalAnchor(lon: 112.1, lat: 31.8, provinceName: "襄阳", weight: 1.0),
                 ],
                 rulerName: "嬴稷", rulerTitle: "秦昭襄王",
                 rulerMilitary: 88, rulerAdmin: 86, rulerDiplo: 82, rulerCharisma: 84,
@@ -1001,8 +1412,8 @@ public enum HistoricalScenarios {
                 anchors: [
                     HistoricalAnchor(lon: 114.6, lat: 39.8, provinceName: "代郡", weight: 1.05),
                     HistoricalAnchor(lon: 113.1, lat: 36.2, provinceName: "上党", weight: 0.9),
-                    HistoricalAnchor(lon: 112.5, lat: 37.9, provinceName: "太原", weight: 1.05),
-                    HistoricalAnchor(lon: 111.7, lat: 40.5, provinceName: "云中", weight: 1.0),
+                    HistoricalAnchor(lon: 112.5, lat: 37.9, provinceName: "晋阳", weight: 1.05),
+                    HistoricalAnchor(lon: 111.8, lat: 40.4, provinceName: "云中", weight: 1.0),
                     HistoricalAnchor(lon: 115.0, lat: 37.2, provinceName: "巨鹿", weight: 0.9),
                 ],
                 rulerName: "赵丹", rulerTitle: "赵孝成王",
@@ -1014,9 +1425,9 @@ public enum HistoricalScenarios {
                 culture: "chinese", religion: "confucian", polity: "Kingdom", style: "feudal",
                 capitalLon: 118.3, capitalLat: 36.8, capitalName: "临淄",
                 anchors: [
-                    HistoricalAnchor(lon: 121.2, lat: 37.1, provinceName: "胶东", weight: 1.1),
-                    HistoricalAnchor(lon: 116.8, lat: 36.6, provinceName: "济北", weight: 0.95),
-                    HistoricalAnchor(lon: 119.3, lat: 35.6, provinceName: "琅琊", weight: 1.0),
+                    HistoricalAnchor(lon: 120.8, lat: 37.5, provinceName: "胶东", weight: 1.1),
+                    HistoricalAnchor(lon: 116.5, lat: 36.4, provinceName: "济北", weight: 0.95),
+                    HistoricalAnchor(lon: 118.4, lat: 35.1, provinceName: "琅琊", weight: 1.0),
                     HistoricalAnchor(lon: 120.4, lat: 36.4, provinceName: "即墨", weight: 0.95),
                     HistoricalAnchor(lon: 117.0, lat: 35.6, provinceName: "曲阜", weight: 0.85),
                 ],
@@ -1033,7 +1444,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 113.0, lat: 28.2, provinceName: "长沙", weight: 1.25),
                     HistoricalAnchor(lon: 120.6, lat: 31.3, provinceName: "吴郡", weight: 1.2),
                     HistoricalAnchor(lon: 120.6, lat: 30.0, provinceName: "会稽", weight: 1.15),
-                    HistoricalAnchor(lon: 118.4, lat: 32.2, provinceName: "淮南", weight: 1.05),
+                    HistoricalAnchor(lon: 119.4, lat: 32.4, provinceName: "广陵", weight: 1.05),
                     HistoricalAnchor(lon: 112.5, lat: 33.0, provinceName: "宛城", weight: 0.95),
                     HistoricalAnchor(lon: 115.9, lat: 28.7, provinceName: "豫章", weight: 1.15),
                     HistoricalAnchor(lon: 117.2, lat: 34.3, provinceName: "彭城", weight: 0.95),
@@ -1047,9 +1458,8 @@ public enum HistoricalScenarios {
                 culture: "chinese", religion: "confucian", polity: "Kingdom", style: "feudal",
                 capitalLon: 114.3, capitalLat: 34.8, capitalName: "大梁",
                 anchors: [
-                    HistoricalAnchor(lon: 113.8, lat: 35.3, provinceName: "河内", weight: 0.85),
-                    HistoricalAnchor(lon: 110.5, lat: 35.6, provinceName: "河西", weight: 0.8),
-                    HistoricalAnchor(lon: 111.2, lat: 35.1, provinceName: "安邑", weight: 0.85),
+                    HistoricalAnchor(lon: 113.8, lat: 35.3, provinceName: "朝歌", weight: 0.85),
+                    HistoricalAnchor(lon: 111.0, lat: 35.1, provinceName: "安邑", weight: 0.85),
                     HistoricalAnchor(lon: 115.6, lat: 34.4, provinceName: "睢阳", weight: 0.85),
                 ],
                 rulerName: "魏圉", rulerTitle: "魏安釐王",
@@ -1062,7 +1472,7 @@ public enum HistoricalScenarios {
                 capitalLon: 113.7, capitalLat: 34.4, capitalName: "新郑",
                 anchors: [
                     HistoricalAnchor(lon: 113.5, lat: 34.1, provinceName: "阳翟", weight: 0.8),
-                    HistoricalAnchor(lon: 112.5, lat: 33.7, provinceName: "南阳", weight: 0.8),
+                    HistoricalAnchor(lon: 112.5, lat: 33.0, provinceName: "南阳", weight: 0.8),
                     HistoricalAnchor(lon: 112.4, lat: 34.6, provinceName: "洛阳", weight: 0.8),
                 ],
                 rulerName: "韩然", rulerTitle: "韩桓惠王",
@@ -1074,47 +1484,59 @@ public enum HistoricalScenarios {
                 culture: "chinese", religion: "confucian", polity: "Kingdom", style: "feudal",
                 capitalLon: 116.4, capitalLat: 39.9, capitalName: "蓟城",
                 anchors: [
-                    HistoricalAnchor(lon: 123.2, lat: 41.3, provinceName: "辽东", weight: 1.25),
+                    HistoricalAnchor(lon: 123.2, lat: 41.3, provinceName: "襄平", weight: 1.25),
                     HistoricalAnchor(lon: 117.4, lat: 40.1, provinceName: "渔阳", weight: 1.0),
-                    HistoricalAnchor(lon: 115.9, lat: 39.4, provinceName: "涿郡", weight: 0.95),
-                    HistoricalAnchor(lon: 120.4, lat: 41.6, provinceName: "右北平", weight: 1.1),
-                    HistoricalAnchor(lon: 126.5, lat: 39.0, provinceName: "乐浪", weight: 1.25),
+                    HistoricalAnchor(lon: 115.9, lat: 39.5, provinceName: "涿郡", weight: 0.95),
+                    HistoricalAnchor(lon: 118.7, lat: 40.9, provinceName: "右北平", weight: 1.1),
+                    HistoricalAnchor(lon: 125.8, lat: 39.0, provinceName: "乐浪", weight: 1.25),
                 ],
                 rulerName: "姬喜", rulerTitle: "燕王喜",
                 rulerMilitary: 62, rulerAdmin: 60, rulerDiplo: 65, rulerCharisma: 62,
                 rulerTraits: ["Ambitious", "Stubborn"]
             ),
             HistoricalNationSpec(
-                id: "xiongnu", name: "匈奴单于庭", shortName: "匈奴", color: "#B87333",
+                id: "xiongnu", name: "匈奴", shortName: "匈奴", color: "#B87333",
                 culture: "mongol", religion: "tengri", polity: "Tribal", style: "khanate",
                 capitalLon: 109.8, capitalLat: 41.2, capitalName: "头曼城",
                 anchors: [
-                    HistoricalAnchor(lon: 108.0, lat: 40.5, provinceName: "朔方", weight: 1.25),
-                    HistoricalAnchor(lon: 103.0, lat: 47.2, provinceName: "漠北", weight: 1.65),
-                    HistoricalAnchor(lon: 95.0, lat: 42.5, provinceName: "河西大漠", weight: 1.6),
-                    HistoricalAnchor(lon: 85.0, lat: 41.5, provinceName: "西域", weight: 1.8),
-                    HistoricalAnchor(lon: 119.0, lat: 46.5, provinceName: "东胡草原", weight: 1.55),
-                    HistoricalAnchor(lon: 91.0, lat: 32.0, provinceName: "西羌高原", weight: 1.75),
+                    HistoricalAnchor(lon: 108.3, lat: 41.1, provinceName: "五原", weight: 1.25),
+                    HistoricalAnchor(lon: 110.1, lat: 41.0, provinceName: "阴山", weight: 1.2),
+                    HistoricalAnchor(lon: 101.1, lat: 42.0, provinceName: "居延", weight: 1.3),
+                    HistoricalAnchor(lon: 119.0, lat: 43.2, provinceName: "大宁", weight: 1.3),
                 ],
                 rulerName: "头曼", rulerTitle: "单于",
                 rulerMilitary: 84, rulerAdmin: 58, rulerDiplo: 62, rulerCharisma: 78,
                 rulerTraits: ["Hawkish", "Brave", "Conqueror"]
             ),
             HistoricalNationSpec(
-                id: "baiyue", name: "百越诸部", shortName: "百越", color: "#2A7A68",
+                id: "baiyue", name: "百越", shortName: "百越", color: "#2A7A68",
                 culture: "vietnamese", religion: "chineseFolk", polity: "Tribal", style: "chiefdom",
                 capitalLon: 113.3, capitalLat: 23.1, capitalName: "番禺",
                 anchors: [
                     HistoricalAnchor(lon: 119.3, lat: 26.1, provinceName: "东冶", weight: 1.25),
                     HistoricalAnchor(lon: 110.3, lat: 25.3, provinceName: "桂林", weight: 1.2),
-                    HistoricalAnchor(lon: 108.3, lat: 22.8, provinceName: "象郡", weight: 1.25),
+                    HistoricalAnchor(lon: 108.4, lat: 22.8, provinceName: "象郡", weight: 1.25),
                     HistoricalAnchor(lon: 105.8, lat: 21.0, provinceName: "交趾", weight: 1.3),
-                    HistoricalAnchor(lon: 102.7, lat: 25.0, provinceName: "滇国", weight: 1.45),
                     HistoricalAnchor(lon: 121.0, lat: 23.8, provinceName: "夷洲", weight: 1.2),
                 ],
                 rulerName: "无诸", rulerTitle: "闽越王",
                 rulerMilitary: 72, rulerAdmin: 66, rulerDiplo: 68, rulerCharisma: 74,
                 rulerTraits: ["NavalMastery", "BattleHardened"]
+            ),
+            HistoricalNationSpec(
+                id: "qiangrong", name: "羌戎", shortName: "羌", color: "#9C5B34",
+                culture: "tibetan", religion: "tengri", polity: "Tribal", style: "chiefdom",
+                capitalLon: 101.2, capitalLat: 36.7, capitalName: "临羌",
+                anchors: [
+                    HistoricalAnchor(lon: 100.4, lat: 38.9, provinceName: "张掖", weight: 1.2),
+                    HistoricalAnchor(lon: 98.5, lat: 39.7, provinceName: "酒泉", weight: 1.2),
+                    HistoricalAnchor(lon: 97.2, lat: 31.1, provinceName: "昌都", weight: 1.3),
+                    HistoricalAnchor(lon: 100.2, lat: 25.6, provinceName: "大理", weight: 1.3),
+                    HistoricalAnchor(lon: 102.7, lat: 25.0, provinceName: "滇池", weight: 1.25),
+                ],
+                rulerName: "无弋爰剑", rulerTitle: "羌豪",
+                rulerMilitary: 78, rulerAdmin: 56, rulerDiplo: 58, rulerCharisma: 72,
+                rulerTraits: ["Brave", "BattleHardened"]
             ),
         ],
         openingWars: [
@@ -1123,21 +1545,23 @@ public enum HistoricalScenarios {
         openingAlliances: [
             HistoricalAllianceSpec(name: "合纵抗秦同盟", memberIds: ["zhao", "wei", "han"]),
         ],
-        tags: ["先秦", "中国", "长平之战", "经典"]
+        tags: ["先秦", "中国", "长平之战", "经典"],
+        rebelMode: "historical",
+        eraOverride: "antiquity"
     )
 
-    // 剧本 2：三国鼎立 · 赤壁风云（公元 208 年 · 建安十三年）
+    // 剧本 2：三国鼎立 · 赤壁风云（公元 208 年 · 建安十三年 · 华夏精图 · 9 国）
     private static let sanguo208 = HistoricalScenario(
         id: "sanguo_208",
         title: "三国鼎立 · 赤壁风云",
         subtitle: "曹操南下 · 孙刘合纵",
-        region: .china,
+        region: .huaxia,
         year: 208,
         eraName: "建安十三年",
-        description: "建安十三年，曹操平定河北后挥师南下荆州，舳舻千里直指江东。孙权、刘备结盟于柴桑，赤壁烈火一触即发；益州刘璋、西凉马腾、汉中张鲁与辽东公孙各守一方。",
+        description: "建安十三年，曹操平定河北后挥师南下荆州，舳舻千里直指江东。孙权、刘备结盟于柴桑，赤壁烈火一触即发；益州刘璋、西凉马腾、汉中张鲁、辽东公孙、塞北鲜卑与交州士燮各守一方。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 120,
+        provinceCount: 125,
         nations: [
             HistoricalNationSpec(
                 id: "caowei", name: "曹魏", shortName: "魏", color: "#2D64A8",
@@ -1150,7 +1574,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 117.2, lat: 34.3, provinceName: "徐州", weight: 1.15),
                     HistoricalAnchor(lon: 118.5, lat: 36.7, provinceName: "青州", weight: 1.25),
                     HistoricalAnchor(lon: 116.4, lat: 39.9, provinceName: "幽州", weight: 1.2),
-                    HistoricalAnchor(lon: 112.5, lat: 37.9, provinceName: "并州", weight: 1.15),
+                    HistoricalAnchor(lon: 112.5, lat: 37.9, provinceName: "晋阳", weight: 1.15),
                     HistoricalAnchor(lon: 112.5, lat: 33.0, provinceName: "宛城", weight: 1.05),
                     HistoricalAnchor(lon: 112.1, lat: 32.0, provinceName: "襄阳", weight: 1.05),
                     HistoricalAnchor(lon: 117.3, lat: 31.9, provinceName: "合淝", weight: 1.0),
@@ -1169,9 +1593,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 116.0, lat: 29.7, provinceName: "柴桑", weight: 1.05),
                     HistoricalAnchor(lon: 115.9, lat: 28.7, provinceName: "豫章", weight: 1.15),
                     HistoricalAnchor(lon: 114.8, lat: 30.4, provinceName: "江夏", weight: 0.95),
-                    HistoricalAnchor(lon: 119.0, lat: 26.5, provinceName: "建安", weight: 1.25),
-                    HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "番禺", weight: 1.35),
-                    HistoricalAnchor(lon: 106.5, lat: 21.2, provinceName: "交州", weight: 1.35),
+                    HistoricalAnchor(lon: 118.3, lat: 27.0, provinceName: "建安", weight: 1.25),
                     HistoricalAnchor(lon: 121.0, lat: 23.8, provinceName: "夷洲", weight: 1.2),
                 ],
                 rulerName: "孙权", rulerTitle: "吴侯",
@@ -1179,7 +1601,7 @@ public enum HistoricalScenarios {
                 rulerTraits: ["NavalMastery", "Diplomatic", "SeaVision"]
             ),
             HistoricalNationSpec(
-                id: "liubei", name: "刘备军", shortName: "汉", color: "#2E8B57",
+                id: "liubei", name: "刘备", shortName: "汉", color: "#2E8B57",
                 culture: "chinese", religion: "confucian", polity: "Kingdom", style: "feudal",
                 capitalLon: 112.2, capitalLat: 30.3, capitalName: "江陵",
                 anchors: [
@@ -1187,7 +1609,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 111.7, lat: 29.0, provinceName: "武陵", weight: 1.05),
                     HistoricalAnchor(lon: 111.6, lat: 26.4, provinceName: "零陵", weight: 1.1),
                     HistoricalAnchor(lon: 113.0, lat: 28.2, provinceName: "长沙", weight: 1.05),
-                    HistoricalAnchor(lon: 113.0, lat: 25.8, provinceName: "桂阳", weight: 1.0),
+                    HistoricalAnchor(lon: 112.7, lat: 25.8, provinceName: "桂阳", weight: 1.0),
                 ],
                 rulerName: "刘备", rulerTitle: "左将军",
                 rulerMilitary: 82, rulerAdmin: 80, rulerDiplo: 88, rulerCharisma: 95,
@@ -1202,7 +1624,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 106.5, lat: 29.6, provinceName: "江州", weight: 1.1),
                     HistoricalAnchor(lon: 109.5, lat: 31.0, provinceName: "永安", weight: 1.0),
                     HistoricalAnchor(lon: 102.7, lat: 25.0, provinceName: "建宁", weight: 1.4),
-                    HistoricalAnchor(lon: 100.2, lat: 25.6, provinceName: "永昌", weight: 1.35),
+                    HistoricalAnchor(lon: 99.2, lat: 25.1, provinceName: "永昌", weight: 1.35),
                 ],
                 rulerName: "刘璋", rulerTitle: "益州牧",
                 rulerMilitary: 46, rulerAdmin: 64, rulerDiplo: 58, rulerCharisma: 62,
@@ -1214,10 +1636,10 @@ public enum HistoricalScenarios {
                 capitalLon: 102.6, capitalLat: 37.9, capitalName: "武威",
                 anchors: [
                     HistoricalAnchor(lon: 105.7, lat: 34.6, provinceName: "天水", weight: 1.05),
-                    HistoricalAnchor(lon: 104.2, lat: 35.1, provinceName: "陇西", weight: 1.05),
-                    HistoricalAnchor(lon: 94.7, lat: 40.1, provinceName: "敦煌", weight: 1.55),
-                    HistoricalAnchor(lon: 85.0, lat: 41.2, provinceName: "西域长史府", weight: 1.8),
-                    HistoricalAnchor(lon: 92.0, lat: 31.5, provinceName: "羌中高原", weight: 1.65),
+                    HistoricalAnchor(lon: 104.6, lat: 35.0, provinceName: "陇西", weight: 1.05),
+                    HistoricalAnchor(lon: 103.8, lat: 36.1, provinceName: "金城", weight: 1.05),
+                    HistoricalAnchor(lon: 100.5, lat: 38.9, provinceName: "张掖", weight: 1.2),
+                    HistoricalAnchor(lon: 98.5, lat: 39.7, provinceName: "酒泉", weight: 1.3),
                 ],
                 rulerName: "马腾", rulerTitle: "征西将军",
                 rulerMilitary: 84, rulerAdmin: 60, rulerDiplo: 62, rulerCharisma: 78,
@@ -1229,7 +1651,7 @@ public enum HistoricalScenarios {
                 capitalLon: 107.0, capitalLat: 33.1, capitalName: "南郑",
                 anchors: [
                     HistoricalAnchor(lon: 106.2, lat: 33.2, provinceName: "阳平", weight: 0.9),
-                    HistoricalAnchor(lon: 106.8, lat: 31.8, provinceName: "巴中", weight: 0.85),
+                    HistoricalAnchor(lon: 106.8, lat: 31.8, provinceName: "巴州", weight: 0.85),
                 ],
                 rulerName: "张鲁", rulerTitle: "师君",
                 rulerMilitary: 62, rulerAdmin: 76, rulerDiplo: 66, rulerCharisma: 78,
@@ -1242,26 +1664,38 @@ public enum HistoricalScenarios {
                 anchors: [
                     HistoricalAnchor(lon: 125.8, lat: 39.0, provinceName: "乐浪", weight: 1.2),
                     HistoricalAnchor(lon: 127.0, lat: 37.5, provinceName: "带方", weight: 1.2),
-                    HistoricalAnchor(lon: 128.5, lat: 35.8, provinceName: "三韩", weight: 1.25),
-                    HistoricalAnchor(lon: 126.5, lat: 43.8, provinceName: "玄菟", weight: 1.3),
+                    HistoricalAnchor(lon: 124.9, lat: 41.9, provinceName: "玄菟", weight: 1.25),
                 ],
                 rulerName: "公孙康", rulerTitle: "辽东太守",
                 rulerMilitary: 70, rulerAdmin: 72, rulerDiplo: 68, rulerCharisma: 66,
                 rulerTraits: ["Patient", "Administrator"]
             ),
             HistoricalNationSpec(
-                id: "xianbei", name: "鲜卑诸部", shortName: "鲜卑", color: "#B7950B",
+                id: "xianbei", name: "鲜卑", shortName: "鲜卑", color: "#B7950B",
                 culture: "mongol", religion: "tengri", polity: "Tribal", style: "khanate",
                 capitalLon: 114.2, capitalLat: 42.4, capitalName: "弹汗山",
                 anchors: [
                     HistoricalAnchor(lon: 110.0, lat: 41.2, provinceName: "阴山", weight: 1.25),
-                    HistoricalAnchor(lon: 104.0, lat: 47.0, provinceName: "漠北", weight: 1.65),
-                    HistoricalAnchor(lon: 121.0, lat: 47.5, provinceName: "兴安岭", weight: 1.55),
-                    HistoricalAnchor(lon: 98.0, lat: 44.0, provinceName: "漠西草原", weight: 1.5),
+                    HistoricalAnchor(lon: 108.3, lat: 41.1, provinceName: "五原", weight: 1.25),
+                    HistoricalAnchor(lon: 101.1, lat: 42.0, provinceName: "居延", weight: 1.3),
                 ],
                 rulerName: "轲比能", rulerTitle: "大人",
                 rulerMilitary: 86, rulerAdmin: 68, rulerDiplo: 72, rulerCharisma: 82,
                 rulerTraits: ["Brave", "Hawkish", "Tactician"]
+            ),
+            HistoricalNationSpec(
+                id: "shixie", name: "交州士燮", shortName: "交", color: "#1E8E88",
+                culture: "chinese", religion: "confucian", polity: "Empire", style: "jiedushi",
+                capitalLon: 105.8, capitalLat: 21.0, capitalName: "交趾",
+                anchors: [
+                    HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "番禺", weight: 1.25),
+                    HistoricalAnchor(lon: 110.3, lat: 25.3, provinceName: "桂林", weight: 1.15),
+                    HistoricalAnchor(lon: 109.2, lat: 21.7, provinceName: "合浦", weight: 1.1),
+                    HistoricalAnchor(lon: 110.3, lat: 20.0, provinceName: "琼州", weight: 1.1),
+                ],
+                rulerName: "士燮", rulerTitle: "交趾太守",
+                rulerMilitary: 64, rulerAdmin: 84, rulerDiplo: 82, rulerCharisma: 80,
+                rulerTraits: ["Scholar", "Administrator", "Patient"]
             ),
         ],
         openingWars: [
@@ -1271,10 +1705,12 @@ public enum HistoricalScenarios {
         openingAlliances: [
             HistoricalAllianceSpec(name: "孙刘联盟", memberIds: ["sunwu", "liubei"]),
         ],
-        tags: ["三国", "赤壁之战", "中国", "名将"]
+        tags: ["三国", "赤壁之战", "中国", "名将"],
+        rebelMode: "historical",
+        eraOverride: "antiquity"
     )
 
-    // 剧本 3：盛唐天宝（公元 755 年 · 天宝十四载）
+    // 剧本 3：盛唐天宝（公元 755 年 · 天宝十四载 · 中国全图 · 7 国）
     private static let tang755 = HistoricalScenario(
         id: "tang_755",
         title: "盛唐天宝",
@@ -1285,7 +1721,7 @@ public enum HistoricalScenarios {
         description: "公元755年，开元天宝盛世已臻极盛，大唐西域安西四镇远播葱岭，然吐蕃强盛于青藏、南诏崛起于滇中、黑衣大食虎视西域、回纥雄踞漠北、渤海与新罗拱卫海东。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 130,
+        provinceCount: 135,
         nations: [
             HistoricalNationSpec(
                 id: "tang", name: "大唐", shortName: "唐", color: "#D49B2A",
@@ -1298,15 +1734,15 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 104.1, lat: 30.7, provinceName: "成都", weight: 1.3),
                     HistoricalAnchor(lon: 119.4, lat: 32.4, provinceName: "扬州", weight: 1.35),
                     HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "广州", weight: 1.4),
-                    HistoricalAnchor(lon: 114.3, lat: 34.8, provinceName: "汴州", weight: 1.2),
+                    HistoricalAnchor(lon: 114.3, lat: 34.8, provinceName: "汴京", weight: 1.2),
                     HistoricalAnchor(lon: 112.2, lat: 30.3, provinceName: "江陵", weight: 1.25),
                     HistoricalAnchor(lon: 102.6, lat: 37.9, provinceName: "凉州", weight: 1.25),
                     HistoricalAnchor(lon: 94.7, lat: 40.1, provinceName: "敦煌", weight: 1.3),
                     HistoricalAnchor(lon: 82.9, lat: 41.7, provinceName: "安西", weight: 1.35),
-                    HistoricalAnchor(lon: 89.2, lat: 44.0, provinceName: "北庭", weight: 1.3),
+                    HistoricalAnchor(lon: 89.2, lat: 44.0, provinceName: "庭州", weight: 1.3),
                     HistoricalAnchor(lon: 118.6, lat: 24.9, provinceName: "泉州", weight: 1.3),
-                    HistoricalAnchor(lon: 105.8, lat: 21.0, provinceName: "安南", weight: 1.3),
-                    HistoricalAnchor(lon: 119.5, lat: 36.6, provinceName: "青州", weight: 1.2),
+                    HistoricalAnchor(lon: 105.8, lat: 21.0, provinceName: "交趾", weight: 1.3),
+                    HistoricalAnchor(lon: 118.5, lat: 36.7, provinceName: "青州", weight: 1.2),
                 ],
                 rulerName: "李隆基", rulerTitle: "唐玄宗",
                 rulerMilitary: 76, rulerAdmin: 82, rulerDiplo: 88, rulerCharisma: 92,
@@ -1318,26 +1754,26 @@ public enum HistoricalScenarios {
                 capitalLon: 91.1, capitalLat: 29.7, capitalName: "逻些",
                 anchors: [
                     HistoricalAnchor(lon: 97.2, lat: 31.1, provinceName: "昌都", weight: 1.3),
-                    HistoricalAnchor(lon: 100.2, lat: 36.4, provinceName: "青海", weight: 1.25),
+                    HistoricalAnchor(lon: 101.8, lat: 36.6, provinceName: "湟中", weight: 1.25),
                     HistoricalAnchor(lon: 103.6, lat: 32.6, provinceName: "松州", weight: 1.0),
                     HistoricalAnchor(lon: 88.9, lat: 29.3, provinceName: "日喀则", weight: 1.35),
                     HistoricalAnchor(lon: 80.1, lat: 32.5, provinceName: "阿里", weight: 1.45),
-                    HistoricalAnchor(lon: 92.0, lat: 34.5, provinceName: "那曲", weight: 1.35),
+                    HistoricalAnchor(lon: 92.0, lat: 31.5, provinceName: "那曲", weight: 1.35),
                 ],
                 rulerName: "赤松德赞", rulerTitle: "赞普",
                 rulerMilitary: 88, rulerAdmin: 82, rulerDiplo: 76, rulerCharisma: 86,
                 rulerTraits: ["Brave", "Conqueror", "Ambitious"]
             ),
             HistoricalNationSpec(
-                id: "uyghur", name: "回纥汗国", shortName: "回纥", color: "#2D7FB8",
+                id: "uyghur", name: "回纥", shortName: "回纥", color: "#2D7FB8",
                 culture: "turkic", religion: "tengri", polity: "Tribal", style: "khanate",
                 capitalLon: 102.8, capitalLat: 47.2, capitalName: "鄂尔浑",
                 anchors: [
-                    HistoricalAnchor(lon: 107.0, lat: 47.8, provinceName: "漠北", weight: 1.55),
-                    HistoricalAnchor(lon: 100.5, lat: 42.5, provinceName: "甘州北", weight: 1.25),
-                    HistoricalAnchor(lon: 91.0, lat: 48.0, provinceName: "阿尔泰", weight: 1.55),
-                    HistoricalAnchor(lon: 117.0, lat: 48.0, provinceName: "室韦草原", weight: 1.5),
-                    HistoricalAnchor(lon: 112.0, lat: 43.2, provinceName: "漠南", weight: 1.3),
+                    HistoricalAnchor(lon: 106.9, lat: 47.9, provinceName: "库伦", weight: 1.55),
+                    HistoricalAnchor(lon: 101.1, lat: 42.0, provinceName: "居延", weight: 1.25),
+                    HistoricalAnchor(lon: 91.0, lat: 48.0, provinceName: "科布多", weight: 1.55),
+                    HistoricalAnchor(lon: 117.0, lat: 48.0, provinceName: "呼伦贝尔", weight: 1.5),
+                    HistoricalAnchor(lon: 111.7, lat: 40.8, provinceName: "阴山", weight: 1.3),
                 ],
                 rulerName: "磨延啜", rulerTitle: "葛勒可汗",
                 rulerMilitary: 86, rulerAdmin: 70, rulerDiplo: 78, rulerCharisma: 82,
@@ -1348,10 +1784,10 @@ public enum HistoricalScenarios {
                 culture: "chinese", religion: "buddhism", polity: "Kingdom", style: "feudal",
                 capitalLon: 100.2, capitalLat: 25.6, capitalName: "太和城",
                 anchors: [
-                    HistoricalAnchor(lon: 100.5, lat: 25.9, provinceName: "大理", weight: 1.1),
+                    HistoricalAnchor(lon: 100.2, lat: 25.6, provinceName: "大理", weight: 1.1),
                     HistoricalAnchor(lon: 102.7, lat: 25.0, provinceName: "拓东", weight: 1.2),
                     HistoricalAnchor(lon: 99.1, lat: 25.1, provinceName: "永昌", weight: 1.15),
-                    HistoricalAnchor(lon: 101.8, lat: 22.8, provinceName: "蒙舍", weight: 1.15),
+                    HistoricalAnchor(lon: 100.3, lat: 25.2, provinceName: "蒙舍", weight: 1.15),
                 ],
                 rulerName: "阁罗凤", rulerTitle: "南诏王",
                 rulerMilitary: 82, rulerAdmin: 74, rulerDiplo: 76, rulerCharisma: 78,
@@ -1362,10 +1798,10 @@ public enum HistoricalScenarios {
                 culture: "korean", religion: "confucian", polity: "Kingdom", style: "feudal",
                 capitalLon: 129.0, capitalLat: 44.1, capitalName: "上京龙泉府",
                 anchors: [
-                    HistoricalAnchor(lon: 123.5, lat: 41.8, provinceName: "辽东", weight: 1.15),
-                    HistoricalAnchor(lon: 130.5, lat: 42.9, provinceName: "东京龙原府", weight: 1.25),
-                    HistoricalAnchor(lon: 126.6, lat: 45.8, provinceName: "靺鞨北", weight: 1.4),
-                    HistoricalAnchor(lon: 133.0, lat: 47.5, provinceName: "黑水", weight: 1.45),
+                    HistoricalAnchor(lon: 123.5, lat: 41.8, provinceName: "沈阳", weight: 1.15),
+                    HistoricalAnchor(lon: 130.5, lat: 42.9, provinceName: "珲春", weight: 1.25),
+                    HistoricalAnchor(lon: 126.6, lat: 45.8, provinceName: "哈尔滨", weight: 1.4),
+                    HistoricalAnchor(lon: 133.0, lat: 47.5, provinceName: "伯力", weight: 1.45),
                 ],
                 rulerName: "大钦茂", rulerTitle: "渤海文王",
                 rulerMilitary: 72, rulerAdmin: 84, rulerDiplo: 82, rulerCharisma: 80,
@@ -1374,25 +1810,22 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "silla", name: "新罗", shortName: "罗", color: "#4CA8DE",
                 culture: "korean", religion: "buddhism", polity: "Kingdom", style: "absolute",
-                capitalLon: 129.2, capitalLat: 35.8, capitalName: "金城",
+                capitalLon: 129.2, capitalLat: 35.8, capitalName: "庆州",
                 anchors: [
-                    HistoricalAnchor(lon: 127.0, lat: 37.5, provinceName: "汉山州", weight: 1.15),
+                    HistoricalAnchor(lon: 127.0, lat: 37.5, provinceName: "汉城", weight: 1.15),
                     HistoricalAnchor(lon: 125.8, lat: 39.0, provinceName: "平壤", weight: 1.1),
-                    HistoricalAnchor(lon: 127.1, lat: 35.8, provinceName: "完山州", weight: 1.1),
-                    HistoricalAnchor(lon: 130.6, lat: 32.8, provinceName: "筑紫", weight: 1.2),
+                    HistoricalAnchor(lon: 127.1, lat: 35.8, provinceName: "全州", weight: 1.1),
                 ],
                 rulerName: "金宪英", rulerTitle: "景德王",
                 rulerMilitary: 68, rulerAdmin: 78, rulerDiplo: 80, rulerCharisma: 76,
                 rulerTraits: ["Scholar", "Merciful"]
             ),
             HistoricalNationSpec(
-                id: "abbasid", name: "黑衣大食东疆", shortName: "大食", color: "#2F3B47",
+                id: "abbasid", name: "黑衣大食西域", shortName: "大食", color: "#2F3B47",
                 culture: "arab", religion: "islam", polity: "Theocracy", style: "caliphate",
-                capitalLon: 75.9, capitalLat: 39.5, capitalName: "喀什噶尔",
+                capitalLon: 75.9, capitalLat: 39.5, capitalName: "疏勒",
                 anchors: [
-                    HistoricalAnchor(lon: 74.8, lat: 39.9, provinceName: "疏勒", weight: 1.1),
-                    HistoricalAnchor(lon: 77.2, lat: 37.8, provinceName: "葱岭", weight: 1.15),
-                    HistoricalAnchor(lon: 78.2, lat: 42.5, provinceName: "碎叶", weight: 1.25),
+                    HistoricalAnchor(lon: 75.2, lat: 42.8, provinceName: "碎叶", weight: 1.25),
                     HistoricalAnchor(lon: 79.9, lat: 37.1, provinceName: "于阗", weight: 1.05),
                 ],
                 rulerName: "阿布·穆斯林", rulerTitle: "呼罗珊总督",
@@ -1406,29 +1839,167 @@ public enum HistoricalScenarios {
         openingAlliances: [
             HistoricalAllianceSpec(name: "唐回和亲盟约", memberIds: ["tang", "uyghur"]),
         ],
-        tags: ["大唐", "丝绸之路", "盛世", "中国"]
+        tags: ["大唐", "丝绸之路", "盛世", "中国"],
+        rebelMode: "historical",
+        eraOverride: "medieval"
     )
 
-    // 剧本 4：日本战国 · 桶狭间（公元 1560 年 · 永禄三年）
+    // 剧本 4：宋金对峙 · 绍兴和议（公元 1142 年 · 华夏精图 · 8 国）
+    private static let songJin1142 = HistoricalScenario(
+        id: "song_jin_1142",
+        title: "宋金对峙 · 绍兴和议",
+        subtitle: "划淮为界 · 九州鼎立",
+        region: .huaxia,
+        year: 1142,
+        eraName: "绍兴十二年",
+        description: "公元1142年，宋金绍兴和议初定，大金铁骑雄踞中原燕云，南宋偏安临安坐拥江南巴蜀富庶之地；西夏雄守河西、大理据守西南、蒙古诸部兴起于漠北草原，高丽、吐蕃诸部与大越环峙四方。",
+        author: "列国纪官方",
+        isOfficial: true,
+        provinceCount: 125,
+        nations: [
+            HistoricalNationSpec(
+                id: "jin", name: "金朝", shortName: "金", color: "#C99327",
+                culture: "chinese", religion: "confucian", polity: "Empire", style: "dynasty",
+                capitalLon: 116.4, capitalLat: 39.9, capitalName: "燕京",
+                anchors: [
+                    HistoricalAnchor(lon: 114.3, lat: 34.8, provinceName: "汴京", weight: 1.2),
+                    HistoricalAnchor(lon: 108.9, lat: 34.3, provinceName: "长安", weight: 1.15),
+                    HistoricalAnchor(lon: 112.5, lat: 37.9, provinceName: "太原", weight: 1.15),
+                    HistoricalAnchor(lon: 117.0, lat: 36.7, provinceName: "济南", weight: 1.15),
+                    HistoricalAnchor(lon: 123.4, lat: 41.8, provinceName: "沈阳", weight: 1.2),
+                    HistoricalAnchor(lon: 112.4, lat: 34.6, provinceName: "洛阳", weight: 1.1),
+                    HistoricalAnchor(lon: 113.3, lat: 40.1, provinceName: "大同", weight: 1.1),
+                ],
+                rulerName: "完颜亶", rulerTitle: "金熙宗",
+                rulerMilitary: 82, rulerAdmin: 80, rulerDiplo: 76, rulerCharisma: 78,
+                rulerTraits: ["Conqueror", "Reformer", "BattleHardened"]
+            ),
+            HistoricalNationSpec(
+                id: "nsong", name: "南宋", shortName: "宋", color: "#2B78AD",
+                culture: "chinese", religion: "confucian", polity: "Empire", style: "dynasty",
+                capitalLon: 120.2, capitalLat: 30.3, capitalName: "临安",
+                anchors: [
+                    HistoricalAnchor(lon: 118.8, lat: 32.1, provinceName: "金陵", weight: 1.2),
+                    HistoricalAnchor(lon: 119.4, lat: 32.4, provinceName: "扬州", weight: 1.15),
+                    HistoricalAnchor(lon: 112.1, lat: 32.0, provinceName: "襄阳", weight: 1.1),
+                    HistoricalAnchor(lon: 114.3, lat: 30.5, provinceName: "鄂州", weight: 1.15),
+                    HistoricalAnchor(lon: 104.1, lat: 30.7, provinceName: "成都", weight: 1.25),
+                    HistoricalAnchor(lon: 113.0, lat: 28.2, provinceName: "潭州", weight: 1.15),
+                    HistoricalAnchor(lon: 118.7, lat: 24.9, provinceName: "泉州", weight: 1.2),
+                    HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "广州", weight: 1.25),
+                ],
+                rulerName: "赵构", rulerTitle: "宋高宗",
+                rulerMilitary: 62, rulerAdmin: 78, rulerDiplo: 82, rulerCharisma: 76,
+                rulerTraits: ["Financier", "Patient", "Scholar"]
+            ),
+            HistoricalNationSpec(
+                id: "xixia", name: "西夏", shortName: "夏", color: "#9E4A36",
+                culture: "chinese", religion: "buddhism", polity: "Empire", style: "dynasty",
+                capitalLon: 106.3, capitalLat: 38.5, capitalName: "兴庆府",
+                anchors: [
+                    HistoricalAnchor(lon: 102.6, lat: 37.9, provinceName: "凉州", weight: 1.15),
+                    HistoricalAnchor(lon: 100.5, lat: 38.9, provinceName: "张掖", weight: 1.15),
+                    HistoricalAnchor(lon: 98.5, lat: 39.7, provinceName: "酒泉", weight: 1.2),
+                    HistoricalAnchor(lon: 106.3, lat: 38.1, provinceName: "灵州", weight: 1.05),
+                ],
+                rulerName: "李仁孝", rulerTitle: "夏仁宗",
+                rulerMilitary: 76, rulerAdmin: 84, rulerDiplo: 80, rulerCharisma: 80,
+                rulerTraits: ["Scholar", "Administrator", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "dali", name: "大理", shortName: "理", color: "#2E8B57",
+                culture: "chinese", religion: "buddhism", polity: "Kingdom", style: "feudal",
+                capitalLon: 100.2, capitalLat: 25.6, capitalName: "大理",
+                anchors: [
+                    HistoricalAnchor(lon: 102.7, lat: 25.0, provinceName: "拓东", weight: 1.2),
+                    HistoricalAnchor(lon: 99.2, lat: 25.1, provinceName: "永昌", weight: 1.15),
+                ],
+                rulerName: "段和誉", rulerTitle: "大理宪宗",
+                rulerMilitary: 68, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 78,
+                rulerTraits: ["Benevolent", "Merciful", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "mongol", name: "蒙古诸部", shortName: "蒙", color: "#A87B2D",
+                culture: "mongol", religion: "tengri", polity: "Tribal", style: "khanate",
+                capitalLon: 109.8, capitalLat: 42.5, capitalName: "斡难河",
+                anchors: [
+                    HistoricalAnchor(lon: 111.7, lat: 40.8, provinceName: "阴山", weight: 1.25),
+                    HistoricalAnchor(lon: 101.1, lat: 42.0, provinceName: "居延", weight: 1.25),
+                ],
+                rulerName: "合不勒汗", rulerTitle: "大汗",
+                rulerMilitary: 88, rulerAdmin: 64, rulerDiplo: 66, rulerCharisma: 84,
+                rulerTraits: ["Hawkish", "Brave", "Conqueror"]
+            ),
+            HistoricalNationSpec(
+                id: "goryeo", name: "高丽", shortName: "丽", color: "#4EA0D8",
+                culture: "korean", religion: "buddhism", polity: "Kingdom", style: "absolute",
+                capitalLon: 126.6, capitalLat: 38.0, capitalName: "开京",
+                anchors: [
+                    HistoricalAnchor(lon: 125.8, lat: 39.0, provinceName: "平壤", weight: 1.1),
+                    HistoricalAnchor(lon: 127.0, lat: 37.6, provinceName: "汉城", weight: 1.05),
+                    HistoricalAnchor(lon: 129.2, lat: 35.8, provinceName: "庆州", weight: 1.1),
+                ],
+                rulerName: "王楷", rulerTitle: "高丽仁宗",
+                rulerMilitary: 64, rulerAdmin: 76, rulerDiplo: 80, rulerCharisma: 74,
+                rulerTraits: ["Scholar", "Diplomatic"]
+            ),
+            HistoricalNationSpec(
+                id: "tibet_tribes", name: "吐蕃诸部", shortName: "蕃", color: "#B83B2E",
+                culture: "tibetan", religion: "tantric", polity: "Theocracy", style: "lamaism",
+                capitalLon: 97.2, capitalLat: 31.1, capitalName: "昌都",
+                anchors: [
+                    HistoricalAnchor(lon: 97.0, lat: 33.0, provinceName: "玉树", weight: 1.2),
+                    HistoricalAnchor(lon: 100.0, lat: 31.6, provinceName: "甘孜", weight: 1.2),
+                    HistoricalAnchor(lon: 101.8, lat: 36.6, provinceName: "湟中", weight: 1.15),
+                ],
+                rulerName: "贡嘎宁波", rulerTitle: "萨迦法王",
+                rulerMilitary: 70, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 82,
+                rulerTraits: ["Just", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "daiviet", name: "大越", shortName: "越", color: "#248A6A",
+                culture: "vietnamese", religion: "buddhism", polity: "Kingdom", style: "absolute",
+                capitalLon: 105.8, capitalLat: 21.0, capitalName: "升龙",
+                anchors: [
+                    HistoricalAnchor(lon: 105.8, lat: 19.8, provinceName: "九真", weight: 1.1),
+                    HistoricalAnchor(lon: 107.6, lat: 16.5, provinceName: "顺化", weight: 1.1),
+                ],
+                rulerName: "李天祚", rulerTitle: "李英宗",
+                rulerMilitary: 72, rulerAdmin: 74, rulerDiplo: 76, rulerCharisma: 74,
+                rulerTraits: ["BattleHardened", "Patient"]
+            ),
+        ],
+        openingWars: [
+            HistoricalWarSpec(attackerId: "mongol", defenderId: "jin", casusBelli: "漠北草原与金边之争"),
+        ],
+        openingAlliances: [
+            HistoricalAllianceSpec(name: "金夏盟约", memberIds: ["jin", "xixia"]),
+        ],
+        tags: ["宋金", "两宋", "中国", "华夏"],
+        rebelMode: "historical",
+        eraOverride: "medieval"
+    )
+
+    // 剧本 5：日本战国 · 桶狭间（公元 1560 年 · 永禄三年 · 日本列岛精图 · 14 家大名）
     private static let sengoku1560 = HistoricalScenario(
         id: "sengoku_1560",
         title: "日本战国 · 桶狭间",
         subtitle: "下克上 · 群雄上洛",
-        region: .eastAsiaJapan,
+        region: .japanDetail,
         year: 1560,
         eraName: "永禄三年",
-        description: "永禄三年五月，东海道第一弓取今川义元统率大军上洛，织田信长于尾张清洲孤注一掷奇袭桶狭间。甲斐武田与越后上杉激战川中岛，关东北条、中国毛利、畿内三好、九州岛津群雄并起，大明与朝鲜隔海相望。",
+        description: "永禄三年五月，东海道第一弓取今川义元统率大军上洛，织田信长于尾张清洲孤注一掷奇袭桶狭间。甲斐武田与越后上杉激战川中岛，关东北条、中国毛利、畿内三好、美浓斋藤、九州岛津大友龙造寺与奥羽伊达十四强雄踞扶桑。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 105,
+        provinceCount: 110,
         nations: [
             HistoricalNationSpec(
                 id: "oda", name: "织田家", shortName: "织田", color: "#C6444B",
                 culture: "japanese", religion: "shinto", polity: "Kingdom", style: "feudal",
-                capitalLon: 136.8, capitalLat: 35.2, capitalName: "清洲",
+                capitalLon: 136.85, capitalLat: 35.21, capitalName: "清洲",
                 anchors: [
-                    HistoricalAnchor(lon: 136.9, lat: 35.1, provinceName: "尾张", weight: 0.9),
-                    HistoricalAnchor(lon: 136.7, lat: 35.5, provinceName: "美浓", weight: 0.8),
+                    HistoricalAnchor(lon: 136.91, lat: 35.18, provinceName: "那古野", weight: 0.9),
+                    HistoricalAnchor(lon: 136.94, lat: 35.38, provinceName: "犬山", weight: 0.8),
                 ],
                 rulerName: "织田信长", rulerTitle: "上总介",
                 rulerMilitary: 95, rulerAdmin: 92, rulerDiplo: 84, rulerCharisma: 94,
@@ -1437,10 +2008,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "imagawa", name: "今川家", shortName: "今川", color: "#8E44AD",
                 culture: "japanese", religion: "buddhism", polity: "Kingdom", style: "feudal",
-                capitalLon: 138.4, capitalLat: 35.0, capitalName: "骏府",
+                capitalLon: 138.38, capitalLat: 34.98, capitalName: "骏府",
                 anchors: [
-                    HistoricalAnchor(lon: 137.8, lat: 35.0, provinceName: "远江", weight: 0.85),
-                    HistoricalAnchor(lon: 137.3, lat: 34.9, provinceName: "三河", weight: 0.8),
+                    HistoricalAnchor(lon: 137.73, lat: 34.71, provinceName: "滨松", weight: 0.85),
+                    HistoricalAnchor(lon: 137.16, lat: 34.95, provinceName: "冈崎", weight: 0.8),
                 ],
                 rulerName: "今川义元", rulerTitle: "治部大辅",
                 rulerMilitary: 80, rulerAdmin: 86, rulerDiplo: 84, rulerCharisma: 82,
@@ -1449,10 +2020,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "takeda", name: "武田家", shortName: "武田", color: "#A93226",
                 culture: "japanese", religion: "buddhism", polity: "Kingdom", style: "feudal",
-                capitalLon: 138.6, capitalLat: 35.7, capitalName: "甲府",
+                capitalLon: 138.57, capitalLat: 35.66, capitalName: "甲府",
                 anchors: [
-                    HistoricalAnchor(lon: 138.5, lat: 35.6, provinceName: "甲斐", weight: 0.9),
-                    HistoricalAnchor(lon: 138.0, lat: 36.2, provinceName: "信浓", weight: 1.0),
+                    HistoricalAnchor(lon: 138.11, lat: 36.04, provinceName: "诹访", weight: 0.9),
+                    HistoricalAnchor(lon: 138.20, lat: 36.56, provinceName: "海津", weight: 1.0),
                 ],
                 rulerName: "武田信玄", rulerTitle: "甲斐守",
                 rulerMilitary: 96, rulerAdmin: 88, rulerDiplo: 86, rulerCharisma: 90,
@@ -1461,10 +2032,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "uesugi", name: "上杉家", shortName: "上杉", color: "#2980B9",
                 culture: "japanese", religion: "buddhism", polity: "Kingdom", style: "feudal",
-                capitalLon: 138.2, capitalLat: 37.1, capitalName: "春日山",
+                capitalLon: 138.20, capitalLat: 37.14, capitalName: "春日山",
                 anchors: [
-                    HistoricalAnchor(lon: 139.2, lat: 37.6, provinceName: "越后", weight: 1.05),
-                    HistoricalAnchor(lon: 137.2, lat: 36.7, provinceName: "越中", weight: 0.9),
+                    HistoricalAnchor(lon: 138.85, lat: 37.45, provinceName: "长冈", weight: 1.0),
+                    HistoricalAnchor(lon: 137.21, lat: 36.70, provinceName: "富山", weight: 0.9),
                 ],
                 rulerName: "上杉谦信", rulerTitle: "关东管领",
                 rulerMilitary: 98, rulerAdmin: 76, rulerDiplo: 72, rulerCharisma: 88,
@@ -1473,12 +2044,11 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "hojo", name: "北条家", shortName: "北条", color: "#1F618D",
                 culture: "japanese", religion: "shinto", polity: "Kingdom", style: "feudal",
-                capitalLon: 139.2, capitalLat: 35.3, capitalName: "小田原",
+                capitalLon: 139.15, capitalLat: 35.25, capitalName: "小田原",
                 anchors: [
-                    HistoricalAnchor(lon: 139.6, lat: 35.7, provinceName: "武藏", weight: 1.05),
-                    HistoricalAnchor(lon: 139.0, lat: 35.0, provinceName: "伊豆", weight: 0.85),
-                    HistoricalAnchor(lon: 140.2, lat: 35.9, provinceName: "下总", weight: 1.0),
-                    HistoricalAnchor(lon: 139.2, lat: 36.4, provinceName: "上野", weight: 0.95),
+                    HistoricalAnchor(lon: 139.75, lat: 35.69, provinceName: "江户", weight: 1.05),
+                    HistoricalAnchor(lon: 139.49, lat: 35.92, provinceName: "川越", weight: 0.9),
+                    HistoricalAnchor(lon: 140.22, lat: 35.72, provinceName: "佐仓", weight: 1.0),
                 ],
                 rulerName: "北条氏康", rulerTitle: "相模守",
                 rulerMilitary: 88, rulerAdmin: 92, rulerDiplo: 84, rulerCharisma: 86,
@@ -1487,13 +2057,12 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "mori", name: "毛利家", shortName: "毛利", color: "#27AE60",
                 culture: "japanese", religion: "shinto", polity: "Kingdom", style: "feudal",
-                capitalLon: 132.7, capitalLat: 34.7, capitalName: "吉田郡山",
+                capitalLon: 132.71, capitalLat: 34.67, capitalName: "吉田郡山",
                 anchors: [
-                    HistoricalAnchor(lon: 132.5, lat: 34.4, provinceName: "安艺", weight: 0.95),
-                    HistoricalAnchor(lon: 131.6, lat: 34.1, provinceName: "周防", weight: 0.95),
-                    HistoricalAnchor(lon: 131.0, lat: 34.2, provinceName: "长门", weight: 0.95),
-                    HistoricalAnchor(lon: 133.1, lat: 35.4, provinceName: "出云", weight: 1.0),
-                    HistoricalAnchor(lon: 133.9, lat: 34.8, provinceName: "备前", weight: 0.9),
+                    HistoricalAnchor(lon: 132.46, lat: 34.39, provinceName: "广岛", weight: 0.95),
+                    HistoricalAnchor(lon: 131.47, lat: 34.18, provinceName: "山口", weight: 0.95),
+                    HistoricalAnchor(lon: 133.19, lat: 35.36, provinceName: "月山富田", weight: 1.0),
+                    HistoricalAnchor(lon: 133.93, lat: 34.66, provinceName: "冈山", weight: 0.9),
                 ],
                 rulerName: "毛利元就", rulerTitle: "陆奥守",
                 rulerMilitary: 90, rulerAdmin: 88, rulerDiplo: 94, rulerCharisma: 88,
@@ -1502,12 +2071,12 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "miyoshi", name: "三好家", shortName: "三好", color: "#D68910",
                 culture: "japanese", religion: "buddhism", polity: "Empire", style: "shogunate",
-                capitalLon: 135.5, capitalLat: 34.6, capitalName: "堺",
+                capitalLon: 135.48, capitalLat: 34.57, capitalName: "堺",
                 anchors: [
-                    HistoricalAnchor(lon: 135.8, lat: 35.0, provinceName: "京都", weight: 0.95),
-                    HistoricalAnchor(lon: 134.6, lat: 34.1, provinceName: "阿波", weight: 0.9),
-                    HistoricalAnchor(lon: 134.7, lat: 34.8, provinceName: "播磨", weight: 0.9),
-                    HistoricalAnchor(lon: 135.6, lat: 33.9, provinceName: "纪伊", weight: 0.95),
+                    HistoricalAnchor(lon: 135.77, lat: 35.01, provinceName: "京都", weight: 0.95),
+                    HistoricalAnchor(lon: 134.55, lat: 34.07, provinceName: "德岛", weight: 0.9),
+                    HistoricalAnchor(lon: 134.69, lat: 34.84, provinceName: "姬路", weight: 0.9),
+                    HistoricalAnchor(lon: 135.17, lat: 34.23, provinceName: "和歌山", weight: 0.95),
                 ],
                 rulerName: "三好长庆", rulerTitle: "修理大夫",
                 rulerMilitary: 84, rulerAdmin: 86, rulerDiplo: 82, rulerCharisma: 84,
@@ -1516,12 +2085,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "shimazu", name: "岛津家", shortName: "岛津", color: "#34495E",
                 culture: "japanese", religion: "shinto", polity: "Kingdom", style: "feudal",
-                capitalLon: 130.6, capitalLat: 31.6, capitalName: "鹿儿岛",
+                capitalLon: 130.56, capitalLat: 31.60, capitalName: "鹿儿岛",
                 anchors: [
-                    HistoricalAnchor(lon: 130.4, lat: 31.9, provinceName: "萨摩", weight: 0.95),
-                    HistoricalAnchor(lon: 131.0, lat: 31.5, provinceName: "大隅", weight: 0.9),
-                    HistoricalAnchor(lon: 131.4, lat: 32.1, provinceName: "日向", weight: 0.9),
-                    HistoricalAnchor(lon: 127.8, lat: 26.3, provinceName: "琉球", weight: 1.2),
+                    HistoricalAnchor(lon: 131.06, lat: 31.72, provinceName: "都城", weight: 0.9),
+                    HistoricalAnchor(lon: 131.47, lat: 32.05, provinceName: "佐土原", weight: 0.9),
                 ],
                 rulerName: "岛津贵久", rulerTitle: "陆奥守",
                 rulerMilitary: 88, rulerAdmin: 80, rulerDiplo: 76, rulerCharisma: 84,
@@ -1530,11 +2097,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "otomo", name: "大友家", shortName: "大友", color: "#E67E22",
                 culture: "japanese", religion: "catholic", polity: "Kingdom", style: "feudal",
-                capitalLon: 131.6, capitalLat: 33.2, capitalName: "府内",
+                capitalLon: 131.61, capitalLat: 33.24, capitalName: "府内",
                 anchors: [
-                    HistoricalAnchor(lon: 131.4, lat: 33.0, provinceName: "丰后", weight: 0.9),
-                    HistoricalAnchor(lon: 130.4, lat: 33.6, provinceName: "筑前", weight: 0.95),
-                    HistoricalAnchor(lon: 130.0, lat: 33.1, provinceName: "肥前", weight: 0.95),
+                    HistoricalAnchor(lon: 131.80, lat: 33.12, provinceName: "臼杵", weight: 0.9),
+                    HistoricalAnchor(lon: 131.19, lat: 33.60, provinceName: "中津", weight: 0.9),
                 ],
                 rulerName: "大友宗麟", rulerTitle: "丰后守",
                 rulerMilitary: 78, rulerAdmin: 80, rulerDiplo: 86, rulerCharisma: 80,
@@ -1543,13 +2109,12 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "date", name: "伊达家", shortName: "伊达", color: "#16A085",
                 culture: "japanese", religion: "shinto", polity: "Kingdom", style: "feudal",
-                capitalLon: 140.1, capitalLat: 37.9, capitalName: "米泽",
+                capitalLon: 140.11, capitalLat: 37.92, capitalName: "米泽",
                 anchors: [
-                    HistoricalAnchor(lon: 140.9, lat: 38.3, provinceName: "陆奥", weight: 1.15),
-                    HistoricalAnchor(lon: 140.1, lat: 39.7, provinceName: "出羽", weight: 1.15),
-                    HistoricalAnchor(lon: 140.8, lat: 40.8, provinceName: "津轻", weight: 1.15),
-                    HistoricalAnchor(lon: 142.5, lat: 43.2, provinceName: "虾夷", weight: 1.6),
-                    HistoricalAnchor(lon: 142.6, lat: 48.0, provinceName: "桦太", weight: 1.45),
+                    HistoricalAnchor(lon: 140.87, lat: 38.27, provinceName: "仙台", weight: 1.15),
+                    HistoricalAnchor(lon: 141.15, lat: 39.70, provinceName: "盛冈", weight: 1.15),
+                    HistoricalAnchor(lon: 140.46, lat: 40.60, provinceName: "弘前", weight: 1.15),
+                    HistoricalAnchor(lon: 141.35, lat: 43.06, provinceName: "札幌", weight: 1.5),
                 ],
                 rulerName: "伊达晴宗", rulerTitle: "左京大夫",
                 rulerMilitary: 78, rulerAdmin: 74, rulerDiplo: 80, rulerCharisma: 76,
@@ -1558,10 +2123,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "chosokabe", name: "长宗我部家", shortName: "长宗", color: "#2E7D32",
                 culture: "japanese", religion: "shinto", polity: "Kingdom", style: "feudal",
-                capitalLon: 133.6, capitalLat: 33.6, capitalName: "冈丰",
+                capitalLon: 133.62, capitalLat: 33.60, capitalName: "冈丰",
                 anchors: [
-                    HistoricalAnchor(lon: 133.4, lat: 33.4, provinceName: "土佐", weight: 0.95),
-                    HistoricalAnchor(lon: 132.8, lat: 33.7, provinceName: "伊予", weight: 0.9),
+                    HistoricalAnchor(lon: 133.53, lat: 33.56, provinceName: "高知", weight: 0.95),
+                    HistoricalAnchor(lon: 132.77, lat: 33.84, provinceName: "松山", weight: 0.9),
                 ],
                 rulerName: "长宗我部国亲", rulerTitle: "宫内少辅",
                 rulerMilitary: 82, rulerAdmin: 78, rulerDiplo: 74, rulerCharisma: 80,
@@ -1570,52 +2135,39 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "asakura", name: "朝仓家", shortName: "朝仓", color: "#6C3483",
                 culture: "japanese", religion: "buddhism", polity: "Kingdom", style: "feudal",
-                capitalLon: 136.3, capitalLat: 36.0, capitalName: "一乘谷",
+                capitalLon: 136.30, capitalLat: 36.00, capitalName: "一乘谷",
                 anchors: [
-                    HistoricalAnchor(lon: 136.2, lat: 36.1, provinceName: "越前", weight: 0.9),
-                    HistoricalAnchor(lon: 136.7, lat: 36.6, provinceName: "加贺", weight: 0.9),
+                    HistoricalAnchor(lon: 136.07, lat: 35.65, provinceName: "敦贺", weight: 0.9),
+                    HistoricalAnchor(lon: 136.66, lat: 36.56, provinceName: "金泽", weight: 0.9),
                 ],
                 rulerName: "朝仓义景", rulerTitle: "左卫门督",
                 rulerMilitary: 62, rulerAdmin: 74, rulerDiplo: 70, rulerCharisma: 72,
                 rulerTraits: ["Scholar", "Patient"]
             ),
             HistoricalNationSpec(
-                id: "ming", name: "大明", shortName: "明", color: "#D49B2A",
-                culture: "chinese", religion: "confucian", polity: "Empire", style: "dynasty",
-                capitalLon: 116.4, capitalLat: 39.9, capitalName: "北京",
+                id: "saito", name: "斋藤家", shortName: "斋藤", color: "#B9770E",
+                culture: "japanese", religion: "buddhism", polity: "Kingdom", style: "feudal",
+                capitalLon: 136.78, capitalLat: 35.43, capitalName: "稻叶山",
                 anchors: [
-                    HistoricalAnchor(lon: 118.8, lat: 32.1, provinceName: "南京", weight: 1.55),
-                    HistoricalAnchor(lon: 123.4, lat: 41.8, provinceName: "辽东", weight: 1.45),
-                    HistoricalAnchor(lon: 120.2, lat: 30.3, provinceName: "浙江", weight: 1.4),
-                    HistoricalAnchor(lon: 119.3, lat: 26.1, provinceName: "福建", weight: 1.45),
-                    HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "广东", weight: 1.6),
-                    HistoricalAnchor(lon: 108.9, lat: 34.3, provinceName: "陕西", weight: 1.75),
-                    HistoricalAnchor(lon: 104.1, lat: 30.7, provinceName: "四川", weight: 1.8),
-                    HistoricalAnchor(lon: 114.3, lat: 30.6, provinceName: "湖广", weight: 1.6),
-                    HistoricalAnchor(lon: 102.7, lat: 25.0, provinceName: "云南", weight: 1.85),
-                    HistoricalAnchor(lon: 128.0, lat: 46.5, provinceName: "奴儿干", weight: 1.75),
-                    HistoricalAnchor(lon: 121.0, lat: 23.8, provinceName: "大员", weight: 1.35),
-                    HistoricalAnchor(lon: 121.0, lat: 18.4, provinceName: "吕宋", weight: 1.35),
-                    HistoricalAnchor(lon: 105.8, lat: 20.5, provinceName: "安南", weight: 1.65),
-                    HistoricalAnchor(lon: 97.5, lat: 20.5, provinceName: "滇缅边", weight: 1.75),
+                    HistoricalAnchor(lon: 136.61, lat: 35.36, provinceName: "大垣", weight: 0.85),
+                    HistoricalAnchor(lon: 137.25, lat: 36.15, provinceName: "高山", weight: 0.9),
                 ],
-                rulerName: "朱厚熜", rulerTitle: "嘉靖帝",
-                rulerMilitary: 68, rulerAdmin: 82, rulerDiplo: 76, rulerCharisma: 78,
-                rulerTraits: ["IronFist", "Stubborn"]
+                rulerName: "斋藤义龙", rulerTitle: "美浓守",
+                rulerMilitary: 84, rulerAdmin: 74, rulerDiplo: 70, rulerCharisma: 76,
+                rulerTraits: ["BattleHardened", "Stubborn"]
             ),
             HistoricalNationSpec(
-                id: "joseon", name: "朝鲜", shortName: "鲜", color: "#4285C4",
-                culture: "korean", religion: "confucian", polity: "Kingdom", style: "absolute",
-                capitalLon: 127.0, capitalLat: 37.6, capitalName: "汉城",
+                id: "ryuzoji", name: "龙造寺家", shortName: "龙造寺", color: "#4A6FA5",
+                culture: "japanese", religion: "shinto", polity: "Kingdom", style: "feudal",
+                capitalLon: 130.30, capitalLat: 33.26, capitalName: "佐贺",
                 anchors: [
-                    HistoricalAnchor(lon: 129.0, lat: 35.2, provinceName: "釜山", weight: 1.05),
-                    HistoricalAnchor(lon: 125.8, lat: 39.0, provinceName: "平壤", weight: 1.1),
-                    HistoricalAnchor(lon: 127.5, lat: 40.3, provinceName: "咸兴", weight: 1.1),
-                    HistoricalAnchor(lon: 127.1, lat: 35.8, provinceName: "全州", weight: 1.0),
+                    HistoricalAnchor(lon: 130.40, lat: 33.59, provinceName: "博多", weight: 0.95),
+                    HistoricalAnchor(lon: 129.87, lat: 32.75, provinceName: "长崎", weight: 0.95),
+                    HistoricalAnchor(lon: 130.71, lat: 32.80, provinceName: "熊本", weight: 0.95),
                 ],
-                rulerName: "李峘", rulerTitle: "朝鲜明宗",
-                rulerMilitary: 64, rulerAdmin: 76, rulerDiplo: 78, rulerCharisma: 74,
-                rulerTraits: ["Scholar", "Patient"]
+                rulerName: "龙造寺隆信", rulerTitle: "山城守",
+                rulerMilitary: 86, rulerAdmin: 70, rulerDiplo: 68, rulerCharisma: 80,
+                rulerTraits: ["Hawkish", "Brave", "Conqueror"]
             ),
         ],
         openingWars: [
@@ -1625,10 +2177,12 @@ public enum HistoricalScenarios {
         openingAlliances: [
             HistoricalAllianceSpec(name: "甲相骏三国同盟", memberIds: ["takeda", "hojo", "imagawa"]),
         ],
-        tags: ["日本战国", "桶狭间", "东亚", "群雄割据"]
+        tags: ["日本战国", "桶狭间", "扶桑", "群雄割据"],
+        rebelMode: "historical",
+        eraOverride: "gunpowder"
     )
 
-    // 剧本 5：拿破仑欧陆 · 远征莫斯科（公元 1812 年）
+    // 剧本 6：拿破仑欧陆 · 远征莫斯科（公元 1812 年 · 欧洲全图 · 10 国）
     private static let napoleon1812 = HistoricalScenario(
         id: "napoleon_1812",
         title: "拿破仑欧陆 · 远征莫斯科",
@@ -1636,18 +2190,18 @@ public enum HistoricalScenarios {
         region: .europe,
         year: 1812,
         eraName: "法兰西第一帝国",
-        description: "1812年夏，拿破仑率六十万大军强渡涅曼河远征莫斯科。法兰西帝国及其莱茵邦联、华沙大公国与意大利诸邦雄踞欧陆，大英帝国以制海权与西班牙半岛战线牵制法军，俄、奥、普、奥斯曼与北欧诸王各自博弈。",
+        description: "1812年夏，拿破仑率六十万大军强渡涅曼河远征莫斯科。法兰西第一帝国及其莱茵邦联、华沙大公国与意大利诸邦雄踞欧陆，大英帝国以制海权与西班牙半岛战线牵制法军，俄、奥、普、奥斯曼与北欧诸王各自博弈。",
         author: "列国纪官方",
         isOfficial: true,
         provinceCount: 145,
         nations: [
             HistoricalNationSpec(
-                id: "france", name: "法兰西帝国", shortName: "法", color: "#2557A7",
+                id: "france", name: "法兰西第一帝国", shortName: "法", color: "#2557A7",
                 culture: "french", religion: "catholic", polity: "Empire", style: "empire",
                 capitalLon: 2.3, capitalLat: 48.9, capitalName: "巴黎",
                 anchors: [
                     HistoricalAnchor(lon: 4.8, lat: 45.8, provinceName: "里昂", weight: 1.25),
-                    HistoricalAnchor(lon: 5.4, lat: 43.8, provinceName: "马赛", weight: 1.2),
+                    HistoricalAnchor(lon: 5.4, lat: 43.3, provinceName: "马赛", weight: 1.2),
                     HistoricalAnchor(lon: -0.6, lat: 44.8, provinceName: "波尔多", weight: 1.25),
                     HistoricalAnchor(lon: 4.4, lat: 50.8, provinceName: "布鲁塞尔", weight: 1.15),
                     HistoricalAnchor(lon: 4.9, lat: 52.4, provinceName: "阿姆斯特丹", weight: 1.15),
@@ -1657,7 +2211,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 12.5, lat: 41.9, provinceName: "罗马", weight: 1.25),
                     HistoricalAnchor(lon: 14.3, lat: 40.8, provinceName: "那不勒斯", weight: 1.2),
                     HistoricalAnchor(lon: 21.0, lat: 52.2, provinceName: "华沙", weight: 1.2),
-                    HistoricalAnchor(lon: 9.0, lat: 42.2, provinceName: "科西嘉", weight: 1.1),
+                    HistoricalAnchor(lon: 9.0, lat: 42.2, provinceName: "阿雅克肖", weight: 1.1),
                 ],
                 rulerName: "拿破仑·波拿巴", rulerTitle: "皇帝",
                 rulerMilitary: 99, rulerAdmin: 92, rulerDiplo: 82, rulerCharisma: 96,
@@ -1674,9 +2228,9 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 32.0, lat: 54.8, provinceName: "斯摩棱斯克", weight: 1.3),
                     HistoricalAnchor(lon: 46.0, lat: 55.8, provinceName: "喀山", weight: 1.6),
                     HistoricalAnchor(lon: 30.7, lat: 46.5, provinceName: "敖德萨", weight: 1.25),
-                    HistoricalAnchor(lon: 25.0, lat: 60.8, provinceName: "赫尔辛基", weight: 1.35),
+                    HistoricalAnchor(lon: 25.0, lat: 60.2, provinceName: "赫尔辛基", weight: 1.35),
                     HistoricalAnchor(lon: 24.1, lat: 56.9, provinceName: "里加", weight: 1.15),
-                    HistoricalAnchor(lon: 42.0, lat: 47.2, provinceName: "顿河罗斯托夫", weight: 1.5),
+                    HistoricalAnchor(lon: 39.7, lat: 47.2, provinceName: "顿河畔罗斯托夫", weight: 1.5),
                     HistoricalAnchor(lon: 44.8, lat: 41.7, provinceName: "第比利斯", weight: 1.35),
                 ],
                 rulerName: "亚历山大一世", rulerTitle: "沙皇",
@@ -1691,8 +2245,8 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: -3.2, lat: 55.9, provinceName: "爱丁堡", weight: 1.25),
                     HistoricalAnchor(lon: -2.2, lat: 53.5, provinceName: "曼彻斯特", weight: 1.15),
                     HistoricalAnchor(lon: -6.3, lat: 53.3, provinceName: "都柏林", weight: 1.3),
-                    HistoricalAnchor(lon: 14.0, lat: 37.5, provinceName: "巴勒莫", weight: 1.15),
-                    HistoricalAnchor(lon: 9.0, lat: 40.0, provinceName: "卡利亚里", weight: 1.1),
+                    HistoricalAnchor(lon: 13.4, lat: 38.1, provinceName: "巴勒莫", weight: 1.15),
+                    HistoricalAnchor(lon: 9.1, lat: 39.2, provinceName: "卡利亚里", weight: 1.1),
                 ],
                 rulerName: "利物浦勋爵", rulerTitle: "首相",
                 rulerMilitary: 78, rulerAdmin: 88, rulerDiplo: 90, rulerCharisma: 80,
@@ -1706,8 +2260,8 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 14.4, lat: 50.1, provinceName: "布拉格", weight: 1.1),
                     HistoricalAnchor(lon: 19.0, lat: 47.5, provinceName: "布达佩斯", weight: 1.25),
                     HistoricalAnchor(lon: 19.9, lat: 50.1, provinceName: "克拉科夫", weight: 1.05),
-                    HistoricalAnchor(lon: 12.1, lat: 45.7, provinceName: "威尼斯", weight: 1.0),
-                    HistoricalAnchor(lon: 24.0, lat: 46.8, provinceName: "特兰西瓦尼亚", weight: 1.15),
+                    HistoricalAnchor(lon: 12.3, lat: 45.4, provinceName: "威尼斯", weight: 1.0),
+                    HistoricalAnchor(lon: 23.6, lat: 46.8, provinceName: "克卢日", weight: 1.15),
                 ],
                 rulerName: "弗朗茨一世", rulerTitle: "皇帝",
                 rulerMilitary: 70, rulerAdmin: 80, rulerDiplo: 88, rulerCharisma: 76,
@@ -1732,9 +2286,9 @@ public enum HistoricalScenarios {
                 capitalLon: -3.7, capitalLat: 40.4, capitalName: "马德里",
                 anchors: [
                     HistoricalAnchor(lon: -6.0, lat: 37.4, provinceName: "塞维利亚", weight: 1.2),
-                    HistoricalAnchor(lon: 1.8, lat: 41.7, provinceName: "巴塞罗那", weight: 1.1),
+                    HistoricalAnchor(lon: 2.2, lat: 41.4, provinceName: "巴塞罗那", weight: 1.1),
                     HistoricalAnchor(lon: -0.4, lat: 39.5, provinceName: "瓦伦西亚", weight: 1.1),
-                    HistoricalAnchor(lon: -5.8, lat: 43.0, provinceName: "莱昂", weight: 1.15),
+                    HistoricalAnchor(lon: -5.6, lat: 42.6, provinceName: "莱昂", weight: 1.15),
                 ],
                 rulerName: "费尔南多七世", rulerTitle: "国王",
                 rulerMilitary: 64, rulerAdmin: 60, rulerDiplo: 66, rulerCharisma: 68,
@@ -1746,7 +2300,7 @@ public enum HistoricalScenarios {
                 capitalLon: -9.1, capitalLat: 38.7, capitalName: "里斯本",
                 anchors: [
                     HistoricalAnchor(lon: -8.6, lat: 41.1, provinceName: "波尔图", weight: 0.9),
-                    HistoricalAnchor(lon: -8.0, lat: 37.2, provinceName: "法鲁", weight: 0.85),
+                    HistoricalAnchor(lon: -8.0, lat: 37.0, provinceName: "法鲁", weight: 0.85),
                 ],
                 rulerName: "若昂六世", rulerTitle: "摄政王",
                 rulerMilitary: 62, rulerAdmin: 72, rulerDiplo: 78, rulerCharisma: 70,
@@ -1755,15 +2309,15 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "ottoman", name: "奥斯曼帝国", shortName: "奥斯曼", color: "#196F3D",
                 culture: "turkic", religion: "islam", polity: "Kingdom", style: "sultanate",
-                capitalLon: 28.4, capitalLat: 41.4, capitalName: "君士坦丁堡",
+                capitalLon: 28.9, capitalLat: 41.0, capitalName: "君士坦丁堡",
                 anchors: [
                     HistoricalAnchor(lon: 23.3, lat: 42.7, provinceName: "索菲亚", weight: 1.2),
                     HistoricalAnchor(lon: 23.7, lat: 38.0, provinceName: "雅典", weight: 1.25),
                     HistoricalAnchor(lon: 20.5, lat: 44.8, provinceName: "贝尔格莱德", weight: 1.15),
                     HistoricalAnchor(lon: 32.9, lat: 39.9, provinceName: "安卡拉", weight: 1.45),
                     HistoricalAnchor(lon: 27.1, lat: 38.4, provinceName: "伊兹密尔", weight: 1.25),
-                    HistoricalAnchor(lon: 39.7, lat: 40.9, provinceName: "特拉布宗", weight: 1.35),
-                    HistoricalAnchor(lon: 25.0, lat: 35.3, provinceName: "克里特", weight: 1.15),
+                    HistoricalAnchor(lon: 39.7, lat: 41.0, provinceName: "特拉布宗", weight: 1.35),
+                    HistoricalAnchor(lon: 25.1, lat: 35.3, provinceName: "伊拉克利翁", weight: 1.15),
                     HistoricalAnchor(lon: 10.2, lat: 36.8, provinceName: "突尼斯", weight: 1.4),
                     HistoricalAnchor(lon: 3.0, lat: 36.7, provinceName: "阿尔及尔", weight: 1.45),
                 ],
@@ -1786,12 +2340,11 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "denmark", name: "丹麦-挪威", shortName: "丹", color: "#A93226",
                 culture: "norse", religion: "protestant", polity: "Kingdom", style: "absolute",
-                capitalLon: 11.9, capitalLat: 55.6, capitalName: "哥本哈根",
+                capitalLon: 12.6, capitalLat: 55.7, capitalName: "哥本哈根",
                 anchors: [
                     HistoricalAnchor(lon: 10.7, lat: 59.9, provinceName: "奥斯陆", weight: 1.25),
                     HistoricalAnchor(lon: 5.3, lat: 60.4, provinceName: "卑尔根", weight: 1.2),
                     HistoricalAnchor(lon: 10.4, lat: 63.4, provinceName: "特隆赫姆", weight: 1.3),
-                    HistoricalAnchor(lon: -21.9, lat: 64.1, provinceName: "雷克雅未克", weight: 1.5),
                 ],
                 rulerName: "弗雷德里克六世", rulerTitle: "国王",
                 rulerMilitary: 68, rulerAdmin: 76, rulerDiplo: 70, rulerCharisma: 72,
@@ -1807,10 +2360,12 @@ public enum HistoricalScenarios {
             HistoricalAllianceSpec(name: "反法同盟", memberIds: ["britain", "russia", "portugal", "spain"]),
             HistoricalAllianceSpec(name: "法兰西大陆同盟", memberIds: ["france", "denmark"]),
         ],
-        tags: ["拿破仑", "欧洲", "近代", "列强"]
+        tags: ["拿破仑", "欧洲", "近代", "列强"],
+        rebelMode: "historical",
+        eraOverride: "gunpowder"
     )
 
-    // 剧本 6：第一次世界大战 · 八月炮火（公元 1914 年 · 全球格局）
+    // 剧本 7：第一次世界大战 · 八月炮火（公元 1914 年 · 世界全图 · 14 国）
     private static let ww1_1914 = HistoricalScenario(
         id: "ww1_1914",
         title: "第一次世界大战 · 八月炮火",
@@ -1829,11 +2384,11 @@ public enum HistoricalScenarios {
                 capitalLon: 13.4, capitalLat: 52.5, capitalName: "柏林",
                 anchors: [
                     HistoricalAnchor(lon: 11.6, lat: 48.1, provinceName: "慕尼黑", weight: 1.0),
-                    HistoricalAnchor(lon: 9.9, lat: 53.5, provinceName: "汉堡", weight: 1.0),
-                    HistoricalAnchor(lon: 19.5, lat: 54.0, provinceName: "东普鲁士", weight: 1.0),
-                    HistoricalAnchor(lon: 12.5, lat: 5.0, provinceName: "德属喀麦隆", weight: 1.15),
-                    HistoricalAnchor(lon: 35.0, lat: -6.5, provinceName: "德属东非", weight: 1.2),
-                    HistoricalAnchor(lon: 17.0, lat: -22.5, provinceName: "德属西南非", weight: 1.25),
+                    HistoricalAnchor(lon: 10.0, lat: 53.5, provinceName: "汉堡", weight: 1.0),
+                    HistoricalAnchor(lon: 20.5, lat: 54.7, provinceName: "柯尼斯堡", weight: 1.0),
+                    HistoricalAnchor(lon: 11.5, lat: 3.9, provinceName: "雅温得", weight: 1.15),
+                    HistoricalAnchor(lon: 39.3, lat: -6.8, provinceName: "达累斯萨拉姆", weight: 1.2),
+                    HistoricalAnchor(lon: 17.1, lat: -22.6, provinceName: "温得和克", weight: 1.25),
                 ],
                 rulerName: "威廉二世", rulerTitle: "德皇",
                 rulerMilitary: 84, rulerAdmin: 82, rulerDiplo: 66, rulerCharisma: 80,
@@ -1854,13 +2409,13 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "ottoman", name: "奥斯曼帝国", shortName: "奥斯曼", color: "#1B7A43",
                 culture: "turkic", religion: "islam", polity: "Kingdom", style: "sultanate",
-                capitalLon: 28.4, capitalLat: 41.4, capitalName: "君士坦丁堡",
+                capitalLon: 28.9, capitalLat: 41.0, capitalName: "君士坦丁堡",
                 anchors: [
-                    HistoricalAnchor(lon: 35.0, lat: 39.0, provinceName: "安卡拉", weight: 1.25),
+                    HistoricalAnchor(lon: 32.9, lat: 39.9, provinceName: "安卡拉", weight: 1.25),
                     HistoricalAnchor(lon: 36.3, lat: 33.5, provinceName: "大马士革", weight: 1.2),
                     HistoricalAnchor(lon: 44.4, lat: 33.3, provinceName: "巴格达", weight: 1.4),
-                    HistoricalAnchor(lon: 41.0, lat: 22.0, provinceName: "希贾兹", weight: 1.45),
-                    HistoricalAnchor(lon: 53.0, lat: 32.0, provinceName: "波斯高原", weight: 1.45),
+                    HistoricalAnchor(lon: 39.8, lat: 21.4, provinceName: "麦加", weight: 1.45),
+                    HistoricalAnchor(lon: 51.4, lat: 35.7, provinceName: "德黑兰", weight: 1.45),
                 ],
                 rulerName: "穆罕默德五世", rulerTitle: "苏丹",
                 rulerMilitary: 68, rulerAdmin: 66, rulerDiplo: 68, rulerCharisma: 70,
@@ -1873,19 +2428,17 @@ public enum HistoricalScenarios {
                 anchors: [
                     HistoricalAnchor(lon: -3.2, lat: 55.9, provinceName: "爱丁堡", weight: 1.1),
                     HistoricalAnchor(lon: -75.7, lat: 45.4, provinceName: "渥太华", weight: 1.7),
-                    HistoricalAnchor(lon: -105.0, lat: 55.0, provinceName: "加拿大西部", weight: 2.1),
-                    HistoricalAnchor(lon: -42.0, lat: 67.0, provinceName: "格陵兰", weight: 1.8),
+                    HistoricalAnchor(lon: -114.1, lat: 51.0, provinceName: "卡尔加里", weight: 2.0),
                     HistoricalAnchor(lon: 31.2, lat: 30.0, provinceName: "开罗", weight: 1.45),
                     HistoricalAnchor(lon: 32.5, lat: 15.6, provinceName: "喀土穆", weight: 1.4),
-                    HistoricalAnchor(lon: 24.0, lat: -29.0, provinceName: "开普敦", weight: 1.65),
+                    HistoricalAnchor(lon: 18.4, lat: -33.9, provinceName: "开普敦", weight: 1.65),
                     HistoricalAnchor(lon: 77.2, lat: 28.6, provinceName: "德里", weight: 1.7),
-                    HistoricalAnchor(lon: 78.0, lat: 14.0, provinceName: "马德拉斯", weight: 1.5),
-                    HistoricalAnchor(lon: 96.2, lat: 17.0, provinceName: "仰光", weight: 1.35),
-                    HistoricalAnchor(lon: 103.8, lat: 1.4, provinceName: "新加坡", weight: 1.65),
-                    HistoricalAnchor(lon: 114.0, lat: -2.0, provinceName: "南洋群岛", weight: 1.65),
-                    HistoricalAnchor(lon: 149.8, lat: -33.6, provinceName: "悉尼", weight: 1.9),
-                    HistoricalAnchor(lon: 122.0, lat: -25.0, provinceName: "珀斯", weight: 1.9),
-                    HistoricalAnchor(lon: 173.2, lat: -41.0, provinceName: "惠灵顿", weight: 1.6),
+                    HistoricalAnchor(lon: 80.3, lat: 13.1, provinceName: "马德拉斯", weight: 1.5),
+                    HistoricalAnchor(lon: 96.2, lat: 16.8, provinceName: "仰光", weight: 1.35),
+                    HistoricalAnchor(lon: 103.8, lat: 1.3, provinceName: "新加坡", weight: 1.65),
+                    HistoricalAnchor(lon: 151.2, lat: -33.9, provinceName: "悉尼", weight: 1.9),
+                    HistoricalAnchor(lon: 115.9, lat: -32.0, provinceName: "珀斯", weight: 1.9),
+                    HistoricalAnchor(lon: 174.8, lat: -41.3, provinceName: "惠灵顿", weight: 1.6),
                 ],
                 rulerName: "乔治五世", rulerTitle: "国王",
                 rulerMilitary: 82, rulerAdmin: 88, rulerDiplo: 90, rulerCharisma: 86,
@@ -1898,10 +2451,10 @@ public enum HistoricalScenarios {
                 anchors: [
                     HistoricalAnchor(lon: 5.4, lat: 43.3, provinceName: "马赛", weight: 1.05),
                     HistoricalAnchor(lon: 3.0, lat: 36.7, provinceName: "阿尔及尔", weight: 1.35),
-                    HistoricalAnchor(lon: -5.0, lat: 18.0, provinceName: "法属西非", weight: 1.85),
-                    HistoricalAnchor(lon: 16.0, lat: 12.0, provinceName: "法属赤道非洲", weight: 1.6),
-                    HistoricalAnchor(lon: 47.0, lat: -19.0, provinceName: "马达加斯加", weight: 1.45),
-                    HistoricalAnchor(lon: 106.7, lat: 15.0, provinceName: "印度支那", weight: 1.35),
+                    HistoricalAnchor(lon: -17.4, lat: 14.7, provinceName: "达喀尔", weight: 1.8),
+                    HistoricalAnchor(lon: 15.3, lat: -4.3, provinceName: "布拉柴维尔", weight: 1.6),
+                    HistoricalAnchor(lon: 47.5, lat: -18.9, provinceName: "塔那那利佛", weight: 1.45),
+                    HistoricalAnchor(lon: 106.7, lat: 10.8, provinceName: "西贡", weight: 1.35),
                 ],
                 rulerName: "雷蒙·普恩加莱", rulerTitle: "总统",
                 rulerMilitary: 78, rulerAdmin: 82, rulerDiplo: 84, rulerCharisma: 80,
@@ -1918,7 +2471,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 82.9, lat: 55.0, provinceName: "新西伯利亚", weight: 2.0),
                     HistoricalAnchor(lon: 104.3, lat: 52.3, provinceName: "伊尔库茨克", weight: 2.0),
                     HistoricalAnchor(lon: 131.9, lat: 43.1, provinceName: "海参崴", weight: 1.75),
-                    HistoricalAnchor(lon: 155.0, lat: 62.0, provinceName: "堪察加", weight: 2.0),
+                    HistoricalAnchor(lon: 158.6, lat: 53.0, provinceName: "彼得罗巴甫洛夫斯克", weight: 2.0),
                     HistoricalAnchor(lon: 69.2, lat: 41.3, provinceName: "塔什干", weight: 1.65),
                 ],
                 rulerName: "尼古拉二世", rulerTitle: "沙皇",
@@ -1933,10 +2486,10 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: -74.0, lat: 40.7, provinceName: "纽约", weight: 1.35),
                     HistoricalAnchor(lon: -87.6, lat: 41.9, provinceName: "芝加哥", weight: 1.55),
                     HistoricalAnchor(lon: -96.8, lat: 32.8, provinceName: "达拉斯", weight: 1.55),
-                    HistoricalAnchor(lon: -120.8, lat: 37.8, provinceName: "旧金山", weight: 1.65),
-                    HistoricalAnchor(lon: -150.0, lat: 64.0, provinceName: "阿拉斯加", weight: 1.75),
+                    HistoricalAnchor(lon: -122.4, lat: 37.8, provinceName: "旧金山", weight: 1.65),
+                    HistoricalAnchor(lon: -149.9, lat: 61.2, provinceName: "安克雷奇", weight: 1.75),
                     HistoricalAnchor(lon: 121.0, lat: 14.6, provinceName: "马尼拉", weight: 1.3),
-                    HistoricalAnchor(lon: -80.0, lat: 22.0, provinceName: "哈瓦那", weight: 1.2),
+                    HistoricalAnchor(lon: -82.4, lat: 23.1, provinceName: "哈瓦那", weight: 1.2),
                 ],
                 rulerName: "伍德罗·威尔逊", rulerTitle: "总统",
                 rulerMilitary: 74, rulerAdmin: 88, rulerDiplo: 92, rulerCharisma: 86,
@@ -1949,7 +2502,7 @@ public enum HistoricalScenarios {
                 anchors: [
                     HistoricalAnchor(lon: 135.5, lat: 34.7, provinceName: "大阪", weight: 1.15),
                     HistoricalAnchor(lon: 141.3, lat: 43.1, provinceName: "札幌", weight: 1.15),
-                    HistoricalAnchor(lon: 127.0, lat: 37.6, provinceName: "京城", weight: 1.15),
+                    HistoricalAnchor(lon: 127.0, lat: 37.6, provinceName: "汉城", weight: 1.15),
                     HistoricalAnchor(lon: 121.5, lat: 25.0, provinceName: "台北", weight: 1.05),
                 ],
                 rulerName: "大正天皇", rulerTitle: "天皇",
@@ -1964,10 +2517,10 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 121.5, lat: 31.2, provinceName: "上海", weight: 1.35),
                     HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "广州", weight: 1.35),
                     HistoricalAnchor(lon: 104.1, lat: 30.7, provinceName: "成都", weight: 1.45),
-                    HistoricalAnchor(lon: 87.6, lat: 43.8, provinceName: "迪化", weight: 1.65),
+                    HistoricalAnchor(lon: 87.6, lat: 43.8, provinceName: "乌鲁木齐", weight: 1.65),
                     HistoricalAnchor(lon: 91.1, lat: 29.7, provinceName: "拉萨", weight: 1.5),
-                    HistoricalAnchor(lon: 123.4, lat: 41.8, provinceName: "奉天", weight: 1.3),
-                    HistoricalAnchor(lon: 106.9, lat: 47.9, provinceName: "库伦", weight: 1.4),
+                    HistoricalAnchor(lon: 123.4, lat: 41.8, provinceName: "沈阳", weight: 1.3),
+                    HistoricalAnchor(lon: 106.9, lat: 47.9, provinceName: "乌兰巴托", weight: 1.4),
                 ],
                 rulerName: "袁世凯", rulerTitle: "大总统",
                 rulerMilitary: 80, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 76,
@@ -1979,8 +2532,8 @@ public enum HistoricalScenarios {
                 capitalLon: 12.5, capitalLat: 41.9, capitalName: "罗马",
                 anchors: [
                     HistoricalAnchor(lon: 9.2, lat: 45.5, provinceName: "米兰", weight: 1.0),
-                    HistoricalAnchor(lon: 17.0, lat: 27.0, provinceName: "的黎波里", weight: 1.35),
-                    HistoricalAnchor(lon: 45.3, lat: 5.0, provinceName: "意属索马里", weight: 1.25),
+                    HistoricalAnchor(lon: 13.2, lat: 32.9, provinceName: "的黎波里", weight: 1.35),
+                    HistoricalAnchor(lon: 45.3, lat: 2.0, provinceName: "摩加迪沙", weight: 1.25),
                 ],
                 rulerName: "维托里奥·埃马努埃莱三世", rulerTitle: "国王",
                 rulerMilitary: 70, rulerAdmin: 74, rulerDiplo: 78, rulerCharisma: 74,
@@ -1991,8 +2544,8 @@ public enum HistoricalScenarios {
                 culture: "spanish", religion: "catholic", polity: "Kingdom", style: "constitutional",
                 capitalLon: -3.7, capitalLat: 40.4, capitalName: "马德里",
                 anchors: [
-                    HistoricalAnchor(lon: -8.2, lat: 38.9, provinceName: "里斯本", weight: 1.05),
-                    HistoricalAnchor(lon: 15.0, lat: 62.0, provinceName: "北欧中立区", weight: 1.4),
+                    HistoricalAnchor(lon: -9.1, lat: 38.7, provinceName: "里斯本", weight: 1.05),
+                    HistoricalAnchor(lon: 18.1, lat: 59.3, provinceName: "斯德哥尔摩", weight: 1.35),
                 ],
                 rulerName: "阿方索十三世", rulerTitle: "国王",
                 rulerMilitary: 66, rulerAdmin: 72, rulerDiplo: 78, rulerCharisma: 76,
@@ -2005,7 +2558,7 @@ public enum HistoricalScenarios {
                 anchors: [
                     HistoricalAnchor(lon: -60.0, lat: -3.1, provinceName: "马瑙斯", weight: 1.8),
                     HistoricalAnchor(lon: -38.5, lat: -12.9, provinceName: "萨尔瓦多", weight: 1.65),
-                    HistoricalAnchor(lon: -74.0, lat: 4.6, provinceName: "波哥大", weight: 1.55),
+                    HistoricalAnchor(lon: -74.1, lat: 4.6, provinceName: "波哥大", weight: 1.55),
                     HistoricalAnchor(lon: -77.0, lat: -12.0, provinceName: "利马", weight: 1.5),
                 ],
                 rulerName: "赫尔梅斯·达·丰塞卡", rulerTitle: "总统",
@@ -2018,7 +2571,7 @@ public enum HistoricalScenarios {
                 capitalLon: -58.4, capitalLat: -34.6, capitalName: "布宜诺斯艾利斯",
                 anchors: [
                     HistoricalAnchor(lon: -70.7, lat: -33.4, provinceName: "圣地亚哥", weight: 1.45),
-                    HistoricalAnchor(lon: -68.0, lat: -46.0, provinceName: "巴塔哥尼亚", weight: 1.6),
+                    HistoricalAnchor(lon: -67.5, lat: -45.9, provinceName: "里瓦达维亚海军准将城", weight: 1.55),
                     HistoricalAnchor(lon: -68.1, lat: -16.5, provinceName: "拉巴斯", weight: 1.35),
                 ],
                 rulerName: "维克托里诺·德·拉·普拉萨", rulerTitle: "总统",
@@ -2030,8 +2583,8 @@ public enum HistoricalScenarios {
                 culture: "spanish", religion: "catholic", polity: "Republic", style: "presidential",
                 capitalLon: -99.1, capitalLat: 19.4, capitalName: "墨西哥城",
                 anchors: [
-                    HistoricalAnchor(lon: -103.3, lat: 25.5, provinceName: "蒙特雷", weight: 1.35),
-                    HistoricalAnchor(lon: -86.0, lat: 13.0, provinceName: "中美洲", weight: 1.35),
+                    HistoricalAnchor(lon: -100.3, lat: 25.7, provinceName: "蒙特雷", weight: 1.35),
+                    HistoricalAnchor(lon: -90.5, lat: 14.6, provinceName: "危地马拉城", weight: 1.35),
                 ],
                 rulerName: "贝努斯蒂亚诺·卡兰萨", rulerTitle: "总统",
                 rulerMilitary: 74, rulerAdmin: 74, rulerDiplo: 72, rulerCharisma: 76,
@@ -2048,10 +2601,12 @@ public enum HistoricalScenarios {
             HistoricalAllianceSpec(name: "同盟国", memberIds: ["germany", "austria_hungary", "ottoman"]),
             HistoricalAllianceSpec(name: "协约国", memberIds: ["britain", "france", "russia"]),
         ],
-        tags: ["一战", "世界全图", "全球大战", "近代"]
+        tags: ["一战", "世界全图", "全球大战", "近代"],
+        rebelMode: "historical",
+        eraOverride: "ww1"
     )
 
-    // 剧本 7：二战欧洲战场 · 欧陆烽烟（公元 1939 年 9 月）
+    // 剧本 8：二战欧洲战场 · 欧陆烽烟（公元 1939 年 9 月 · 欧洲全图 · 16 国）
     private static let ww2Europe1939 = HistoricalScenario(
         id: "ww2_europe_1939",
         title: "二战欧洲战场 · 欧陆烽烟",
@@ -2095,21 +2650,21 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 44.8, lat: 41.7, provinceName: "第比利斯", weight: 1.45),
                     HistoricalAnchor(lon: 33.1, lat: 68.9, provinceName: "摩尔曼斯克", weight: 1.4),
                     HistoricalAnchor(lon: 24.1, lat: 56.9, provinceName: "里加", weight: 1.1),
-                    HistoricalAnchor(lon: 46.0, lat: 61.0, provinceName: "阿尔汉格尔斯克", weight: 1.6),
+                    HistoricalAnchor(lon: 40.5, lat: 64.5, provinceName: "阿尔汉格尔斯克", weight: 1.6),
                 ],
                 rulerName: "约瑟夫·斯大林", rulerTitle: "总书记",
                 rulerMilitary: 86, rulerAdmin: 88, rulerDiplo: 80, rulerCharisma: 84,
                 rulerTraits: ["IronFist", "Paranoid", "BattleHardened"]
             ),
             HistoricalNationSpec(
-                id: "uk", name: "大不列颠王国", shortName: "英", color: "#D34848",
+                id: "uk", name: "大英帝国", shortName: "英", color: "#D34848",
                 culture: "english", religion: "protestant", polity: "Kingdom", style: "constitutional",
                 capitalLon: -0.1, capitalLat: 51.5, capitalName: "伦敦",
                 anchors: [
                     HistoricalAnchor(lon: -3.2, lat: 55.9, provinceName: "爱丁堡", weight: 1.25),
                     HistoricalAnchor(lon: -2.2, lat: 53.5, provinceName: "曼彻斯特", weight: 1.15),
                     HistoricalAnchor(lon: -6.3, lat: 53.3, provinceName: "都柏林", weight: 1.25),
-                    HistoricalAnchor(lon: 33.4, lat: 35.1, provinceName: "塞浦路斯", weight: 1.1),
+                    HistoricalAnchor(lon: 33.4, lat: 35.2, provinceName: "尼科西亚", weight: 1.1),
                 ],
                 rulerName: "温斯顿·丘吉尔", rulerTitle: "首相",
                 rulerMilitary: 86, rulerAdmin: 84, rulerDiplo: 92, rulerCharisma: 94,
@@ -2121,10 +2676,9 @@ public enum HistoricalScenarios {
                 capitalLon: 2.3, capitalLat: 48.9, capitalName: "巴黎",
                 anchors: [
                     HistoricalAnchor(lon: 4.8, lat: 45.8, provinceName: "里昂", weight: 1.15),
-                    HistoricalAnchor(lon: 5.4, lat: 43.8, provinceName: "马赛", weight: 1.15),
+                    HistoricalAnchor(lon: 5.4, lat: 43.3, provinceName: "马赛", weight: 1.15),
                     HistoricalAnchor(lon: -0.6, lat: 44.8, provinceName: "波尔多", weight: 1.2),
                     HistoricalAnchor(lon: 7.7, lat: 48.6, provinceName: "斯特拉斯堡", weight: 0.95),
-                    HistoricalAnchor(lon: 9.0, lat: 42.2, provinceName: "科西嘉", weight: 1.05),
                     HistoricalAnchor(lon: 3.0, lat: 36.7, provinceName: "阿尔及尔", weight: 1.45),
                     HistoricalAnchor(lon: 10.2, lat: 36.8, provinceName: "突尼斯", weight: 1.3),
                     HistoricalAnchor(lon: -6.8, lat: 34.0, provinceName: "拉巴特", weight: 1.35),
@@ -2154,9 +2708,9 @@ public enum HistoricalScenarios {
                 capitalLon: 12.5, capitalLat: 41.9, capitalName: "罗马",
                 anchors: [
                     HistoricalAnchor(lon: 9.2, lat: 45.5, provinceName: "米兰", weight: 1.05),
-                    HistoricalAnchor(lon: 12.1, lat: 45.7, provinceName: "威尼斯", weight: 1.0),
+                    HistoricalAnchor(lon: 12.3, lat: 45.4, provinceName: "威尼斯", weight: 1.0),
                     HistoricalAnchor(lon: 14.3, lat: 40.8, provinceName: "那不勒斯", weight: 1.1),
-                    HistoricalAnchor(lon: 13.8, lat: 37.6, provinceName: "巴勒莫", weight: 1.15),
+                    HistoricalAnchor(lon: 13.4, lat: 38.1, provinceName: "巴勒莫", weight: 1.15),
                     HistoricalAnchor(lon: 9.1, lat: 39.2, provinceName: "卡利亚里", weight: 1.1),
                     HistoricalAnchor(lon: 19.8, lat: 41.3, provinceName: "地拉那", weight: 0.9),
                     HistoricalAnchor(lon: 13.2, lat: 32.9, provinceName: "的黎波里", weight: 1.45),
@@ -2166,11 +2720,11 @@ public enum HistoricalScenarios {
                 rulerTraits: ["Hawkish", "Ambitious", "Stubborn"]
             ),
             HistoricalNationSpec(
-                id: "spain", name: "西班牙国", shortName: "西", color: "#D99B26",
+                id: "spain", name: "西班牙", shortName: "西", color: "#D99B26",
                 culture: "spanish", religion: "catholic", polity: "Empire", style: "junta",
                 capitalLon: -3.7, capitalLat: 40.4, capitalName: "马德里",
                 anchors: [
-                    HistoricalAnchor(lon: 1.8, lat: 41.7, provinceName: "巴塞罗那", weight: 1.1),
+                    HistoricalAnchor(lon: 2.2, lat: 41.4, provinceName: "巴塞罗那", weight: 1.1),
                     HistoricalAnchor(lon: -6.0, lat: 37.4, provinceName: "塞维利亚", weight: 1.2),
                     HistoricalAnchor(lon: -9.1, lat: 38.7, provinceName: "里斯本", weight: 1.15),
                     HistoricalAnchor(lon: -2.9, lat: 43.3, provinceName: "毕尔巴鄂", weight: 1.1),
@@ -2182,11 +2736,11 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "finland", name: "芬兰共和国", shortName: "芬", color: "#6FA8DC",
                 culture: "norse", religion: "protestant", polity: "Republic", style: "presidential",
-                capitalLon: 25.0, capitalLat: 60.8, capitalName: "赫尔辛基",
+                capitalLon: 25.0, capitalLat: 60.2, capitalName: "赫尔辛基",
                 anchors: [
                     HistoricalAnchor(lon: 25.5, lat: 65.0, provinceName: "奥卢", weight: 1.2),
                     HistoricalAnchor(lon: 28.7, lat: 60.7, provinceName: "维堡", weight: 0.95),
-                    HistoricalAnchor(lon: 25.7, lat: 66.5, provinceName: "拉普兰", weight: 1.2),
+                    HistoricalAnchor(lon: 25.7, lat: 66.5, provinceName: "罗瓦涅米", weight: 1.2),
                 ],
                 rulerName: "曼纳海姆", rulerTitle: "元帅",
                 rulerMilitary: 92, rulerAdmin: 80, rulerDiplo: 82, rulerCharisma: 88,
@@ -2212,20 +2766,19 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 5.3, lat: 60.4, provinceName: "卑尔根", weight: 1.1),
                     HistoricalAnchor(lon: 10.4, lat: 63.4, provinceName: "特隆赫姆", weight: 1.2),
                     HistoricalAnchor(lon: 17.4, lat: 68.4, provinceName: "纳尔维克", weight: 1.25),
-                    HistoricalAnchor(lon: 11.9, lat: 55.6, provinceName: "哥本哈根", weight: 1.05),
-                    HistoricalAnchor(lon: -21.9, lat: 64.1, provinceName: "雷克雅未克", weight: 1.5),
+                    HistoricalAnchor(lon: 12.6, lat: 55.7, provinceName: "哥本哈根", weight: 1.05),
                 ],
                 rulerName: "哈康七世", rulerTitle: "国王",
                 rulerMilitary: 68, rulerAdmin: 78, rulerDiplo: 80, rulerCharisma: 84,
                 rulerTraits: ["Just", "Beloved"]
             ),
             HistoricalNationSpec(
-                id: "benelux", name: "荷兰-比利时", shortName: "低地", color: "#E67E22",
+                id: "benelux", name: "低地联盟", shortName: "低地", color: "#E67E22",
                 culture: "dutch", religion: "protestant", polity: "Kingdom", style: "constitutional",
                 capitalLon: 4.9, capitalLat: 52.4, capitalName: "阿姆斯特丹",
                 anchors: [
                     HistoricalAnchor(lon: 4.4, lat: 50.8, provinceName: "布鲁塞尔", weight: 0.9),
-                    HistoricalAnchor(lon: 7.4, lat: 46.9, provinceName: "伯尔尼", weight: 0.85),
+                    HistoricalAnchor(lon: 6.1, lat: 49.6, provinceName: "卢森堡", weight: 0.85),
                 ],
                 rulerName: "威廉明娜", rulerTitle: "女王",
                 rulerMilitary: 64, rulerAdmin: 84, rulerDiplo: 82, rulerCharisma: 84,
@@ -2275,7 +2828,7 @@ public enum HistoricalScenarios {
                 capitalLon: 23.7, capitalLat: 38.0, capitalName: "雅典",
                 anchors: [
                     HistoricalAnchor(lon: 22.9, lat: 40.6, provinceName: "塞萨洛尼基", weight: 0.95),
-                    HistoricalAnchor(lon: 25.0, lat: 35.3, provinceName: "克里特", weight: 1.1),
+                    HistoricalAnchor(lon: 25.1, lat: 35.3, provinceName: "伊拉克利翁", weight: 1.1),
                 ],
                 rulerName: "扬尼斯·梅塔克萨斯", rulerTitle: "首相",
                 rulerMilitary: 80, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 78,
@@ -2286,7 +2839,7 @@ public enum HistoricalScenarios {
                 culture: "turkic", religion: "islam", polity: "Republic", style: "presidential",
                 capitalLon: 32.9, capitalLat: 39.9, capitalName: "安卡拉",
                 anchors: [
-                    HistoricalAnchor(lon: 28.4, lat: 41.4, provinceName: "伊斯坦布尔", weight: 1.15),
+                    HistoricalAnchor(lon: 28.9, lat: 41.0, provinceName: "伊斯坦布尔", weight: 1.15),
                     HistoricalAnchor(lon: 27.1, lat: 38.4, provinceName: "伊兹密尔", weight: 1.15),
                     HistoricalAnchor(lon: 41.3, lat: 39.9, provinceName: "埃尔祖鲁姆", weight: 1.3),
                     HistoricalAnchor(lon: 35.3, lat: 37.0, provinceName: "阿达纳", weight: 1.2),
@@ -2305,10 +2858,12 @@ public enum HistoricalScenarios {
             HistoricalAllianceSpec(name: "反法西斯盟国", memberIds: ["uk", "france", "poland"]),
             HistoricalAllianceSpec(name: "轴心国", memberIds: ["germany", "italy"]),
         ],
-        tags: ["二战", "欧洲战场", "闪电战", "现代"]
+        tags: ["二战", "欧洲战场", "闪电战", "现代"],
+        rebelMode: "historical",
+        eraOverride: "ww2"
     )
 
-    // 剧本 8：二战亚洲太平洋 · 太平洋风暴（公元 1941 年 12 月）
+    // 剧本 9：二战亚洲太平洋 · 太平洋风暴（公元 1941 年 12 月 · 东亚与太平洋 · 9 国）
     private static let ww2Asia1941 = HistoricalScenario(
         id: "ww2_asia_1941",
         title: "二战亚洲太平洋 · 太平洋风暴",
@@ -2316,13 +2871,13 @@ public enum HistoricalScenarios {
         region: .eastAsiaJapan,
         year: 1941,
         eraName: "二战亚太",
-        description: "1941年12月，太平洋战争爆发，日军南下香港、菲律宾与东南亚，正面战场中华民国死守西南大后方，延安抗日根据地深入敌后牵制华北，关东军与苏联远东方面军陈兵百万隔江对峙。",
+        description: "1941年12月，太平洋战争爆发，日军南下香港、菲律宾与东南亚，正面战场中华民国国民政府死守西南大后方，延安抗日根据地深入敌后牵制华北，关东军与苏联远东方面军陈兵百万隔江对峙。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 135,
+        provinceCount: 140,
         nations: [
             HistoricalNationSpec(
-                id: "roc", name: "中华民国", shortName: "国", color: "#2B6CB0",
+                id: "roc", name: "中华民国国民政府", shortName: "国", color: "#2B6CB0",
                 culture: "chinese", religion: "confucian", polity: "Republic", style: "presidential",
                 capitalLon: 106.5, capitalLat: 29.5, capitalName: "重庆",
                 anchors: [
@@ -2333,7 +2888,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 110.3, lat: 25.3, provinceName: "桂林", weight: 1.25),
                     HistoricalAnchor(lon: 106.7, lat: 26.6, provinceName: "贵阳", weight: 1.25),
                     HistoricalAnchor(lon: 103.8, lat: 36.1, provinceName: "兰州", weight: 1.5),
-                    HistoricalAnchor(lon: 116.0, lat: 26.0, provinceName: "赣州", weight: 1.15),
+                    HistoricalAnchor(lon: 114.9, lat: 25.8, provinceName: "赣州", weight: 1.15),
                 ],
                 rulerName: "蒋中正", rulerTitle: "国民政府主席",
                 rulerMilitary: 80, rulerAdmin: 78, rulerDiplo: 84, rulerCharisma: 82,
@@ -2344,10 +2899,9 @@ public enum HistoricalScenarios {
                 culture: "chinese", religion: "chineseFolk", polity: "Republic", style: "communist",
                 capitalLon: 109.5, capitalLat: 36.6, capitalName: "延安",
                 anchors: [
-                    HistoricalAnchor(lon: 113.3, lat: 36.6, provinceName: "太行", weight: 0.95),
-                    HistoricalAnchor(lon: 114.6, lat: 38.8, provinceName: "晋察冀", weight: 0.95),
-                    HistoricalAnchor(lon: 120.5, lat: 37.0, provinceName: "胶东", weight: 0.95),
-                    HistoricalAnchor(lon: 119.3, lat: 33.4, provinceName: "苏北", weight: 0.9),
+                    HistoricalAnchor(lon: 113.1, lat: 36.2, provinceName: "长治", weight: 0.95),
+                    HistoricalAnchor(lon: 114.5, lat: 38.0, provinceName: "石家庄", weight: 0.95),
+                    HistoricalAnchor(lon: 112.5, lat: 37.9, provinceName: "太原", weight: 0.95),
                 ],
                 rulerName: "毛泽东", rulerTitle: "主席",
                 rulerMilitary: 95, rulerAdmin: 90, rulerDiplo: 88, rulerCharisma: 96,
@@ -2362,7 +2916,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 136.9, lat: 35.2, provinceName: "名古屋", weight: 1.05),
                     HistoricalAnchor(lon: 130.4, lat: 33.6, provinceName: "福冈", weight: 1.2),
                     HistoricalAnchor(lon: 141.3, lat: 43.1, provinceName: "札幌", weight: 1.35),
-                    HistoricalAnchor(lon: 127.0, lat: 37.6, provinceName: "京城", weight: 1.25),
+                    HistoricalAnchor(lon: 127.0, lat: 37.6, provinceName: "汉城", weight: 1.25),
                     HistoricalAnchor(lon: 129.0, lat: 35.2, provinceName: "釜山", weight: 1.15),
                     HistoricalAnchor(lon: 121.5, lat: 25.0, provinceName: "台北", weight: 1.2),
                     HistoricalAnchor(lon: 121.5, lat: 31.2, provinceName: "上海", weight: 1.15),
@@ -2370,23 +2924,23 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 116.4, lat: 39.9, provinceName: "北平", weight: 1.1),
                     HistoricalAnchor(lon: 114.3, lat: 30.6, provinceName: "武汉", weight: 1.05),
                     HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "广州", weight: 1.05),
-                    HistoricalAnchor(lon: 127.8, lat: 26.3, provinceName: "冲绳", weight: 1.1),
-                    HistoricalAnchor(lon: 110.0, lat: 19.3, provinceName: "海南", weight: 1.1),
+                    HistoricalAnchor(lon: 127.7, lat: 26.2, provinceName: "那霸", weight: 1.1),
+                    HistoricalAnchor(lon: 110.3, lat: 20.0, provinceName: "海口", weight: 1.1),
                 ],
                 rulerName: "东条英机", rulerTitle: "首相",
                 rulerMilitary: 84, rulerAdmin: 78, rulerDiplo: 56, rulerCharisma: 74,
                 rulerTraits: ["Hawkish", "NavalMastery", "IronFist", "Stubborn"]
             ),
             HistoricalNationSpec(
-                id: "manchukuo", name: "关东军·伪满洲", shortName: "满", color: "#B7950B",
+                id: "manchukuo", name: "伪满洲国·关东军", shortName: "满", color: "#B7950B",
                 culture: "chinese", religion: "confucian", polity: "Empire", style: "junta",
-                capitalLon: 125.3, capitalLat: 43.9, capitalName: "新京",
+                capitalLon: 125.3, capitalLat: 43.9, capitalName: "长春",
                 anchors: [
                     HistoricalAnchor(lon: 123.4, lat: 41.8, provinceName: "奉天", weight: 1.15),
                     HistoricalAnchor(lon: 126.6, lat: 45.8, provinceName: "哈尔滨", weight: 1.25),
                     HistoricalAnchor(lon: 121.6, lat: 38.9, provinceName: "大连", weight: 1.05),
                     HistoricalAnchor(lon: 123.9, lat: 47.3, provinceName: "齐齐哈尔", weight: 1.25),
-                    HistoricalAnchor(lon: 118.0, lat: 41.0, provinceName: "热河", weight: 1.1),
+                    HistoricalAnchor(lon: 117.9, lat: 41.0, provinceName: "承德", weight: 1.1),
                 ],
                 rulerName: "梅津美治郎", rulerTitle: "关东军司令",
                 rulerMilitary: 82, rulerAdmin: 72, rulerDiplo: 60, rulerCharisma: 66,
@@ -2398,23 +2952,23 @@ public enum HistoricalScenarios {
                 capitalLon: 131.9, capitalLat: 43.1, capitalName: "海参崴",
                 anchors: [
                     HistoricalAnchor(lon: 135.1, lat: 48.5, provinceName: "伯力", weight: 1.45),
-                    HistoricalAnchor(lon: 113.5, lat: 50.0, provinceName: "赤塔", weight: 1.7),
-                    HistoricalAnchor(lon: 127.5, lat: 50.3, provinceName: "海兰泡", weight: 1.4),
+                    HistoricalAnchor(lon: 113.5, lat: 52.0, provinceName: "赤塔", weight: 1.7),
+                    HistoricalAnchor(lon: 127.5, lat: 50.3, provinceName: "布拉戈维申斯克", weight: 1.4),
                     HistoricalAnchor(lon: 106.9, lat: 47.9, provinceName: "乌兰巴托", weight: 1.75),
-                    HistoricalAnchor(lon: 142.8, lat: 49.0, provinceName: "北库页", weight: 1.35),
                 ],
                 rulerName: "格奥尔基·朱可夫", rulerTitle: "大将",
                 rulerMilitary: 94, rulerAdmin: 80, rulerDiplo: 74, rulerCharisma: 88,
                 rulerTraits: ["Tactician", "BattleHardened", "Veteran"]
             ),
             HistoricalNationSpec(
-                id: "uk_burma", name: "英属缅甸与香港", shortName: "英", color: "#D65A5A",
+                id: "uk_burma", name: "英属缅甸与马来", shortName: "英", color: "#D65A5A",
                 culture: "english", religion: "protestant", polity: "Republic", style: "protectorate",
-                capitalLon: 96.1, capitalLat: 22.0, capitalName: "曼德勒",
+                capitalLon: 96.2, capitalLat: 16.8, capitalName: "仰光",
                 anchors: [
-                    HistoricalAnchor(lon: 96.4, lat: 18.6, provinceName: "仰光北", weight: 1.35),
+                    HistoricalAnchor(lon: 96.1, lat: 22.0, provinceName: "曼德勒", weight: 1.3),
                     HistoricalAnchor(lon: 97.4, lat: 25.4, provinceName: "密支那", weight: 1.3),
-                    HistoricalAnchor(lon: 114.2, lat: 22.7, provinceName: "香港", weight: 0.72),
+                    HistoricalAnchor(lon: 101.7, lat: 3.1, provinceName: "吉隆坡", weight: 1.25),
+                    HistoricalAnchor(lon: 114.2, lat: 22.3, provinceName: "香港", weight: 0.72),
                 ],
                 rulerName: "阿奇博尔德·韦维尔", rulerTitle: "远东总司令",
                 rulerMilitary: 80, rulerAdmin: 78, rulerDiplo: 80, rulerCharisma: 78,
@@ -2425,9 +2979,10 @@ public enum HistoricalScenarios {
                 culture: "vietnamese", religion: "catholic", polity: "Republic", style: "protectorate",
                 capitalLon: 105.8, capitalLat: 21.0, capitalName: "河内",
                 anchors: [
-                    HistoricalAnchor(lon: 106.2, lat: 21.0, provinceName: "海防", weight: 0.95),
-                    HistoricalAnchor(lon: 106.4, lat: 18.2, provinceName: "顺化", weight: 1.1),
-                    HistoricalAnchor(lon: 102.6, lat: 19.2, provinceName: "万象", weight: 1.05),
+                    HistoricalAnchor(lon: 106.7, lat: 10.8, provinceName: "西贡", weight: 1.15),
+                    HistoricalAnchor(lon: 107.6, lat: 16.5, provinceName: "顺化", weight: 1.1),
+                    HistoricalAnchor(lon: 102.6, lat: 18.0, provinceName: "万象", weight: 1.05),
+                    HistoricalAnchor(lon: 104.9, lat: 11.6, provinceName: "金边", weight: 1.05),
                 ],
                 rulerName: "让·德古", rulerTitle: "总督",
                 rulerMilitary: 66, rulerAdmin: 74, rulerDiplo: 72, rulerCharisma: 68,
@@ -2436,10 +2991,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "philippines", name: "美属菲律宾", shortName: "美菲", color: "#3B82C4",
                 culture: "english", religion: "catholic", polity: "Federation", style: "federal",
-                capitalLon: 121.0, capitalLat: 18.1, capitalName: "马尼拉",
+                capitalLon: 121.0, capitalLat: 14.6, capitalName: "马尼拉",
                 anchors: [
-                    HistoricalAnchor(lon: 121.7, lat: 19.1, provinceName: "吕宋北", weight: 1.15),
-                    HistoricalAnchor(lon: 120.5, lat: 18.5, provinceName: "碧瑶", weight: 1.05),
+                    HistoricalAnchor(lon: 123.9, lat: 10.3, provinceName: "宿务", weight: 1.15),
+                    HistoricalAnchor(lon: 125.6, lat: 7.1, provinceName: "达沃", weight: 1.1),
                 ],
                 rulerName: "道格拉斯·麦克阿瑟", rulerTitle: "远东总司令",
                 rulerMilitary: 90, rulerAdmin: 80, rulerDiplo: 82, rulerCharisma: 90,
@@ -2448,10 +3003,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "thailand", name: "泰国", shortName: "泰", color: "#2E8B57",
                 culture: "vietnamese", religion: "buddhism", polity: "Empire", style: "junta",
-                capitalLon: 99.6, capitalLat: 18.9, capitalName: "清迈",
+                capitalLon: 100.5, capitalLat: 13.8, capitalName: "曼谷",
                 anchors: [
-                    HistoricalAnchor(lon: 100.6, lat: 18.2, provinceName: "湄南", weight: 1.15),
-                    HistoricalAnchor(lon: 98.8, lat: 18.0, provinceName: "泰北", weight: 1.05),
+                    HistoricalAnchor(lon: 99.0, lat: 18.8, provinceName: "清迈", weight: 1.15),
+                    HistoricalAnchor(lon: 102.1, lat: 15.0, provinceName: "呵叻", weight: 1.05),
                 ],
                 rulerName: "銮披汶·颂堪", rulerTitle: "元帅",
                 rulerMilitary: 74, rulerAdmin: 74, rulerDiplo: 78, rulerCharisma: 76,
@@ -2468,6 +3023,205 @@ public enum HistoricalScenarios {
             HistoricalAllianceSpec(name: "世界反法西斯同盟", memberIds: ["roc", "yanan", "uk_burma", "philippines"]),
             HistoricalAllianceSpec(name: "东亚轴心", memberIds: ["japan", "manchukuo", "thailand"]),
         ],
-        tags: ["二战", "亚太战场", "抗战", "太平洋"]
+        tags: ["二战", "亚太战场", "抗战", "太平洋"],
+        rebelMode: "historical",
+        eraOverride: "ww2"
+    )
+
+    // 剧本 10：冷战铁幕 · 1950（公元 1950 年 · 世界全图 · 12 大阵营/强国）
+    private static let coldwar1950 = HistoricalScenario(
+        id: "coldwar_1950",
+        title: "冷战铁幕 · 1950",
+        subtitle: "两大阵营 · 核威慑时代",
+        region: .world,
+        year: 1950,
+        eraName: "冷战时代",
+        description: "1950年，铁幕横贯欧陆、新中国屹立东方，美苏两大超级大国进入原子弹与战略导弹威慑时代。北大西洋公约组织与东方阵营剑拔弩张，印度、不结盟国家与拉美各国在两极格局中寻求自立。",
+        author: "列国纪官方",
+        isOfficial: true,
+        provinceCount: 190,
+        nations: [
+            HistoricalNationSpec(
+                id: "usa", name: "美利坚合众国", shortName: "美", color: "#2B6CB0",
+                culture: "english", religion: "protestant", polity: "Federation", style: "federal",
+                capitalLon: -77.0, capitalLat: 38.9, capitalName: "华盛顿",
+                anchors: [
+                    HistoricalAnchor(lon: -74.0, lat: 40.7, provinceName: "纽约", weight: 1.4),
+                    HistoricalAnchor(lon: -87.6, lat: 41.9, provinceName: "芝加哥", weight: 1.55),
+                    HistoricalAnchor(lon: -118.2, lat: 34.1, provinceName: "洛杉矶", weight: 1.65),
+                    HistoricalAnchor(lon: -75.7, lat: 45.4, provinceName: "渥太华", weight: 1.65),
+                    HistoricalAnchor(lon: -149.9, lat: 61.2, provinceName: "安克雷奇", weight: 1.65),
+                    HistoricalAnchor(lon: -99.1, lat: 19.4, provinceName: "墨西哥城", weight: 1.45),
+                ],
+                rulerName: "哈里·杜鲁门", rulerTitle: "总统",
+                rulerMilitary: 88, rulerAdmin: 88, rulerDiplo: 88, rulerCharisma: 84,
+                rulerTraits: ["NavalMastery", "IronFist", "Financier"]
+            ),
+            HistoricalNationSpec(
+                id: "ussr", name: "苏联", shortName: "苏", color: "#B92B27",
+                culture: "slavic", religion: "orthodox", polity: "Republic", style: "communist",
+                capitalLon: 37.6, capitalLat: 55.8, capitalName: "莫斯科",
+                anchors: [
+                    HistoricalAnchor(lon: 30.3, lat: 59.9, provinceName: "列宁格勒", weight: 1.45),
+                    HistoricalAnchor(lon: 30.5, lat: 50.4, provinceName: "基辅", weight: 1.4),
+                    HistoricalAnchor(lon: 60.6, lat: 56.8, provinceName: "斯维尔德洛夫斯克", weight: 1.85),
+                    HistoricalAnchor(lon: 82.9, lat: 55.0, provinceName: "新西伯利亚", weight: 2.0),
+                    HistoricalAnchor(lon: 131.9, lat: 43.1, provinceName: "海参崴", weight: 1.75),
+                    HistoricalAnchor(lon: 69.2, lat: 41.3, provinceName: "塔什干", weight: 1.6),
+                ],
+                rulerName: "约瑟夫·斯大林", rulerTitle: "部长会议主席",
+                rulerMilitary: 90, rulerAdmin: 88, rulerDiplo: 82, rulerCharisma: 86,
+                rulerTraits: ["IronFist", "BattleHardened", "Paranoid"]
+            ),
+            HistoricalNationSpec(
+                id: "prc", name: "中华人民共和国", shortName: "中", color: "#D9363E",
+                culture: "chinese", religion: "confucian", polity: "Republic", style: "communist",
+                capitalLon: 116.4, capitalLat: 39.9, capitalName: "北京",
+                anchors: [
+                    HistoricalAnchor(lon: 121.5, lat: 31.2, provinceName: "上海", weight: 1.35),
+                    HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "广州", weight: 1.35),
+                    HistoricalAnchor(lon: 104.1, lat: 30.7, provinceName: "成都", weight: 1.4),
+                    HistoricalAnchor(lon: 123.4, lat: 41.8, provinceName: "沈阳", weight: 1.3),
+                    HistoricalAnchor(lon: 87.6, lat: 43.8, provinceName: "乌鲁木齐", weight: 1.6),
+                    HistoricalAnchor(lon: 91.1, lat: 29.7, provinceName: "拉萨", weight: 1.5),
+                ],
+                rulerName: "毛泽东", rulerTitle: "主席",
+                rulerMilitary: 96, rulerAdmin: 90, rulerDiplo: 88, rulerCharisma: 96,
+                rulerTraits: ["Genius", "Strategist", "Visionary", "Unifier"]
+            ),
+            HistoricalNationSpec(
+                id: "uk", name: "大英帝国", shortName: "英", color: "#C84B52",
+                culture: "english", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: -0.1, capitalLat: 51.5, capitalName: "伦敦",
+                anchors: [
+                    HistoricalAnchor(lon: -3.2, lat: 55.9, provinceName: "爱丁堡", weight: 1.15),
+                    HistoricalAnchor(lon: 18.4, lat: -33.9, provinceName: "开普敦", weight: 1.65),
+                    HistoricalAnchor(lon: 36.8, lat: -1.3, provinceName: "内罗毕", weight: 1.45),
+                    HistoricalAnchor(lon: 103.8, lat: 1.3, provinceName: "新加坡", weight: 1.45),
+                ],
+                rulerName: "克莱门特·艾德礼", rulerTitle: "首相",
+                rulerMilitary: 80, rulerAdmin: 86, rulerDiplo: 88, rulerCharisma: 80,
+                rulerTraits: ["NavalMastery", "Reformer", "Financier"]
+            ),
+            HistoricalNationSpec(
+                id: "france", name: "法兰西第四共和国", shortName: "法", color: "#2E5FA8",
+                culture: "french", religion: "catholic", polity: "Republic", style: "parliamentary",
+                capitalLon: 2.3, capitalLat: 48.9, capitalName: "巴黎",
+                anchors: [
+                    HistoricalAnchor(lon: 5.4, lat: 43.3, provinceName: "马赛", weight: 1.1),
+                    HistoricalAnchor(lon: 3.0, lat: 36.7, provinceName: "阿尔及尔", weight: 1.4),
+                    HistoricalAnchor(lon: -17.4, lat: 14.7, provinceName: "达喀尔", weight: 1.75),
+                    HistoricalAnchor(lon: 15.3, lat: -4.3, provinceName: "布拉柴维尔", weight: 1.55),
+                    HistoricalAnchor(lon: 47.5, lat: -18.9, provinceName: "塔那那利佛", weight: 1.4),
+                ],
+                rulerName: "樊尚·奥里奥尔", rulerTitle: "总统",
+                rulerMilitary: 76, rulerAdmin: 80, rulerDiplo: 84, rulerCharisma: 78,
+                rulerTraits: ["Diplomatic", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "west_europe", name: "西欧北约", shortName: "西欧", color: "#4A89C8",
+                culture: "german", religion: "catholic", polity: "Federation", style: "federal",
+                capitalLon: 7.1, capitalLat: 50.7, capitalName: "波恩",
+                anchors: [
+                    HistoricalAnchor(lon: 12.5, lat: 41.9, provinceName: "罗马", weight: 1.25),
+                    HistoricalAnchor(lon: -3.7, lat: 40.4, provinceName: "马德里", weight: 1.25),
+                    HistoricalAnchor(lon: 18.1, lat: 59.3, provinceName: "斯德哥尔摩", weight: 1.3),
+                    HistoricalAnchor(lon: 10.7, lat: 59.9, provinceName: "奥斯陆", weight: 1.25),
+                ],
+                rulerName: "康拉德·阿登纳", rulerTitle: "总理",
+                rulerMilitary: 76, rulerAdmin: 90, rulerDiplo: 88, rulerCharisma: 84,
+                rulerTraits: ["Administrator", "Financier", "Reformer"]
+            ),
+            HistoricalNationSpec(
+                id: "warsaw_east", name: "东欧华约", shortName: "东欧", color: "#A63A46",
+                culture: "polish", religion: "catholic", polity: "Republic", style: "communist",
+                capitalLon: 21.0, capitalLat: 52.2, capitalName: "华沙",
+                anchors: [
+                    HistoricalAnchor(lon: 14.4, lat: 50.1, provinceName: "布拉格", weight: 1.05),
+                    HistoricalAnchor(lon: 19.0, lat: 47.5, provinceName: "布达佩斯", weight: 1.05),
+                    HistoricalAnchor(lon: 26.1, lat: 44.4, provinceName: "布加勒斯特", weight: 1.1),
+                ],
+                rulerName: "博莱斯瓦夫·贝鲁特", rulerTitle: "总统",
+                rulerMilitary: 76, rulerAdmin: 78, rulerDiplo: 74, rulerCharisma: 74,
+                rulerTraits: ["IronFist", "Administrator"]
+            ),
+            HistoricalNationSpec(
+                id: "india", name: "印度共和国", shortName: "印", color: "#E08E26",
+                culture: "indian", religion: "hinduism", polity: "Republic", style: "parliamentary",
+                capitalLon: 77.2, capitalLat: 28.6, capitalName: "新德里",
+                anchors: [
+                    HistoricalAnchor(lon: 72.9, lat: 19.1, provinceName: "孟买", weight: 1.4),
+                    HistoricalAnchor(lon: 88.4, lat: 22.6, provinceName: "加尔各答", weight: 1.4),
+                    HistoricalAnchor(lon: 80.3, lat: 13.1, provinceName: "金奈", weight: 1.35),
+                    HistoricalAnchor(lon: 106.8, lat: -6.2, provinceName: "雅加达", weight: 1.5),
+                ],
+                rulerName: "贾瓦哈拉尔·尼赫鲁", rulerTitle: "总理",
+                rulerMilitary: 72, rulerAdmin: 84, rulerDiplo: 90, rulerCharisma: 86,
+                rulerTraits: ["MasterDiplomat", "Scholar", "Visionary"]
+            ),
+            HistoricalNationSpec(
+                id: "japan", name: "日本", shortName: "日", color: "#D46A7E",
+                culture: "japanese", religion: "shinto", polity: "Kingdom", style: "constitutional",
+                capitalLon: 139.7, capitalLat: 35.7, capitalName: "东京",
+                anchors: [
+                    HistoricalAnchor(lon: 135.5, lat: 34.7, provinceName: "大阪", weight: 1.05),
+                    HistoricalAnchor(lon: 141.3, lat: 43.1, provinceName: "札幌", weight: 1.05),
+                ],
+                rulerName: "吉田茂", rulerTitle: "首相",
+                rulerMilitary: 68, rulerAdmin: 90, rulerDiplo: 86, rulerCharisma: 80,
+                rulerTraits: ["Financier", "Reformer", "Administrator"]
+            ),
+            HistoricalNationSpec(
+                id: "yugo_mideast", name: "南斯拉夫与中东", shortName: "不结盟", color: "#3D9970",
+                culture: "arab", religion: "islam", polity: "Republic", style: "socialist",
+                capitalLon: 31.2, capitalLat: 30.0, capitalName: "开罗",
+                anchors: [
+                    HistoricalAnchor(lon: 20.5, lat: 44.8, provinceName: "贝尔格莱德", weight: 1.25),
+                    HistoricalAnchor(lon: 32.9, lat: 39.9, provinceName: "安卡拉", weight: 1.3),
+                    HistoricalAnchor(lon: 44.4, lat: 33.3, provinceName: "巴格达", weight: 1.4),
+                    HistoricalAnchor(lon: 51.4, lat: 35.7, provinceName: "德黑兰", weight: 1.45),
+                    HistoricalAnchor(lon: 46.7, lat: 24.7, provinceName: "利雅得", weight: 1.5),
+                ],
+                rulerName: "约瑟普·铁托", rulerTitle: "总统",
+                rulerMilitary: 86, rulerAdmin: 82, rulerDiplo: 88, rulerCharisma: 88,
+                rulerTraits: ["Charismatic", "BattleHardened", "Diplomatic"]
+            ),
+            HistoricalNationSpec(
+                id: "latam", name: "巴西与拉美", shortName: "拉美", color: "#27AE60",
+                culture: "portuguese", religion: "catholic", polity: "Federation", style: "federal",
+                capitalLon: -43.2, capitalLat: -22.9, capitalName: "里约热内卢",
+                anchors: [
+                    HistoricalAnchor(lon: -58.4, lat: -34.6, provinceName: "布宜诺斯艾利斯", weight: 1.55),
+                    HistoricalAnchor(lon: -70.7, lat: -33.4, provinceName: "圣地亚哥", weight: 1.45),
+                    HistoricalAnchor(lon: -77.0, lat: -12.0, provinceName: "利马", weight: 1.45),
+                    HistoricalAnchor(lon: -74.1, lat: 4.6, provinceName: "波哥大", weight: 1.5),
+                ],
+                rulerName: "热图利奥·瓦加斯", rulerTitle: "总统",
+                rulerMilitary: 72, rulerAdmin: 82, rulerDiplo: 80, rulerCharisma: 82,
+                rulerTraits: ["Reformer", "Administrator", "Financier"]
+            ),
+            HistoricalNationSpec(
+                id: "australia", name: "澳大利亚联邦", shortName: "澳", color: "#5B9BD5",
+                culture: "english", religion: "protestant", polity: "Federation", style: "federal",
+                capitalLon: 149.1, capitalLat: -35.3, capitalName: "堪培拉",
+                anchors: [
+                    HistoricalAnchor(lon: 151.2, lat: -33.9, provinceName: "悉尼", weight: 1.4),
+                    HistoricalAnchor(lon: 145.0, lat: -37.8, provinceName: "墨尔本", weight: 1.4),
+                    HistoricalAnchor(lon: 115.9, lat: -32.0, provinceName: "珀斯", weight: 1.7),
+                    HistoricalAnchor(lon: 174.8, lat: -41.3, provinceName: "惠灵顿", weight: 1.55),
+                ],
+                rulerName: "罗伯特·孟席斯", rulerTitle: "总理",
+                rulerMilitary: 74, rulerAdmin: 84, rulerDiplo: 84, rulerCharisma: 80,
+                rulerTraits: ["NavalMastery", "Financier", "Diplomatic"]
+            ),
+        ],
+        openingWars: [],
+        openingAlliances: [
+            HistoricalAllianceSpec(name: "北大西洋公约组织", memberIds: ["usa", "uk", "france", "west_europe", "japan", "australia"]),
+            HistoricalAllianceSpec(name: "东方社会主义阵营", memberIds: ["ussr", "prc", "warsaw_east"]),
+        ],
+        tags: ["冷战", "世界全图", "核威慑", "现代"],
+        rebelMode: "historical",
+        eraOverride: "modern"
     )
 }

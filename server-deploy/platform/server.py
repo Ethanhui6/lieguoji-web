@@ -99,22 +99,22 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
-DEFAULT_LATEST_VERSION = "5.8.0"
-DEFAULT_LATEST_BUILD = 188
+DEFAULT_LATEST_VERSION = "6.0.0"
+DEFAULT_LATEST_BUILD = 189
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【切后台返场秒级无感重连 × 告别僵尸连接与二级菜单卡顿】接入全套 iOS 生命周期监听与 1.2 秒硬超时探活（fastProbeRTT），秒级识别后台僵尸套接字并直走 resumeWorld 零上传恢复；同步降低二级菜单后台刷新频率（1.85s）并保持点击瞬时响应。",
-    "【极致流畅计算服 v11 × 65%–80% 省流差量疆域帧 × 弱网自适应】升级至 lieguoji-server/v11：新增疆域差量帧（ownersDelta）、事件去重、启动目录预热（跳过 2MB 上传）与 Linux 低延迟防缓冲膨胀 TCP 调优，弱网 4G 下依旧丝滑推进。",
-    "【真实历史剧本 × 平台 v6 玩家创意工坊舆图库】上线云端创意工坊 API（上传 / 地区检索 / 点赞 / 下载开局）与本地工坊仓库，完善公元前（BCE）纪年显示，玩家可将自制历史剧本一键分享给全服史官。",
+    "【九州云服 v12 满血 16 Mbps + 五路推流竞速 × 开局零设置自动秒连】计算服升级至 lieguoji-server/v12（16 Mbps 满速带宽、TCP 443/8765/8443 三端口并发竞速、28ms 超低帧间隔、动态 3 帧滑动窗口与 Linux TCP_QUICKACK）；启动即静默预热全线路，进局零设置自动秒连最快专线，轻点延迟胶囊一键诊断重连。",
+    "【爽看海 32× 极速推演 × 陆海行军 1.42× 疾行 × 钢铁雄心核战与时代兵制】新增 32× 极速档（约 355 日/秒，1 秒 1 年爽看海），陆海行军全面提速 1.42×、攻城与战损节奏更利落；实装全球紧张度、时代兵制、核反应堆建造、核打击闪光与史实/自由叛乱模式。",
+    "【228.54 MB 真实地理与五千年史典热更包 v5（绝不靠图凑数）】新增 Natural Earth 1:10m 全球高精地貌与水文矢量化图集、世界五千年 45 纪元真实历史国界图集（3000 BCE – 2010 CE）及全球 7,342 城双语地理志与历代名将史料全典，支持按模块勾选与多镜像流式断点续传。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 12,
-    "notice": "v5.8.0 已上线：极速计算服 v11 差量推流 + 切后台秒连 + 二级菜单流畅重构 + 创意工坊云端舆图",
+    "version": 13,
+    "notice": "v6.0.0 已上线：云服 v12 满血 16Mbps 五路竞速 + 32× 爽看海 + 228MB 真实地理五千年史典热更包 v5",
     "computeHost": COMPUTE_HOST,
-    "pace": {"1": 1, "2": 1, "4": 2, "8": 3, "16": 5},
+    "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16},
     "tuning": {
-        "lethality": 2.0,
-        "siege": 6.0,
+        "lethality": 2.35,
+        "siege": 7.5,
         "peaceGoalMonths": 4,
         "peaceDecisiveMonths": 6,
         "wearyStart": 12,
@@ -162,6 +162,16 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
         "build": DEFAULT_LATEST_BUILD,
         "date": "2026-11-26",
         "lines": list(DEFAULT_RELEASE_NOTES),
+    },
+    {
+        "version": "5.8.0",
+        "build": 188,
+        "date": "2026-11-26",
+        "lines": [
+            "【切后台返场秒级无感重连 × 告别僵尸连接与二级菜单卡顿】接入全套 iOS 生命周期监听与 1.2 秒硬超时探活（fastProbeRTT），秒级识别后台僵尸套接字并直走 resumeWorld 零上传恢复；同步降低二级菜单后台刷新频率（1.85s）并保持点击瞬时响应。",
+            "【极致流畅计算服 v11 × 65%–80% 省流差量疆域帧 × 弱网自适应】升级至 lieguoji-server/v11：新增疆域差量帧（ownersDelta）、事件去重、启动目录预热（跳过 2MB 上传）与 Linux 低延迟防缓冲膨胀 TCP 调优，弱网 4G 下依旧丝滑推进。",
+            "【真实历史剧本 × 平台 v6 玩家创意工坊舆图库】上线云端创意工坊 API（上传 / 地区检索 / 点赞 / 下载开局）与本地工坊仓库，完善公元前（BCE）纪年显示，玩家可将自制历史剧本一键分享给全服史官。",
+        ],
     },
     {
         "version": "5.7.0",
@@ -233,9 +243,9 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 12,
+        "patchVersion": 13,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v5.8.0 极速计算服 v11 差量推流 + 平台 v6 创意工坊舆图参数",
+        "summary": "v6.0.0 极速计算服 v12（16Mbps 五路竞速）+ 32× 爽看海 + 228MB 真实地理五千年史典热更包 v5",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -714,18 +724,27 @@ def save_release_config(cfg: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# HotPack Resource Manifest Engine (20MB+ real incremental SHA256 delta sync)
+# HotPack v5 Resource Manifest Engine (228+ MB real GIS & 5000-Year Atlas + SHA256 delta sync)
 # ---------------------------------------------------------------------------
 
 MODULE_META = {
+    "gis-basemaps-10m": ("Natural Earth 1:10m 高精地貌图集", "Natural Earth 1:10m 全球高精地貌与水文矢量化图集"),
+    "gis-historical-45eras": ("世界五千年 45 纪元历史国界图集", "世界五千年 45 纪元真实历史国界图集（3000 BCE – 2010 CE）"),
+    "gis-cities-encyclopedia": ("全球 7,342 城双语地理志与名将全典", "全球 7,342 城双语地理志与历代名将史料全典"),
     "content": ("剧本与史典扩展", "12 套全新历史剧本、典籍题词、列国百科与云端平衡规则"),
+    "scenarios": ("历代历史剧本合集", "精选真实历史剧本与战役开局配置"),
+    "lore": ("列国史料与典故志", "历代名臣传记、典籍题词与文明史典"),
+    "rules": ("云端平衡规则集", "可热更战局平衡参数、时代兵制与核战规则"),
     "catalog": ("文明词典与名将谱", "全文明姓氏、贵族世家、将才特质与物产配置"),
+    "world": ("世界底图与文化集", "文明文化目录与宣纸纹理资源"),
     "art": ("工笔水墨美术包", "舆图地标、御印篆章、罗盘与典藏纹样资源"),
     "video": ("传报长卷画幅包", "54 卷全文明历史大事画卷与高清动态海报"),
     "engine": ("推演内核扩展包", "热更兼容内核与脚本桥接包"),
+    "audio": ("古风原声与战场音效包", "全文明环境配乐与高保真战场交互音效"),
     "music": ("古风史诗配乐包", "高音质典藏原声配乐与古风交互音效"),
-    "world": ("世界底图与文化集", "文明文化目录与宣纸纹理资源"),
 }
+
+HOTPACK_V5_RELEASE_TAG = os.environ.get("LGJ_HOTPACK_RELEASE_TAG", "hotpack-v5")
 
 _hotpack_lock = threading.Lock()
 _hotpack_cache: Optional[dict[str, Any]] = None
@@ -737,10 +756,14 @@ def _get_hotpack_version_meta() -> tuple[int, str, str]:
     if row:
         try:
             d = json.loads(row["v"])
-            return int(d.get("packVersion", 2)), str(d.get("releaseTag", "v2026.11 · 典藏资源扩展包")), str(d.get("summary", ""))
+            return int(d.get("packVersion", 5)), str(d.get("releaseTag", "v6.0 · 228MB 真实世界 GIS 与五千年史典热更包 v5")), str(d.get("summary", ""))
         except Exception:
             pass
-    return 2, "v2026.11 · 典藏资源扩展包", "含 12 套全新历史剧本、文明名将词典、工笔水墨美术与 54 卷史事长卷（免换包游戏内更新）"
+    return (
+        5,
+        "v6.0 · 228MB 真实世界 GIS 与五千年史典热更包 v5",
+        "含 Natural Earth 1:10m 全球高精地貌与水文矢量化图集、世界五千年 45 纪元真实历史国界图集（3000 BCE – 2010 CE）、全球 7,342 城双语地理志与历代名将史料全典（支持分模块免换包下载）",
+    )
 
 
 def _save_hotpack_version_meta(ver: int, tag: str, summary: str) -> None:
@@ -753,16 +776,52 @@ def _save_hotpack_version_meta(ver: int, tag: str, summary: str) -> None:
         DB.commit()
 
 
+def _resolve_hotpack_module(rel: str) -> str:
+    top = rel.split("/", 1)[0].lower() if "/" in rel else "content"
+    if top in MODULE_META:
+        return top
+    if top in ("historicalatlas", "atlas", "gis_basemaps", "basemaps"):
+        return "gis-basemaps-10m"
+    if top in ("gis_historical", "historical_45eras", "eras"):
+        return "gis-historical-45eras"
+    if top in ("gis_cities", "cities", "encyclopedia"):
+        return "gis-cities-encyclopedia"
+    if top in ("sfx", "sound"):
+        return "audio"
+    return "content"
+
+
 def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
     top, _, rest = rel.partition("/")
     if not rest:
         return []
-    if top in ("Music", "Art", "Video", "Engine", "Catalog", "World"):
+    quoted_rel = urllib.parse.quote(rel, safe="/")
+    direct_download_url = f"http://{PUBLIC_HOST}/api/v1/hotpack/download/{quoted_rel}"
+    top_low = top.lower()
+
+    # Hotpack v5 228+ MB GIS & 5000-Year Atlas modules: GitHub Release + EdgeOne + gh-proxy + Cloudflare Edge + Tencent Cloud direct
+    if top_low in ("gis-basemaps-10m", "gis-historical-45eras", "gis-cities-encyclopedia"):
+        asset_name = urllib.parse.quote(Path(rel).name, safe="")
+        gh_release_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/{HOTPACK_V5_RELEASE_TAG}/{asset_name}"
+        return [
+            f"https://edgeone.gh-proxy.com/{gh_release_asset}",
+            f"https://cdn.gh-proxy.org/{gh_release_asset}",
+            f"https://ghfast.top/{gh_release_asset}",
+            f"https://gh-proxy.org/{gh_release_asset}",
+            f"https://lieguoji-edge.pages.dev/api/cdn/hotpack/{quoted_rel}",
+            gh_release_asset,
+            direct_download_url,
+        ]
+
+    if top in ("Music", "Art", "Video", "Engine", "Catalog", "World", "Audio", "HistoricalAtlas"):
         gh_path = f"ios-native/Resources/{rel}"
-    elif top == "Content":
-        gh_path = f"server-deploy/platform/hotpack-content/{rest}"
+    elif top_low in ("content", "scenarios", "lore", "rules"):
+        gh_path = f"server-deploy/platform/hotpack-content/{rest}" if top_low == "content" else f"server-deploy/platform/hotpack-content/{top_low}/{rest}"
     else:
-        return []
+        return [
+            f"https://lieguoji-edge.pages.dev/api/cdn/hotpack/{quoted_rel}",
+            direct_download_url,
+        ]
     quoted = urllib.parse.quote(gh_path, safe="/")
     return [
         f"https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
@@ -771,7 +830,12 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
         f"https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://gcore.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
         f"https://lieguoji-edge.pages.dev/api/cdn/raw/{quoted}",
+        direct_download_url,
     ]
+
+
+def build_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = None, summary: Optional[str] = None) -> dict[str, Any]:
+    return rebuild_hotpack_manifest(bump_version=bump_version, tag=tag, summary=summary)
 
 
 def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = None, summary: Optional[str] = None) -> dict[str, Any]:
@@ -794,8 +858,7 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
             if not fp.is_file() or fp.name.startswith(".") or fp.suffix.lower() == ".mp4":
                 continue
             rel = fp.relative_to(HOTPACK_DIR).as_posix()
-            top = rel.split("/", 1)[0].lower() if "/" in rel else "content"
-            mod_id = top if top in MODULE_META else "content"
+            mod_id = _resolve_hotpack_module(rel)
             h = hashlib.sha256()
             sz = 0
             with fp.open("rb") as f:
@@ -817,7 +880,22 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
             mod_acc[mod_id]["bytes"] += sz
             mod_acc[mod_id]["fileCount"] += 1
 
-    order = ["content", "catalog", "world", "art", "video", "engine", "music"]
+    order = [
+        "gis-basemaps-10m",
+        "gis-historical-45eras",
+        "gis-cities-encyclopedia",
+        "content",
+        "scenarios",
+        "lore",
+        "rules",
+        "catalog",
+        "world",
+        "art",
+        "video",
+        "engine",
+        "audio",
+        "music",
+    ]
     modules = [mod_acc[k] for k in order if k in mod_acc] + [v for k, v in mod_acc.items() if k not in order]
     manifest = {
         "ok": True,
@@ -1423,6 +1501,14 @@ class PlatformHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
+        if path.startswith("/api/v1/hotpack/download/"):
+            rel_path = urllib.parse.unquote(path[len("/api/v1/hotpack/download/"):])
+            self.handle_hotpack_file(rel_path, head_only=True)
+            return
+        if path.startswith("/api/v1/hotpack/file/"):
+            rel_path = urllib.parse.unquote(path[len("/api/v1/hotpack/file/"):])
+            self.handle_hotpack_file(rel_path, head_only=True)
+            return
         self.send_response(200)
         self._security_headers()
         self.send_header("Content-Length", "0")
@@ -1474,6 +1560,11 @@ class PlatformHandler(BaseHTTPRequestHandler):
 
         if path == "/api/v1/hotpack/manifest":
             self.send_json(get_hotpack_manifest())
+            return
+
+        if path.startswith("/api/v1/hotpack/download/"):
+            rel_path = urllib.parse.unquote(path[len("/api/v1/hotpack/download/"):])
+            self.handle_hotpack_file(rel_path)
             return
 
         if path.startswith("/api/v1/hotpack/file/"):
@@ -1739,26 +1830,50 @@ class PlatformHandler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError, TimeoutError, socket.timeout):
             self.close_connection = True
 
-    def handle_hotpack_file(self, rel_path: str) -> None:
+    def handle_hotpack_file(self, rel_path: str, head_only: bool = False) -> None:
         if not rel_path or ".." in rel_path or rel_path.startswith("/"):
-            self.send_json({"ok": False, "error": "非法路径"}, 400)
+            if head_only:
+                self.send_response(400)
+                self._security_headers()
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+            else:
+                self.send_json({"ok": False, "error": "非法路径"}, 400)
             return
         try:
             root = HOTPACK_DIR.resolve()
             target = (HOTPACK_DIR / rel_path).resolve()
             if not target.is_relative_to(root) or not target.is_file():
-                self.send_json({"ok": False, "error": "资源不存在"}, 404)
+                if head_only:
+                    self.send_response(404)
+                    self._security_headers()
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                else:
+                    self.send_json({"ok": False, "error": "资源不存在"}, 404)
                 return
         except Exception:
-            self.send_json({"ok": False, "error": "非法路径"}, 400)
+            if head_only:
+                self.send_response(400)
+                self._security_headers()
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+            else:
+                self.send_json({"ok": False, "error": "非法路径"}, 400)
             return
         size = target.stat().st_size
         rng = self.headers.get("Range")
         if rng and rng.startswith("bytes=") and size > 0:
             try:
-                s_str, e_str = rng[6:].split(",")[0].strip().split("-", 1)
-                start = int(s_str) if s_str else 0
-                end = min(size - 1, int(e_str)) if e_str else size - 1
+                spec = rng[6:].split(",")[0].strip()
+                s_str, e_str = spec.split("-", 1)
+                if not s_str and e_str:
+                    suffix = int(e_str)
+                    start = max(0, size - suffix)
+                    end = size - 1
+                else:
+                    start = int(s_str) if s_str else 0
+                    end = min(size - 1, int(e_str)) if e_str else size - 1
                 if 0 <= start <= end < size:
                     length = end - start + 1
                     self.send_response(206)
@@ -1770,6 +1885,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     self.send_header("Cache-Control", "public, max-age=86400")
                     self.send_header("Connection", "keep-alive")
                     self.end_headers()
+                    if head_only:
+                        return
                     try:
                         with target.open("rb") as f:
                             f.seek(start)
@@ -1787,7 +1904,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 pass
         accept_enc = (self.headers.get("Accept-Encoding") or "").lower()
         compressible = target.suffix.lower() in (".json", ".js", ".html", ".css", ".txt", ".svg")
-        use_gzip = compressible and "gzip" in accept_enc and 512 <= size <= 8 * 1024 * 1024
+        use_gzip = (not head_only) and compressible and "gzip" in accept_enc and 512 <= size <= 8 * 1024 * 1024
         if use_gzip:
             with target.open("rb") as f:
                 payload = gzip.compress(f.read(), compresslevel=6)
@@ -1815,6 +1932,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "public, max-age=86400")
         self.send_header("Connection", "keep-alive")
         self.end_headers()
+        if head_only:
+            return
         try:
             with target.open("rb") as f:
                 while True:
@@ -2891,7 +3010,7 @@ def main() -> None:
             return
         shutdown_started.set()
         _shutdown_event.set()
-        print(f"收到信号 {signum}，正在优雅关闭云端行宫平台服务器 v6.0…", flush=True)
+        print(f"收到信号 {signum}，正在优雅关闭云端行宫平台服务器 v6.5…", flush=True)
         threading.Thread(target=server.shutdown, daemon=True).start()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
@@ -2900,7 +3019,7 @@ def main() -> None:
         except (ValueError, OSError):
             pass
 
-    print(f"列国纪云端行宫平台服务器 v6.0 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
+    print(f"列国纪云端行宫平台服务器 v6.5 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
     try:
         server.serve_forever()
     finally:
@@ -2910,7 +3029,7 @@ def main() -> None:
         except Exception:
             pass
         close_db()
-        print("列国纪云端行宫平台服务器 v6.0 已安全退出并关闭数据库。", flush=True)
+        print("列国纪云端行宫平台服务器 v6.5 已安全退出并关闭数据库。", flush=True)
 
 
 if __name__ == "__main__":

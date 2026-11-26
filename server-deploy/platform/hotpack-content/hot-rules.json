@@ -1,17 +1,18 @@
 {
-  "version": 9,
-  "notice": "v5.5.0 已上线：云端 v8 极速微步推流（零跳月丝滑行军）+ 极轻客户端",
-  "computeHost": "111.230.153.235:8765",
+  "version": 13,
+  "notice": "v6.0.0 已上线：云服 v12 满血 16Mbps 五路竞速 + 32× 爽看海 + 228MB 真实地理五千年史典热更包 v5",
+  "computeHost": "111.230.153.235:443",
   "pace": {
     "1": 1,
     "2": 1,
     "4": 2,
-    "8": 3,
-    "16": 5
+    "8": 4,
+    "16": 8,
+    "32": 16
   },
   "tuning": {
-    "lethality": 2.0,
-    "siege": 6.0,
+    "lethality": 2.35,
+    "siege": 7.5,
     "peaceGoalMonths": 4,
     "peaceDecisiveMonths": 6,
     "wearyStart": 12,

@@ -17,8 +17,14 @@ public enum NobleRevolt {
 
     // MARK: Family rebellion (shouldFamilyRebel47 … startFamilyRebellion47)
     static func shouldRebel(_ r: JS, _ id: String) -> Bool {
+        if !r.regimes.isNull {
+            let mode = Rebellion.rebelMode(r)
+            if mode == "off" || Regimes.rule(r, "rebel") <= 0 { return false }
+            if mode == "historical" && r.world.day.asInt < 1080 { return false }
+        }
         let n = r.nobility, fam = n.families[id]
         let app = UnitKinds.enabled
+        if app && (r.world.day.asNumber / 30.0) < Double(Tuning.current.calmMonths) { return false }
         if fam.isNull || fam.ruling.asBool || fam.controlledProvinces.length == 0 || (app ? 120 : 200) > fam.influence.asNumber || !alive(r, fam.nationId.asString) { return false }
         let state = fam.nationId.asString, d = r.destiny.nations[state]
         var minimum = n.settings.familyRebelMinMonths.asNumber
@@ -36,6 +42,7 @@ public enum NobleRevolt {
             chance = f(chance * f(1 - resistance(leader.traits.isNull ? [] : leader.traits.asArray.map(\.asString))))
         }
         if app { chance = f(chance * Tuning.current.unrest) }
+        if !r.regimes.isNull && Rebellion.rebelMode(r) == "historical" { chance = f(chance * f(0.25)) }
         return chance > Nobility.Random(n: n).value()
     }
     static func rallyProbability(_ r: JS, _ rebel: String, _ target: String, _ restored: String?) -> Double {
@@ -222,7 +229,7 @@ public enum NobleRevolt {
     static func checkFamilyRebellions(_ r: JS) {
         let n = r.nobility
         if n.isNull || !n.settings.allowFamilyRebellion.isTruthy || r.foundings.isNull || !r.foundings.enabled.isTruthy { return }
-        if UnitKinds.enabled && Regimes.rule(r, "rebel") <= 0 { return }
+        if !r.regimes.isNull && (Rebellion.rebelMode(r) == "off" || Regimes.rule(r, "rebel") <= 0) { return }
         for id in n.families.objectKeys where n.families.has(id) && shouldRebel(r, id) { startFamilyRebellion(r, id) }
     }
 
@@ -314,6 +321,12 @@ public enum NobleRevolt {
         return custom.asString
     }
     static func checkStateForCivilWar(_ r: JS, _ state: String) {
+        if !r.regimes.isNull {
+            let mode = Rebellion.rebelMode(r)
+            if mode == "off" || Regimes.rule(r, "rebel") <= 0 { return }
+            if mode == "historical" && r.world.day.asInt < 1080 { return }
+        }
+        if UnitKinds.enabled && (r.world.day.asNumber / 30.0) < Double(Tuning.current.calmMonths) { return }
         let n = r.nobility, d = r.destiny.nations[state]
         if !n.families.has(rulingId(r, state)) { return }
         var minimum = n.settings.civilWarMinMonths.asNumber
@@ -322,13 +335,14 @@ public enum NobleRevolt {
         guard let rebels = discontented(r, state) else { return }
         let destiny = d.destiny.optionalNumber ?? 0
         if rebels.count < 2 || !(60 > destiny) { return }
-        let chance = f(f(f(60 - destiny) * f(0.01)) + f(0.1))
+        var chance = f(f(f(60 - destiny) * f(0.01)) + f(0.1))
+        if !r.regimes.isNull && Rebellion.rebelMode(r) == "historical" { chance = f(chance * f(0.25)) }
         if chance > Nobility.Random(n: n).value() { startCivilWar(r, state, rebels) }
     }
     static func checkCivilWars(_ r: JS) {
         let n = r.nobility
         if n.isNull || !n.settings.allowCivilWar.isTruthy || r.foundings.isNull || !r.foundings.enabled.isTruthy { return }
-        if UnitKinds.enabled && Regimes.rule(r, "rebel") <= 0 { return }
+        if !r.regimes.isNull && (Rebellion.rebelMode(r) == "off" || Regimes.rule(r, "rebel") <= 0) { return }
         for v in r.world.nations.asArray.map(\.id.asString) where land(r, v) >= 15 { checkStateForCivilWar(r, v) }
     }
     /// Installs the month-6/12 checks into the family step.

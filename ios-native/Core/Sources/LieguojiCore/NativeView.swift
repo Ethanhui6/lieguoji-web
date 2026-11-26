@@ -725,6 +725,19 @@ extension NativeEngine {
         }
         out.weatherZones = wzs.isEmpty ? nil : wzs
         out.contacts = contacts; out.arrows = arrows; out.seaBattles = seaBattles; out.era = era; out.yearOffset = yearOffset
+        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+            let eraObj = EraMilitarySystem.currentEra(r)
+            out.historicalEra = eraObj.rawValue
+            if !r.regimes.hoi4.isNull {
+                let h = r.regimes.hoi4
+                let wt = h.worldTension.optionalNumber ?? 0.0
+                out.worldTension = Int(max(0.0, min(100.0, wt.isFinite ? wt : 0.0)).rounded())
+                if let p = h.lastNukeProvince.optionalNumber, p.isFinite, Int(p) >= 0 {
+                    out.lastNukeProvince = Int(p)
+                    out.lastNukeDay = h.lastNukeDay.optionalNumber.map { $0.isFinite ? Int($0) : 0 } ?? 0
+                }
+            }
+        }
         return out
     }
 }

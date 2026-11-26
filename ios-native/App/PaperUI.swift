@@ -302,7 +302,7 @@ struct MapViewLegend: View {
                     }
                     .buttonStyle(.plain)
                 } else {
-                    Text("\(legend.count)").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Text("\(legend.count)").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
             }
             Rectangle().fill(Theme.ink.opacity(0.2)).frame(height: 0.8)
@@ -326,7 +326,7 @@ struct MapViewLegend: View {
                                 .foregroundStyle(active ? Theme.seal : Theme.ink.opacity(dimmed ? 0.5 : 1))
                                 .lineLimit(1).minimumScaleFactor(0.82)
                             Spacer(minLength: 4)
-                            Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(dimmed ? 0.5 : 1)).fixedSize()
+                            Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(dimmed ? 0.5 : 1)).monospacedDigit().lineLimit(1).fixedSize()
                         }
                         .contentShape(Rectangle())
                     }
@@ -478,19 +478,21 @@ struct StatisticsSheet: View {
                                                         .fill(Names.color(c))
                                                         .frame(width: 10, height: 10)
                                                 }
-                                                Text(row.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                                                Text(row.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
                                                 Spacer(minLength: 6)
                                                 Text(row.text)
                                                     .font(Theme.label)
                                                     .foregroundStyle(row.value < 0 ? Theme.seal : Theme.ink2)
                                                     .monospacedDigit()
+                                                    .lineLimit(1)
+                                                    .minimumScaleFactor(0.8)
                                                     .contentTransition(.numericText())
                                             }
                                             InkBar(fraction: frac, color: row.color.map { Names.color($0) } ?? Theme.seal, height: 5, gradient: true)
                                                 .animation(reduceMotion ? nil : Motion.drift.delay(min(0.22, Double(offset) * 0.022)), value: frac)
                                         }
                                     }
-                                    .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
+                                    .padding(.horizontal, 14).padding(.vertical, 11).contentShape(Rectangle())
                                 }
                                 .buttonStyle(PressStyle())
                                 if offset < shownRows.count - 1 {
@@ -583,6 +585,7 @@ struct WorldSettings: Decodable {
     let families: Bool?; let familyMonths: Int; let civilWar: Bool?; let civilMonths: Int
     let vassals: Bool?
     var globalAutoGovern: Bool? = nil
+    var rebelMode: String? = nil
 }
 
 /// The original's world AI and rule settings as an imperial edict: each change is proclaimed.
@@ -651,14 +654,15 @@ struct EdictSheet: View {
         Button { confirming = (title, key) } label: {
             HStack(spacing: 10) {
                 Glyph.icon(title, size: 15, fallback: .edict)
+                    .frame(width: Theme.Layout.iconGutter, alignment: .center)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(Theme.section).foregroundStyle(Theme.seal)
+                    Text(title).font(Theme.section).foregroundStyle(Theme.seal).lineLimit(1).minimumScaleFactor(0.82)
                     Text(note).font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 Spacer()
                 InkIcon(glyph: .chevronRight, size: 12, weight: 1.6).foregroundStyle(Theme.ink2)
             }
-            .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+            .padding(.horizontal, 14).padding(.vertical, 10).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .confirmationDialog(confirming?.title ?? "", isPresented: Binding(get: { confirming?.key == key }, set: { if !$0 { confirming = nil } }), titleVisibility: .visible) {
@@ -694,15 +698,18 @@ struct EdictSheet: View {
     private func stepper(_ title: String, _ value: Int, _ range: ClosedRange<Int>, _ step: Int, _ unit: String, _ key: String, zero: String? = nil) -> some View {
         HStack(spacing: 10) {
             Glyph.icon(title, size: 15)
-            Text(title).font(Theme.section).foregroundStyle(Theme.ink2)
+                .frame(width: Theme.Layout.iconGutter, alignment: .center)
+            Text(title).font(Theme.section).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
             Spacer()
             Button { apply(key, max(range.lowerBound, value - step)) } label: { InkIcon(glyph: .minus, size: 14, weight: 1.8).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
-            Text(value == 0 && zero != nil ? zero! : "\(value) \(unit)").font(Theme.section).foregroundStyle(Theme.ink).frame(minWidth: 64).contentTransition(.numericText())
+            Text(value == 0 && zero != nil ? zero! : "\(value) \(unit)")
+                .font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+                .frame(minWidth: 64).contentTransition(.numericText())
             Button { apply(key, min(range.upperBound, value + step)) } label: { InkIcon(glyph: .plus, size: 14, weight: 1.8).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
         }
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        .padding(.horizontal, 14).padding(.vertical, 10)
     }
 }
 
@@ -758,13 +765,15 @@ struct PaperMenu<T: Hashable>: View {
         Button { GameFeel.shared.tap(); open = true } label: {
             HStack(spacing: 10) {
                 Glyph.icon(title, size: 15, fallback: .edict)
-                Text(title).font(Theme.body).foregroundStyle(Theme.ink2)
+                    .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                Text(title).font(Theme.body).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.82)
                 Spacer(minLength: 12)
                 HStack(spacing: 5) {
                     Text(items.first { $0.0 == selection }?.1 ?? "请选择")
                         .font(Theme.sans(13.5, weight: .medium))
                         .foregroundStyle(Theme.ink)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     PhosphorIcon(glyph: .chevronRight, size: 11, weight: .light).foregroundStyle(Theme.ink2)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 5)
@@ -957,11 +966,12 @@ struct PaperSlider: View {
         HStack(spacing: 10) {
             HStack(spacing: 6) {
                 Glyph.icon(title, size: 13)
+                    .frame(width: 16, alignment: .center)
                 Text(title).font(Theme.body).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
             }
-            .frame(minWidth: 68, alignment: .leading)
+            .frame(minWidth: 70, alignment: .leading)
             PaperTrack(value: $value, range: range, step: step, onEditingChanged: onEditingChanged)
-            Text(format(value)).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 50, alignment: .trailing)
+            Text(format(value)).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8).frame(width: 52, alignment: .trailing)
                 .contentTransition(.numericText())
         }
         .accessibilityElement(children: .combine)
@@ -1669,5 +1679,547 @@ struct SheetTopSafeClearance: View {
     private func update(_ value: CGFloat) {
         let snapped = min(72, (value * 2).rounded() / 2)
         if abs(snapped - extraTop) >= 1 { extraTop = snapped }
+    }
+}
+
+// MARK: - 叛乱模式三段式宋韵选择器（关闭叛乱 / 历史拟真 / 经典乱世）
+
+/// 统一叛乱设置控件：支持卡片模式（新世界向导）与紧凑三段条模式（历史剧本 / 世界编辑）。
+struct RebelModeSelector: View {
+    @Binding var selection: String
+    var compact: Bool = false
+    var disabled: Bool = false
+    var onSelect: ((String) -> Void)? = nil
+
+    private struct Option: Identifiable {
+        let id: String
+        let title: String
+        let shortNote: String
+    }
+
+    private static let options: [Option] = [
+        Option(id: "off", title: "关闭叛乱", shortNote: "零民变分裂 · 纯粹国战"),
+        Option(id: "historical", title: "历史拟真", shortNote: "仅危亡起事 · 零开局内爆"),
+        Option(id: "classic", title: "经典乱世", shortNote: "原作高发叛乱与割据"),
+    ]
+
+    var body: some View {
+        if compact {
+            HStack(spacing: 4) {
+                ForEach(Self.options) { opt in
+                    let on = selection == opt.id
+                    Button {
+                        guard !disabled else { return }
+                        GameFeel.shared.tap()
+                        if let onSelect {
+                            onSelect(opt.id)
+                        } else {
+                            withAnimation(Motion.tap) { selection = opt.id }
+                        }
+                    } label: {
+                        Text(opt.title)
+                            .font(Theme.label)
+                            .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 32)
+                            .background(on ? Theme.seal : Color.clear, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(disabled)
+                }
+            }
+            .padding(3)
+            .background(Theme.wash.opacity(0.62), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+            .opacity(disabled ? 0.55 : 1.0)
+        } else {
+            HStack(spacing: 8) {
+                ForEach(Self.options) { opt in
+                    let on = selection == opt.id
+                    Button {
+                        guard !disabled else { return }
+                        GameFeel.shared.tap()
+                        if let onSelect {
+                            onSelect(opt.id)
+                        } else {
+                            withAnimation(Motion.tap) { selection = opt.id }
+                        }
+                    } label: {
+                        VStack(spacing: 4) {
+                            Text(opt.title)
+                                .font(Theme.serif(14.5))
+                                .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Text(opt.shortNote)
+                                .font(Theme.sans(10.5))
+                                .foregroundStyle(on ? Theme.paperLight.opacity(0.84) : Theme.ink2)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.76)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 62)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 8)
+                        .background(on ? Theme.seal : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.7))
+                    }
+                    .buttonStyle(PressStyle())
+                    .disabled(disabled)
+                }
+            }
+            .opacity(disabled ? 0.55 : 1.0)
+        }
+    }
+}
+
+// MARK: - 时代军制 · 工业与战略核威慑（HOI4 战略与核武界面）
+
+struct NuclearStrategicInfo: Decodable, Equatable {
+    let eraId: String
+    let eraTitle: String
+    let eraWeapons: String
+    let worldTension: Int
+    let ic: Int
+    let warSupport: Int
+    let airPower: Int
+    let mobilization: String
+    let nuclearUnlocked: Bool
+    let reactors: Int
+    let nukeProgress: Int
+    let nukes: Int
+    let nukesHit: Int
+    let reactorCost: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case eraId, eraTitle, eraWeapons, worldTension, ic, warSupport, airPower
+        case mobilization, nuclearUnlocked, reactors, nukeProgress, nukes, nukesHit, reactorCost
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        func intVal(_ key: CodingKeys, default def: Int = 0) -> Int {
+            if let i = try? c.decodeIfPresent(Int.self, forKey: key) { return i }
+            if let d = try? c.decodeIfPresent(Double.self, forKey: key) { return Int(d.rounded()) }
+            return def
+        }
+        eraId = (try? c.decodeIfPresent(String.self, forKey: .eraId)) ?? ""
+        eraTitle = (try? c.decodeIfPresent(String.self, forKey: .eraTitle)) ?? "古典军制时代"
+        eraWeapons = (try? c.decodeIfPresent(String.self, forKey: .eraWeapons)) ?? ""
+        worldTension = intVal(.worldTension)
+        ic = intVal(.ic)
+        warSupport = intVal(.warSupport)
+        airPower = intVal(.airPower)
+        mobilization = (try? c.decodeIfPresent(String.self, forKey: .mobilization)) ?? "civilian"
+        nuclearUnlocked = (try? c.decodeIfPresent(Bool.self, forKey: .nuclearUnlocked)) ?? false
+        reactors = intVal(.reactors)
+        nukeProgress = intVal(.nukeProgress)
+        nukes = intVal(.nukes)
+        nukesHit = intVal(.nukesHit)
+        reactorCost = intVal(.reactorCost, default: 800)
+    }
+
+    static func decode(from data: Data?) -> NuclearStrategicInfo? {
+        guard let data else { return nil }
+        return try? JSONDecoder().decode(NuclearStrategicInfo.self, from: data)
+    }
+
+    var normalizedMobilization: String {
+        let lower = mobilization.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if lower.contains("total") || lower.contains("全面") { return "total" }
+        if lower.contains("war") || lower.contains("战时") { return "war_economy" }
+        if lower.contains("early") || lower.contains("早期") { return "early" }
+        return "civilian"
+    }
+}
+
+/// 宋韵「时代军制 · 工业与战略核威慑」指令卡（用于国家军事页与全局军情总览）。
+struct StrategicNuclearCard: View {
+    @ObservedObject var model: GameModel
+    let map: WorldMap
+    let state: GameState
+    let nation: Int
+    let alive: Bool
+    var refreshNonce: Int = 0
+    var onPickProvince: ((String, @escaping (Int) -> Void) -> Void)? = nil
+    var onFocusProvince: ((Int) -> Void)? = nil
+    let onToast: (String) -> Void
+    var onDidMutate: (() async -> Void)? = nil
+
+    private struct MobLevel: Identifiable {
+        let id: String
+        let label: String
+    }
+
+    private static let mobLevels: [MobLevel] = [
+        MobLevel(id: "civilian", label: "民用经济"),
+        MobLevel(id: "early", label: "早期动员"),
+        MobLevel(id: "war_economy", label: "战时经济"),
+        MobLevel(id: "total", label: "全面总动员"),
+    ]
+
+    @State private var info: NuclearStrategicInfo?
+    @State private var busy = false
+    @State private var localNonce = 0
+    @State private var pickingTargetSheet = false
+    @State private var confirmStrikeProvince: Int? = nil
+
+    private var strikeCandidates: [Int] {
+        let enemySet: Set<Int> = state.nations.indices.contains(nation) ? Set(state.nations[nation].enemies) : []
+        return state.owners.indices
+            .filter { p in
+                guard p < map.meta.provinces.count else { return false }
+                let owner = state.owners[p]
+                return owner >= 0 && owner != nation
+            }
+            .sorted { a, b in
+                let ea = enemySet.contains(state.owners[a]) ? 1 : 0
+                let eb = enemySet.contains(state.owners[b]) ? 1 : 0
+                if ea != eb { return ea > eb }
+                return a < b
+            }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let data = info {
+                SectionLabel("时代军制 · 工业与战略核威慑")
+                Group2 {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // 1. 时代抬头与制式兵器
+                        HStack(alignment: .center, spacing: 10) {
+                            SealFace(text: data.nuclearUnlocked ? "核" : "制", size: 32, color: data.nuclearUnlocked ? Theme.seal : Theme.ink)
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 6) {
+                                    Text(data.eraTitle)
+                                        .font(Theme.serif(16))
+                                        .foregroundStyle(Theme.ink)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
+                                    if data.nuclearUnlocked {
+                                        PaperTag(text: "战略核威慑", color: Theme.seal, size: 10)
+                                    }
+                                    Spacer(minLength: 4)
+                                    if data.nukesHit > 0 {
+                                        PaperTag(text: "受核击 \(data.nukesHit)", color: Theme.seal, size: 10)
+                                    }
+                                }
+                                if !data.eraWeapons.isEmpty {
+                                    Text(data.eraWeapons)
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.ink2)
+                                        .lineLimit(2)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+
+                        // 2. 四列严格对齐战略 KPI（工业产能 IC / 战争支持 / 制空权 / 世界紧张度）
+                        HStack(spacing: 0) {
+                            kpiCell(label: "工业产能 IC", value: "\(data.ic)", warn: false)
+                            Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 30)
+                            kpiCell(label: "战争支持", value: "\(data.warSupport)%", warn: data.warSupport < 35)
+                            Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 30)
+                            kpiCell(label: "制空权", value: "\(data.airPower)%", warn: false)
+                            Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 30)
+                            kpiCell(label: "世界紧张度", value: "\(data.worldTension)%", warn: data.worldTension >= 60)
+                        }
+                        .padding(.vertical, 9)
+                        .background(Theme.paper.opacity(0.75), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+
+                        Divider2()
+
+                        // 3. 四档动员法令
+                        VStack(alignment: .leading, spacing: 7) {
+                            HStack(spacing: 6) {
+                                InkIcon(glyph: .edict, size: 14, weight: 1.7)
+                                    .foregroundStyle(Theme.seal)
+                                    .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                                Text("动员法令")
+                                    .font(Theme.body)
+                                    .foregroundStyle(Theme.ink)
+                                Spacer()
+                                Text(Self.mobLevels.first(where: { $0.id == data.normalizedMobilization })?.label ?? data.mobilization)
+                                    .font(Theme.caption)
+                                    .foregroundStyle(Theme.seal)
+                                    .lineLimit(1)
+                            }
+                            HStack(spacing: 4) {
+                                ForEach(Self.mobLevels) { lv in
+                                    let on = data.normalizedMobilization == lv.id
+                                    Button {
+                                        guard alive, !busy, !on else { return }
+                                        GameFeel.shared.tap()
+                                        busy = true
+                                        Task {
+                                            let err = await model.mobilizeIndustry(nation: nation, level: lv.id)
+                                            busy = false
+                                            if let err {
+                                                onToast(err)
+                                                GameFeel.shared.notify(.error)
+                                            } else {
+                                                onToast("已颁行「\(lv.label)」动员法令")
+                                                GameFeel.shared.notify(.success)
+                                                localNonce &+= 1
+                                                await onDidMutate?()
+                                            }
+                                        }
+                                    } label: {
+                                        Text(lv.label)
+                                            .font(Theme.sans(11.5))
+                                            .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.74)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 32)
+                                            .background(on ? Theme.seal : Color.clear, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(!alive || busy)
+                                }
+                            }
+                            .padding(3)
+                            .background(Theme.wash.opacity(0.62), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+                        }
+
+                        // 4. 战略核工程（核时代解锁后呈现）
+                        if data.nuclearUnlocked {
+                            Divider2()
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(spacing: 6) {
+                                    InkIcon(glyph: .fire, size: 15, weight: 1.85, filled: true)
+                                        .foregroundStyle(Theme.seal)
+                                        .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                                    Text("战略核工程")
+                                        .font(Theme.serif(15))
+                                        .foregroundStyle(Theme.ink)
+                                    Spacer(minLength: 4)
+                                    PaperTag(text: "库存 \(data.nukes) 枚", color: data.nukes > 0 ? Theme.seal : Theme.ink2, size: 11)
+                                }
+
+                                // 反应堆数量 + 浓缩进度
+                                HStack(spacing: 10) {
+                                    Text("核反应堆")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.ink2)
+                                    HStack(spacing: 4) {
+                                        ForEach(1...5, id: \.self) { idx in
+                                            Circle()
+                                                .fill(idx <= data.reactors ? Theme.seal : Theme.ink.opacity(0.14))
+                                                .frame(width: 7, height: 7)
+                                        }
+                                    }
+                                    Text("\(data.reactors) / 5")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.ink)
+                                        .monospacedDigit()
+                                    Spacer(minLength: 6)
+                                    Text("浓缩 \(data.nukeProgress)%")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(data.reactors > 0 ? Theme.seal : Theme.ink2)
+                                        .monospacedDigit()
+                                }
+                                InkBar(fraction: Double(max(0, min(100, data.nukeProgress))) / 100.0, color: Theme.seal, track: Theme.ink.opacity(0.09), height: 5, gradient: true)
+
+                                HStack(spacing: 8) {
+                                    Button {
+                                        guard alive, !busy, data.reactors < 5 else { return }
+                                        GameFeel.shared.tap()
+                                        busy = true
+                                        Task {
+                                            let err = await model.buildReactor(nation: nation)
+                                            busy = false
+                                            if let err {
+                                                onToast(err)
+                                                GameFeel.shared.notify(.error)
+                                            } else {
+                                                onToast("核反应堆竣工并网，铀浓缩提速")
+                                                GameFeel.shared.notify(.success)
+                                                localNonce &+= 1
+                                                await onDidMutate?()
+                                            }
+                                        }
+                                    } label: {
+                                        HStack(spacing: 5) {
+                                            InkIcon(glyph: .plus, size: 13, weight: 1.8)
+                                            Text(data.reactors >= 5 ? "反应堆已满" : "兴建核反应堆 · \(data.reactorCost)金")
+                                                .font(Theme.caption)
+                                                .monospacedDigit()
+                                                .lineLimit(1)
+                                                .minimumScaleFactor(0.75)
+                                        }
+                                        .foregroundStyle((alive && data.reactors < 5) ? Theme.ink : Theme.ink2)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 38)
+                                        .padding(.horizontal, 8)
+                                        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.8))
+                                    }
+                                    .buttonStyle(PressStyle())
+                                    .disabled(!alive || busy || data.reactors >= 5)
+                                    .opacity((!alive || data.reactors >= 5) ? 0.5 : 1)
+
+                                    Button {
+                                        guard alive, !busy, data.nukes > 0 else { return }
+                                        GameFeel.shared.tap()
+                                        if let pick = onPickProvince {
+                                            pick("点选敌国州郡实施战略核打击") { targetProv in
+                                                confirmStrikeProvince = targetProv
+                                            }
+                                        } else {
+                                            pickingTargetSheet = true
+                                        }
+                                    } label: {
+                                        HStack(spacing: 5) {
+                                            InkIcon(glyph: .fire, size: 13, weight: 1.85, filled: true)
+                                            Text("选州实施核打击")
+                                                .font(Theme.label)
+                                                .lineLimit(1)
+                                                .minimumScaleFactor(0.78)
+                                        }
+                                        .foregroundStyle(Theme.paperLight)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 38)
+                                        .padding(.horizontal, 8)
+                                        .background(Theme.seal.opacity((alive && data.nukes > 0) ? 1.0 : 0.36), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                                    }
+                                    .buttonStyle(PressStyle())
+                                    .disabled(!alive || busy || data.nukes <= 0)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+        }
+        .task(id: "\(nation)-\(state.day / 30)-\(refreshNonce)-\(localNonce)") {
+            let raw = await model.nuclearInfo(nation: nation)
+            if let decoded = NuclearStrategicInfo.decode(from: raw) {
+                info = decoded
+            }
+        }
+        .sheet(isPresented: $pickingTargetSheet) {
+            targetPickerSheet
+                .presentationDetents([.medium, .fraction(0.84)])
+                .presentationCornerRadius(Theme.Control.cornerSheet)
+                .presentationBackground { MemorialPaper() }
+                .presentationDragIndicator(.hidden)
+        }
+        .confirmationDialog(
+            "确认实施战略核打击？",
+            isPresented: Binding(get: { confirmStrikeProvince != nil }, set: { if !$0 { confirmStrikeProvince = nil } }),
+            titleVisibility: .visible
+        ) {
+            if let targetProv = confirmStrikeProvince {
+                let pName = map.meta.provinces.indices.contains(targetProv) ? map.meta.provinces[targetProv].name : "目标州郡"
+                Button("确认核打击：\(pName)", role: .destructive) {
+                    confirmStrikeProvince = nil
+                    executeStrike(province: targetProv)
+                }
+            }
+            Button("取消", role: .cancel) { confirmStrikeProvince = nil }
+        } message: {
+            if let targetProv = confirmStrikeProvince {
+                let pName = map.meta.provinces.indices.contains(targetProv) ? map.meta.provinces[targetProv].name : "该州"
+                let oIdx = state.owners.indices.contains(targetProv) ? state.owners[targetProv] : -1
+                let oName = (oIdx >= 0 && oIdx < map.meta.nations.count) ? map.meta.nations[oIdx].name : "无主之地"
+                Text("将消耗 1 枚战略核弹打击「\(oName) · \(pName)」，造成毁灭性兵力与城防损毁并推升世界紧张度。")
+            }
+        }
+    }
+
+    private func kpiCell(label: String, value: String, warn: Bool) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(Theme.serif(16))
+                .foregroundStyle(warn ? Theme.seal : Theme.ink)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+            Text(label)
+                .font(Theme.sans(11))
+                .foregroundStyle(Theme.ink2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 4)
+    }
+
+    private func executeStrike(province targetProv: Int) {
+        guard !busy else { return }
+        busy = true
+        let pName = map.meta.provinces.indices.contains(targetProv) ? map.meta.provinces[targetProv].name : "目标州郡"
+        Task {
+            let err = await model.nuclearStrike(attacker: nation, province: targetProv)
+            busy = false
+            if let err {
+                onToast(err)
+                GameFeel.shared.notify(.error)
+            } else {
+                onFocusProvince?(targetProv)
+                onToast("战略核打击已命中「\(pName)」！")
+                GameFeel.shared.notify(.warning)
+                localNonce &+= 1
+                await onDidMutate?()
+            }
+        }
+    }
+
+    private var targetPickerSheet: some View {
+        let candidates = Array(strikeCandidates.prefix(40))
+        return ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                SheetHeader(title: "选择核打击目标州郡", subtitle: "优先列出当前交战敌国州郡 · 轻点确认", seal: "核")
+                Group2 {
+                    if candidates.isEmpty {
+                        Row(label: "打击目标", value: "暂无可打击的外国州郡")
+                    } else {
+                        ForEach(Array(candidates.enumerated()), id: \.element) { idx, pIdx in
+                            let p = map.meta.provinces[pIdx]
+                            let oIdx = state.owners.indices.contains(pIdx) ? state.owners[pIdx] : -1
+                            let oMeta = (oIdx >= 0 && oIdx < map.meta.nations.count) ? map.meta.nations[oIdx] : nil
+                            let isEnemy = state.nations.indices.contains(nation) && state.nations[nation].enemies.contains(oIdx)
+                            Button {
+                                GameFeel.shared.tap()
+                                pickingTargetSheet = false
+                                confirmStrikeProvince = pIdx
+                            } label: {
+                                HStack(spacing: 10) {
+                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                        .fill(oMeta.map { Names.color($0.color) } ?? Theme.ink2)
+                                        .frame(width: 10, height: 22)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(spacing: 6) {
+                                            Text(p.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                            if isEnemy { PaperTag(text: "敌国", color: Theme.seal, size: 10) }
+                                        }
+                                        Text(oMeta?.name ?? "外国").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                    }
+                                    Spacer(minLength: 6)
+                                    Text("选定").font(Theme.caption).foregroundStyle(Theme.seal)
+                                    InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal)
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            if idx < candidates.count - 1 { Divider2() }
+                        }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+            .padding(.bottom, 24)
+        }
     }
 }

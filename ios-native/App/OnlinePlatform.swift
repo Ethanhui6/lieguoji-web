@@ -755,9 +755,14 @@ private final class TokenBox: @unchecked Sendable {
 @MainActor final class OnlinePlatform: ObservableObject {
     static let shared = OnlinePlatform()
 
-    /// 默认专属腾讯云平台地址与计算节点（开机直连，国内实测 20–40 ms）
+    /// 默认专属腾讯云平台地址与计算节点（开机优先 443 运营商防限速专线 + 8765/8443 并行竞速直连）
     nonisolated static let defaultPlatformBase = "http://111.230.153.235"
-    nonisolated static let defaultComputeHost = "111.230.153.235:8765"
+    nonisolated static let defaultComputeHost = "111.230.153.235:443"
+    nonisolated static let defaultComputeEndpoints: [String] = [
+        "111.230.153.235:443",
+        "111.230.153.235:8765",
+        "111.230.153.235:8443"
+    ]
 
     nonisolated static var apiBase: String {
         let custom = (UserDefaults.standard.string(forKey: "platform.baseURL") ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -828,10 +833,10 @@ private final class TokenBox: @unchecked Sendable {
     }()
 
     static var currentVersionString: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "5.8.0"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "6.0.0"
     }
     static var currentBuildNumber: Int {
-        Int((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "188") ?? 188
+        Int((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "189") ?? 189
     }
     private static var deviceUUID: String {
         let k = "online.deviceId.v1"

@@ -264,6 +264,8 @@ import LieguojiCore
     /// 查看都城: the camera glides to the place, zooms in and a vermilion seal ring closes on it.
     var spotlight: (x: Double, y: Double, id: UUID)? { didSet { scheduleSync() } }
     func showPlace(x: Double, y: Double) { spotlight = (x, y, UUID()) }
+    /// 战略核打击冲击波闪光（由 GPU CoreAnimation 呈现朱砂鎏金冲击波，1.1 秒后自动销毁零持续开销）。
+    @Published public var nukeFlash: (id: UUID, province: Int)? = nil { didSet { scheduleSync() } }
 }
 
 /// Map display options kept between launches. v3 resets older saves once so the province borders
@@ -532,12 +534,15 @@ struct MapView: UIViewRepresentable {
         private var zoomID: UUID?
         private var unrollID: UUID?
         private var spotlightID: UUID?
+        private var nukeFlashID: UUID?
         /// The seal ring over a spotlit place; it follows the map while it shows.
         private var spot: (x: Double, y: Double, layer: CALayer)?
         /// 落指点选水晕同样锚定世界坐标，随地图平移缩放同步跟随。
         private var tapRipples: [(id: UUID, layer: CALayer, x: Double, y: Double)] = []
+        /// 战略核打击冲击波层（锚定受击州世界坐标，1.1s 后自动移除，零持续帧开销）。
+        private var activeNukeWaves: [(id: UUID, layer: CALayer, x: Double, y: Double)] = []
         private func placeSpot() {
-            guard spot != nil || !tapRipples.isEmpty, let renderer else { return }
+            guard spot != nil || !tapRipples.isEmpty || !activeNukeWaves.isEmpty, let renderer else { return }
             let vp = viewport
             guard vp.width > 0, vp.height > 0 else { return }
             CATransaction.begin(); CATransaction.setDisableActions(true)
@@ -548,6 +553,10 @@ struct MapView: UIViewRepresentable {
             for r in tapRipples {
                 let p = renderer.camera.toScreen(x: r.x, y: r.y, viewport: vp)
                 if p.x.isFinite && p.y.isFinite { r.layer.position = CGPoint(x: p.x, y: p.y) }
+            }
+            for w in activeNukeWaves {
+                let p = renderer.camera.toScreen(x: w.x, y: w.y, viewport: vp)
+                if p.x.isFinite && p.y.isFinite { w.layer.position = CGPoint(x: p.x, y: p.y) }
             }
             CATransaction.commit()
         }
@@ -579,6 +588,121 @@ struct MapView: UIViewRepresentable {
             DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.05) { [weak self, weak root] in
                 root?.removeFromSuperlayer()
                 if let self, self.spot?.layer === root { self.spot = nil }
+            }
+        }
+        /// 战略核打击朱砂鎏金冲击波动画（100% GPU CoreAnimation 合成，1.1 秒后自动销毁，零持续帧开销）。
+        private func showNukeShockwave(x: Double, y: Double) {
+            guard x.isFinite && y.isFinite, let renderer else { return }
+            let vp = viewport
+            guard vp.width > 0, vp.height > 0 else { return }
+            let pt = renderer.camera.toScreen(x: x, y: y, viewport: vp)
+            guard pt.x.isFinite && pt.y.isFinite else { return }
+
+            let root = CALayer()
+            root.position = CGPoint(x: pt.x, y: pt.y)
+
+            let whiteGold = UIColor(red: 1.0, green: 0.96, blue: 0.80, alpha: 1.0)
+            let brightGold = UIColor(red: 0.95, green: 0.76, blue: 0.28, alpha: 1.0)
+            let cinnabar = UIColor(red: 0.82, green: 0.22, blue: 0.14, alpha: 1.0)
+
+            // 1. 瞬态白金核爆核心闪光层
+            let core = CAShapeLayer()
+            let coreR: CGFloat = 30
+            core.path = UIBezierPath(ovalIn: CGRect(x: -coreR, y: -coreR, width: coreR * 2, height: coreR * 2)).cgPath
+            core.fillColor = whiteGold.withAlphaComponent(0.92).cgColor
+            core.strokeColor = brightGold.withAlphaComponent(0.95).cgColor
+            core.lineWidth = 2.4
+
+            let coreScale = CABasicAnimation(keyPath: "transform.scale")
+            coreScale.fromValue = 0.22
+            coreScale.toValue = 2.15
+            coreScale.duration = 0.52
+            coreScale.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            coreScale.isRemovedOnCompletion = false
+            coreScale.fillMode = .forwards
+
+            let coreFade = CABasicAnimation(keyPath: "opacity")
+            coreFade.fromValue = 0.98
+            coreFade.toValue = 0.0
+            coreFade.duration = 0.56
+            coreFade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            coreFade.isRemovedOnCompletion = false
+            coreFade.fillMode = .forwards
+            core.add(coreScale, forKey: "coreScale")
+            core.add(coreFade, forKey: "coreFade")
+
+            // 2. 主朱砂金冲击波扩散环
+            let shock = CAShapeLayer()
+            let shockR: CGFloat = 40
+            shock.path = UIBezierPath(ovalIn: CGRect(x: -shockR, y: -shockR, width: shockR * 2, height: shockR * 2)).cgPath
+            shock.fillColor = cinnabar.withAlphaComponent(0.18).cgColor
+            shock.strokeColor = cinnabar.withAlphaComponent(0.95).cgColor
+            shock.lineWidth = 3.8
+
+            let shockScale = CABasicAnimation(keyPath: "transform.scale")
+            shockScale.fromValue = 0.18
+            shockScale.toValue = 3.6
+            shockScale.duration = 1.04
+            shockScale.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            shockScale.isRemovedOnCompletion = false
+            shockScale.fillMode = .forwards
+
+            let shockWidth = CABasicAnimation(keyPath: "lineWidth")
+            shockWidth.fromValue = 4.2
+            shockWidth.toValue = 0.6
+            shockWidth.duration = 1.04
+            shockWidth.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            shockWidth.isRemovedOnCompletion = false
+            shockWidth.fillMode = .forwards
+
+            let shockFade = CABasicAnimation(keyPath: "opacity")
+            shockFade.fromValue = 0.96
+            shockFade.toValue = 0.0
+            shockFade.duration = 1.06
+            shockFade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            shockFade.isRemovedOnCompletion = false
+            shockFade.fillMode = .forwards
+            shock.add(shockScale, forKey: "shockScale")
+            shock.add(shockWidth, forKey: "shockWidth")
+            shock.add(shockFade, forKey: "shockFade")
+
+            // 3. 外层鎏金热浪虚线环
+            let outer = CAShapeLayer()
+            let outerR: CGFloat = 34
+            outer.path = UIBezierPath(ovalIn: CGRect(x: -outerR, y: -outerR, width: outerR * 2, height: outerR * 2)).cgPath
+            outer.fillColor = UIColor.clear.cgColor
+            outer.strokeColor = brightGold.withAlphaComponent(0.90).cgColor
+            outer.lineWidth = 2.0
+            outer.lineDashPattern = [7, 4]
+
+            let outerScale = CABasicAnimation(keyPath: "transform.scale")
+            outerScale.fromValue = 0.28
+            outerScale.toValue = 4.4
+            outerScale.duration = 1.08
+            outerScale.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            outerScale.isRemovedOnCompletion = false
+            outerScale.fillMode = .forwards
+
+            let outerFade = CABasicAnimation(keyPath: "opacity")
+            outerFade.fromValue = 0.88
+            outerFade.toValue = 0.0
+            outerFade.duration = 1.08
+            outerFade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            outerFade.isRemovedOnCompletion = false
+            outerFade.fillMode = .forwards
+            outer.add(outerScale, forKey: "outerScale")
+            outer.add(outerFade, forKey: "outerFade")
+
+            root.addSublayer(outer)
+            root.addSublayer(shock)
+            root.addSublayer(core)
+            floats.layer.addSublayer(root)
+
+            let waveId = UUID()
+            activeNukeWaves.append((id: waveId, layer: root, x: x, y: y))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.12) { [weak self, weak root] in
+                root?.removeFromSuperlayer()
+                self?.activeNukeWaves.removeAll { $0.id == waveId }
             }
         }
         private let selection = UISelectionFeedbackGenerator()
@@ -1798,6 +1922,7 @@ struct MapView: UIViewRepresentable {
                     || controller.panAboveSheet?.id != panAboveSheetID
                     || controller.focusPoint?.id != focusPointID
                     || controller.spotlight?.id != spotlightID
+                    || controller.nukeFlash?.id != nukeFlashID
                     || controller.zoomRequest?.id != zoomID
                     || controller.unrollRequest != unrollID
                     || controller.resetRequest != resetID
@@ -1879,6 +2004,15 @@ struct MapView: UIViewRepresentable {
                     let spotBottom = effTrailing > 0.05 ? 0.0 : max(effBottom, controller.sheetOpen ? 0.38 : 0.0)
                     animate(to: MapCamera.focused(worldX: s.x, worldY: s.y, scale: scale, viewport: viewport, bottomFraction: spotBottom, trailingFraction: effTrailing), duration: 0.72)
                     showSpot(x: s.x, y: s.y)
+                }
+            }
+            if let nf = controller.nukeFlash, nf.id != nukeFlashID {
+                nukeFlashID = nf.id
+                if map.meta.provinces.indices.contains(nf.province) {
+                    let p = map.meta.provinces[nf.province]
+                    if p.x.isFinite && p.y.isFinite {
+                        showNukeShockwave(x: Double(p.x), y: Double(p.y))
+                    }
                 }
             }
             if let z = controller.zoomRequest, z.id != zoomID {

@@ -19,6 +19,7 @@ public enum SovereignAI {
         case grandWonders      = "grandWonders"      // (D) 天下奇观与国家大工程自动择优竞建
         case missionsAndGolden = "missionsAndGolden" // (E) 国家霸业使命自动领赏与黄金盛世自动开启
         case wartimeAndVoyage  = "wartimeAndVoyage"  // (F) 战时雇佣兵团紧急招募与四海古迹远征
+        case nuclearAndIndustry = "nuclearAndIndustry" // (G) 战时工业动员、核反应堆建设与战略核威慑
     }
 
     // MARK: - 2. 八大最高执政决策人格原型
@@ -861,6 +862,8 @@ public enum SovereignAI {
                 if autoGovern { claimMissionsAndGoldenAge(r, ctx: ctx) }
             case .wartimeAndVoyage:
                 if autoGovern { handleWartimeAndExpeditions(r, ctx: ctx) }
+            case .nuclearAndIndustry:
+                if autoGovern { manageNuclearAndIndustry(r, ctx: ctx) }
             }
         }
     }
@@ -2288,6 +2291,139 @@ public enum SovereignAI {
                     detail: "\(maker)（\(p.briefSignature)）拨款 \(Int(pick.site.cost)) 金遣队远征「\(pick.site.name)」（\(pick.site.regionKind)），预计 \(pick.site.months) 个月凯旋（\(pick.site.rewardLine)）。"
                 )
             }
+        }
+    }
+
+    // MARK: - Subsystem (G): 工业动员、核反应堆建设与战略核威慑
+
+    private static func manageNuclearAndIndustry(_ r: JS, ctx: NationContext) {
+        let id = ctx.id
+        let p = ctx.profile
+        let maker = p.fullDecisionMaker
+        let b = Regimes.book(r, id)
+        NuclearWarfare.ensureInitialized(r)
+
+        let tension = NuclearWarfare.worldTension(r)
+        let curLaw = NuclearWarfare.mobilization(r, nationId: id)
+
+        // 1. 战时自动上调工业动员法案，和平时期自动回调民用/早期动员以养民息兵
+        let mobCd = b.aiMobCooldownUntil.optionalNumber.map(Int.init) ?? 0
+        if ctx.day >= mobCd {
+            let desiredLaw: NuclearWarfare.MobilizationLaw = {
+                if ctx.atWar {
+                    let existential = ctx.warStatus == .losing || ctx.lostCount >= 2
+                    let aggressive = (p.archetype == .militarist || p.archetype == .autocrat || p.archetype == .conqueror) && tension >= 60
+                    return (existential || aggressive) ? .total : .warEconomy
+                }
+                if tension >= 68 && (p.archetype == .militarist || p.archetype == .conqueror || p.archetype == .autocrat) {
+                    return .early
+                }
+                if ctx.gold < ctx.monthlyIncome * 4.0 || p.archetype == .mercantile || p.archetype == .benevolent {
+                    return .civilian
+                }
+                return .early
+            }()
+            if desiredLaw != curLaw {
+                let res = NuclearWarfare.setMobilization(r, nationId: id, level: desiredLaw.rawValue)
+                if res.ok {
+                    b.aiMobCooldownUntil = JS(ctx.day + 180)
+                    let why = ctx.atWar ? "战火炽烈，急需提高军工产能与前线战力" : "时局缓和，调整经济体制以休养生息、充盈国库"
+                    recordCourtDecision(
+                        r,
+                        nationId: id,
+                        category: "方略",
+                        decisionMaker: maker,
+                        title: "切换动员体制为「\(desiredLaw.label)」",
+                        detail: "\(maker)（\(p.briefSignature)）\(why)：\(res.text)"
+                    )
+                }
+            }
+        }
+
+        // 2. 二战/现代时代（或顶级双 5 科技）富裕强国自动建设核反应堆
+        guard NuclearWarfare.isNuclearEra(r, nationId: id) else { return }
+        let curReactors = NuclearWarfare.reactors(r, nationId: id)
+        let reactorCd = b.aiReactorCooldownUntil.optionalNumber.map(Int.init) ?? 0
+        let icVal = NuclearWarfare.ic(r, nationId: id)
+        let desiredReactors = (icVal >= 120 || ctx.provinceCount >= 10) ? 4 : (icVal >= 65 || ctx.provinceCount >= 5 ? 2 : 1)
+        if curReactors < desiredReactors && curReactors < 5 && ctx.day >= reactorCd {
+            let cost = NuclearWarfare.reactorCost(currentReactors: curReactors)
+            let reserve = max(260.0, ctx.monthlyIncome * 2.5)
+            if ctx.gold >= cost + reserve {
+                let res = NuclearWarfare.buildReactor(r, nationId: id)
+                if res.ok {
+                    b.aiReactorCooldownUntil = JS(ctx.day + 150)
+                    recordCourtDecision(
+                        r,
+                        nationId: id,
+                        category: "工程",
+                        decisionMaker: maker,
+                        title: "投建第 \(curReactors + 1) 座核反应堆",
+                        detail: "\(maker)（\(p.briefSignature)）着眼战略核威慑与大国均势，斥资 \(Int(cost)) 金建设核设施：\(res.text)"
+                    )
+                }
+            }
+        }
+
+        // 3. 存亡危局或高紧张度全面战争下的战略核威慑打击
+        let nukeCount = NuclearWarfare.nukes(r, nationId: id)
+        guard nukeCount >= 1 && ctx.atWar else { return }
+        let nukeCd = b.aiNukeCooldownUntil.optionalNumber.map(Int.init) ?? 0
+        guard ctx.day >= nukeCd else { return }
+
+        let capitalLost: Bool = {
+            guard let capPid = ctx.capitalPid else { return false }
+            let capCtrl = r.world.provinces.asArray.first(where: { $0.id.asString == capPid })?.controller.optionalString
+            return capCtrl != nil && capCtrl != id
+        }()
+        let existentialCrisis = (ctx.warStatus == .losing && (ctx.lostCount >= 2 || capitalLost))
+        let totalWarEscalation = (tension >= 85.0 && NuclearWarfare.mobilization(r, nationId: id) == .total && ctx.warStatus != .winning
+            && (p.archetype == .autocrat || p.archetype == .militarist || ctx.traitsNormalized.contains("cruel")))
+        guard existentialCrisis || totalWarEscalation else { return }
+
+        let enemies = Set(activeCache(r)?.enemiesByNation[id] ?? {
+            var out = [String]()
+            for rel in r.world.statecraft.relations.asArray where rel.status.optionalString == "war" {
+                if rel.a.optionalString == id, let other = rel.b.optionalString { out.append(other) }
+                else if rel.b.optionalString == id, let other = rel.a.optionalString { out.append(other) }
+            }
+            return out
+        }())
+        guard !enemies.isEmpty else { return }
+
+        // 选定敌军兵力最密集且尚未受核辐射污染的敌控核心州实施核打击
+        var troopsByPid = [String: Int]()
+        for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
+            if let nid = a.nationId.optionalString, enemies.contains(nid), let pid = a.provinceId.optionalString {
+                troopsByPid[pid, default: 0] += a.troops.asInt
+            }
+        }
+        var bestTarget: (index: Int, score: Double)?
+        for (idx, prov) in r.world.provinces.asArray.enumerated() {
+            guard let ctrl = prov.controller.optionalString, enemies.contains(ctrl) else { continue }
+            let pid = prov.id.asString
+            if NuclearWarfare.falloutMonths(r, provinceId: pid) > 0 { continue }
+            let troopWeight = Double(troopsByPid[pid] ?? 0) * 1.5
+            let popWeight = (Regimes.monthStock(r, pid)?.population.optionalNumber ?? 0) * 0.04
+            let capWeight = (activeCache(r)?.capitalPidByNation[ctrl] == pid) ? 3500.0 : 0.0
+            let score = troopWeight + popWeight + capWeight
+            if bestTarget.map({ score > $0.score }) ?? true {
+                bestTarget = (idx, score)
+            }
+        }
+        guard let target = bestTarget else { return }
+        let strike = NuclearWarfare.nuclearStrike(r, attackerId: id, provinceIndex: target.index)
+        if strike.ok {
+            b.aiNukeCooldownUntil = JS(ctx.day + 180)
+            let targetName = r.world.provinces[target.index].name.asString
+            recordCourtDecision(
+                r,
+                nationId: id,
+                category: "军备",
+                decisionMaker: maker,
+                title: "下令对\(targetName)实施战略核打击",
+                detail: "\(maker)（\(p.briefSignature)）\(existentialCrisis ? "面对亡国危局动用终极战略威慑" : "于高烈度全面战争中下达核突击密令")：\(strike.text)"
+            )
         }
     }
 }

@@ -15,6 +15,24 @@ public enum Rebellion {
     static func value(_ s: JS) -> Double { let x = JSMath.lcg(s.random.state.asNumber); s.random.state = JS(x); s.random.draws = JS(s.random.draws.asNumber + 1); return x / 4294967296 }
     static func range(_ s: JS, _ lo: Int, _ hi: Int) -> Int { lo + Int((value(s) * Double(hi - lo)).rounded(.down)) }
     static func alive(_ r: JS, _ id: String) -> Bool { Vassals.alive(r, id) }
+    /// 当前世界的叛乱模式："off"（关闭）/ "historical"（历史克制）/ "classic"（经典）。
+    /// 网页逐字节对照测试（`r.regimes.isNull`）一律返回 "classic"，零影响旧测试。
+    public static func rebelMode(_ r: JS) -> String {
+        guard !r.regimes.isNull else { return "classic" }
+        if !r.regimes.world.isNull, let m = r.regimes.world.rebelMode.optionalString, !m.isEmpty {
+            return m
+        }
+        if Regimes.rule(r, "rebel") <= 0 { return "off" }
+        if !r.regimes.historicalScenarioId.isNull { return "historical" }
+        return "classic"
+    }
+    /// 是否已度过开局太平期（App 模式按真实已过月数 `day / 30`，彻底修复 `monthsSince(r, never)` 开局首日即放行 bug；网页对照保留原式）。
+    static func pastCalmPeriod(_ r: JS) -> Bool {
+        if UnitKinds.enabled {
+            return (r.world.day.asNumber / 30.0) >= Double(Tuning.current.calmMonths)
+        }
+        return monthsSince(r, never) >= 24
+    }
     static func monthsSince(_ r: JS, _ t: Double) -> Int {
         let spd = r.life.secondsPerDay.asNumber, s = People.start(r)
         return DiplomacyCalendar.wholeMonths(DiplomacyCalendar.date(t, secondsPerDay: spd, start: s), DiplomacyCalendar.date(f(r.life.gameTime.asNumber), secondsPerDay: spd, start: s))
@@ -63,7 +81,7 @@ public enum Rebellion {
         s.recent[id] = .array(q.map { JS($0) }); s.lastRebel[id] = r.life.gameTime.clone()
     }
     static func canProvinceRebel(_ r: JS, _ s: JS, _ id: String, _ province: String) -> Bool {
-        if monthsSince(r, never) < (UnitKinds.enabled ? Tuning.current.calmMonths : 24) || !canAllowNew(r, s, id) { return false }
+        if !pastCalmPeriod(r) || !canAllowNew(r, s, id) { return false }
         let threshold = (r.upperCombat.provinces[province].connected.isTruthy ? s.destinyToRebelConnected.asNumber : s.destinyToRebel.asNumber) - Double(manifest(r, id)) + 5
         if destiny(r, id) > threshold { return false }
         if r.world.provinces.asArray.filter({ $0.controller.asString == id }).count < (UnitKinds.enabled ? Tuning.current.rebelMinProvinces : 30) { return false }
@@ -98,7 +116,13 @@ public enum Rebellion {
         let owner = p.controller.asString
         if !force {
             if !s.enabled.isTruthy || capitalProvince(r, owner) == province { return false }
-            if UnitKinds.enabled && Regimes.rule(r, "rebel") <= 0 { return false }
+            let mode = rebelMode(r)
+            if mode == "off" || (!r.regimes.isNull && Regimes.rule(r, "rebel") <= 0) { return false }
+            if mode == "historical" {
+                let isCoreHomeland = (p.legalOwner.optionalString == nil || p.legalOwner.optionalString == owner)
+                let extremeCollapse = destiny(r, owner) < 12 && r.world.day.asInt > 1080
+                if isCoreHomeland && !extremeCollapse { return false }
+            }
             let c = r.upperCombat.provinces[province]
             if c.distance.asNumber <= r.upperCombat.nations[owner].coreThreshold.asNumber && manifest(r, owner) > 1 { return false }
             if !canProvinceRebel(r, s, owner, province) { return false }
@@ -108,6 +132,7 @@ public enum Rebellion {
             if monthsSince(r, never) < 18 { chance = Int((Double(chance) * f(0.1)).rounded(.towardZero)) }
             if !r.offices47.isNull { chance = roundHalfEven(f(Double(chance) * Offices.localRebellion(r, province))) }
             chance += Regimes.faithUnrest(r, p) + CultureDoctrines.provinceUnrest(r, p)
+            if mode == "historical" { chance = Int((Double(chance) * 0.45).rounded(.towardZero)) }
             chance = max(0, min(100, chance))
             if !(range(s, 0, 100) < chance) { return false }
         }
@@ -127,12 +152,22 @@ public enum Rebellion {
     static func process(_ r: JS, _ id: String) {
         let s = r.foundings
         if s.isNull || !s.enabled.isTruthy || !alive(r, id) { return }
-        if UnitKinds.enabled && Regimes.rule(r, "rebel") <= 0 { return }
+        let mode = rebelMode(r)
+        if mode == "off" || (!r.regimes.isNull && Regimes.rule(r, "rebel") <= 0) { return }
         let d = destiny(r, id)
-        if monthsSince(r, never) < (UnitKinds.enabled ? Tuning.current.calmMonths : 24) || d > 30 || !superSuperPower(r, id) || !canAllowNew(r, s, id) { return }
+        if !pastCalmPeriod(r) || d > 30 || !superSuperPower(r, id) || !canAllowNew(r, s, id) { return }
         let capital = capitalProvince(r, id)
         let owned = r.upperCombat.nations[id].provinceOrder.asArray.map(\.asString).filter { pid in r.world.provinces.asArray.first { $0.id.asString == pid }?.controller.asString == id }
-        let list = owned.filter { d > 13 ? !isCore(r, $0, id) && !provinceAtWar(r, $0) : !provinceAtWar(r, $0) && $0 != capital }
+        var list = owned.filter { d > 13 ? !isCore(r, $0, id) && !provinceAtWar(r, $0) : !provinceAtWar(r, $0) && $0 != capital }
+        if mode == "historical" {
+            let extremeCollapse = d < 12 && r.world.day.asInt > 1080
+            if !extremeCollapse {
+                list = list.filter { pid in
+                    guard let p = provinceById(r, pid) else { return false }
+                    return p.legalOwner.optionalString != nil && p.legalOwner.optionalString != id
+                }
+            }
+        }
         if list.isEmpty { return }
         var chance = f(f(f(min(1, max(0, f(f(30 - d) / 20)))) * f(0.3)) + f(0.35)); chance = f(chance / 2)
         let leaderId = r.people.nations[id].leaderId
@@ -211,16 +246,16 @@ extension Rebellion {
         let o = JS.object(), s = r.foundings
         o.provinces = .array()
         guard !s.isNull, s.enabled.isTruthy, alive(r, id) else { o.status = JS("本世界未开启行省叛乱"); o.open = JS(false); return o }
+        if rebelMode(r) == "off" || (!r.regimes.isNull && Regimes.rule(r, "rebel") <= 0) { o.status = JS("叛乱规则已关闭"); o.open = JS(false); return o }
         let owned = r.world.provinces.asArray.filter { $0.controller.asString == id }
         let minProvinces = UnitKinds.enabled ? Tuning.current.rebelMinProvinces : 30
-        let calm = UnitKinds.enabled ? Tuning.current.calmMonths : 24
         let recent = (s.recent[id].isNull ? [] : s.recent[id].asArray.map(\.asNumber)).filter { monthsSince(r, $0) <= 26 }.count
         var interval = f(s.minMonths.asNumber)
         if destiny(r, id) < 15 && superSuperPower(r, id) { interval = f(interval / 6) }
         let since = monthsSince(r, s.lastRebel[id].optionalNumber ?? 0)
         o.destiny = JS(destiny(r, id).rounded())
         var status: String?
-        if monthsSince(r, never) < calm { status = "开局太平期，暂无叛乱" }
+        if !pastCalmPeriod(r) { status = "开局太平期，暂无叛乱" }
         else if owned.count < minProvinces { status = "州郡不足\(minProvinces)，难以生乱" }
         else if monthsSince(r, bornTime(r, id)) < 15 { status = "立国未满十五月" }
         else if recent >= maxRecent(r, id) { status = "近两年叛乱已多，暂时平息" }

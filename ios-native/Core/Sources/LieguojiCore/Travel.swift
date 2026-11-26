@@ -370,9 +370,10 @@ public enum ForceMotion {
         }
     }
     public static let mapUnitsPerNativeUnit = 1000.0 / 240.0
-    /// App worlds: this map's provinces are several times the original's, so an army marches twice
-    /// the original's pace to cross one in about the original's time.
+    /// App worlds: this map's provinces are several times the original's, so an army marches briskly
+    /// across Europe/China (1.42× step boost for land & sea when UnitKinds.enabled; parity tests untouched).
     public static let appMarch = 2.5
+    public static let appPaceMultiplier = 1.42
 
     /// actualForceSpeed47 for an army: native Army.GetSpeed (nativeArmyMovementSpeed) per tick, in map units.
     public static func armySpeed(base: Double, unitSpeed: Double, cell: Int, graph g: TravelGraph, secondsPerTick: Double) -> Double {
@@ -387,7 +388,8 @@ public enum ForceMotion {
             let sp = UnitKinds.enabled && appTerrainSpeed.indices.contains(bi) ? fr(appTerrainSpeed[bi]) : biomeSpeed[min(biomeSpeed.count - 1, max(0, bi))]
             value = fr(fr(b * sp) * unit)
         }
-        return value * mapUnitsPerNativeUnit * secondsPerTick
+        let appBoost = UnitKinds.enabled ? appPaceMultiplier : 1.0
+        return value * mapUnitsPerNativeUnit * secondsPerTick * appBoost
     }
 }
 

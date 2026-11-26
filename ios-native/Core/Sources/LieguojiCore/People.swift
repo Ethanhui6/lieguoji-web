@@ -284,6 +284,24 @@ public enum People {
         return r.kin.families.objectValues.map { Electing(k: $0, influence: 0, warMerit: 0) }
     }
     static func republicLeader(_ r: JS, families: [Electing], excluding: Int = 0) -> JS? {
+        // 历史剧本任期守护与真实继任：终身制领袖或任期未满的在世民选领袖绝不会被提前换下；届满大选优先推举真实历史继任者。
+        if let sid = families.first?.k.stateId.asInt, sid > 0, !r.people.isNull,
+           let nationId = r.people.nations.objectEntries.first(where: { $0.1.id.asInt == sid })?.0 {
+            let polity = r.civilization.isNull ? "" : (r.civilization.nations[nationId].polity.optionalString ?? "")
+            if (polity == "Republic" || polity == "Federation"),
+               let lid = r.people.nations[nationId].leaderId.optionalNumber,
+               let old = person(r, Int(lid)), old.isAlive.asBool {
+                let isHeadElection = excluding == old.id.asInt || families.contains(where: { $0.k.id.asInt == old.familyId.asInt })
+                if isHeadElection {
+                    if HistoricalRoster.isTermProtected(r, nationId: nationId) {
+                        return excluding == old.id.asInt ? nil : old
+                    }
+                    if let nextHist = HistoricalRoster.peekNextSuccessor(r, nationId: nationId, excludingPersonId: old.id.asInt) {
+                        return nextHist
+                    }
+                }
+            }
+        }
         var candidates = [(JS, Double)]()
         for fam in families {
             let hasLiving = !living47(r, fam.k).isEmpty || ids(fam.k.collateralMemberIds).contains { person(r, $0)?.isAlive.asBool == true }
@@ -310,6 +328,10 @@ public enum People {
 
     // MARK: Succession (civilization47-lifecycle, civilization47-succession)
     static func knownSuccessor(_ r: JS, _ nationId: String, _ previous: JS) -> JS? {
+        // 历史剧本优先按真实历史继任队列出队，确保继任者为真实历史人物且不重复建档。
+        if let historical = HistoricalRoster.popNextSuccessor(r, nationId: nationId, excludingPersonId: previous.id.asInt) {
+            return historical
+        }
         let family = r.kin.families[previous.familyId.asInt.description], polity = r.civilization.nations[nationId].polity.asString
         let nobles = !r.nobility.isNull
         // App 规则：选侯君主制（elective）与部族汗国（khanate/tribal）由境内势力前三世家公推新君。
@@ -368,36 +390,68 @@ public enum People {
     }
     @discardableResult
     static func appointKnownPerson(_ r: JS, _ nationId: String, _ heir: JS, cause: String, requestedName: String? = nil) -> JS {
-        let regnalName = requestedName ?? heir.identity.given.asString
         let history = r.chronicle.leaders[nationId].isNull ? { let a = JS.array(); r.chronicle.leaders[nationId] = a; return a }() : r.chronicle.leaders[nationId]
         let old = history.asArray.last
-        let order = history.length + 1, id = "ruler-\(nationId)-\(order)", nation = r.civilization.nations[nationId]
-        let identity = heir.identity.clone()
-        identity.religionId = nation.religionId.clone(); identity.polityAtAccession = nation.polity.clone(); identity.regnalName = JS(regnalName)
-        identity.titleAtAccession = JS(rulerTitle(culture: identity.cultureId.optionalString ?? "chinese", polity: nation.polity.optionalString ?? "Kingdom", religion: nation.religionId.optionalString ?? "", gender: identity.gender.asInt))
-        let seed = nameSeed("\(r.world.custom.seed.asString)/\(nationId)/\(order)"), ordinal = history.asArray.filter { $0.regnalName.optionalString == regnalName }.count + 1
+        let nation = r.civilization.nations[nationId]
         let day = r.world.day.asNumber
+
+        // 历史剧本双重任期守护：严禁定期选举提前替换终身制领袖或任期未满的在世民选领袖！
+        if cause == "election", let old, old.endedDay.isNull, HistoricalRoster.isTermProtected(r, nationId: nationId) {
+            let oldRid = old.id.asString
+            let oldPid = (!r.sovereignty.isNull && !r.sovereignty.reigns.isNull) ? (r.sovereignty.reigns[oldRid].optionalNumber.map(Int.init) ?? 0) : 0
+            let oldPolity = r.civilization.rulers[oldRid].polityAtAccession.optionalString ?? nation.polity.optionalString ?? ""
+            if oldPid > 0, let oldPerson = person(r, oldPid), oldPerson.isAlive.asBool, oldPolity == (nation.polity.optionalString ?? oldPolity) {
+                if oldPerson.roles.isNull { oldPerson.roles = .array() }
+                if !oldPerson.roles.asArray.contains(where: { $0.nativeKind.optionalString == "leader" }) {
+                    let oldTitle = oldPerson.historicalTitle.optionalString ?? r.civilization.rulers[oldRid].titleAtAccession.optionalString ?? rulerTitle(culture: oldPerson.cultureName.optionalString ?? "chinese", polity: nation.polity.optionalString ?? "Republic", religion: nation.religionId.optionalString ?? "", gender: oldPerson.gender.asInt)
+                    oldPerson.roles.push(leaderRole(r, oldPerson, title: oldTitle))
+                }
+                r.people.nations[nationId].leaderId = oldPerson.id.clone()
+                return old
+            }
+        }
+
+        // 合法换届选举时，若历史继任队列尚有真实接班人，优先以真实历史接班人当选
+        var chosenHeir = heir
+        if cause == "election" && !HistoricalRoster.matchesQueueHead(r, nationId: nationId, person: heir) {
+            let prevId = old.flatMap { r.sovereignty.reigns[$0.id.asString].optionalNumber.map(Int.init) } ?? 0
+            if let queued = HistoricalRoster.popNextSuccessor(r, nationId: nationId, excludingPersonId: prevId) {
+                chosenHeir = queued
+            }
+        } else {
+            HistoricalRoster.consumeIfQueueHead(r, nationId: nationId, person: chosenHeir)
+        }
+
+        let regnalName = requestedName ?? chosenHeir.identity.given.asString
+        let order = history.length + 1, id = "ruler-\(nationId)-\(order)"
+        let identity = chosenHeir.identity.clone()
+        identity.religionId = nation.religionId.clone(); identity.polityAtAccession = nation.polity.clone(); identity.regnalName = JS(regnalName)
+        let histTitle = chosenHeir.historicalTitle.optionalString ?? ""
+        let resolvedTitle = !histTitle.isEmpty ? histTitle : rulerTitle(culture: identity.cultureId.optionalString ?? "chinese", polity: nation.polity.optionalString ?? "Kingdom", religion: nation.religionId.optionalString ?? "", gender: identity.gender.asInt)
+        identity.titleAtAccession = JS(resolvedTitle)
+        let seed = nameSeed("\(r.world.custom.seed.asString)/\(nationId)/\(order)"), ordinal = history.asArray.filter { $0.regnalName.optionalString == regnalName }.count + 1
+        let computedTermEnd = HistoricalRoster.termEndDay(r, nationId: nationId, fromDay: day, fallbackSeed: seed)
         let reign = JS.object()
         reign.id = JS(id); reign.name = identity.name.clone(); reign.family = identity.house.clone(); reign.order = JS(order); reign.regnalName = JS(regnalName)
-        reign.regnalOrdinal = JS(ordinal); reign.ascendedDay = JS(day); reign.endedDay = .null; reign.termEndDay = JS(day + Double((12 + Int(seed % 14)) * 365))
+        reign.regnalOrdinal = JS(ordinal); reign.ascendedDay = JS(day); reign.endedDay = .null; reign.termEndDay = JS(computedTermEnd)
         if let old, old.endedDay.isNull { old.endedDay = JS(day) }
         history.push(reign); r.civilization.rulers[id] = identity; r.civilization.revision = JS(r.civilization.revision.asNumber + 1)
-        let key = heir.id.asInt.description
+        let key = chosenHeir.id.asInt.description
         if !r.people.persons.has(key) {
             let c = JS.object()
-            c.id = heir.id.clone(); c.stateId = heir.stateId.clone(); c.nationId = JS(nationId); c.rulerId = JS(id); c.name = identity.name.clone(); c.family = identity.house.clone()
-            c.alive = JS(true); c.recordedDay = JS(day); c.base = heir.base.clone(); c.traits = heir.traits.clone()
+            c.id = chosenHeir.id.clone(); c.stateId = chosenHeir.stateId.clone(); c.nationId = JS(nationId); c.rulerId = JS(id); c.name = identity.name.clone(); c.family = identity.house.clone()
+            c.alive = JS(true); c.recordedDay = JS(day); c.base = chosenHeir.base.clone(); c.traits = chosenHeir.traits.clone()
             r.people.persons[key] = c
         }
-        r.people.nations[nationId].leaderId = heir.id.clone(); r.people.revision = JS(r.people.revision.asNumber + 1)
-        heir.roles.push(leaderRole(r, heir, title: identity.titleAtAccession.asString)); r.kin.revision = JS(r.kin.revision.asNumber + 1)
-        r.sovereignty.reigns[id] = heir.id.clone(); r.sovereignty.revision = JS(r.sovereignty.revision.asNumber + 1); r.kin.lifecycle.vacancies.delete(nationId)
-        setRulingFamily(r, nationId, heir.familyId.asInt)
+        r.people.nations[nationId].leaderId = chosenHeir.id.clone(); r.people.revision = JS(r.people.revision.asNumber + 1)
+        chosenHeir.roles.push(leaderRole(r, chosenHeir, title: identity.titleAtAccession.asString)); r.kin.revision = JS(r.kin.revision.asNumber + 1)
+        r.sovereignty.reigns[id] = chosenHeir.id.clone(); r.sovereignty.revision = JS(r.sovereignty.revision.asNumber + 1); r.kin.lifecycle.vacancies.delete(nationId)
+        setRulingFamily(r, nationId, chosenHeir.familyId.asInt)
         let polity = nation.polity.optionalString ?? "Kingdom", title = identity.titleAtAccession.asString
         let cultureId = nation.cultureId.optionalString ?? "chinese"
         let leaderName: String
         if UnitKinds.enabled {
-            let honor = MonarchLore.honor(r, nationId: nationId, reignId: id, order: order, culture: cultureId, polity: polity, title: title, person: heir, fallbackName: identity.name.asString, reignYears: 0, deltaProvs: 0, avgSkill: 60, isActive: true)
+            let honor = MonarchLore.honor(r, nationId: nationId, reignId: id, order: order, culture: cultureId, polity: polity, title: title, person: chosenHeir, fallbackName: identity.name.asString, reignYears: 0, deltaProvs: 0, avgSkill: 60, isActive: true)
             leaderName = honor.styledName
         } else {
             leaderName = rulerDisplayName(culture: cultureId, polity: polity, name: identity.name.asString, regnalName: regnalName, ordinal: ordinal, given: identity.given.asString, title: title)
@@ -511,11 +565,31 @@ public enum People {
         let l = r.life, k = r.kin, s = k.lifecycle, month = l.currentDate.year.asInt * 12 + l.currentDate.month.asInt - 1
         if month == s.lastMonth.asInt { return false }
         var stats = s.stats
+        let isHistorical = !r.regimes.isNull && !r.regimes.historicalScenarioId.isNull
+        let nowDay = r.world.day.optionalNumber ?? 0
+        // 历史剧本开局任期校准：保障所有初登大宝的历史领袖 termEndDay 永不小于 day + 365（民主制至少4年，终身制40年）
+        if isHistorical && nowDay <= 45 && !r.chronicle.isNull && !r.chronicle.leaders.isNull {
+            for (nid, list) in r.chronicle.leaders.objectEntries where list.isArray {
+                if let activeReign = list.asArray.last, activeReign.endedDay.isNull {
+                    let curEnd = activeReign.termEndDay.optionalNumber ?? 0
+                    if curEnd <= nowDay + 365.0 {
+                        activeReign.termEndDay = JS(HistoricalRoster.termEndDay(r, nationId: nid, fromDay: nowDay, fallbackSeed: 0))
+                    }
+                }
+            }
+        }
+        var activeLeaderIds = Set<Int>()
+        if isHistorical && nowDay < 730.0 && !r.people.isNull && !r.people.nations.isNull {
+            for (_, rec) in r.people.nations.objectEntries {
+                if let lid = rec.leaderId.optionalNumber, lid > 0 { activeLeaderIds.insert(Int(lid)) }
+            }
+        }
         let alive = k.persons.objectValues.filter { $0.isAlive.asBool }
         for c in alive {
             if c.isAlive.asBool { c.age = JS(yearSince(r, c.birthTime.asNumber)) }
             if c.isAlive.asBool { let lp = l.persons[c.id.asInt.description]; lp.age = c.age.clone(); lp.updatedMonth = JS(month) }
             let roll = drawLife(s.random)
+            if isHistorical && nowDay < 730.0 && c.age.asInt < 66 && activeLeaderIds.contains(c.id.asInt) { continue }
             if !(f(roll) < deathProbability(c.age.asInt)) { continue }
             stats.totalDeaths = JS(stats.totalDeaths.asNumber + 1)
             stats.deathAges.push(JS(f(c.age.asNumber)))

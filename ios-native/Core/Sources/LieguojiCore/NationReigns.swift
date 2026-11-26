@@ -20,6 +20,8 @@ extension NativeEngine {
         let curDate = (r.life.isNull || r.life.currentDate.isNull) ? JS.null : r.life.currentDate
         let yearOffset = (!r.regimes.isNull && !r.regimes.calendar.isNull) ? (r.regimes.calendar.offset.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 0) : 0
         let eraName = (!r.regimes.isNull && !r.regimes.calendar.isNull) ? (r.regimes.calendar.era.optionalString ?? "") : ""
+        let mapTitle = (!r.world.isNull && !r.world.custom.isNull) ? (r.world.custom.name.optionalString ?? "") : ""
+        let isHistorical = !r.regimes.isNull && !r.regimes.historicalScenarioId.isNull
         let baseYear = curDate.year.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 1
         let baseMonth = curDate.month.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 1
         let baseDay = curDate.day.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 1
@@ -30,6 +32,18 @@ extension NativeEngine {
             let delta = ((dayOfYear - (curDay - day)) / 365.25).rounded(.down)
             guard delta.isFinite && abs(delta) < 1e7 else { return displayNowYear }
             return displayNowYear + Int(delta)
+        }
+        // 规范纪年文本：绝不将剧本/地图名称拼进纪年；公元前按真实史书格式输出「公元前X年」
+        let cleanEra: String = {
+            if isHistorical || displayNowYear <= 0 { return "公元" }
+            let trimmed = eraName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty || trimmed == "公元" { return "公元" }
+            if !mapTitle.isEmpty && (trimmed == mapTitle || mapTitle.contains(trimmed) || trimmed.contains(mapTitle)) { return "公元" }
+            if trimmed.count > 4 { return "公元" }
+            return trimmed
+        }()
+        func formatYearText(_ y: Int) -> String {
+            y <= 0 ? "公元前\(y < 0 ? -y : 1)年" : "\(cleanEra)\(y)年"
         }
 
         // 州郡与城池映射，供定位都城与事件发生地
@@ -191,8 +205,10 @@ extension NativeEngine {
             let keyEvents = reignEvents.reversed().prefix(8).map { e -> JS in
                 let ev = JS.object()
                 let evDay = e.day.optionalNumber ?? startDay
+                let evYear = yearOf(evDay)
                 ev.day = JS(evDay.isFinite ? Int(evDay) : Int(startDay))
-                ev.year = JS(yearOf(evDay))
+                ev.year = JS(evYear)
+                ev.yearText = JS(formatYearText(evYear))
                 ev.text = JS(e.text.optionalString ?? "")
                 ev.kind = JS(e.kind.optionalString ?? "event")
                 if let reason = e.reason.optionalString, !reason.isEmpty { ev.reason = JS(reason) }
@@ -208,6 +224,10 @@ extension NativeEngine {
                 reignYears: reignYears, deltaProvs: deltaProvs, avgSkill: avgSkill, isActive: active
             )
 
+            let ascYear = yearOf(startDay)
+            let endYear = yearOf(endDay)
+            let safeEraYearText = (!mapTitle.isEmpty && honor.eraYearText.contains(mapTitle)) ? "" : honor.eraYearText
+
             let item = JS.object()
             item.order = JS(order)
             item.id = JS(rid)
@@ -215,7 +235,7 @@ extension NativeEngine {
             item.styledName = JS(honor.styledName.isEmpty ? honor.cleanPersonalName : honor.styledName)
             item.surnameLessImperial = JS(honor.surnameLessImperial)
             item.eraName = JS(honor.eraName)
-            item.eraYearText = JS(honor.eraYearText)
+            item.eraYearText = JS(safeEraYearText)
             item.honorific = JS(honor.honorific)
             item.title = JS(title)
             item.house = JS(honor.surnameLessImperial ? "皇室" : (house.isEmpty ? "无" : NamingCatalog.houseLabel(house)))
@@ -225,8 +245,11 @@ extension NativeEngine {
             item.polity = JS(Regimes.titles[reignPolity] ?? reignPolity)
             item.ascendedDay = JS(Int(startDay.isFinite ? startDay : 0))
             item.endedDay = active ? .null : JS(Int(endDay.isFinite ? endDay : 0))
-            item.ascendedYear = JS(yearOf(startDay))
-            item.endedYear = active ? .null : JS(yearOf(endDay))
+            item.ascendedYear = JS(ascYear)
+            item.endedYear = active ? .null : JS(endYear)
+            item.ascendedYearText = JS(formatYearText(ascYear))
+            item.endedYearText = active ? .null : JS(formatYearText(endYear))
+            item.reignSpanText = JS(active ? "\(formatYearText(ascYear)) — 至今" : "\(formatYearText(ascYear)) — \(formatYearText(endYear))")
             item.reignYears = JS(reignYears.isFinite ? (reignYears * 10).rounded() / 10 : 0)
             item.active = JS(active)
             item.alive = JS(alive)
@@ -250,7 +273,7 @@ extension NativeEngine {
 
         let summary = JS.object()
         summary.nationName = JS(n.name.optionalString ?? "无名国")
-        summary.era = JS(eraName.isEmpty ? "公元" : eraName)
+        summary.era = JS(cleanEra)
         summary.totalReigns = JS(leaders.count)
         summary.peakProvinces = JS(peakAcrossHistory)
         summary.currentProvinces = JS(currentProvinces)
@@ -258,5 +281,12 @@ extension NativeEngine {
         summary.capitalProvince = JS(currentCapProv)
         summary.reigns = outReigns
         return Data(summary.json.utf8)
+    }
+
+    /// 规范历史纪年格式化：公元前严格按 `y <= 0 → 公元前X年`（绝不将地图/剧本名拼入年份）。
+    public static func formatHistoricalYear(_ y: Int, era: String = "公元") -> String {
+        if y <= 0 { return "公元前\(y < 0 ? -y : 1)年" }
+        let prefix = era.trimmingCharacters(in: .whitespacesAndNewlines)
+        return "\(prefix.isEmpty ? "公元" : prefix)\(y)年"
     }
 }

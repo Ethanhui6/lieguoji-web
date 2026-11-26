@@ -72,24 +72,94 @@ public enum Armies {
         return cavalry ? f(1.9499999284744263) : ordinary
     }
     static func median(_ r: JS) -> Double {
-        let values = r.world.statecraft.provinces.asArray.map(\.population.asNumber).sorted(), mid = values.count >> 1
+        let values = r.world.statecraft.provinces.asArray.map(\.population.asNumber).sorted()
+        guard !values.isEmpty else { return 10_000 }
+        let mid = values.count >> 1
         return values.count % 2 == 1 ? values[mid] : (values[mid - 1] + values[mid]) / 2
     }
+    /// 州郡地理与人口密度权重（用于遏制西伯利亚/撒哈拉/青藏等广袤低密度地带仅靠面积无限爆兵）。
+    private static func provinceDensityFactor(_ r: JS, provinceId: String, population: Double, medianPop: Double) -> Double {
+        let popRatio = population / max(1.0, medianPop)
+        var factor = max(0.55, min(1.28, 0.72 + popRatio * 0.28))
+        if !r.terrainContext.isNull && !r.terrainContext.provinces.isNull {
+            let land = r.terrainContext.provinces[provinceId]
+            if !land.isNull {
+                let ratios = land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
+                let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
+                let harsh = (main == 1 || main == 2 || main == 10 || main == 11)
+                if harsh && popRatio < 1.1 {
+                    factor *= (main == 11 ? 0.58 : 0.68)
+                } else if land.mountain.isTruthy && popRatio < 0.85 {
+                    factor *= 0.82
+                }
+            }
+        }
+        return max(0.35, min(1.32, factor))
+    }
+    /// 核算某国常备军团编制上限（App 模式以工业指数、人口密度与动员法案取代纯领土面积，彻底避免俄/苏西伯利亚面积碾压）。
+    public static func maxArmiesCap(_ r: JS, nationId id: String) -> Int {
+        let land = r.world.provinces.asArray.filter { $0.controller.optionalString == id && $0.legalOwner.optionalString == id }
+        guard !land.isEmpty else { return 0 }
+        let app = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
+        if !app {
+            return max(1, Int((Double(land.count) * f(2.0 / 3.0)).rounded(.down)))
+        }
+        // 若历史剧本显式给出该国军团编制上限，按动员法弹性缩放后直接采用
+        if !r.regimes.historicalPower.isNull, let explicitCap = r.regimes.historicalPower[id].maxArmies.optionalNumber, explicitCap > 0 {
+            let mobMult = NuclearWarfare.mobilization(r, nationId: id).milProdMult
+            return max(1, Int((explicitCap * mobMult).rounded()))
+        }
+        let med = median(r)
+        var stockById = [String: Double]()
+        for s in r.world.statecraft.provinces.asArray { stockById[s.provinceId.asString] = s.population.asNumber }
+        var effectiveLand = 0.0
+        for p in land {
+            let pid = p.id.asString
+            let pop = stockById[pid] ?? med
+            effectiveLand += provinceDensityFactor(r, provinceId: pid, population: pop, medianPop: med)
+        }
+        // 广土递减收益：超过 14 个等效州后边际增幅折减 55%，确保稠密工业国质量与规模不输广袤荒原大国
+        let dampedLand = effectiveLand <= 14.0 ? effectiveLand : (14.0 + (effectiveLand - 14.0) * 0.45)
+        let indIdx = NuclearWarfare.industryIndex(r, nationId: id)
+        let mpScale = NuclearWarfare.manpowerScale(r, nationId: id)
+        let mobMult = NuclearWarfare.mobilization(r, nationId: id).milProdMult
+        let powerFactor = max(0.45, min(2.40, (0.55 + 0.45 * indIdx) * mpScale * mobMult))
+        let scale = min(1, (80 / Double(max(80, r.world.provinces.length))).squareRoot())
+        return max(1, Int((dampedLand * f(Tuning.current.armiesPerProvince * scale) * powerFactor).rounded(.down)))
+    }
     public static func strength(_ r: JS, _ home: String) -> Int {
-        Muster.legionStrength(r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == home }!.population.asNumber, median: median(r))
+        let med = median(r)
+        let pop = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == home }?.population.asNumber ?? med
+        let base = Muster.legionStrength(pop, median: med)
+        guard UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy else { return base }
+        let prov = r.world.provinces.asArray.first { $0.id.asString == home }
+        let owner = prov?.controller.optionalString ?? ""
+        let indIdx = owner.isEmpty ? 1.0 : NuclearWarfare.industryIndex(r, nationId: owner)
+        let mpScale = owner.isEmpty ? 1.0 : NuclearWarfare.manpowerScale(r, nationId: owner)
+        let density = provinceDensityFactor(r, provinceId: home, population: pop, medianPop: med)
+        let mult = max(0.45, min(2.35, indIdx.squareRoot() * mpScale * (0.65 + 0.35 * density)))
+        return max(500, Int((Double(base) * mult / 100.0).rounded() * 100.0))
     }
     @discardableResult
     public static func create(_ r: JS, nation: String, home: String, kind: String) -> Int {
         let t = r.tactics
         var id: String
         repeat { id = "force-\(t.nextArmyId.asInt)"; t.nextArmyId = JS(t.nextArmyId.asNumber + 1) } while t.forces.has(id)
-        let p = r.world.provinces.asArray.first { $0.id.asString == home }!, cell = homeCells[home]!
+        guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == home }), let cell = homeCells[home] else { return 0 }
         // 天下规则: the world's levy size scales new armies (app rules only).
         let troops = UnitKinds.enabled ? max(1, Int((Double(strength(r, home)) * Regimes.rule(r, "levy")).rounded())) : strength(r, home)
         var unit = Muster.units[(t.nextArmyId.asInt - 2) % Muster.units.count]
-        // App rules: the state's culture decides its arms, unique troops included.
+        // App rules: strict era-locked arms by HistoricalEra & culture!
         if UnitKinds.enabled {
-            let k = Regimes.pickUnit(r, nation, id: id)
+            let era = HistoricalEra.current(r)
+            let culture = r.civilization.isNull ? "" : (r.civilization.nations[nation].cultureId.optionalString ?? "")
+            let k: UnitKinds.Kind
+            if era.isColdWeaponEra {
+                let candidate = Regimes.pickUnit(r, nation, id: id)
+                k = UnitKinds.isAllowed(candidate.key, in: era) ? candidate : UnitKinds.pickForEra(era, culture: culture, id: id)
+            } else {
+                k = UnitKinds.pickForEra(era, culture: culture, id: id)
+            }
             unit = Muster.Unit(key: k.key, name: Regimes.unitName(r, nation, k))
             Regimes.noteExtraUnit(r, army: id, k)
         }
@@ -136,11 +206,13 @@ public enum Armies {
             // one a province, two thirds of them), for armies as numerous as the original's.
             // App worlds raise more: up to three a province at home and 2.2 a province in all (900 in the world).
             let app = UnitKinds.enabled, perHome = app ? Tuning.current.armiesAtHome : 1, globalCap = app ? Tuning.current.armyCap : 500
-            // Large maps (over 80 provinces): fewer armies a province, falling with the square root of the
-            // map's size (240 provinces: 0.58 of the rate), so the world holds about as many columns on the
-            // move as the original's maps do and a day of marching stays affordable.
-            let scale = app ? min(1, (80 / Double(max(80, r.world.provinces.length))).squareRoot()) : 1
-            let cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(app ? Tuning.current.armiesPerProvince * scale : 2.0 / 3.0)).rounded(.down)))
+            let cap: Int
+            if app && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+                cap = maxArmiesCap(r, nationId: id)
+            } else {
+                let scale = app ? min(1, (80 / Double(max(80, r.world.provinces.length))).squareRoot()) : 1
+                cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(app ? Tuning.current.armiesPerProvince * scale : 2.0 / 3.0)).rounded(.down)))
+            }
             var formed = 0, cost = 0
             // Counted once per state and kept current as armies form (the loop used to refilter every army
             // and rebuild every army's position for each province). Same results: a new army is this

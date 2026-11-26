@@ -121,6 +121,8 @@ extension NativeEngine {
             }
             if !r.foundings.isNull, r.foundings.enabled.isTruthy, let chance = Rebellion.provinceChance(r, owner, id) { o.unrest = JS(chance) }
             if let d = Regimes.disasterAt(r, id) { o.disaster = JS(d) }
+            let fallout = NuclearWarfare.falloutMonths(r, provinceId: id)
+            if fallout > 0 { o.fallout = JS(fallout) }
             // 信仰: this province's own, when it differs from its holder's.
             if let f = Regimes.provinceFaith(r, p), f != r.civilization.nations[owner].religionId.optionalString {
                 o.faith = JS(Regimes.creeds[f]?.name ?? f); o.heresy = JS(Regimes.creeds[f]?.heresy == true)
@@ -331,4 +333,81 @@ extension NativeEngine {
             return o
         }).json.utf8)
     }
+
+    // MARK: - v6.0.0 HOI4 核武 / 工业动员 / 叛乱模式指令（供 Service.swift 与 UI 调用）
+
+    /// 读取指定国家的时代兵器、工业产能 IC、战争支持度、制空权、全球紧张度与战略核武态势 JSON。
+    public func nuclearInfo(_ nation: Int) -> Data? {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(nation) else { return nil }
+        let nid = nations[nation].id.asString
+        let status = NuclearWarfare.statusJS(r, nationId: nid)
+        return Data(status.json.utf8)
+    }
+    public func nuclearInfo(nation: Int) -> Data? { nuclearInfo(nation) }
+
+    /// 为指定国家建造一座核反应堆（需解锁核时代、反应堆 < 5 座且国库充裕）。
+    public func buildReactor(_ nation: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(nation) else { return (false, "国家不存在。") }
+        let res = NuclearWarfare.buildReactor(r, nationId: nations[nation].id.asString)
+        if res.ok { afterGlobalOrder() }
+        return (res.ok, res.text)
+    }
+    public func buildReactor(nation: Int) -> (ok: Bool, reason: String) { buildReactor(nation) }
+
+    /// 命指定国家向目标州郡实施战略核打击。
+    public func nuclearStrike(_ nation: Int, province: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(nation) else { return (false, "发起国不存在。") }
+        let res = NuclearWarfare.nuclearStrike(r, attackerId: nations[nation].id.asString, provinceIndex: province)
+        if res.ok { afterGlobalOrder() }
+        return (res.ok, res.text)
+    }
+    public func nuclearStrike(nation: Int, province: Int) -> (ok: Bool, reason: String) { nuclearStrike(nation, province: province) }
+
+    /// 切换指定国家的工业动员法案：`civilian` / `early` / `war_economy` / `total`。
+    public func mobilizeIndustry(_ nation: Int, level: String) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(nation) else { return (false, "国家不存在。") }
+        let res = NuclearWarfare.setMobilization(r, nationId: nations[nation].id.asString, level: level)
+        if res.ok { afterGlobalOrder() }
+        return (res.ok, res.text)
+    }
+    public func mobilizeIndustry(nation: Int, level: String) -> (ok: Bool, reason: String) { mobilizeIndustry(nation, level: level) }
+
+    /// 切换世界叛乱模式：`off`（彻底关闭）/ `historical`（历史克制，保护法理本土）/ `classic`（经典模式）。
+    public func setRebelMode(_ mode: String) -> (ok: Bool, reason: String) {
+        let normalized = mode.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard ["off", "historical", "classic"].contains(normalized) else {
+            return (false, "未知叛乱模式（可选：off / historical / classic）。")
+        }
+        let r = run
+        Regimes.enable(r)
+        if r.regimes.world.isNull { r.regimes.world = JS.object() }
+        r.regimes.world.rebelMode = JS(normalized)
+        r.regimes.world.rebel = JS(normalized == "off" ? 0 : (normalized == "historical" ? 35 : 100))
+        let allowRebels = (normalized != "off")
+        if !r.foundings.isNull {
+            r.foundings.enabled = JS(allowRebels)
+            Vassals.bump(r.foundings)
+        }
+        if !r.nobility.isNull && !r.nobility.settings.isNull {
+            r.nobility.settings.allowFamilyRebellion = JS(allowRebels)
+            r.nobility.settings.allowCivilWar = JS(allowRebels)
+        }
+        if !r.vassalManager.isNull {
+            r.vassalManager.enabled = JS(allowRebels)
+            Vassals.bump(r.vassalManager)
+        }
+        afterGlobalOrder()
+        let label: String
+        switch normalized {
+        case "off":        label = "已彻底关闭全图叛乱与内战。"
+        case "historical": label = "叛乱模式已切换为「历史克制」（本土核心稳固，仅占领地或帝国崩塌时起事）。"
+        default:           label = "叛乱模式已切换为「经典模式」。"
+        }
+        return (true, label)
+    }
+    public func setRebelMode(mode: String) -> (ok: Bool, reason: String) { setRebelMode(mode) }
 }

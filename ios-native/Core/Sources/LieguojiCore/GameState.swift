@@ -128,19 +128,39 @@ public struct GameState: Codable, Equatable, Sendable {
     /// 纪年 (custom): an era name and a shift of the year, display only.
     public var era: String? = nil
     public var yearOffset: Int? = nil
+    /// v6.0.0 全球紧张度、历史时代与核打击摘要字段（HOI4 时代机制）。
+    public var worldTension: Int? = nil
+    public var historicalEra: String? = nil
+    public var lastNukeProvince: Int? = nil
+    public var lastNukeDay: Int? = nil
     public var displayYear: Int { date.year + (yearOffset ?? 0) }
-    public var dateText: String {
+    /// 纯净日期文本（永远只显示时间，绝不混入地图名或剧本标题）。
+    public var pureDateText: String {
         let y = displayYear
         if y <= 0 {
             let bce = y < 0 ? -y : 1
-            if let era, !era.isEmpty { return "\(era)（前\(bce)年）\(date.month)月\(date.day)日" }
             return "公元前\(bce)年\(date.month)月\(date.day)日"
         }
-        if let era, !era.isEmpty {
-            if era.hasSuffix("年") || era.hasSuffix("载") { return "\(era)（\(y)年）\(date.month)月\(date.day)日" }
-            return "\(era)\(y)年\(date.month)月\(date.day)日"
+        return "\(y)年\(date.month)月\(date.day)日"
+    }
+    public var dateText: String {
+        let y = displayYear
+        if let rawEra = era?.trimmingCharacters(in: .whitespacesAndNewlines), !rawEra.isEmpty {
+            let mapTitleTokens = [
+                "二战", "一战", "冷战", "战国", "三国", "盛唐", "宋金", "拿破仑", "日本战国",
+                "欧洲", "亚太", "全球", "世界", "法兰西第一帝国", "风云", "欧陆", "太平洋", "华夏", "列岛"
+            ]
+            let looksLikeMapName = mapTitleTokens.contains(where: { rawEra.contains($0) })
+            if !looksLikeMapName {
+                if y <= 0 {
+                    let bce = y < 0 ? -y : 1
+                    return "\(rawEra)（前\(bce)年）\(date.month)月\(date.day)日"
+                }
+                if rawEra.hasSuffix("年") || rawEra.hasSuffix("载") { return "\(rawEra)（\(y)年）\(date.month)月\(date.day)日" }
+                return "\(rawEra)\(y)年\(date.month)月\(date.day)日"
+            }
         }
-        return "公元\(y)年\(date.month)月\(date.day)日"
+        return pureDateText
     }
     public var shortDate: String {
         let y = displayYear

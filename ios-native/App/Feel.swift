@@ -184,15 +184,15 @@ struct RemoteSettings: View {
             let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.1fKB/帧", model.remoteFrameKB ?? 0) : ""
             return "已连服务器（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
         }
-        if model.remoteReconnecting { return "正在自动续连九州云服 v10…" }
-        return model.autoRemote ? "正在待命连接九州云服 v10" : "离线单机 · 本机满帧 0ms"
+        if model.remoteReconnecting { return "正在自动续连九州云服 v12…" }
+        return model.autoRemote ? "正在待命连接九州云服 v12" : "离线单机 · 本机满帧 0ms"
     }
     private var statusSubtitle: String {
         if let addr = model.remoteAddress {
-            return "\(addr) · v10 主动推流 + worldId 热续连 + LZ4 压缩，手机零计算负担"
+            return "\(addr) · v12 16Mbps 五路竞速 + worldId 热续连 + LZ4 压缩，手机零计算负担"
         }
         if model.remoteReconnecting { return "世界进度安全托管云端，网络就绪后自动秒连续推" }
-        return model.autoRemote ? "优先直连专属云服或同 Wi-Fi 电脑（UDP 秒发现），断链自动持久重连" : "当前由手机本机满帧直演（0ms 零延迟）；开启九州云服 v10 后可享断链续连与省电挂机"
+        return model.autoRemote ? "默认五路专线竞速（443/8765/8443/局域网/Cloudflare），断链自动持久重连" : "当前由手机本机满帧直演（0ms 零延迟）；开启九州云服 v12 后可享 32× 爽看海与省电挂机"
     }
 
     var body: some View {

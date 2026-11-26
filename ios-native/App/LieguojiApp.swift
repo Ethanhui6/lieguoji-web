@@ -11,10 +11,14 @@ import LieguojiCore
         let segFont = UIFont(name: Theme.fontName, size: 14.5) ?? .systemFont(ofSize: 14, weight: .medium)
         UISegmentedControl.appearance().setTitleTextAttributes([.font: segFont], for: .normal)
         UINavigationBar.appearance().titleTextAttributes = [.font: barFont]
-        // 后台异步预热宣纸 256px 纹理与核心 Phosphor 矢量路径（约 300KB 内存），根除首开详情页顿挫。
+        // 后台异步预热宣纸 256px 纹理、核心 Phosphor 矢量路径与 1:10m 真实历史地理图集（优先热更新包，回退内置包）。
         DispatchQueue.global(qos: .utility).async {
             MemorialPaper.prewarm()
             PhosphorPathCache.prewarmCore()
+            if let atlasURL = HotPackManager.bestAtlasDirectoryURL()
+                ?? Bundle.main.url(forResource: "HistoricalAtlas", withExtension: nil) {
+                HistoricalBasemaps.loadAtlasDirectory(atlasURL)
+            }
         }
     }
     var body: some Scene { WindowGroup { RootView().font(Theme.body).preferredColorScheme(.light).environment(\.colorScheme, .light) } }
@@ -198,7 +202,9 @@ struct RootView: View {
             if model.phase == .playing { Task { await model.handleAppForeground() } }
         }
         .task { GameFeel.shared.start() }
-        // 启动自动检测云端版本、免换包 28MB+ 游戏内热更资源清单、续签账号会话与腾讯云专属服。
+        // 启动即刻并行预热 5 路推流线路测速（443 / 8765 / 8443 / 局域网 / Cloudflare），进局零等待秒连最快线路。
+        .task { model.prewarmCloudRoutes() }
+        // 启动自动检测云端版本、免换包 228MB+ 真实 GIS 典藏热更清单、续签账号会话与腾讯云专属服。
         .task {
             let applied = await platform.bootstrap(manual: false)
             if applied {
@@ -618,6 +624,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("6.0.0", [
+            "【满血计算服 v12（16 Mbps + 5 路专线竞速）× 进游零配置秒连 × 32× 爽看海】解锁服务器出向限速至 16 Mbps + 128KB 缓冲 + Linux TCP_QUICKACK + 动态 3 帧滑动窗口；内置 5 路推流专线（443 运营商防限速专线 / 8765 原生主线 / 8443 容灾专线 / 局域网毫秒直连 / Cloudflare 全球边缘），启动即自动全线测速、进局零配置秒连，点顶栏延迟胶囊即可一键测速切换或秒连；新增 32× 爽看海（每秒推进整年）且军队行军提速 1.42×、围城与决战更利落。",
+            "【真实 1:10m Natural Earth 地理底图 × 228MB 真实 GIS 典藏热更包 v5】彻底告别简陋示意地形：内置离线烘焙真实海岸线与 45 纪元历史疆界（3000 BCE – 2010 CE）及全球 7,342 城双语地理志，配合 228.54 MB 免换包流式磁盘分模块热更引擎（支持断点续传、Range 4 路并发与多镜像满速下载）。",
+            "【HOI4 时代军制与战略核威慑 × 叛乱三档全局直控】按先秦/中古/火器/一战/二战/现代严格锁时代兵种与武器制式，彻底杜绝穿越混编；新增工业产能 IC、战争支持度、制空权、四档动员法案、核反应堆建造与战略核打击（伴随全图核爆白闪与辐射区）；新世界、历史剧本与局中世界编辑均支持随时切换「关闭叛乱 / 历史拟真 / 经典乱世」。"
+        ]),
         ("5.8.0", [
             "【切后台秒级无感重连 × 告别 12 秒僵尸连接卡死】全量接入 `UIApplication` 四大生命周期通知与 1.2 秒极速探活（`fastProbeRTT`），切回前台若检测到底层套接字已被 iOS 回收立即 0ms 销毁并直走 `resumeWorld` 零上传秒连；同时大幅降低二级详情页后台刷新频次（0.5s → 1.85s）并保留操作点击瞬时刷新，二级菜单滑动与点选彻底丝滑。",
             "【极致流畅计算服 v11 × 差量疆域帧 × 弱网自适应推流】升级至 `lieguoji-server/v11`：新增 65%–80% 省流疆域差量帧（`ownersDelta`）、事件去重、服务端启动目录预热（跳过 2MB 目录上传）与 Linux TCP 防缓冲膨胀调优（64KB 缓冲 + 低延迟保活），配合弱网（RTT > 300ms）自适应推流节拍与 4 错容忍心跳，4G/弱网下依然稳定顺滑。",

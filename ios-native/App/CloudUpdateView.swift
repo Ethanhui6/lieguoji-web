@@ -189,23 +189,63 @@ struct HotUpdateSheet: View {
                                 .padding(.horizontal, Theme.Layout.pageInset)
                         }
 
-                        SectionLabel("本次包含典藏模块（\(m.modules.count)）")
+                        HStack {
+                            SectionLabel("本次包含典藏模块（\(m.modules.count)）", inset: false)
+                                .monospacedDigit()
+                            Spacer()
+                            if !hotPack.updating && m.modules.count > 1 && hotPack.selectedModuleIds.count < m.modules.count {
+                                Button("全选模块") {
+                                    GameFeel.shared.tap()
+                                    hotPack.selectAllModules()
+                                }
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.seal)
+                            }
+                        }
+                        .padding(.horizontal, Theme.Layout.sectionInset)
                         Group2 {
                             ForEach(Array(m.modules.enumerated()), id: \.element.id) { idx, mod in
                                 if idx > 0 { Divider2() }
-                                HStack(alignment: .center, spacing: 10) {
-                                    Rectangle()
-                                        .fill(Theme.seal.opacity(0.65))
-                                        .frame(width: 2.2, height: 28)
-                                    VStack(alignment: .leading, spacing: 2.5) {
-                                        Text(mod.name).font(Theme.serif(15)).foregroundStyle(Theme.ink)
-                                        Text(mod.detail).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
+                                let checked = hotPack.isModuleSelected(mod.id)
+                                Button {
+                                    guard !hotPack.updating else { return }
+                                    GameFeel.shared.tap()
+                                    hotPack.toggleModule(mod.id)
+                                } label: {
+                                    HStack(alignment: .center, spacing: 10) {
+                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                            .fill(checked ? Theme.seal : Color.clear)
+                                            .frame(width: 18, height: 18)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                                    .stroke(checked ? Theme.seal : Theme.ink2.opacity(0.45), lineWidth: 1.2)
+                                            )
+                                            .overlay {
+                                                if checked {
+                                                    PhosphorIcon(glyph: .check, size: 10, weight: .fill)
+                                                        .foregroundStyle(Theme.paperLight)
+                                                }
+                                            }
+                                        VStack(alignment: .leading, spacing: 2.5) {
+                                            Text(mod.name)
+                                                .font(Theme.serif(15))
+                                                .foregroundStyle(checked ? Theme.ink : Theme.ink2)
+                                                .lineLimit(1)
+                                                .minimumScaleFactor(0.82)
+                                            Text(mod.detail)
+                                                .font(Theme.caption)
+                                                .foregroundStyle(Theme.ink2)
+                                                .lineLimit(2)
+                                        }
+                                        Spacer(minLength: 8)
+                                        EditorialValueText(mod.sizeText, size: 14.5, color: checked ? Theme.ink : Theme.ink2)
                                     }
-                                    Spacer(minLength: 8)
-                                    EditorialValueText(mod.sizeText, size: 14.5, color: Theme.ink)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 10)
+                                    .contentShape(Rectangle())
                                 }
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 10)
+                                .buttonStyle(.plain)
+                                .disabled(hotPack.updating)
                             }
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
@@ -229,14 +269,16 @@ struct HotUpdateSheet: View {
 
                     VStack(spacing: 10) {
                         if hotPack.hasPendingUpdate {
+                            let targetBytes = hotPack.selectedPendingBytes > 0 ? hotPack.selectedPendingBytes : hotPack.pendingBytes
+                            let noSelection = !hotPack.selectedModuleIds.isEmpty && hotPack.selectedPendingFiles.isEmpty
                             SealButton(
                                 title: hotPack.updating
                                     ? (!speedText.isEmpty
                                        ? "满速更新中（\(Int(hotPack.progress * 100))% · \(speedText)）"
                                        : "正在测速并下载（\(Int(hotPack.progress * 100))%）…")
-                                    : "立即满速热更新（\(HotPackManager.formatBytes(hotPack.pendingBytes))）",
+                                    : (noSelection ? "请至少勾选 1 个待同步模块" : "立即满速热更新（\(HotPackManager.formatBytes(targetBytes))）"),
                                 busy: hotPack.updating,
-                                disabled: hotPack.updating
+                                disabled: hotPack.updating || noSelection
                             ) {
                                 hotPack.startHotUpdate(onApplied: onApplied)
                             }

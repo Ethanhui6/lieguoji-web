@@ -278,7 +278,7 @@ public final class EngineService {
             resetSlimStaticCache()
             return Reply(ok: true, reason: "ok")
         case "enableMux":
-            return Reply(ok: true, reason: "mux-v6")
+            return Reply(ok: true, reason: "mux-v12")
         case "pullLatest":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
             let days = max(1, min(60, optInt("days") ?? 3))
@@ -494,6 +494,52 @@ public final class EngineService {
         case "startGoldenAge": return command(engine?.startGoldenAge(int("n")))
         case "hireMercenary": return command(engine?.hireMercenary(int("n"), mercId: str("merc")))
         case "dispatchExpedition": return command(engine?.dispatchExpedition(int("n"), siteId: str("site")))
+        case "nuclearInfo":
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
+            let idx = int("n")
+            let nations = e.run.world.nations.asArray
+            guard nations.indices.contains(idx) else { return Reply(ok: false, reason: "目标国家不存在。") }
+            return data(Data(NuclearWarfare.statusJS(e.run, nationId: nations[idx].id.asString).json.utf8))
+        case "buildReactor":
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
+            let idx = int("n")
+            let nations = e.run.world.nations.asArray
+            guard nations.indices.contains(idx) else { return Reply(ok: false, reason: "目标国家不存在。") }
+            let res = NuclearWarfare.buildReactor(e.run, nationId: nations[idx].id.asString)
+            return command((ok: res.ok, reason: res.text))
+        case "nuclearStrike":
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
+            let idx = optInt("attacker") ?? int("n")
+            let prov = int("province")
+            let nations = e.run.world.nations.asArray
+            guard nations.indices.contains(idx) else { return Reply(ok: false, reason: "发起国不存在。") }
+            let res = NuclearWarfare.nuclearStrike(e.run, attackerId: nations[idx].id.asString, provinceIndex: prov)
+            if res.ok { lastOwners = [] }
+            return command((ok: res.ok, reason: res.text))
+        case "mobilizeIndustry":
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
+            let idx = int("n")
+            let nations = e.run.world.nations.asArray
+            guard nations.indices.contains(idx) else { return Reply(ok: false, reason: "目标国家不存在。") }
+            let rawLevel = str("level").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let normLevel: String = (rawLevel == "war" || rawLevel == "wareconomy") ? "war_economy" : rawLevel
+            let res = NuclearWarfare.setMobilization(e.run, nationId: nations[idx].id.asString, level: normLevel)
+            return command((ok: res.ok, reason: res.text))
+        case "setRebelMode":
+            return command(engine?.setRebelMode(str("mode")))
+        case "eraMilitaryInfo":
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
+            let era = EraMilitarySystem.currentEra(e.run)
+            let summary = EraMilitarySystem.eraSummaryJS(e.run)
+            let unitRows = EraMilitarySystem.eraUnits(for: era).map { k -> JS in
+                let u = JS.object()
+                u.key = JS(k.key)
+                u.name = JS(k.name)
+                u.note = JS(k.note)
+                return u
+            }
+            summary.allowedUnits = .array(unitRows)
+            return data(Data(summary.json.utf8))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

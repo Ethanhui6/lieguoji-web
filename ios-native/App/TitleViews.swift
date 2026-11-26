@@ -185,6 +185,10 @@ struct TitleView: View {
     @ObservedObject private var cloud = CloudConfig.shared
     @ObservedObject private var platform = OnlinePlatform.shared
     @ObservedObject private var hotPack = HotPackManager.shared
+    @AppStorage("title.dismissedNoticeSig") private var dismissedNoticeSig = ""
+    private var currentNoticeSig: String {
+        "\(AppVersion.text)|v\(cloud.version)|\(cloud.notice ?? "")"
+    }
     var body: some View {
         ZStack {
             // Ink at the top, paper at the bottom: the title and the actions read over any world.
@@ -255,21 +259,43 @@ struct TitleView: View {
                 Spacer()
                 VStack(spacing: 12) {
                     HotpatchSyncBanner(platform: platform, hotPack: hotPack)
-                    if let notice = cloud.notice {
-                        Button {
-                            GameFeel.shared.tap()
-                            hubTab = "notices"
-                            hubOpen = true
-                        } label: {
-                            HStack(spacing: 6) {
-                                InkIcon(glyph: .edict, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
-                                Text(notice).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(2)
-                                PhosphorIcon(glyph: .chevronRight, size: 10, weight: .light).foregroundStyle(Theme.ink2)
+                    if let notice = cloud.notice, !notice.isEmpty, dismissedNoticeSig != currentNoticeSig {
+                        HStack(spacing: 6) {
+                            Button {
+                                GameFeel.shared.tap()
+                                withAnimation(Motion.panel) {
+                                    dismissedNoticeSig = currentNoticeSig
+                                }
+                                hubTab = "notices"
+                                hubOpen = true
+                            } label: {
+                                HStack(spacing: 6) {
+                                    InkIcon(glyph: .edict, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
+                                    Text(notice).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(2)
+                                    PhosphorIcon(glyph: .chevronRight, size: 10, weight: .light).foregroundStyle(Theme.ink2)
+                                }
                             }
-                            .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(Theme.paper2.opacity(0.95), in: Capsule()).overlay(Capsule().stroke(Theme.seal.opacity(0.3)))
+                            .buttonStyle(.plain)
+                            Rectangle()
+                                .fill(Theme.hairline)
+                                .frame(width: 0.75, height: 14)
+                            Button {
+                                GameFeel.shared.tap()
+                                withAnimation(Motion.panel) {
+                                    dismissedNoticeSig = currentNoticeSig
+                                }
+                            } label: {
+                                InkIcon(glyph: .close, size: 10, weight: 1.9)
+                                    .foregroundStyle(Theme.ink2)
+                                    .frame(width: 22, height: 22)
+                                    .contentShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("关闭公告")
                         }
-                        .buttonStyle(PressStyle())
+                        .padding(.leading, 12).padding(.trailing, 7).padding(.vertical, 6)
+                        .background(Theme.paper2.opacity(0.95), in: Capsule()).overlay(Capsule().stroke(Theme.seal.opacity(0.3)))
+                        .transition(.opacity.combined(with: .scale(scale: 0.94)))
                         .rise(shown, 0)
                     }
                     Text("架空世界 · 列国兴衰").font(Theme.body).tracking(6).foregroundStyle(Theme.ink2)
@@ -841,6 +867,9 @@ struct NewWorldSheet: View {
                 choice("war", "群雄混战", "flag.2.crossed", "开局即四面开战", selection: $options.relations)
             }
             .padding(.horizontal, Theme.Layout.pageInset)
+            SectionLabel("叛乱设置")
+            RebelModeSelector(selection: $options.rebelMode, compact: false)
+                .padding(.horizontal, Theme.Layout.pageInset)
             SectionLabel("命名体系")
             HStack(spacing: 10) {
                 choice("historical-names", "历史真名", "book.closed", "取自史书的国名人名", selection: $options.naming)

@@ -50,15 +50,16 @@ public enum ReplayEngine {
         return d
     }
 
-    /// 格式化当前日期文本（兼容自定义纪年）。
+    /// 格式化当前日期文本（永远只返回纯净历史纪年，绝不混入地图标题，且公元前无错位）。
     private static func dateLabel(_ r: JS) -> (year: Int, text: String) {
         let d = r.life.currentDate
         let offset = (!r.regimes.isNull && !r.regimes.calendar.isNull) ? (r.regimes.calendar.offset.optionalNumber.map(Int.init) ?? 0) : 0
-        let era = (!r.regimes.isNull && !r.regimes.calendar.isNull) ? (r.regimes.calendar.era.optionalString ?? "") : ""
         let y = d.year.asInt + offset
-        let prefix = era.isEmpty ? "公元" : era
-        let yearText = y > 0 ? "\(prefix)\(y)年" : "\(prefix)前\(1 - y)年"
-        return (y, "\(yearText)\(d.month.asInt)月")
+        if y <= 0 {
+            let bce = y < 0 ? -y : 1
+            return (y, "公元前\(bce)年\(d.month.asInt)月")
+        }
+        return (y, "\(y)年\(d.month.asInt)月")
     }
 
     /// 在开局或每日/每月推进时按需捕获一帧山河快照。`force: true` 用于开局首帧。

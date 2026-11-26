@@ -105,21 +105,27 @@ private struct HistoricalScenarioThumb: View {
     }
 }
 
-/// 历史地域过滤选项（全部 / 中国 / 欧洲 / 东亚日本 / 世界）。
+/// 历史地域过滤选项（全部 / 华夏精图 / 中国 / 欧洲 / 东亚日本 / 日本列岛 / 地中海 / 世界）。
 private enum AtlasRegionFilter: String, CaseIterable, Identifiable {
     case all = "all"
+    case huaxia = "huaxia"
     case china = "china"
     case europe = "europe"
     case eastAsiaJapan = "east_asia_japan"
+    case japanDetail = "japan_detail"
+    case mediterranean = "mediterranean"
     case world = "world"
 
     var id: String { rawValue }
     var title: String {
         switch self {
         case .all: return "全部"
+        case .huaxia: return "华夏精图"
         case .china: return "中国"
         case .europe: return "欧洲"
         case .eastAsiaJapan: return "东亚日本"
+        case .japanDetail: return "日本列岛"
+        case .mediterranean: return "地中海"
         case .world: return "世界"
         }
     }
@@ -127,9 +133,12 @@ private enum AtlasRegionFilter: String, CaseIterable, Identifiable {
     func matches(_ region: HistoricalRegion) -> Bool {
         switch self {
         case .all: return true
+        case .huaxia: return region == .huaxia
         case .china: return region == .china
         case .europe: return region == .europe
         case .eastAsiaJapan: return region == .eastAsiaJapan
+        case .japanDetail: return region == .japanDetail
+        case .mediterranean: return region == .mediterranean
         case .world: return region == .world
         }
     }
@@ -153,9 +162,12 @@ private func historicalRegionTitle(_ raw: String) -> String {
 
 private func historicalRegionSeal(_ region: HistoricalRegion) -> String {
     switch region {
+    case .huaxia: return "华"
     case .china: return "夏"
     case .europe: return "欧"
     case .eastAsiaJapan: return "东"
+    case .japanDetail: return "和"
+    case .mediterranean: return "海"
     case .world: return "宇"
     case .custom: return "绘"
     }
@@ -170,9 +182,16 @@ struct HistoricalAtlasBrowserView: View {
 
     @State private var filter: AtlasRegionFilter = .all
     @State private var expandedId: String? = nil
+    @State private var rebelMode: String = "historical"
 
     private var filteredScenarios: [HistoricalScenario] {
         HistoricalScenarios.officialScenarios.filter { filter.matches($0.region) }
+    }
+
+    private func scenarioWithRebelMode(_ sc: HistoricalScenario) -> HistoricalScenario {
+        var copy = sc
+        copy.rebelMode = rebelMode
+        return copy
     }
 
     var body: some View {
@@ -188,6 +207,7 @@ struct HistoricalAtlasBrowserView: View {
                             Text(item.title)
                                 .font(Theme.label)
                                 .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                .lineLimit(1)
                                 .padding(.horizontal, 13)
                                 .frame(height: 32)
                                 .background(on ? Theme.seal : Theme.wash.opacity(0.6), in: Capsule())
@@ -199,12 +219,39 @@ struct HistoricalAtlasBrowserView: View {
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
 
+            // 开局叛乱规则一键切换条（默认历史拟真，零开局内爆；亦可一键关闭叛乱）
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 6) {
+                    InkIcon(glyph: .edict, size: 13.5, weight: 1.7)
+                        .foregroundStyle(Theme.seal)
+                        .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                    Text("叛乱设置")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+                    Spacer(minLength: 4)
+                    Text(rebelMode == "off" ? "全程无民变分裂" : (rebelMode == "historical" ? "默认拟真 · 杜绝开局内爆" : "原作高发叛乱"))
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                RebelModeSelector(selection: $rebelMode, compact: true)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
+            .padding(.horizontal, Theme.Layout.pageInset)
+
             HStack {
                 SectionLabel("官方真实历史剧本（\(filteredScenarios.count) 套）", inset: false)
+                    .monospacedDigit()
                 Spacer()
                 Text("点击卡片预览列国与君主")
                     .font(Theme.caption)
                     .foregroundStyle(Theme.ink2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
 
@@ -221,12 +268,12 @@ struct HistoricalAtlasBrowserView: View {
                     },
                     onPlay: {
                         GameFeel.shared.tap()
-                        onPlayScenario(sc)
+                        onPlayScenario(scenarioWithRebelMode(sc))
                     },
                     onEdit: onEditScenario.map { edit in
                         {
                             GameFeel.shared.tap()
-                            edit(sc)
+                            edit(scenarioWithRebelMode(sc))
                         }
                     }
                 )
@@ -515,11 +562,14 @@ struct PlayerWorkshopBrowserView: View {
 
     private static let regionPills: [(id: String, title: String)] = [
         ("all", "全部"),
-        ("china", "中国"),
-        ("europe", "欧洲"),
-        ("east_asia_japan", "东亚日本"),
-        ("world", "世界"),
-        ("custom", "自绘"),
+        (HistoricalRegion.huaxia.rawValue, "华夏精图"),
+        (HistoricalRegion.china.rawValue, "中国"),
+        (HistoricalRegion.europe.rawValue, "欧洲"),
+        (HistoricalRegion.eastAsiaJapan.rawValue, "东亚日本"),
+        (HistoricalRegion.japanDetail.rawValue, "日本列岛"),
+        (HistoricalRegion.mediterranean.rawValue, "地中海"),
+        (HistoricalRegion.world.rawValue, "世界"),
+        (HistoricalRegion.custom.rawValue, "自绘"),
     ]
 
     private var filteredLocal: [HistoricalScenario] {
@@ -698,9 +748,10 @@ struct PlayerWorkshopBrowserView: View {
                         Text(platform.workshopError ?? "云端工坊暂未检索到对应地图")
                             .font(Theme.body)
                             .foregroundStyle(Theme.ink)
-                        Text("离线状态仍可畅玩全部 8 套官方历史剧本与本机自绘；联网后即可下载或发布全网共享地图。")
+                        Text("离线状态仍可畅玩全部 \(HistoricalScenarios.officialScenarios.count) 套官方历史剧本与本机自绘；联网后即可下载或发布全网共享地图。")
                             .font(Theme.caption)
                             .foregroundStyle(Theme.ink2)
+                            .monospacedDigit()
                             .lineSpacing(3)
                         HStack(spacing: 8) {
                             Button {
@@ -1017,10 +1068,12 @@ struct HistoricalScenarioPublishSheet: View {
         EraPreset(id: "warring", label: "战国 -260", year: -260, eraName: "战国七雄"),
         EraPreset(id: "threekingdoms", label: "三国 208", year: 208, eraName: "建安十三年"),
         EraPreset(id: "tang", label: "盛唐 755", year: 755, eraName: "天宝十四载"),
-        EraPreset(id: "sengoku", label: "战国 1560", year: 1560, eraName: "永禄三年"),
+        EraPreset(id: "songjin", label: "宋金 1142", year: 1142, eraName: "绍兴十二年"),
+        EraPreset(id: "sengoku", label: "日本战国 1560", year: 1560, eraName: "永禄三年"),
         EraPreset(id: "napoleon", label: "拿破仑 1812", year: 1812, eraName: "法兰西第一帝国"),
         EraPreset(id: "ww1", label: "一战 1914", year: 1914, eraName: "欧陆大战"),
         EraPreset(id: "ww2", label: "二战 1939", year: 1939, eraName: "欧陆风云"),
+        EraPreset(id: "coldwar", label: "冷战 1950", year: 1950, eraName: "东西对峙"),
         EraPreset(id: "modern", label: "现代 2026", year: 2026, eraName: "现代格局"),
     ]
 
@@ -1592,18 +1645,20 @@ struct HistoricalScenarioPublishSheet: View {
 
     private func defaultCulture(for region: HistoricalRegion) -> String {
         switch region {
-        case .china: return "chinese"
+        case .huaxia, .china: return "chinese"
         case .europe: return "french"
-        case .eastAsiaJapan: return "japanese"
+        case .eastAsiaJapan, .japanDetail: return "japanese"
+        case .mediterranean: return "roman"
         case .world, .custom: return "chinese"
         }
     }
 
     private func defaultReligion(for region: HistoricalRegion) -> String {
         switch region {
-        case .china: return "confucian"
+        case .huaxia, .china: return "confucian"
         case .europe: return "catholic"
-        case .eastAsiaJapan: return "shinto"
+        case .eastAsiaJapan, .japanDetail: return "shinto"
+        case .mediterranean: return "grecoRoman"
         case .world, .custom: return "chineseFolk"
         }
     }

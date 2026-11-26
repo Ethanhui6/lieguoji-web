@@ -370,6 +370,7 @@ public enum Regimes {
         ArmyAutonomy.noAllySupport = r.regimes.world.noAssist.isTruthy
         Shipyards.month(r)
         WorldDepth.month(r, key: key)
+        NuclearWarfare.month(r, key: key)
     }
 
     /// 国家加成 (自定义), in percent: income, attack, defense, growth (a year), speed. nil when unset.
@@ -396,6 +397,13 @@ public enum Regimes {
         a += leverage(r, attacker).attack
         d += leverage(r, victim).defense
         let appMode = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
+        if appMode {
+            // 动员法案与战争支持度实效（战时经济/总动员提升火力与防御，高战意鼓舞士气）
+            let mobA = NuclearWarfare.mobilization(r, nationId: attacker)
+            let mobD = NuclearWarfare.mobilization(r, nationId: victim)
+            a += mobA.attackBonusPct + (NuclearWarfare.warSupport(r, nationId: attacker) - 50.0) * 0.14
+            d += mobD.defenseBonusPct + (NuclearWarfare.warSupport(r, nationId: victim) - 50.0) * 0.10
+        }
         let ratio: Double
         if appMode {
             // App 模式：玩家自定义攻防加成以真实独立乘法生效，绝不被大兵团数量压制淹没，让小国调优属性真正能以少胜多。
@@ -405,11 +413,19 @@ public enum Regimes {
         } else {
             ratio = max(0.2, (1 + (a + customAtk) / 100) / max(0.2, 1 + (d + customDef) / 100))
         }
-        let scaled: Double = ratio * rule(r, "damage") * Tuning.current.lethality
-        // 兵力悬殊：在 App 模式下用双方自定义质量差修正有效兵力比，避免高强化小国白挨大国的 overwhelm 惩罚，并扩大坚韧生效上限至 6 倍。
+        var scaled: Double = ratio * rule(r, "damage") * Tuning.current.lethality
+        // 兵力悬殊：在 App 模式下叠加科技代差、工业产能质量、制空权与海军舰炮岸轰（+18%），彻底杜绝无工业纯面积碾压。
         let rawOdds: Double = odds(r, attacker, victim)
         if appMode {
-            let qualityScale = max(0.25, min(3.5, (1 + customAtk / 100) / max(0.25, 1 + customDef / 100)))
+            let milA = WorldDepth.techLevel(r, nation: attacker, branch: .military)
+            let milB = WorldDepth.techLevel(r, nation: victim, branch: .military)
+            let techMult = Volley.techGapMultiplier(attackerTech: milA, defenderTech: milB)
+            let indMult = NuclearWarfare.industrialCombatRatio(r, attacker: attacker, victim: victim)
+            let airMult = NuclearWarfare.airSuperiorityBonus(r, attacker: attacker, victim: victim)
+            let shoreMult = Naval.hasShoreBombardment(r, attacker: attacker, against: victim) ? 1.18 : 1.0
+            let strategicMult = techMult * indMult * airMult * shoreMult
+            scaled *= strategicMult
+            let qualityScale = max(0.25, min(4.0, (1 + customAtk / 100) / max(0.25, 1 + customDef / 100) * strategicMult))
             let effOdds = rawOdds * qualityScale
             return scaled * overwhelm(effOdds) / (effOdds >= 6 ? 1 : grit(r, victim))
         }
@@ -605,7 +621,7 @@ public enum Regimes {
     static func coup(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         guard !r.nobility.isNull, !r.nobility.families.isNull, Offices.governance(r, id) < 0.4 else { return }
         if !r.foundings.isNull && !r.foundings.enabled.isTruthy { return }
-        guard rule(r, "rebel") > 0, rule(r, "event") > 0 else { return }
+        guard Rebellion.rebelMode(r) != "off", rule(r, "rebel") > 0, rule(r, "event") > 0 else { return }
         let rid = People.rulingFamilyId(r, id)
         let ruling = rid > 0 ? String(rid) : ""
         guard !ruling.isEmpty, r.nobility.families.has(ruling) else { return }
@@ -987,18 +1003,31 @@ extension NativeEngine {
             r.regimes.navyBootstrapped = JS(true)
             Shipyards.expandNavies(r)
         }
-        // Once per world: the opening armies take their culture's arms (renamed to match).
+        // Historical naval powers (Royal Navy / IJN / US Navy / Wu & Song fleets) bootstrap once per world.
+        Naval.spawnHistoricalFleets(r)
+        // Once per world: the opening armies take their era-locked culture arms (renamed to match).
         if !r.regimes.isNull && !r.regimes.armsByCulture.isTruthy {
             r.regimes.armsByCulture = JS(true)
+            let era = HistoricalEra.current(r)
             for a in r.world.armies.asArray {
                 let id = a.id.asString, old = UnitKinds.name(r.units[id].optionalString ?? "Infantry")
-                let k = UnitKinds.pick(culture: r.civilization.nations[a.nationId.asString].cultureId.optionalString ?? "", id: id)
+                let culture = r.civilization.nations[a.nationId.asString].cultureId.optionalString ?? ""
+                let k = UnitKinds.pickForEra(era, culture: culture, id: id)
                 r.units[id] = JS(k.key)
                 let name = a.name.asString
                 if name.hasSuffix(old) { a.name = JS(String(name.dropLast(old.count)) + k.name) }
             }
         }
+        // Enforce strict era-locked military units and initialize HOI4 industry/nuclear state on every open/creation.
+        EraMilitarySystem.enforceEraUnits(r)
+        NuclearWarfare.ensureInitialized(r)
         DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString)
+        // Amphibious landing/sea crossing speed boost (+40% when naval tech >= 4).
+        ContactMotion.amphibiousSpeedMultiplier = { index in
+            let ids = DeclarationEngine.nationIds
+            guard ids.indices.contains(index) else { return 1.0 }
+            return Naval.amphibiousSpeedFactor(r, nation: ids[index])
+        }
         // A state's temper, times the world's war frequency (天下规则).
         DeclarationEngine.temper = { id in Regimes.temper(r, id) * Regimes.rule(r, "war") * Tuning.current.warEagerness }
         DeclarationEngine.pact = { a, b in

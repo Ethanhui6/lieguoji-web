@@ -38,6 +38,8 @@ struct ProvinceSheet: View {
     @State private var editDefenseLevel = 1
     @State private var pickingRename = false
     @State private var pickingCapitalRole = false
+    @State private var nukeAttackers: [(nation: Int, nukes: Int)] = []
+    @State private var confirmingNuke = false
 
     private func report(_ e: String?, _ ok: String) {
         flash = e ?? ok
@@ -48,6 +50,42 @@ struct ProvinceSheet: View {
         refreshNonce &+= 1
         info = await model.provinceInfo(province)
         region = await model.regionInfo(province)
+        await refreshNuclearAttackers()
+    }
+
+    /// 核时代查询可向当前州郡实施核打击的敌国/有核大国（非核时代首探即停，零多余开销）。
+    private func refreshNuclearAttackers() async {
+        guard let state = model.state, let map = model.map else {
+            nukeAttackers = []
+            return
+        }
+        let owner = state.owners.indices.contains(province) ? state.owners[province] : -1
+        let enemySet: Set<Int> = (owner >= 0 && state.nations.indices.contains(owner)) ? Set(state.nations[owner].enemies) : []
+        let candidates = state.nations.indices
+            .filter { idx in
+                idx != owner && state.nations[idx].alive && idx < map.meta.nations.count
+            }
+            .sorted { a, b in
+                let ea = enemySet.contains(a) ? 1 : 0
+                let eb = enemySet.contains(b) ? 1 : 0
+                if ea != eb { return ea > eb }
+                let pa = state.nations[a].troops + state.nations[a].provinces * 600
+                let pb = state.nations[b].troops + state.nations[b].provinces * 600
+                return pa > pb
+            }
+            .prefix(6)
+
+        var found: [(nation: Int, nukes: Int)] = []
+        for cand in candidates {
+            let raw = await model.nuclearInfo(nation: cand)
+            guard let decoded = NuclearStrategicInfo.decode(from: raw) else { continue }
+            if !decoded.nuclearUnlocked { break }
+            if decoded.nukes > 0 {
+                found.append((nation: cand, nukes: decoded.nukes))
+                if found.count >= 4 { break }
+            }
+        }
+        nukeAttackers = found
     }
 
     var body: some View {
@@ -144,6 +182,7 @@ struct ProvinceSheet: View {
                 if owner >= 0 { model.prefetchNationInfo(owner) }
                 info = await model.provinceInfo(province)
                 if region == nil { region = await model.regionInfo(province) }
+                await refreshNuclearAttackers()
             }
             .confirmationDialog("更改本\(lex.adminUnit)特产", isPresented: $pickingGood, titleVisibility: .visible) {
                 ForEach(Array(Trade.goods.enumerated()), id: \.offset) { i, n in
@@ -185,6 +224,21 @@ struct ProvinceSheet: View {
                     }
                 }
                 Button("取消", role: .cancel) {}
+            }
+            .confirmationDialog("实施战略核打击", isPresented: $confirmingNuke, titleVisibility: .visible) {
+                ForEach(nukeAttackers, id: \.nation) { item in
+                    let attackerName = map.meta.nations.indices.contains(item.nation) ? map.meta.nations[item.nation].name : "有核国家"
+                    Button("由\(attackerName)向\(p.name)核打击（余 \(item.nukes) 枚）", role: .destructive) {
+                        Task {
+                            let err = await model.nuclearStrike(attacker: item.nation, province: province)
+                            report(err, "战略核打击已命中「\(p.name)」！")
+                            await reloadNow()
+                        }
+                    }
+                }
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("将消耗发起国 1 枚战略核弹打击「\(p.name)」，重创守军与城防、遗留核辐射并推升世界紧张度。")
             }
             .sheet(isPresented: $renamingRegion) {
                 VStack(alignment: .leading, spacing: 14) {
@@ -327,7 +381,7 @@ struct ProvinceSheet: View {
                 icon: .fortress,
                 label: "城防",
                 value: "\(defLv) 级",
-                sub: siege != nil ? "围城 \(Int((siege!.progress * 100).rounded()))%" : (armiesCount > 0 ? "驻军 \(armiesCount) 支" : "四境安宁"),
+                sub: siege.map { "围城 \(Int(($0.progress * 100).rounded()))%" } ?? (armiesCount > 0 ? "驻军 \(armiesCount) 支" : "四境安宁"),
                 fraction: min(1, Double(defLv) / 10.0),
                 warn: siege != nil
             ) {
@@ -466,6 +520,39 @@ struct ProvinceSheet: View {
             .padding(.horizontal, Theme.Layout.pageInset)
         }
 
+        if !nukeAttackers.isEmpty {
+            let totalWarheads = nukeAttackers.reduce(0) { $0 + $1.nukes }
+            Group2 {
+                HStack(spacing: 10) {
+                    InkIcon(glyph: .fire, size: 16, weight: 1.85, filled: true)
+                        .foregroundStyle(Theme.seal)
+                        .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("战略核威慑就绪").font(Theme.body).foregroundStyle(Theme.seal).lineLimit(1)
+                        Text("\(nukeAttackers.count) 个外国拥核大国备弹 \(totalWarheads) 枚，可直击本州")
+                            .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                    Spacer(minLength: 6)
+                    Button {
+                        GameFeel.shared.tap()
+                        confirmingNuke = true
+                    } label: {
+                        Text("实施战略核打击")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.paperLight)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .padding(.horizontal, 11)
+                            .frame(height: 30)
+                            .background(Theme.seal, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+                .padding(.horizontal, 14).padding(.vertical, 10)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        }
+
         // 本境驻军（前置展示，点击直接进入军团详情）
         if !armies.isEmpty {
             SectionLabel("本\(lex.adminUnit)驻军（\(armies.count) 军）")
@@ -546,9 +633,18 @@ struct ProvinceSheet: View {
         if let port {
             SectionLabel("海港控制")
             Group2 {
-                Row(label: "海港", value: port.occupier == port.owner ? "本国控制" : "被占领"); Divider2()
-                if port.occupier >= 0, port.occupier < map.meta.nations.count { Row(label: "港口控制", value: map.meta.nations[port.occupier].name); Divider2() }
-                Row(label: "控制度", value: "\(Int(port.value))")
+                AlignedMetaRow(
+                    label: "海港状态",
+                    value: port.occupier == port.owner ? "本国控制" : "被占领",
+                    icon: .anchor,
+                    valueColor: port.occupier == port.owner ? Theme.ink : Theme.seal
+                )
+                Divider2()
+                if port.occupier >= 0, port.occupier < map.meta.nations.count {
+                    AlignedMetaRow(label: "港口控制", value: map.meta.nations[port.occupier].name, icon: .nation)
+                    Divider2()
+                }
+                AlignedMetaRow(label: "控制度", value: "\(Int(port.value))", icon: .command)
             }
             .padding(.horizontal, Theme.Layout.pageInset)
         }
@@ -601,16 +697,16 @@ struct ProvinceSheet: View {
                         Text("进攻").font(Theme.label).foregroundStyle(Theme.ink2).frame(width: 62, alignment: .trailing)
                         Text("防守").font(Theme.label).foregroundStyle(Theme.ink2).frame(width: 62, alignment: .trailing)
                     }
-                    .padding(.horizontal, 16).padding(.top, 11).padding(.bottom, 5)
+                    .padding(.horizontal, 14).padding(.top, 11).padding(.bottom, 5)
                     Divider2()
                     ForEach(arms.indices, id: \.self) { i in
                         HStack {
-                            Text(arms[i].unit).font(Theme.body).foregroundStyle(Theme.ink)
+                            Text(arms[i].unit).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
                             Spacer()
                             Self.percent(arms[i].attack).frame(width: 62, alignment: .trailing)
                             Self.percent(arms[i].defense).frame(width: 62, alignment: .trailing)
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
                         if i < arms.count - 1 { Divider2() }
                     }
                 }
@@ -774,7 +870,7 @@ struct ProvinceSheet: View {
                 label: "实控国",
                 value: nation?.name ?? "无主之地",
                 icon: .command,
-                valueColor: (info != nil && info!.owner != info!.controller) ? Theme.seal : Theme.ink,
+                valueColor: (info.map { $0.owner != $0.controller } ?? false) ? Theme.seal : Theme.ink,
                 trailingGlyph: .chevronRight,
                 action: nation != nil ? { openNation(owner) } : nil
             )
@@ -886,6 +982,45 @@ struct ProvinceSheet: View {
             }
         }
         .padding(.horizontal, Theme.Layout.pageInset)
+
+        if !nukeAttackers.isEmpty {
+            let totalWarheads = nukeAttackers.reduce(0) { $0 + $1.nukes }
+            SectionLabel("战略核威慑 · 战术打击")
+            Group2 {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        InkIcon(glyph: .fire, size: 15, weight: 1.85, filled: true)
+                            .foregroundStyle(Theme.seal)
+                            .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                        Text("可用核打击方：\(nukeAttackers.count) 国（共 \(totalWarheads) 枚核弹）")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink2)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Spacer(minLength: 4)
+                    }
+                    Button {
+                        GameFeel.shared.tap()
+                        confirmingNuke = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            InkIcon(glyph: .fire, size: 14, weight: 1.85, filled: true)
+                            Text("实施战略核打击")
+                                .font(Theme.label)
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(Theme.paperLight)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        }
     }
 
     private func terrainCell(label: String, value: String, tone: Color) -> some View {

@@ -6,6 +6,30 @@ import UIKit
 #endif
 import LieguojiCore
 
+/// 5 路云端/局域网推流线路元数据（运营商 443 防限速专线 / 8765 原生主线 / 8443 容灾专线 / 局域网毫秒直连 / Cloudflare 全球边缘）。
+struct ComputeRouteInfo: Identifiable, Equatable, Sendable {
+    let id: String
+    let name: String
+    let address: String
+    let tag: String
+    var rttMs: Int?
+    var active: Bool
+
+    static let builtInRoutes: [ComputeRouteInfo] = [
+        ComputeRouteInfo(id: "tencent-443", name: "九州云服 · 443 运营商优先专线", address: "111.230.153.235:443", tag: "电信/移动/联通防限速", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "原生二进制 MUX v12", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 · 8443 备用高速专线", address: "111.230.153.235:8443", tag: "双端口容灾专线", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "lan-udp", name: "局域网毫秒直连", address: "lan", tag: "同 Wi-Fi 自动发现", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "cf-relay", name: "Cloudflare 全球边缘推流", address: "relay", tag: "弱网/海外穿透备用", rttMs: nil, active: false),
+    ]
+
+    static let directCloudAddresses: [String] = [
+        "111.230.153.235:443",
+        "111.230.153.235:8765",
+        "111.230.153.235:8443",
+    ]
+}
+
 /// 轻量级系统网络路径监听器（NWPathMonitor）：
 /// 监听 Wi-Fi ↔ 5G 切换、断网恢复或接口变更；当链路重新 `.satisfied` 时即时触发回调（<300ms 秒连云服）。
 final class NetworkPathWatcher: @unchecked Sendable {
@@ -123,7 +147,7 @@ final class StreamFrameBuffer: @unchecked Sendable {
     private var framesReceived: Int = 0
     private var latestDecodedDay: Int = 0
     private var baselineOwners: [Int] = []
-    private let maxBuffered = 3
+    private let maxBuffered = 4
     var onFrameConsumed: (@Sendable (UInt32) -> Void)?
 
     var lastDay: Int {
@@ -366,6 +390,10 @@ actor NativeHost {
     private var remote: EngineLink?
     private(set) var remoteAddress: String?
     private(set) var remoteTransport: String = ""
+    private(set) var activeRouteId: String = ""
+    private(set) var activeDirectAddress: String = ""
+    private var fastestRouteHint: String?
+    private var discoveredLANAddress: String?
     private(set) var lastRTTMs: Int?
     private(set) var serverSupportsStream = false
     private(set) var serverSupportsPush = false
@@ -399,6 +427,8 @@ actor NativeHost {
         current.cancel()
         remote = nil
         remoteAddress = nil
+        activeRouteId = ""
+        activeDirectAddress = ""
         serverSupportsStream = false
         serverSupportsPush = false
         serverSupportsLZ4 = false
@@ -408,6 +438,116 @@ actor NativeHost {
         if !parked {
             lost = true
             onLinkLost?()
+        }
+    }
+
+    func setRouteProbeHints(fastestDirect: String?, lanAddress: String?) {
+        if let fastestDirect, !fastestDirect.isEmpty {
+            fastestRouteHint = fastestDirect
+        }
+        if let lanAddress, !lanAddress.isEmpty {
+            discoveredLANAddress = lanAddress
+        }
+    }
+
+    func cachedLANAddress() -> String? { discoveredLANAddress }
+
+    nonisolated static func routeId(forAddress address: String, transport: String) -> String {
+        let lower = address.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if lower == "111.230.153.235:443" { return "tencent-443" }
+        if lower == "111.230.153.235:8765" { return "tencent-8765" }
+        if lower == "111.230.153.235:8443" { return "tencent-8443" }
+        if lower == "lan" || transport.contains("局域网") { return "lan-udp" }
+        if lower == "relay" || transport.contains("云端") { return "cf-relay" }
+        if lower.hasSuffix(":443") { return "tencent-443" }
+        if lower.hasSuffix(":8443") { return "tencent-8443" }
+        if lower.hasSuffix(":8765") { return "tencent-8765" }
+        return ""
+    }
+
+    /// 轻量级非驱逐直连 TCP 探针（1.4s 硬超时，`ping` 绝不踢掉活跃手机连接），返回真实往返 RTT（毫秒）。
+    nonisolated static func probeDirectTCP(_ address: String, timeout: Double = 1.4) async -> Int? {
+        let clean = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { return nil }
+        var host = clean
+        var port: UInt16 = 8765
+        if let idx = host.lastIndex(of: ":"), let p = UInt16(host[host.index(after: idx)...]) {
+            port = p
+            host = String(host[..<idx])
+        }
+        guard !host.isEmpty else { return nil }
+        let link = RemoteLink(host: host, port: port)
+        let clampedTimeout = max(0.3, timeout)
+        let t0 = Date().timeIntervalSinceReferenceDate
+        let rtt: Int? = await withTaskGroup(of: Int?.self) { group in
+            group.addTask {
+                do {
+                    try await link.start(timeout: clampedTimeout)
+                    let hello = try await link.call("ping", ["v": 6], payload: nil)
+                    guard hello.ok, EngineWire.compatibleGreetings.contains(hello.reason) else { return nil }
+                    return max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
+                } catch {
+                    return nil
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(clampedTimeout * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+        link.cancel()
+        return rtt
+    }
+
+    /// 并行竞速多个直连端口（如 443 / 8765 / 8443）：首个健康节点 <50ms 胜出并立即取消其余探测。
+    nonisolated static func raceDirectAddresses(_ addresses: [String], timeout: Double = 1.5) async -> (address: String, rttMs: Int)? {
+        var unique: [String] = []
+        var seen = Set<String>()
+        for raw in addresses {
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, trimmed.contains(".") || trimmed.contains(":"), !seen.contains(trimmed) else { continue }
+            seen.insert(trimmed)
+            unique.append(trimmed)
+        }
+        guard !unique.isEmpty else { return nil }
+        return await withTaskGroup(of: (String, Int)?.self) { group in
+            for addr in unique {
+                group.addTask {
+                    if let rtt = await Self.probeDirectTCP(addr, timeout: timeout) {
+                        return (addr, rtt)
+                    }
+                    return nil
+                }
+            }
+            for await candidate in group {
+                if let winner = candidate {
+                    group.cancelAll()
+                    return (winner.0, winner.1)
+                }
+            }
+            return nil
+        }
+    }
+
+    /// 轻量探测 Cloudflare 中继线路可用性与往返延迟（1.4s 硬超时）。
+    nonisolated static func probeRelayRoute(roomCode: String, timeout: Double = 1.4) async -> Int? {
+        let clampedTimeout = max(0.3, timeout)
+        let t0 = Date().timeIntervalSinceReferenceDate
+        return await withTaskGroup(of: Int?.self) { group in
+            group.addTask {
+                guard let status = await RelayLink.probeStatus(code: roomCode), status.online else { return nil }
+                return max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(clampedTimeout * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
         }
     }
 
@@ -527,6 +667,7 @@ actor NativeHost {
                 return r
             } catch {
                 remote.cancel(); self.remote = nil; remoteAddress = nil
+                activeRouteId = ""; activeDirectAddress = ""
                 serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
                 streamBuffer.onFrameConsumed = nil
                 streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
@@ -583,7 +724,8 @@ actor NativeHost {
             isDirectTCP = true
             let isPrivate = host.hasPrefix("192.168.") || host.hasPrefix("10.") || host.hasPrefix("172.") || host.hasPrefix("127.") || host.hasSuffix(".local")
             transport = isPrivate ? "局域网直连" : "专属云服"
-            label = isPrivate ? "\(host):\(port)（局域网）" : "\(host):\(port)（专属服）"
+            let portTag = port == 443 ? "443专线" : (port == 8443 ? "8443专线" : "专属服")
+            label = isPrivate ? "\(host):\(port)（局域网）" : "\(host):\(port)（\(portTag)）"
         }
 
         let t0 = Date().timeIntervalSinceReferenceDate
@@ -652,6 +794,8 @@ actor NativeHost {
                 currentWorldId = localMeta.worldId
                 if let sDay = pingMeta.day, sDay > currentKnownDay { currentKnownDay = sDay }
                 remote = link; remoteAddress = label; remoteTransport = finalTransport
+                activeRouteId = Self.routeId(forAddress: text, transport: finalTransport)
+                activeDirectAddress = text
                 rttBox.reset(rtt); lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
                 serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
                 lost = false; parked = false; lastAddress = address
@@ -670,6 +814,8 @@ actor NativeHost {
             }
             if isOpen {
                 remote = link; remoteAddress = label; remoteTransport = finalTransport
+                activeRouteId = Self.routeId(forAddress: text, transport: finalTransport)
+                activeDirectAddress = text
                 rttBox.reset(rtt); lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
                 serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
                 lost = false; parked = false; lastAddress = address
@@ -694,6 +840,8 @@ actor NativeHost {
                 }
                 _ = try? await link.call("enableAppRules", [:], payload: nil)
                 remote = link; remoteAddress = label; remoteTransport = finalTransport
+                activeRouteId = Self.routeId(forAddress: text, transport: finalTransport)
+                activeDirectAddress = text
                 rttBox.reset(rtt); lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
                 serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
                 lost = false; parked = false; lastAddress = address
@@ -825,6 +973,8 @@ actor NativeHost {
         if !localMeta.worldId.isEmpty { currentWorldId = localMeta.worldId }
         currentKnownDay = max(currentKnownDay, service.engine?.run.world.day.asInt ?? startDay)
         remote = link; remoteAddress = label; remoteTransport = finalTransport
+        activeRouteId = Self.routeId(forAddress: text, transport: finalTransport)
+        activeDirectAddress = text
         rttBox.reset(rtt); lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
         serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
         lastAddress = address; lost = false; parked = false
@@ -835,6 +985,7 @@ actor NativeHost {
     func disconnect() async {
         parked = false; lost = false
         lastResumedState = nil
+        activeRouteId = ""; activeDirectAddress = ""
         serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
         rttBox.reset(nil); lastRTTMs = nil
         streamBuffer.onFrameConsumed = nil
@@ -951,7 +1102,24 @@ actor NativeHost {
         return nil
     }
 
-    /// 最优路径秒级重连：专属直连地址 → 局域网 UDP 自动发现 → 云端最新 LAN IP → 云端 WebSocket 推流。
+    /// 构造并去重直连云服候选地址（优先 443 / 8765 / 8443 三端口并行竞速 + 玩家自定专属地址）。
+    private func directRaceCandidates() -> [String] {
+        var list: [String] = []
+        let pinned = Self.savedDirectAddress
+        if let hint = fastestRouteHint, !hint.isEmpty { list.append(hint) }
+        if !pinned.isEmpty { list.append(pinned) }
+        list.append(contentsOf: ComputeRouteInfo.directCloudAddresses)
+        if let last = lastAddress, last.contains(".") || last.contains(":") { list.append(last) }
+        var seen = Set<String>()
+        return list.filter { addr in
+            let clean = addr.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !clean.isEmpty, clean.contains(".") || clean.contains(":"), !seen.contains(clean) else { return false }
+            seen.insert(clean)
+            return true
+        }
+    }
+
+    /// 最优路径秒级重连：并行竞速 111.230.153.235:443 / :8765 / :8443（首个健康端口 <50ms 胜出）→ 局域网 UDP 自动发现 → 云端最新 LAN IP → Cloudflare WebSocket 推流。
     private func reattachBest() async -> String? {
         if let existing = remoteAddress, remote != nil { return existing }
         guard !reattaching else { return nil }
@@ -959,17 +1127,27 @@ actor NativeHost {
         defer { reattaching = false }
 
         let room = Self.activeRoomCode
-        let pinned = Self.savedDirectAddress
-        if !pinned.isEmpty, let label = try? await connect(pinned, timeout: 2.2, reattach: true) { return label }
-        if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.55),
-           let label = try? await connect(lanFound, timeout: 1.4, reattach: true) { return label }
+        let directCandidates = directRaceCandidates()
+        if let winner = await Self.raceDirectAddresses(directCandidates, timeout: 1.5) {
+            fastestRouteHint = winner.address
+            if let label = try? await connect(winner.address, timeout: 2.0, reattach: true) {
+                return label
+            }
+        }
+        for addr in directCandidates where addr != fastestRouteHint {
+            if let label = try? await connect(addr, timeout: 1.6, reattach: true) { return label }
+        }
+        if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.55) {
+            discoveredLANAddress = lanFound
+            if let label = try? await connect(lanFound, timeout: 1.4, reattach: true) { return label }
+        }
         if let status = await RelayLink.probeStatus(code: room), status.online {
             for lanAddr in status.lan {
                 if let label = try? await connect(lanAddr, timeout: 1.3, reattach: true) { return label }
             }
             if let label = try? await connect(room, timeout: 4.0, reattach: true) { return label }
         }
-        if let address = lastAddress, address != pinned, address != room,
+        if let address = lastAddress, !directCandidates.contains(address), address != room,
            let label = try? await connect(address, timeout: 3.0, reattach: true) { return label }
         return nil
     }
@@ -984,6 +1162,7 @@ actor NativeHost {
 
     func fallbackLocal() {
         lost = false; parked = false
+        activeRouteId = ""; activeDirectAddress = ""
         serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
         rttBox.reset(nil); lastRTTMs = nil
         streamBuffer.onFrameConsumed = nil
@@ -1010,8 +1189,8 @@ actor NativeHost {
         return ms
     }
 
-    /// 配置服务器端推流（v11 启用差量疆域 + 滑动窗口背压 + 弱网 RTT > 300ms 自适应节流 + epoch 防乱序）。
-    func configureRemoteStream(playing: Bool, days: Int, intervalMs: Int = 80, resetEpoch: Bool = true) async {
+    /// 配置服务器端推流（v12 支持 16Mbps 满速推流 + 28ms 帧下限 + 动态 3 帧滑动窗口 + 弱网 RTT > 300ms 自适应节流 + epoch 防乱序）。
+    func configureRemoteStream(playing: Bool, days: Int, intervalMs: Int = 68, resetEpoch: Bool = true) async {
         if resetEpoch || !playing {
             streamEpoch &+= 1
             streamBuffer.reset(epoch: streamEpoch)
@@ -1030,14 +1209,14 @@ actor NativeHost {
         _ = await call("streamConfig", [
             "playing": playing,
             "days": max(1, min(32, days)),
-            "intervalMs": max(35, min(900, adaptedIntervalMs)),
+            "intervalMs": max(28, min(900, adaptedIntervalMs)),
             "epoch": Int(streamEpoch),
             "push": serverSupportsPush && playing,
             "window": useWindow
         ])
     }
 
-    /// 自动接入：专属云服务器地址 → 局域网 UDP 10ms 秒发现 → 云端中转 LAN 列表 → 云端 WebSocket 推流。
+    /// 自动接入：并行竞速 443 / 8765 / 8443 云服专线（优先已预热最快线路）→ 局域网 UDP 10ms 秒发现 → 云端中转 LAN 列表 → Cloudflare WebSocket 推流。
     func connectAuto() async -> (label: String, transport: String, rttMs: Int?)? {
         guard !cloudHandingOff else { return nil }
         cloudHandingOff = true
@@ -1047,14 +1226,27 @@ actor NativeHost {
             return nil
         }
         guard remote == nil, service.engine != nil else { return nil }
-        let pinned = Self.savedDirectAddress
-        if !pinned.isEmpty, let label = try? await connect(pinned, timeout: 2.2) {
+        if let hint = fastestRouteHint, !hint.isEmpty, let label = try? await connect(hint, timeout: 1.8) {
             return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
         }
+        let directCandidates = directRaceCandidates()
+        if let winner = await Self.raceDirectAddresses(directCandidates, timeout: 1.5) {
+            fastestRouteHint = winner.address
+            if let label = try? await connect(winner.address, timeout: 2.0) {
+                return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
+            }
+        }
+        for addr in directCandidates where addr != fastestRouteHint {
+            if let label = try? await connect(addr, timeout: 1.6) {
+                return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
+            }
+        }
         let room = Self.activeRoomCode
-        if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.65),
-           let label = try? await connect(lanFound, timeout: 1.5) {
-            return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
+        if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.65) {
+            discoveredLANAddress = lanFound
+            if let label = try? await connect(lanFound, timeout: 1.5) {
+                return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
+            }
         }
         guard let status = await RelayLink.probeStatus(code: room), status.online else { return nil }
         for address in status.lan {
@@ -1333,6 +1525,18 @@ actor NativeHost {
     func editArmy(_ armyId: String, troops: Int?, unit: String?, morale: Double?) async -> (ok: Bool, reason: String, state: Data?) {
         await command("editArmy", ["armyId": armyId, "troops": Self.opt(troops), "unit": Self.opt(unit), "morale": Self.opt(morale)])
     }
+    func nuclearInfo(_ nation: Int) async -> Data? { await call("nuclearInfo", ["n": nation]).data }
+    func buildReactor(_ nation: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("buildReactor", ["n": nation]) }
+    func nuclearStrike(attacker: Int, province: Int) async -> (ok: Bool, reason: String, state: Data?) {
+        await command("nuclearStrike", ["attacker": attacker, "n": attacker, "province": province])
+    }
+    func mobilizeIndustry(_ nation: Int, level: String) async -> (ok: Bool, reason: String, state: Data?) {
+        await command("mobilizeIndustry", ["n": nation, "level": level])
+    }
+    func setRebelMode(_ mode: String) async -> (ok: Bool, reason: String, state: Data?) {
+        await command("setRebelMode", ["mode": mode])
+    }
+    func eraMilitaryInfo(_ nation: Int) async -> Data? { await call("eraMilitaryInfo", ["n": nation]).data }
 }
 
 /// A channel to LieguojiServer: direct full-duplex TCP (LAN / Cloud VPS), persistent WebSocket Push relay, or HTTP/2 fallback.

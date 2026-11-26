@@ -35,10 +35,55 @@ public enum UnitKinds {
         Kind(key: "Hussar", name: "翼骑兵", role: .cavalry, base: "Cavalry", power: 1.4, speed: 1.3, note: "波兰、匈牙利特色：疾驰突击"),
         Kind(key: "Jaguar", name: "美洲豹武士", role: .infantry, base: "Elite", power: 1.3, speed: 1.05, note: "阿兹特克、印加特色：林间猛袭"),
         Kind(key: "Streltsy", name: "射击军", role: .crossbow, base: "Archer", power: 1.15, speed: 0.95, note: "斯拉夫特色：火绳枪兵"),
+        // Gunpowder era (1450..<1860)
+        Kind(key: "LineInfantry", name: "线列步兵", role: .infantry, base: "Infantry", power: 1.25, speed: 1.0, note: "火器时代：燧发枪齐射与刺刀方阵主力"),
+        Kind(key: "Cuirassier", name: "胸甲骑兵", role: .heavy, base: "Cavalry", power: 1.45, speed: 1.25, note: "火器时代：重甲骑兵冲击，克制野战炮兵与线列侧翼"),
+        Kind(key: "FieldArtillery", name: "野战炮兵", role: .crossbow, base: "Archer", power: 1.50, speed: 0.90, note: "火器时代：拿破仑式野战炮群，远程霰弹与破城压制"),
+        Kind(key: "MatchlockAshigaru", name: "铁炮足轻", role: .archer, base: "Archer", power: 1.30, speed: 0.98, note: "东亚火器特色：三段击火绳枪阵，压制冲锋骑兵"),
+        // WWI industrial trench era (1860..<1930)
+        Kind(key: "TrenchInfantry", name: "堑壕步兵师", role: .shield, base: "Shield", power: 1.40, speed: 0.98, note: "一战工业军：栓动步枪与重机枪阵地，守御稳固"),
+        Kind(key: "HeavyArtillery", name: "重炮旅", role: .crossbow, base: "Archer", power: 1.65, speed: 0.88, note: "一战工业军：大口径榴弹重炮，轰碎坚固堑壕与要塞"),
+        Kind(key: "EarlyTank", name: "早期坦克营", role: .heavy, base: "Cavalry", power: 1.70, speed: 1.10, note: "一战工业军：装甲履带突破战车，碾压步兵堑壕"),
+        Kind(key: "Stormtrooper", name: "突击步兵营", role: .elite, base: "Elite", power: 1.60, speed: 1.15, note: "一战工业军：渗透奇袭精锐，瓦解防线与炮兵阵地"),
+        // WWII mechanized era (1930..<1955)
+        Kind(key: "MechInfantry", name: "机械化步兵师", role: .infantry, base: "Infantry", power: 1.75, speed: 1.25, note: "二战机械化：半履带步战协同，全域机动主力"),
+        Kind(key: "ArmoredDivision", name: "重装装甲师", role: .heavy, base: "Cavalry", power: 2.10, speed: 1.35, note: "二战机械化：中重型坦克集群，闪电战钢铁突击矛头"),
+        Kind(key: "Airborne", name: "空降突击师", role: .elite, base: "Elite", power: 1.85, speed: 1.45, note: "二战机械化：高速垂直机降奇袭，穿插敌后要害"),
+        Kind(key: "MarineDiv", name: "海军陆战师", role: .shield, base: "Shield", power: 1.80, speed: 1.15, note: "二战与现代两栖：专精跨海抢滩与要塞攻坚"),
+        // Cold War & Modern combined-arms era (>= 1955)
+        Kind(key: "CombinedArms", name: "合成装甲旅", role: .heavy, base: "Cavalry", power: 2.25, speed: 1.40, note: "现代合成军：主战坦克与信息化步战车合成主力"),
+        Kind(key: "AirAssault", name: "空中突击旅", role: .elite, base: "Elite", power: 2.05, speed: 1.55, note: "现代合成军：武装直升机与高机动空中突击群"),
+        Kind(key: "RocketArtillery", name: "战略火箭炮旅", role: .crossbow, base: "Archer", power: 2.20, speed: 1.15, note: "现代合成军：精确制导远程火箭炮与战术导弹打击"),
     ]
     public static let byKey: [String: Kind] = Dictionary(uniqueKeysWithValues: kinds.map { ($0.key, $0) })
     public static let original: Set<String> = ["Infantry", "Archer", "Shield", "Cavalry", "Elite"]
+    public static let ancientKeys: Set<String> = [
+        "Infantry", "Archer", "Shield", "Cavalry", "Elite", "Spear", "Crossbow", "HeavyCavalry", "HorseArcher",
+        "Samurai", "Legion", "Elephant", "Longbow", "Mamluk", "Keshig", "Repeater", "Berserker", "Phalanx",
+        "Cataphract", "Knight", "Landsknecht", "Hussar", "Jaguar", "Streltsy",
+    ]
+    public static let gunpowderKeys: Set<String> = ["LineInfantry", "Cuirassier", "FieldArtillery", "MatchlockAshigaru"]
+    public static let ww1Keys: Set<String> = ["TrenchInfantry", "HeavyArtillery", "EarlyTank", "Stormtrooper"]
+    public static let ww2Keys: Set<String> = ["MechInfantry", "ArmoredDivision", "Airborne", "MarineDiv"]
+    public static let modernKeys: Set<String> = ["CombinedArms", "AirAssault", "RocketArtillery", "MarineDiv"]
     public static func name(_ key: String) -> String { byKey[key]?.name ?? key }
+
+    /// 某历史时代严格允许使用的全部兵种键集合。
+    public static func allowedKeys(for era: HistoricalEra) -> Set<String> {
+        switch era {
+        case .antiquity: return ancientKeys.subtracting(["Streltsy"])
+        case .medieval:  return ancientKeys
+        case .gunpowder: return gunpowderKeys
+        case .ww1:       return ww1Keys
+        case .ww2:       return ww2Keys
+        case .modern:    return modernKeys
+        }
+    }
+
+    /// 检查某兵种是否属于指定时代的合法编制。
+    public static func isAllowed(_ key: String, in era: HistoricalEra) -> Bool {
+        allowedKeys(for: era).contains(key)
+    }
 
     /// Each culture's armies: weights over the common kinds, and its unique troop.
     static let unique: [String: String] = [
@@ -56,18 +101,87 @@ public enum UnitKinds {
         if let u = unique[culture] { out.append((u, 9)) }
         return out
     }
+    /// 严格按历史时代与文化返回加权兵种池（绝不跨时代混编）。
+    public static func rosterForEra(_ era: HistoricalEra, culture: String) -> [(String, Int)] {
+        switch era {
+        case .antiquity:
+            return roster(culture).filter { $0.0 != "Streltsy" }
+        case .medieval:
+            return roster(culture)
+        case .gunpowder:
+            if culture == "japanese" {
+                return [("MatchlockAshigaru", 42), ("LineInfantry", 26), ("FieldArtillery", 18), ("Cuirassier", 14)]
+            }
+            if ["chinese", "korean", "vietnamese"].contains(culture) {
+                return [("LineInfantry", 38), ("MatchlockAshigaru", 24), ("FieldArtillery", 22), ("Cuirassier", 16)]
+            }
+            if steppe.contains(culture) || ["french", "polish", "hungarian"].contains(culture) {
+                return [("LineInfantry", 40), ("Cuirassier", 34), ("FieldArtillery", 26)]
+            }
+            return [("LineInfantry", 48), ("FieldArtillery", 28), ("Cuirassier", 24)]
+        case .ww1:
+            if culture == "german" || culture == "hungarian" {
+                return [("TrenchInfantry", 38), ("HeavyArtillery", 24), ("Stormtrooper", 24), ("EarlyTank", 14)]
+            }
+            if culture == "english" || culture == "french" {
+                return [("TrenchInfantry", 38), ("HeavyArtillery", 24), ("EarlyTank", 24), ("Stormtrooper", 14)]
+            }
+            return [("TrenchInfantry", 44), ("HeavyArtillery", 26), ("Stormtrooper", 16), ("EarlyTank", 14)]
+        case .ww2:
+            if culture == "japanese" || culture == "english" {
+                return [("MechInfantry", 34), ("MarineDiv", 28), ("ArmoredDivision", 22), ("Airborne", 16)]
+            }
+            if culture == "german" || culture == "slavic" || culture == "french" {
+                return [("MechInfantry", 34), ("ArmoredDivision", 36), ("Airborne", 18), ("MarineDiv", 12)]
+            }
+            return [("MechInfantry", 40), ("ArmoredDivision", 28), ("Airborne", 16), ("MarineDiv", 16)]
+        case .modern:
+            if culture == "japanese" || culture == "english" {
+                return [("CombinedArms", 34), ("MarineDiv", 26), ("AirAssault", 22), ("RocketArtillery", 18)]
+            }
+            return [("CombinedArms", 42), ("RocketArtillery", 22), ("AirAssault", 22), ("MarineDiv", 14)]
+        }
+    }
     /// A deterministic pick for an army (by its id), from its culture's roster.
     public static func pick(culture: String, id: String) -> Kind {
         var h: UInt32 = 2166136261
         for u in id.utf8 { h = (h ^ UInt32(u)) &* 16777619 }
         let r = roster(culture), total = r.reduce(0) { $0 + $1.1 }
         var x = Int(h % UInt32(max(1, total)))
-        for (k, w) in r { if x < w { return byKey[k]! }; x -= w }
-        return byKey["Infantry"]!
+        for (k, w) in r { if x < w, let kind = byKey[k] { return kind }; x -= w }
+        return byKey["Infantry"] ?? kinds[0]
+    }
+    /// 严格时代锁定的确定性兵种抽选（先秦/中古绝不出现火器坦克；火器/一战/二战/现代绝不出现冷兵器弓骑）。
+    public static func pickForEra(_ era: HistoricalEra, culture: String, id: String) -> Kind {
+        var h: UInt32 = 2166136261
+        for u in id.utf8 { h = (h ^ UInt32(u)) &* 16777619 }
+        let r = rosterForEra(era, culture: culture)
+        let total = r.reduce(0) { $0 + $1.1 }
+        var x = Int(h % UInt32(max(1, total)))
+        for (k, w) in r {
+            if x < w, let kind = byKey[k] { return kind }
+            x -= w
+        }
+        if let first = r.first?.0, let kind = byKey[first] { return kind }
+        return byKey["Infantry"] ?? kinds[0]
     }
 
     /// Damage multiplier of `attacker` hitting `victim` (unit keys).
     public static func counter(_ attacker: String, _ victim: String) -> Double {
+        // Era-specific tactical counters for gunpowder / WWI / WWII / Modern rosters
+        switch (attacker, victim) {
+        case ("Cuirassier", "FieldArtillery"), ("Cuirassier", "MatchlockAshigaru"): return 1.35
+        case ("FieldArtillery", "LineInfantry"), ("FieldArtillery", "MatchlockAshigaru"): return 1.25
+        case ("MatchlockAshigaru", "Cuirassier"), ("LineInfantry", "Cuirassier"): return 1.15
+        case ("HeavyArtillery", "TrenchInfantry"), ("EarlyTank", "TrenchInfantry"): return 1.28
+        case ("Stormtrooper", "HeavyArtillery"), ("Stormtrooper", "TrenchInfantry"): return 1.22
+        case ("ArmoredDivision", "MechInfantry"), ("ArmoredDivision", "MarineDiv"): return 1.22
+        case ("Airborne", "HeavyArtillery"), ("Airborne", "FieldArtillery"), ("Airborne", "RocketArtillery"): return 1.30
+        case ("CombinedArms", "MarineDiv"), ("CombinedArms", "MechInfantry"): return 1.22
+        case ("RocketArtillery", "CombinedArms"), ("RocketArtillery", "MarineDiv"), ("RocketArtillery", "ArmoredDivision"): return 1.20
+        case ("AirAssault", "RocketArtillery"), ("AirAssault", "CombinedArms"): return 1.25
+        default: break
+        }
         guard let a = byKey[attacker]?.role, let v = byKey[victim]?.role else { return 1 }
         switch (a, v) {
         case (.spear, .cavalry), (.spear, .heavy), (.spear, .horseArcher): return 1.4

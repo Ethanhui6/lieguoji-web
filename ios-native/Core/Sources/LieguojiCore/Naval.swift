@@ -135,8 +135,25 @@ public enum Naval {
     static func speed(_ r: JS) -> Double { f(2.2) * ForceMotion.mapUnitsPerNativeUnit * r.forceClock.secondsPerTick.asNumber }
 
     // MARK: Volley input (civilization47-combat combatReader47 volley.navy)
-    /// The fleet's national destiny, maritime livelihood and its living leader's naval modifier
-    /// (nativeNavalCharacter47: the ordered float32 sum of navalCombatModifier, e.g. NavalMastery +0.3).
+    /// 读取国家的历史海军战力加成（来自 `r.regimes.historicalFleets[nation]` 或 `r.regimes.historicalPower[nation]`）。
+    public static func historicalNavalBonus(_ r: JS, nation: String) -> Double {
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return 0 }
+        if !r.regimes.historicalFleets.isNull, let v = r.regimes.historicalFleets[nation].navalPowerBonus.optionalNumber, v.isFinite {
+            return max(-0.30, min(0.85, v))
+        }
+        if !r.regimes.historicalPower.isNull, let v = r.regimes.historicalPower[nation].navalPowerBonus.optionalNumber, v.isFinite {
+            return max(-0.30, min(0.85, v))
+        }
+        return 0
+    }
+    /// 两栖跨海登陆与渡海航速加成：航海科技 ≥ 4 阶的海洋强国获得 +40% 跨海登陆速度！
+    public static func amphibiousSpeedFactor(_ r: JS, nation: String) -> Double {
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return 1.0 }
+        let navTech = WorldDepth.techLevel(r, nation: nation, branch: .naval)
+        return navTech >= 4 ? 1.40 : 1.0
+    }
+    /// The fleet's national destiny, maritime livelihood, its living leader's naval modifier,
+    /// historical naval power bonus, and naval tech advantage vs active naval enemies.
     static func combatInput(_ r: JS, _ nation: String) -> Volley.NavalInput {
         let id = r.people.nations[nation].leaderId
         var leader: Double?
@@ -149,7 +166,297 @@ public enum Naval {
             let doctrineBonus = MaritimeWarfare.navalCombatBonus(r, nation: nation)
             if doctrineBonus > 0 { leader = f(doctrineBonus) }
         }
-        return Volley.NavalInput(destiny: r.upperCombat.nations[nation].destiny.asNumber, maritime: r.economy.nations[nation].ethnic.optionalString == "Maritime", leader: leader)
+        var powerBonus = 0.0
+        if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy {
+            powerBonus += historicalNavalBonus(r, nation: nation)
+            // 对比当前交战敌国的航海科技均差，赋予海上代差火力倍率（每阶 ±12%）
+            let myTech = WorldDepth.techLevel(r, nation: nation, branch: .naval)
+            var enemyTechSum = 0.0, enemyCount = 0
+            if !r.world.statecraft.isNull && !r.world.statecraft.relations.isNull {
+                for rel in r.world.statecraft.relations.asArray where rel.status.optionalString == "war" {
+                    let other: String? = (rel.a.optionalString == nation) ? rel.b.optionalString : (rel.b.optionalString == nation ? rel.a.optionalString : nil)
+                    if let other {
+                        enemyTechSum += Double(WorldDepth.techLevel(r, nation: other, branch: .naval))
+                        enemyCount += 1
+                    }
+                }
+            }
+            if enemyCount > 0 {
+                let avgEnemy = enemyTechSum / Double(enemyCount)
+                let techGap = max(-0.25, min(0.40, (Double(myTech) - avgEnemy) * 0.12))
+                powerBonus += techGap
+            }
+        }
+        return Volley.NavalInput(destiny: r.upperCombat.nations[nation].destiny.asNumber, maritime: r.economy.nations[nation].ethnic.optionalString == "Maritime", leader: leader, powerBonus: powerBonus)
+    }
+
+    // MARK: Naval Shore Bombardment (+18% coastal battle support)
+    private static var shoreCache: (world: ObjectIdentifier, tick: Int, map: [String: Bool])?
+
+    /// 判断 `attacker` 的友军舰队是否控制与当前对 `victim` 沿海激战州相邻的海域，从而提供 +18% 舰炮岸轰火力支援。
+    public static func hasShoreBombardment(_ r: JS, attacker: String, against victim: String) -> Bool {
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy,
+              let sea, let bridge = Armies.bridge, !r.navy.isNull, !r.navy.fleets.isNull else { return false }
+        let tick = r.clock.tick.asInt
+        let wid = ObjectIdentifier(r)
+        let pairKey = "\(attacker)|\(victim)"
+        if shoreCache?.world == wid && shoreCache?.tick == tick, let cached = shoreCache?.map[pairKey] {
+            return cached
+        }
+        if shoreCache?.world != wid || shoreCache?.tick != tick {
+            shoreCache = (wid, tick, [:])
+        }
+        let g = bridge.graph
+        let provinces = r.world.provinces.asArray
+        var portByPid = [String: Port]()
+        for pt in sea.ports { portByPid[pt.provinceId] = pt }
+
+        // 找出攻守双方正处于陆地交锋的沿海港口州
+        var battlePorts = [Port]()
+        var seenPids = Set<String>()
+        for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.optionalString == "fighting" {
+            let nid = a.nationId.optionalString ?? ""
+            guard nid == attacker || nid == victim else { continue }
+            let rec = r.armyPositions.records[a.id.asString]
+            guard !rec.isNull else { continue }
+            let cell = g.location(bridge.travel(rec)).cell
+            guard g.provinces.indices.contains(cell) else { continue }
+            let q = Int(g.provinces[cell])
+            guard q >= 0, provinces.indices.contains(q) else { continue }
+            let pid = provinces[q].id.asString
+            if let port = portByPid[pid], seenPids.insert(pid).inserted {
+                battlePorts.append(port)
+            }
+        }
+        guard !battlePorts.isEmpty else {
+            shoreCache?.map[pairKey] = false
+            return false
+        }
+
+        // 校验攻方（或友邦）主力舰队是否压制该沿海战区相邻海面
+        var supported = false
+        let liveFleets = r.navy.fleets.asArray.filter { $0.status.optionalString != "lost" && $0.ships.asInt > 0 }
+        for port in battlePorts {
+            let portComp = sea.component(port.node)
+            var friendlyShips = 0
+            var enemyShips = 0
+            // 若港口已由己方舰队实控封锁，直接计入制海优势
+            if !r.portControl.isNull, r.portControl.ports[port.provinceId].occupierId.optionalString == attacker {
+                friendlyShips += 4
+            }
+            for fl in liveFleets {
+                let fn = fl.nationId.asString
+                let rec = r.fleetPositions.records[fl.id.asString]
+                guard !rec.isNull else { continue }
+                let loc = g.location(bridge.travel(rec))
+                let face = g.faces.indices.contains(loc.cell) ? Int(g.faces[loc.cell]) : -1
+                guard sea.component(face) == portComp else { continue }
+                let dist = jsHypot(loc.point.x - port.center.x, loc.point.y - port.center.y)
+                guard dist <= 155.0 else { continue }
+                if fn == attacker || RunWindow.access(r, attacker, fn) {
+                    friendlyShips += fl.ships.asInt
+                } else if fn == victim || atWar(r, attacker, fn) {
+                    enemyShips += fl.ships.asInt
+                }
+            }
+            if friendlyShips > enemyShips && friendlyShips > 0 {
+                supported = true
+                break
+            }
+        }
+        shoreCache?.map[pairKey] = supported
+        return supported
+    }
+
+    // MARK: Historical Fleets Bootstrap (Royal Navy / IJN / US Navy / Wu & Song Fleets)
+
+    private static func defaultHistoricalFleetProfile(nationName: String, culture: String, era: HistoricalEra) -> (names: [String], admirals: [String]) {
+        if nationName.contains("英") || nationName.contains("不列颠") || culture == "english" {
+            let names = ["皇家本土舰队", "地中海舰队", "大西洋舰队", "远东舰队", "印度洋舰队", "海峡舰队"]
+            let adms: [String]
+            switch era {
+            case .ww2, .modern: adms = ["坎宁安", "托维", "萨默维尔", "庞德", "弗雷泽", "蒙巴顿"]
+            case .ww1:          adms = ["杰利科", "贝蒂", "费舍尔", "斯特迪", "杰克逊", "凯斯"]
+            default:            adms = ["纳尔逊", "德雷克", "豪勋爵", "柯林伍德", "罗德尼", "胡德"]
+            }
+            return (names, adms)
+        }
+        if nationName.contains("日") || nationName.contains("幕府") || culture == "japanese" {
+            let names = ["联合舰队", "第一航空舰队", "第二舰队", "南遣舰队", "第三舰队", "镇守府警备舰队"]
+            let adms: [String]
+            switch era {
+            case .ww2, .modern: adms = ["山本五十六", "南云忠一", "小泽治三郎", "栗田健男", "近藤信竹", "古贺峰一"]
+            case .ww1:          adms = ["东乡平八郎", "秋山真之", "上村彦之丞", "加藤友三郎", "岛村速雄", "出羽重远"]
+            default:            adms = ["九鬼嘉隆", "村上武吉", "藤堂高虎", "加藤嘉明", "胁坂安治", "长宗我部水军"]
+            }
+            return (names, adms)
+        }
+        if nationName.contains("美") || nationName.contains("合众国") {
+            let names = ["太平洋舰队", "大西洋舰队", "第三舰队", "第五舰队", "第七舰队", "特混航母舰队"]
+            let adms = (era == .ww2 || era == .modern)
+                ? ["尼米兹", "哈尔西", "斯普鲁恩斯", "欧内斯特·金", "米彻尔", "金凯德"]
+                : ["法拉格特", "杜威", "马汉", "辛姆斯", "琼斯", "佩里"]
+            return (names, adms)
+        }
+        if nationName.contains("德") || nationName.contains("普鲁士") || culture == "german" {
+            let names = era == .ww1 ? ["公海舰队", "波罗的海舰队", "远东巡洋舰队", "北海潜艇群"] : ["北海主力舰队", "大西洋潜艇舰队", "波罗的海舰队", "挪威舰队"]
+            let adms = era == .ww1 ? ["舍尔", "希佩尔", "提尔皮茨", "施佩"] : ["雷德尔", "邓尼茨", "吕特晏斯", "马沙尔"]
+            return (names, adms)
+        }
+        if nationName.contains("法") || culture == "french" {
+            let names = ["布雷斯特舰队", "地中海舰队", "土伦主力舰队", "远东巡洋舰队"]
+            let adms = era.isNuclearCapableEra ? ["达尔朗", "让苏尔", "阿布里亚尔", "穆塞利耶"] : ["维尔纳夫", "叙弗朗", "德·格拉斯", "图维尔"]
+            return (names, adms)
+        }
+        if nationName.contains("意") || nationName.contains("威尼斯") || culture == "italian" {
+            return (["皇家地中海舰队", "塔兰托主力舰队", "亚得里亚舰队"], ["亚基诺", "坎皮奥尼", "多里亚", "丹多洛"])
+        }
+        if nationName.contains("苏") || nationName.contains("俄") || culture == "slavic" {
+            return (["波罗的海舰队", "黑海舰队", "北方舰队", "太平洋舰队"], ["库兹涅佐夫", "乌沙科夫", "纳希莫夫", "马卡罗夫"])
+        }
+        if culture == "chinese" || culture == "korean" {
+            let names: [String]
+            let adms: [String]
+            if era == .antiquity || era == .medieval {
+                names = ["江南主力水师", "楼船大舰队", "江海巡弋水师", "海防总兵水师"]
+                adms = ["周瑜", "吕蒙", "韩世忠", "郑和", "戚继光", "俞大猷"]
+            } else {
+                names = ["北洋水师", "南洋水师", "东海舰队", "南海舰队"]
+                adms = ["邓世昌", "丁汝昌", "萨镇冰", "陈绍宽", "郑成功", "施琅"]
+            }
+            return (names, adms)
+        }
+        return (["第一主力舰队", "第二巡洋舰队", "远洋特混舰队", "近海护航舰队"], ["海上统帅", "主力提督", "巡洋提督", "海防司令"])
+    }
+
+    /// 历史剧本开局海军强国舰队编成（皇家海军、联合舰队、美国太平洋/大西洋舰队、东吴/两宋水师等）：
+    /// 读取 `r.regimes.historicalFleets[nid]` 与 `r.regimes.historicalPower[nid]`，在各国海港扩编/新建多支历史主力舰队并配属真实历史海军名将。
+    /// 幂等：通过 `r.regimes.historicalFleetsSpawned` 保证每局只执行一次。
+    public static func spawnHistoricalFleets(_ r: JS) {
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy,
+              let sea, !r.navy.isNull, !r.fleetPositions.isNull, !r.maritime.isNull,
+              !r.portControl.isNull, !r.navalAutonomy.isNull else { return }
+        if r.regimes.historicalFleetsSpawned.isTruthy { return }
+        let hasFleetTable = !r.regimes.historicalFleets.isNull
+        let hasPowerTable = !r.regimes.historicalPower.isNull
+        guard hasFleetTable || hasPowerTable else { return }
+
+        r.regimes.historicalFleetsSpawned = JS(true)
+        let era = HistoricalEra.current(r)
+
+        var controllerById = [String: String]()
+        for p in r.world.provinces.asArray { controllerById[p.id.asString] = p.controller.asString }
+        var portsByNation = [String: [Port]]()
+        for pt in sea.ports {
+            if let ctrl = controllerById[pt.provinceId], !ctrl.isEmpty {
+                portsByNation[ctrl, default: []].append(pt)
+            }
+        }
+        let dockBook = Shipyards.book(r)
+        if dockBook.levels.isNull { dockBook.levels = JS.object() }
+        if r.regimes.fleetMeta.isNull { r.regimes.fleetMeta = JS.object() }
+
+        for n in r.world.nations.asArray {
+            let nid = n.id.asString
+            guard Vassals.alive(r, nid), let myPorts = portsByNation[nid], !myPorts.isEmpty else { continue }
+            let hf = hasFleetTable ? r.regimes.historicalFleets[nid] : .null
+            let hp = hasPowerTable ? r.regimes.historicalPower[nid] : .null
+            let targetFleets = max(0, min(10, Int((hf.fleetCount.optionalNumber ?? hp.fleetCount.optionalNumber ?? 0).rounded())))
+            let shipsPerFleet = max(0, min(12, Int((hf.shipsPerFleet.optionalNumber ?? hp.shipsPerFleet.optionalNumber ?? 0).rounded())))
+            let navBonus = max(0.0, hf.navalPowerBonus.optionalNumber ?? hp.navalPowerBonus.optionalNumber ?? 0.0)
+            guard targetFleets > 0 || shipsPerFleet > 0 else { continue }
+
+            let desiredShips = max(3, min(12, shipsPerFleet > 0 ? shipsPerFleet : 6))
+            let desiredFleets = max(1, targetFleets)
+            let culture = r.civilization.isNull ? "" : (r.civilization.nations[nid].cultureId.optionalString ?? "")
+            let fallback = defaultHistoricalFleetProfile(nationName: n.name.asString, culture: culture, era: era)
+            let customNames = hf.fleetNames.optionalArray?.compactMap(\.optionalString)
+                ?? hp.fleetNames.optionalArray?.compactMap(\.optionalString)
+                ?? fallback.names
+            // 兼容 HistoricalRoster 写入的对象数组 `{name, bonus, skill}` 及纯字符串数组
+            struct AdmiralSpec { let name: String; let bonus: Int?; let skill: String? }
+            let parsedAdmirals: [AdmiralSpec] = {
+                let rawArr = hf.admirals.optionalArray ?? hp.admirals.optionalArray ?? []
+                var out = [AdmiralSpec]()
+                for entry in rawArr {
+                    if let s = entry.optionalString, !s.isEmpty {
+                        out.append(AdmiralSpec(name: s, bonus: nil, skill: nil))
+                    } else if let s = entry.name.optionalString, !s.isEmpty {
+                        let b = entry.bonus.optionalNumber.map { Int($0.rounded()) }
+                        let sk = entry.skill.optionalString
+                        out.append(AdmiralSpec(name: s, bonus: b, skill: sk))
+                    }
+                }
+                if out.isEmpty {
+                    return fallback.admirals.map { AdmiralSpec(name: $0, bonus: nil, skill: nil) }
+                }
+                return out
+            }()
+
+            // 升级母港船坞等级，确保历史主力舰队停泊扩编上限匹配
+            let dockTier = desiredShips >= 9 ? 3 : (desiredShips >= 6 ? 2 : 1)
+            for pt in myPorts {
+                let curTier = dockBook.levels[pt.provinceId].optionalNumber.map(Int.init) ?? 1
+                if dockTier > curTier { dockBook.levels[pt.provinceId] = JS(dockTier) }
+            }
+
+            func splitShips(_ total: Int) -> (h: Int, l: Int, g: Int) {
+                let h = max(1, Int((Double(total) * 0.45).rounded()))
+                let l = max(1, Int((Double(total) * 0.35).rounded()))
+                let g = max(0, total - h - l)
+                return (h, l, g)
+            }
+
+            let skills = SeaDominion.AdmiralSkill.allCases
+            func applyAdmiralAndMeta(fleetId fid: String, index idx: Int, totalShips: Int) {
+                let split = splitShips(totalShips)
+                let meta = r.regimes.fleetMeta[fid].isNull ? JS.object() : r.regimes.fleetMeta[fid]
+                meta.mission = JS(idx % 3 == 2 ? "escort" : "patrol")
+                meta.heavy = JS(split.h)
+                meta.light = JS(split.l)
+                meta.gunboats = JS(split.g)
+                meta.xp = JS(max(meta.xp.asInt, navBonus >= 0.25 ? 65 : 30))
+                if !parsedAdmirals.isEmpty {
+                    let adm = parsedAdmirals[idx % parsedAdmirals.count]
+                    meta.admiralName = JS(adm.name)
+                    let defaultBonus = min(30, max(12, Int((14.0 + navBonus * 32.0).rounded())))
+                    meta.admiralBonus = JS(adm.bonus ?? defaultBonus)
+                    meta.admiralSkill = JS(adm.skill ?? skills[idx % skills.count].rawValue)
+                }
+                r.regimes.fleetMeta[fid] = meta
+            }
+
+            // 1. 升级该国现有舰队并赋予历史舰队番号与名将
+            let existing = fleets(r).filter { $0.nationId.optionalString == nid && $0.status.asString != "lost" }
+            var fleetCursor = 0
+            for fl in existing {
+                let fid = fl.id.asString
+                let curShips = max(1, fl.ships.asInt)
+                let finalShips = max(curShips, desiredShips)
+                fl.ships = JS(finalShips)
+                fl.crew = JS(finalShips * SeaDominion.crewPerShip)
+                fl.food = JS(max(fl.food.asNumber, Double(finalShips * SeaDominion.foodPerShip)))
+                r.maritime.hulls[fid] = JS(Double(finalShips * 100))
+                if fleetCursor < customNames.count {
+                    fl.name = JS(customNames[fleetCursor])
+                }
+                applyAdmiralAndMeta(fleetId: fid, index: fleetCursor, totalShips: finalShips)
+                fleetCursor += 1
+            }
+
+            // 2. 补充新建其余历史主力舰队至目标支数
+            let need = max(0, desiredFleets - existing.count)
+            for k in 0..<need {
+                let port = myPorts[(existing.count + k) % myPorts.count]
+                let split = splitShips(desiredShips)
+                let fname = fleetCursor < customNames.count ? customNames[fleetCursor] : nil
+                if let fl = SeaDominion.launchNewFleet(r, nation: nid, port: port, heavy: split.h, light: split.l, gunboats: split.g, customName: fname) {
+                    applyAdmiralAndMeta(fleetId: fl.id.asString, index: fleetCursor, totalShips: desiredShips)
+                }
+                fleetCursor += 1
+            }
+        }
+        Shipyards.remember(r)
     }
 
     // MARK: Ports (civilization47-ports)

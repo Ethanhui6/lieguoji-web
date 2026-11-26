@@ -19,6 +19,7 @@ extension NativeEngine {
         o.civilMonths = JS(st.isNull ? 0 : st.civilWarMinMonths.optionalNumber ?? 0)
         o.vassals = r.vassalManager.isNull ? .null : JS(r.vassalManager.enabled.isTruthy)
         o.globalAutoGovern = JS(Regimes.globalAutoGovern(r))
+        o.rebelMode = JS(Rebellion.rebelMode(r))
         return Data(o.json.utf8)
     }
 
@@ -45,6 +46,9 @@ extension NativeEngine {
                 }
             }
             return (true, key == "globalAutoGovern" ? (value != 0 ? "已开启全图列国自动治理。" : "已关闭全图列国自动治理。") : "诏令已颁行。")
+        case "rebelMode":
+            let mode = value == 0 ? "off" : (value == 1 ? "historical" : "classic")
+            return setRebelMode(mode)
         case "clearHistory": r.chronicle.entries = .array([]); return (true, "大事记已清空。")
         case "stopWars": return stopAllWars()
         case "dissolveAlliances": return dissolveAllAlliances()

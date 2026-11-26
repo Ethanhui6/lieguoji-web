@@ -115,9 +115,20 @@ extension Regimes {
             for m in People.ids(r.kin.families[key].memberIds) { People.person(r, m)?.religionId = JS(creed) }
         }
     }
+    /// 检查当前世界是否关闭叛乱 / 政变机制。
+    private static func rebelsDisabled(_ r: JS) -> Bool {
+        if rule(r, "rebel") <= 0 { return true }
+        if !r.regimes.isNull {
+            if r.regimes.rebelMode.optionalString == "off" { return true }
+            if !r.regimes.world.isNull && r.regimes.world.rebelMode.optionalString == "off" { return true }
+        }
+        if !r.world.isNull && !r.world.custom.isNull && r.world.custom.rebelMode.optionalString == "off" { return true }
+        return false
+    }
     /// A province rises in the name of a cause (never the capital, a battlefield, or a state's last land).
     @discardableResult
     static func rise(_ r: JS, _ owner: String, _ p: JS) -> Bool {
+        guard !rebelsDisabled(r) else { return false }
         let pid = p.id.asString
         guard !r.foundings.isNull, Rebellion.capitalProvince(r, owner) != pid, !Rebellion.provinceAtWar(r, pid),
               r.world.provinces.asArray.reduce(0, { $1.controller.optionalString == owner ? $0 + 1 : $0 }) >= 3 else { return false }
@@ -192,7 +203,16 @@ extension Regimes {
     /// When a state is in crisis, a strong extreme party may take it: revolution, a march on the capital, a coup.
     static func seizure(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         if !r.foundings.isNull && !r.foundings.enabled.isTruthy { return }
-        guard rule(r, "rebel") > 0, rule(r, "event") > 0 else { return }
+        guard !rebelsDisabled(r), rule(r, "event") > 0 else { return }
+        // 历史剧本前 36 个月（1080 天）保护真实历史政权，除非本土沦陷过半或遭遇毁灭性惨败
+        let isHistorical = !r.regimes.isNull && !r.regimes.historicalScenarioId.isNull
+        if isHistorical && (r.world.day.optionalNumber ?? 0) < 36.0 * 30.0 {
+            let legal = r.world.provinces.asArray.filter { $0.legalOwner.optionalString == id }
+            let lost = legal.filter { $0.controller.optionalString != id }.count
+            let catastrophic = (!legal.isEmpty && Double(lost) / Double(legal.count) >= 0.5)
+                || (defeatPenalty(r, id) >= 0.45 && mood(r, id) < -0.65)
+            guard catastrophic else { return }
+        }
         let s = style(r, id), b = book(r, id)
         guard s.parties, s.single == nil, !b.parties.isNull, mood(r, id) < -0.3 else { return }
         let german = r.civilization.nations[id].cultureId.optionalString == "german"

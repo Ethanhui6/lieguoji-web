@@ -1408,19 +1408,19 @@ private struct EditorBasePickerSheet: View {
     }
 }
 
-/// 历史底图与官方剧本地形套用弹窗（四大真实世界底图 + 八大官方剧本起稿）。
+/// 历史底图与官方剧本地形套用弹窗（七大真实世界底图 + 十大官方剧本起稿）。
 private struct EditorHistoricalPickerSheet: View {
     @ObservedObject var editor: MapEditor
     @Binding var isPresented: Bool
 
-    private static let realRegions: [HistoricalRegion] = [.china, .europe, .eastAsiaJapan, .world]
+    private static let realRegions: [HistoricalRegion] = [.huaxia, .china, .europe, .eastAsiaJapan, .japanDetail, .mediterranean, .world]
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
-                SheetHeader(title: "历史底图", subtitle: "一键铺展真实世界地理轮廓，或载入八大官方剧本起稿", seal: "舆")
+                SheetHeader(title: "历史底图", subtitle: "一键铺展真实世界地理轮廓，或载入 \(HistoricalScenarios.officialScenarios.count) 套官方剧本起稿", seal: "舆")
 
-                SectionLabel("四大真实地理底图")
+                SectionLabel("七大真实地理底图")
                 Group2 {
                     ForEach(Array(Self.realRegions.enumerated()), id: \.element.id) { idx, reg in
                         AlignedMetaRow(

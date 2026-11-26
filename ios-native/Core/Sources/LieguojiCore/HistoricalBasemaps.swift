@@ -5,11 +5,14 @@ import Glibc
 import Darwin
 #endif
 
-/// 真实历史地理底图分区（中国、欧洲、东亚与日本、世界、自定义画布）。
+/// 真实历史地理底图分区（中原华夏、中国、欧洲、东亚与太平洋、日本列岛、地中海与欧亚、世界、自定义画布）。
 public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifiable {
+    case huaxia = "huaxia"
     case china = "china"
     case europe = "europe"
     case eastAsiaJapan = "east_asia_japan"
+    case japanDetail = "japan_detail"
+    case mediterranean = "mediterranean"
     case world = "world"
     case custom = "custom"
 
@@ -17,9 +20,12 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
 
     public var title: String {
         switch self {
+        case .huaxia: return "中原华夏精图"
         case .china: return "中国全图"
         case .europe: return "欧洲全图"
-        case .eastAsiaJapan: return "东亚与日本"
+        case .eastAsiaJapan: return "东亚与太平洋"
+        case .japanDetail: return "日本列岛精图"
+        case .mediterranean: return "地中海与欧亚"
         case .world: return "世界全图"
         case .custom: return "自定义地图"
         }
@@ -27,9 +33,12 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
 
     public var subtitle: String {
         switch self {
+        case .huaxia: return "中原·江南·巴蜀·塞北高精版图"
         case .china: return "中原、江南、巴蜀、塞北、西域与朝鲜半岛"
         case .europe: return "西欧、中东欧、巴尔干、不列颠、北欧与地中海"
-        case .eastAsiaJapan: return "日本列岛、朝鲜、东亚大陆、台湾与吕宋海疆"
+        case .eastAsiaJapan: return "日本列岛、朝鲜、东亚大陆、中南半岛与吕宋海疆"
+        case .japanDetail: return "九州·四国·本州·奥羽令制国精图"
+        case .mediterranean: return "罗马·拜占庭·近东环海地图"
         case .world: return "五大洲四大洋完整格局 · 全球争霸舞台"
         case .custom: return "自定义绘制山海地形与历史势力"
         }
@@ -37,9 +46,12 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
 
     public var badge: String {
         switch self {
+        case .huaxia: return "华夏"
         case .china: return "神州"
         case .europe: return "欧陆"
         case .eastAsiaJapan: return "东亚"
+        case .japanDetail: return "扶桑"
+        case .mediterranean: return "地中海"
         case .world: return "全球"
         case .custom: return "自绘"
         }
@@ -47,9 +59,12 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
 
     public var lonMin: Double {
         switch self {
-        case .china: return 72.0
-        case .europe: return -12.0
-        case .eastAsiaJapan: return 103.0
+        case .huaxia: return 95.5
+        case .china: return 73.0
+        case .europe: return -11.5
+        case .eastAsiaJapan: return 92.0
+        case .japanDetail: return 128.0
+        case .mediterranean: return -10.0
         case .world: return -168.0
         case .custom: return 0.0
         }
@@ -57,9 +72,12 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
 
     public var lonMax: Double {
         switch self {
-        case .china: return 136.5
-        case .europe: return 47.0
-        case .eastAsiaJapan: return 148.0
+        case .huaxia: return 129.0
+        case .china: return 136.0
+        case .europe: return 46.5
+        case .eastAsiaJapan: return 147.5
+        case .japanDetail: return 146.5
+        case .mediterranean: return 55.0
         case .world: return 176.0
         case .custom: return 100.0
         }
@@ -67,30 +85,272 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
 
     public var latMin: Double {
         switch self {
-        case .china: return 17.0
-        case .europe: return 34.0
-        case .eastAsiaJapan: return 18.0
-        case .world: return -56.0
+        case .huaxia: return 18.0
+        case .china: return 17.5
+        case .europe: return 34.5
+        case .eastAsiaJapan: return 4.5
+        case .japanDetail: return 30.0
+        case .mediterranean: return 24.0
+        case .world: return -55.0
         case .custom: return 0.0
         }
     }
 
     public var latMax: Double {
         switch self {
-        case .china: return 54.5
-        case .europe: return 68.5
+        case .huaxia: return 44.5
+        case .china: return 54.0
+        case .europe: return 67.5
         case .eastAsiaJapan: return 49.5
-        case .world: return 73.0
+        case .japanDetail: return 46.0
+        case .mediterranean: return 56.0
+        case .world: return 72.0
         case .custom: return 100.0
+        }
+    }
+
+    public var pad: Double {
+        switch self {
+        case .huaxia: return 0.025
+        case .china: return 0.025
+        case .europe: return 0.025
+        case .eastAsiaJapan: return 0.025
+        case .japanDetail: return 0.035
+        case .mediterranean: return 0.025
+        case .world: return 0.02
+        case .custom: return 0.03
         }
     }
 }
 
-/// 真实世界地理底图投影与高程场生成器：
-/// 基于等距圆柱标准纬线投影（`cos(midLat)` 经度修正 + 3% 四周海域留白），
-/// 结合手工精绘的多边形海岸线、内海与大湖挖空、真实造山带高斯隆起与近岸浅海陆架渐变，
-/// 在 20k 原作格网上 20ms 内生成细节丰富的真实地貌。
+/// 真实世界地理底图投影、1:10m Natural Earth 离线 GIS 资源加载与高程场生成器。
 public enum HistoricalBasemaps {
+    /// 离线烘焙的历史剧本逐格归属与真实人口/工业密度数据（`scenarios_gis.bin`）。
+    public struct BakedScenarioGIS: Sendable {
+        public let id: String
+        public let region: String
+        public let nationCount: Int
+        public let ownerMask: [Int8]
+        public let popDensity: [UInt8]
+
+        public init(id: String, region: String, nationCount: Int, ownerMask: [Int8], popDensity: [UInt8]) {
+            self.id = id
+            self.region = region
+            self.nationCount = nationCount
+            self.ownerMask = ownerMask
+            self.popDensity = popDensity
+        }
+    }
+
+    /// 全球 4,200 座真实中文地名城市库条目（`cities_zh.json`）。
+    public struct GazetteerCity: Codable, Sendable {
+        public let n: String
+        public let lon: Double
+        public let lat: Double
+        public let pop: Double
+        public let cap: Int
+        public let iso: String
+
+        public init(n: String, lon: Double, lat: Double, pop: Double, cap: Int, iso: String) {
+            self.n = n
+            self.lon = lon
+            self.lat = lat
+            self.pop = pop
+            self.cap = cap
+            self.iso = iso
+        }
+    }
+
+    private struct BakedBasemap: Sendable {
+        let name: String
+        let lonMin: Double
+        let lonMax: Double
+        let latMin: Double
+        let latMax: Double
+        let pad: Double
+        let heights: [UInt8]
+    }
+
+    private final class AtlasStore: @unchecked Sendable {
+        private let lock = NSLock()
+        private var basemaps: [String: BakedBasemap] = [:]
+        private var scenarios: [String: BakedScenarioGIS] = [:]
+        private var cities: [GazetteerCity] = []
+
+        func setBasemaps(_ map: [String: BakedBasemap]) {
+            lock.lock(); defer { lock.unlock() }
+            basemaps = map
+        }
+
+        func setScenarios(_ map: [String: BakedScenarioGIS]) {
+            lock.lock(); defer { lock.unlock() }
+            scenarios = map
+        }
+
+        func setCities(_ list: [GazetteerCity]) {
+            lock.lock(); defer { lock.unlock() }
+            cities = list
+        }
+
+        func basemap(for key: String) -> BakedBasemap? {
+            lock.lock(); defer { lock.unlock() }
+            return basemaps[key]
+        }
+
+        func scenario(for id: String) -> BakedScenarioGIS? {
+            lock.lock(); defer { lock.unlock() }
+            return scenarios[id]
+        }
+
+        func allCities() -> [GazetteerCity] {
+            lock.lock(); defer { lock.unlock() }
+            return cities
+        }
+
+        func hasBasemaps() -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            return !basemaps.isEmpty
+        }
+    }
+
+    private static let store = AtlasStore()
+
+    /// 安全读取 `HistoricalAtlas` 目录下的 `basemaps.bin`、`scenarios_gis.bin` 与 `cities_zh.json`。
+    public static func loadAtlasDirectory(_ dirURL: URL) {
+        let basemapsURL = dirURL.appendingPathComponent("basemaps.bin")
+        if let data = try? Data(contentsOf: basemapsURL), let parsed = parseBasemaps(data) {
+            store.setBasemaps(parsed)
+        }
+        let scenariosURL = dirURL.appendingPathComponent("scenarios_gis.bin")
+        if let data = try? Data(contentsOf: scenariosURL), let parsed = parseScenariosGIS(data) {
+            store.setScenarios(parsed)
+        }
+        let citiesURL = dirURL.appendingPathComponent("cities_zh.json")
+        if let data = try? Data(contentsOf: citiesURL),
+           let decoded = try? JSONDecoder().decode([GazetteerCity].self, from: data) {
+            store.setCities(decoded)
+        }
+    }
+
+    public static func bakedScenarioGIS(id: String) -> BakedScenarioGIS? {
+        store.scenario(for: id)
+    }
+
+    public static func globalCities() -> [GazetteerCity] {
+        store.allCities()
+    }
+
+    public static func hasBakedAtlas() -> Bool {
+        store.hasBasemaps()
+    }
+
+    public static func bakedHeights(region: HistoricalRegion, expectedCount: Int) -> [UInt8]? {
+        guard let bm = store.basemap(for: region.rawValue), bm.heights.count == expectedCount else { return nil }
+        return bm.heights
+    }
+
+    private static func readUInt16LE(_ bytes: [UInt8], at offset: inout Int) -> UInt16? {
+        guard offset + 2 <= bytes.count else { return nil }
+        let v = UInt16(bytes[offset]) | (UInt16(bytes[offset + 1]) << 8)
+        offset += 2
+        return v
+    }
+
+    private static func readUInt32LE(_ bytes: [UInt8], at offset: inout Int) -> UInt32? {
+        guard offset + 4 <= bytes.count else { return nil }
+        let v = UInt32(bytes[offset])
+            | (UInt32(bytes[offset + 1]) << 8)
+            | (UInt32(bytes[offset + 2]) << 16)
+            | (UInt32(bytes[offset + 3]) << 24)
+        offset += 4
+        return v
+    }
+
+    private static func readDoubleLE(_ bytes: [UInt8], at offset: inout Int) -> Double? {
+        guard offset + 8 <= bytes.count else { return nil }
+        var bits: UInt64 = 0
+        for i in 0..<8 {
+            bits |= UInt64(bytes[offset + i]) << UInt64(i * 8)
+        }
+        offset += 8
+        let val = Double(bitPattern: bits)
+        return val.isFinite ? val : nil
+    }
+
+    private static func readUTF8(_ bytes: [UInt8], length: Int, at offset: inout Int) -> String? {
+        guard length >= 0, offset + length <= bytes.count else { return nil }
+        let slice = bytes[offset..<(offset + length)]
+        offset += length
+        return String(decoding: slice, as: UTF8.self)
+    }
+
+    private static func parseBasemaps(_ data: Data) -> [String: BakedBasemap]? {
+        let bytes = [UInt8](data)
+        guard bytes.count >= 16,
+              bytes[0] == 0x4C, bytes[1] == 0x47, bytes[2] == 0x41, bytes[3] == 0x42 else { return nil } // "LGAB"
+        var o = 4
+        guard let version = readUInt32LE(bytes, at: &o), version == 1,
+              let regionCount = readUInt32LE(bytes, at: &o), regionCount <= 64,
+              let cellCountU32 = readUInt32LE(bytes, at: &o), cellCountU32 > 0, cellCountU32 <= 250_000 else {
+            return nil
+        }
+        let cellCount = Int(cellCountU32)
+        var out = [String: BakedBasemap]()
+        out.reserveCapacity(Int(regionCount))
+        for _ in 0..<regionCount {
+            guard o < bytes.count else { return nil }
+            let nameLen = Int(bytes[o]); o += 1
+            guard let name = readUTF8(bytes, length: nameLen, at: &o),
+                  let lonMin = readDoubleLE(bytes, at: &o),
+                  let lonMax = readDoubleLE(bytes, at: &o),
+                  let latMin = readDoubleLE(bytes, at: &o),
+                  let latMax = readDoubleLE(bytes, at: &o),
+                  let pad = readDoubleLE(bytes, at: &o),
+                  o + cellCount <= bytes.count else {
+                return nil
+            }
+            let heights = Array(bytes[o..<(o + cellCount)])
+            o += cellCount
+            out[name] = BakedBasemap(name: name, lonMin: lonMin, lonMax: lonMax, latMin: latMin, latMax: latMax, pad: pad, heights: heights)
+        }
+        return out
+    }
+
+    private static func parseScenariosGIS(_ data: Data) -> [String: BakedScenarioGIS]? {
+        let bytes = [UInt8](data)
+        guard bytes.count >= 16,
+              bytes[0] == 0x4C, bytes[1] == 0x47, bytes[2] == 0x48, bytes[3] == 0x53 else { return nil } // "LGHS"
+        var o = 4
+        guard let version = readUInt32LE(bytes, at: &o), version == 1,
+              let count = readUInt32LE(bytes, at: &o), count <= 256,
+              let cellCountU32 = readUInt32LE(bytes, at: &o), cellCountU32 > 0, cellCountU32 <= 250_000 else {
+            return nil
+        }
+        let cellCount = Int(cellCountU32)
+        var out = [String: BakedScenarioGIS]()
+        out.reserveCapacity(Int(count))
+        for _ in 0..<count {
+            guard o < bytes.count else { return nil }
+            let idLen = Int(bytes[o]); o += 1
+            guard let id = readUTF8(bytes, length: idLen, at: &o), o < bytes.count else { return nil }
+            let regionLen = Int(bytes[o]); o += 1
+            guard let region = readUTF8(bytes, length: regionLen, at: &o),
+                  let nationCountU16 = readUInt16LE(bytes, at: &o),
+                  o + cellCount * 2 <= bytes.count else {
+                return nil
+            }
+            var owners = [Int8]()
+            owners.reserveCapacity(cellCount)
+            for idx in o..<(o + cellCount) {
+                owners.append(Int8(bitPattern: bytes[idx]))
+            }
+            o += cellCount
+            let popDensity = Array(bytes[o..<(o + cellCount)])
+            o += cellCount
+            out[id] = BakedScenarioGIS(id: id, region: region, nationCount: Int(nationCountU16), ownerMask: owners, popDensity: popDensity)
+        }
+        return out
+    }
     private struct ProjectionFrame: Sendable {
         let lonMin: Double
         let latMax: Double
@@ -209,17 +469,25 @@ public enum HistoricalBasemaps {
     private static func frame(region: HistoricalRegion, width: Double, height: Double) -> ProjectionFrame {
         let w = max(1.0, width)
         let h = max(1.0, height)
+        let baked = store.basemap(for: region.rawValue)
+        let lonMin = baked?.lonMin ?? region.lonMin
+        let lonMax = baked?.lonMax ?? region.lonMax
+        let latMin = baked?.latMin ?? region.latMin
+        let latMax = baked?.latMax ?? region.latMax
+        let pad = baked?.pad ?? region.pad
         let cosScale: Double
         if region == .custom {
             cosScale = 1.0
+        } else if region == .world {
+            cosScale = 0.86
         } else {
-            let midLat = (region.latMin + region.latMax) * 0.5
+            let midLat = (latMin + latMax) * 0.5
             cosScale = max(0.25, cos(midLat * Double.pi / 180.0))
         }
-        let spanX = max(1e-6, (region.lonMax - region.lonMin) * cosScale)
-        let spanY = max(1e-6, region.latMax - region.latMin)
-        let marginX = w * 0.03
-        let marginY = h * 0.03
+        let spanX = max(1e-6, (lonMax - lonMin) * cosScale)
+        let spanY = max(1e-6, latMax - latMin)
+        let marginX = w * pad
+        let marginY = h * pad
         let availW = max(1.0, w - marginX * 2.0)
         let availH = max(1.0, h - marginY * 2.0)
         let scale = min(availW / spanX, availH / spanY)
@@ -228,8 +496,8 @@ public enum HistoricalBasemaps {
         let originX = (w - usedW) * 0.5
         let originY = (h - usedH) * 0.5
         return ProjectionFrame(
-            lonMin: region.lonMin,
-            latMax: region.latMax,
+            lonMin: lonMin,
+            latMax: latMax,
             cosScale: cosScale,
             scale: scale,
             originX: originX,
@@ -237,7 +505,7 @@ public enum HistoricalBasemaps {
         )
     }
 
-    /// 将真实经纬度 `(lon, lat)` 投影到地图画布坐标 `(x, y)`（北上南下，经度按 `cos(midLat)` 等比修正，不拉伸变形）。
+    /// 将真实经纬度 `(lon, lat)` 投影到地图画布坐标 `(x, y)`（与 `bake_v600_atlas.mjs` 逐位一致）。
     public static func project(lon: Double, lat: Double, region: HistoricalRegion, width: Double, height: Double) -> (x: Double, y: Double) {
         let f = frame(region: region, width: width, height: height)
         let x = f.originX + (lon - f.lonMin) * f.cosScale * f.scale
@@ -253,11 +521,15 @@ public enum HistoricalBasemaps {
         return (lon, lat)
     }
 
-    /// 按历史地理底图生成高程数组（`0...100`，`< 20` 为海，`>= 20` 为陆）。
+    /// 按历史地理底图生成高程数组（`0...100`，`< 20` 为海，`>= 20` 为陆）：
+    /// 优先返回离线烘焙的 1:10m Natural Earth 真地形 `basemaps.bin`，未载入或点数不符时优雅回退至内置程序几何。
     public static func generateHeights(region: HistoricalRegion, points: [(Double, Double)], width: Double, height: Double) -> [UInt8] {
         guard !points.isEmpty else { return [] }
         if region == .custom {
             return generateCustomCanvasHeights(points: points, width: width, height: height)
+        }
+        if let baked = bakedHeights(region: region, expectedCount: points.count) {
+            return baked
         }
         let geom = geometry(for: region)
         let f = frame(region: region, width: width, height: height)
@@ -337,6 +609,9 @@ public enum HistoricalBasemaps {
     }
 
     public static func generateHeights(region: HistoricalRegion, graph: TerrainGraph) -> [UInt8] {
+        if region != .custom, let baked = bakedHeights(region: region, expectedCount: graph.points.count) {
+            return baked
+        }
         var heights = generateHeights(region: region, points: graph.points, width: graph.width, height: graph.height)
         if region != .custom {
             removeMicroSpeckles(&heights, neighbors: graph.neighbors, minCells: 4)
@@ -345,6 +620,9 @@ public enum HistoricalBasemaps {
     }
 
     public static func generateHeights(region: HistoricalRegion, document: TerrainDocument) -> [UInt8] {
+        if region != .custom, let baked = bakedHeights(region: region, expectedCount: document.points.count) {
+            return baked
+        }
         var heights = generateHeights(region: region, points: document.points, width: document.width, height: document.height)
         if region != .custom {
             removeMicroSpeckles(&heights, neighbors: document.neighbors, minCells: 4)
@@ -398,9 +676,9 @@ public enum HistoricalBasemaps {
 
     private static func geometry(for region: HistoricalRegion) -> RegionGeometry {
         switch region {
-        case .china: return chinaGeometry
-        case .europe: return europeGeometry
-        case .eastAsiaJapan: return eastAsiaJapanGeometry
+        case .huaxia, .china: return chinaGeometry
+        case .europe, .mediterranean: return europeGeometry
+        case .eastAsiaJapan, .japanDetail: return eastAsiaJapanGeometry
         case .world: return worldGeometry
         case .custom: return chinaGeometry
         }

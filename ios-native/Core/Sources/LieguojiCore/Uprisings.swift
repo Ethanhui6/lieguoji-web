@@ -671,19 +671,30 @@ extension Regimes {
                 }
             }
         }
-        guard !r.foundings.isNull, r.foundings.enabled.isTruthy, Rebellion.monthsSince(r, Rebellion.never) >= Tuning.current.calmMonths else { return }
-        let cityPids = Set(r.world.cities.asArray.map(\.provinceId.asString))
+        let mode = Rebellion.rebelMode(r)
+        guard mode != "off", rule(r, "rebel") > 0 else { return }
+        guard !r.foundings.isNull, r.foundings.enabled.isTruthy else { return }
+        // 修复开局首日大叛乱 bug：以真实已过游戏月数 `day / 30.0` 判断开局太平期，不再误用 `monthsSince(r, -10000)`。
+        guard (r.world.day.asNumber / 30.0) >= Double(Tuning.current.calmMonths) else { return }
         let nowDay = r.world.day.asInt
+        if mode == "historical" && nowDay < 720 { return }
+        let cityPids = Set(r.world.cities.asArray.map(\.provinceId.asString))
         for n in r.world.nations.asArray {
             let id = n.id.asString
             guard monthLandCount(r, id) >= 5, !isBlank(r, id) else { continue }
+            if mode == "historical" {
+                let dest = r.destiny.isNull ? 50.0 : (r.destiny.nations[id].destiny.optionalNumber ?? 50.0)
+                if dest >= 22 { continue }
+            }
             let owned = monthLand(r, id)
             let b = book(r, id)
             let minGap: Double = UnitKinds.enabled ? 18 : 8
             if let last = b.lastUprising.optionalNumber, Double(key) - last < minGap { continue }
             var calm = leverage(r, id).stability
             if isAtWar(r, id) { calm -= 6 }
-            let tag = "\(id)|\(key)|uprising", risk = (max(0, 55 - calm) / 100 * 0.35 * Tuning.current.unrest + (owned.count > 20 ? 0.004 : 0)) * rule(r, "rebel")
+            let tag = "\(id)|\(key)|uprising"
+            var risk = (max(0, 55 - calm) / 100 * 0.35 * Tuning.current.unrest + (owned.count > 20 ? 0.004 : 0)) * rule(r, "rebel")
+            if mode == "historical" { risk *= 0.20 }
             guard chance(tag) < risk else { continue }
             let capital = Rebellion.capitalProvince(r, id)
             var weighted = [(String, UInt32)]()

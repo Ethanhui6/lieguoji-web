@@ -754,7 +754,7 @@ private struct GameTopChrome: View {
         controller.paintNation != nil || controller.pickPrompt != nil || !controller.groupArmies.isEmpty
     }
     private var showOnlineSignalPill: Bool {
-        hudVisible && !viewsOpen && !model.remoteReconnecting && (model.remoteAddress != nil || model.remoteOfflineManual)
+        hudVisible && !viewsOpen
     }
 
     var body: some View {
@@ -857,12 +857,7 @@ private struct GameTopBar: View {
     let say: (String) -> Void
 
     private var compactDateText: String {
-        let raw = model.state?.dateText ?? ""
-        let squeeze = (landscape && panel != nil) || (!landscape && (model.state?.wars.count ?? 0) > 0)
-        if squeeze, raw.hasPrefix("公元") {
-            return String(raw.dropFirst(2))
-        }
-        return raw
+        model.state?.pureDateText ?? ""
     }
 
     var body: some View {
@@ -948,8 +943,8 @@ private struct GameTopDateCapsule: View {
                         .foregroundStyle(Theme.ink)
                         .monospacedDigit()
                         .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                        .frame(maxWidth: tightLandscape ? 110 : 148, alignment: .leading)
+                        .minimumScaleFactor(0.76)
+                        .frame(maxWidth: tightLandscape ? 118 : 162, alignment: .leading)
                         .layoutPriority(1)
                     if let m = model.state?.date.month {
                         GameSeasonBadge(month: m, tight: tightLandscape)
@@ -1002,90 +997,262 @@ private struct OnlineSignalBars: View {
     }
 }
 
-/// 战局内实时云服信号胶囊（连接态可点测速提示，手动离线态一键续连云服）。
+/// 战局内常驻云服信号与延迟胶囊：
+/// - 在线态显示实时 `云服 XXms`，点按即刻全线路测速并打开「云服推流线路与延迟」面板；
+/// - 重连态显示 `重连中…`，离线/未连接态显示 `未连接 · 点此秒连`，点按立即自动竞速重连最优线路并展开 5 线切换表。
 private struct GameOnlineSignalPill: View {
     @ObservedObject var model: GameModel
     let say: (String) -> Void
-    @State private var pinging = false
-    @State private var pingTask: Task<Void, Never>?
+    @State private var routeSheetOpen = false
 
     private var signalStrength: (bars: Int, color: Color) {
-        guard model.remoteAddress != nil else { return (0, Theme.ink2) }
+        guard model.remoteAddress != nil else {
+            return (0, model.remoteReconnecting ? Theme.gold : Theme.seal)
+        }
         guard let rtt = model.remoteRTTMs else { return (3, Theme.jade) }
         if rtt < 85 { return (3, Theme.jade) }
         if rtt < 180 { return (2, Theme.jade) }
         return (1, Theme.gold)
     }
 
-    var body: some View {
+    private var pillLabel: String {
         if model.remoteAddress != nil {
-            let sig = signalStrength
-            Button {
-                guard !pinging else { return }
-                GameFeel.shared.tap()
-                pinging = true
-                pingTask?.cancel()
-                pingTask = Task { @MainActor in
-                    let ms = await model.refreshRemoteRTT()
-                    guard !Task.isCancelled else { return }
-                    pinging = false
-                    let transport = model.remoteTransport.isEmpty ? "九州云服" : model.remoteTransport
-                    let detail = model.remoteConnectionDetail.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if let ms {
-                        let extra = detail.isEmpty ? "" : " · \(detail)"
-                        say("云服链路畅通（\(transport) · \(ms)ms\(extra)）")
-                    } else if !detail.isEmpty {
-                        say("云服链路状态：\(detail)")
-                    } else {
-                        say("云服已连接（\(transport)）")
+            if model.probingRoutes { return "测速…" }
+            if let rtt = model.remoteRTTMs { return "云服 \(rtt)ms" }
+            return "云服在线"
+        }
+        if model.remoteReconnecting {
+            return "重连中…"
+        }
+        return "未连接 · 点此秒连"
+    }
+
+    var body: some View {
+        let connected = model.remoteAddress != nil
+        let sig = signalStrength
+        Button {
+            GameFeel.shared.tap()
+            if !connected {
+                model.reconnectFastestRoute()
+                say("正在自动竞速重连最优云服线路…")
+            }
+            routeSheetOpen = true
+            Task { await model.probeAllRoutes() }
+        } label: {
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(sig.color)
+                    .frame(width: 5.5, height: 5.5)
+                if connected {
+                    OnlineSignalBars(bars: sig.bars, activeColor: sig.color)
+                }
+                Text(pillLabel)
+                    .font(Theme.sans(11.5))
+                    .foregroundStyle(connected ? Theme.ink : (model.remoteReconnecting ? Theme.ink : Theme.seal))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .fixedSize()
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 26)
+            .background(Theme.paperLight.opacity(0.95), in: Capsule())
+            .overlay(Capsule().strokeBorder(sig.color.opacity(connected ? 0.36 : 0.44), lineWidth: 0.75))
+            .overlay(Capsule().inset(by: 2).strokeBorder(Theme.hairline, lineWidth: 0.45))
+        }
+        .buttonStyle(PressStyle())
+        .sheet(isPresented: $routeSheetOpen) {
+            ComputeRouteSheet(model: model, say: say, onClose: { routeSheetOpen = false })
+                .presentationDetents([.medium, .fraction(0.82)])
+                .presentationCornerRadius(Theme.Control.cornerSheet)
+                .presentationBackground { MemorialPaper() }
+                .presentationDragIndicator(.hidden)
+                .font(Theme.section)
+        }
+    }
+}
+
+/// 轻量宋韵「云服推流线路与延迟」多线竞速切换面板（全 5 条推流专线实时测速、1 键切换与秒连）。
+private struct ComputeRouteSheet: View {
+    @ObservedObject var model: GameModel
+    let say: (String) -> Void
+    let onClose: () -> Void
+    @State private var switchingId: String? = nil
+
+    private func rttStyle(_ ms: Int?) -> (text: String, color: Color, bars: Int) {
+        guard let ms else {
+            return (model.probingRoutes ? "测速中" : "超时", Theme.ink2, 0)
+        }
+        if ms < 85 { return ("\(ms)ms", Theme.jade, 3) }
+        if ms < 180 { return ("\(ms)ms", Theme.gold, 2) }
+        return ("\(ms)ms", Theme.seal, 1)
+    }
+
+    private var statusSubtitle: String {
+        if model.remoteAddress != nil {
+            let transport = model.remoteTransport.isEmpty ? "九州云服" : model.remoteTransport
+            let rttPart = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
+            return "已连接：\(transport)\(rttPart)"
+        }
+        if model.remoteReconnecting {
+            return "正在自动竞速重连云服线路…"
+        }
+        return "当前未连接云服 · 点按任一线路即可秒连"
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: "云服推流线路与延迟", subtitle: statusSubtitle, seal: "线")
+
+                // 顶部快捷竞速与重连指令
+                HStack(spacing: 8) {
+                    EditorialTactileButton(
+                        title: model.probingRoutes ? "正在全线测速…" : "一键测速并选最快线路",
+                        icon: .lightning,
+                        accent: true,
+                        solid: true,
+                        compact: true,
+                        fullWidth: true,
+                        disabled: model.probingRoutes
+                    ) {
+                        Task {
+                            await model.probeAllRoutes()
+                            model.reconnectFastestRoute()
+                            say("已完成全线测速并切换至最优推流线路")
+                        }
+                    }
+
+                    EditorialTactileButton(
+                        title: "立即重连",
+                        icon: .refresh,
+                        accent: true,
+                        solid: false,
+                        compact: true,
+                        fullWidth: false
+                    ) {
+                        model.reconnectFastestRoute()
+                        say("正在自动竞速重连最优云服线路…")
                     }
                 }
-            } label: {
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(sig.color)
-                        .frame(width: 5.5, height: 5.5)
-                    OnlineSignalBars(bars: sig.bars, activeColor: sig.color)
-                    Text(pinging ? "测速…" : (model.remoteRTTMs.map { "云服 \($0)ms" } ?? "云服在线"))
-                        .font(Theme.sans(11.5))
-                        .foregroundStyle(Theme.ink)
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                HStack {
+                    SectionLabel("全部推流专线（\(model.computeRoutes.count) 线）", inset: false)
                         .monospacedDigit()
-                        .lineLimit(1)
-                        .fixedSize()
+                    Spacer()
+                    if model.probingRoutes {
+                        HStack(spacing: 5) {
+                            InkBusy().frame(width: 32)
+                            Text("测速中").font(Theme.caption).foregroundStyle(Theme.ink2)
+                        }
+                    }
                 }
-                .padding(.horizontal, 10)
-                .frame(height: 26)
-                .background(Theme.paperLight.opacity(0.95), in: Capsule())
-                .overlay(Capsule().strokeBorder(sig.color.opacity(0.36), lineWidth: 0.75))
-                .overlay(Capsule().inset(by: 2).strokeBorder(Theme.hairline, lineWidth: 0.45))
-            }
-            .buttonStyle(PressStyle())
-            .onDisappear {
-                pingTask?.cancel()
-                pingTask = nil
-            }
-        } else if model.remoteOfflineManual {
-            Button {
-                GameFeel.shared.tap()
-                model.reconnectCloudNow()
-                say("正在重连九州云服…")
-            } label: {
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(Theme.ink2.opacity(0.45))
-                        .frame(width: 5.5, height: 5.5)
-                    Text("离线单机 · 点此连云服")
-                        .font(Theme.sans(11.5))
-                        .foregroundStyle(Theme.ink2)
-                        .lineLimit(1)
-                        .fixedSize()
+                .padding(.horizontal, Theme.Layout.sectionInset)
+
+                Group2 {
+                    if model.computeRoutes.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            InkBusy(text: "正在探测全部云服推流线路……")
+                        }
+                        .padding(14)
+                    } else {
+                        ForEach(Array(model.computeRoutes.enumerated()), id: \.element.id) { idx, route in
+                            let st = rttStyle(route.rttMs)
+                            let isCurrent = route.active && model.remoteAddress != nil
+                            let isBusy = switchingId == route.id
+                            HStack(alignment: .center, spacing: 10) {
+                                VStack(spacing: 3) {
+                                    OnlineSignalBars(bars: st.bars, activeColor: st.color)
+                                }
+                                .frame(width: Theme.Layout.iconGutter, alignment: .center)
+
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack(spacing: 6) {
+                                        Text(route.name)
+                                            .font(Theme.serif(14.5))
+                                            .foregroundStyle(isCurrent ? Theme.seal : Theme.ink)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
+                                        if !route.tag.isEmpty {
+                                            PaperTag(text: route.tag, color: isCurrent ? Theme.seal : Theme.ink2, size: 10)
+                                        }
+                                    }
+                                    Text(route.address)
+                                        .font(Theme.sans(11.5))
+                                        .foregroundStyle(Theme.ink2)
+                                        .monospacedDigit()
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.75)
+                                }
+
+                                Spacer(minLength: 6)
+
+                                Text(st.text)
+                                    .font(Theme.label)
+                                    .foregroundStyle(st.color)
+                                    .monospacedDigit()
+                                    .lineLimit(1)
+                                    .frame(minWidth: 46, alignment: .trailing)
+
+                                if isCurrent {
+                                    Text("当前线路")
+                                        .font(Theme.caption)
+                                        .foregroundStyle(Theme.jade)
+                                        .lineLimit(1)
+                                        .frame(width: 68, height: 28)
+                                        .background(Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.7))
+                                } else {
+                                    Button {
+                                        guard switchingId == nil else { return }
+                                        GameFeel.shared.tap()
+                                        switchingId = route.id
+                                        Task {
+                                            await model.switchComputeRoute(route.id)
+                                            switchingId = nil
+                                            say("已切换至「\(route.name)」")
+                                        }
+                                    } label: {
+                                        Text(isBusy ? "连接中" : "切换此线")
+                                            .font(Theme.caption)
+                                            .foregroundStyle(Theme.paperLight)
+                                            .lineLimit(1)
+                                            .frame(width: 68, height: 28)
+                                            .background(Theme.seal.opacity(isBusy ? 0.6 : 1), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                    }
+                                    .buttonStyle(PressStyle())
+                                    .disabled(switchingId != nil)
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 11)
+                            if idx < model.computeRoutes.count - 1 { Divider2() }
+                        }
+                    }
                 }
-                .padding(.horizontal, 10)
-                .frame(height: 26)
-                .background(Theme.paperLight.opacity(0.94), in: Capsule())
-                .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 0.75))
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                HStack(spacing: 10) {
+                    if model.remoteAddress != nil {
+                        EditorialTactileButton(title: "暂切离线单机", icon: .computer, compact: true, fullWidth: true) {
+                            model.switchToOfflineLocal()
+                            say("已暂切本机离线演算，随时可点顶栏重连")
+                            onClose()
+                        }
+                    }
+                    EditorialTactileButton(title: "关闭", icon: .close, compact: true, fullWidth: model.remoteAddress == nil) {
+                        onClose()
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
             }
-            .buttonStyle(PressStyle())
+            .padding(.bottom, 26)
+        }
+        .task {
+            if model.computeRoutes.isEmpty || model.computeRoutes.allSatisfy({ $0.rttMs == nil }) {
+                await model.probeAllRoutes()
+            }
         }
     }
 }
@@ -1500,7 +1667,7 @@ private struct GameRtsBanner: View {
     let say: (String) -> Void
     var body: some View {
         HStack(spacing: 8) {
-            Text("已选\(controller.groupArmies.count)军").font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+            Text("已选\(controller.groupArmies.count)军").font(Theme.kai(13)).foregroundStyle(Theme.ink).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
             HStack(spacing: 0) {
                 ForEach([false, true], id: \.self) { defend in
                     Button { withAnimation(Motion.tap) { rtsDefend = defend } } label: {
@@ -1602,24 +1769,41 @@ private struct GameCleanMapChip: View {
 private struct GameTransportPill: View {
     @ObservedObject var model: GameModel
     let landscape: Bool
+    private static let speedSteps = [1, 2, 4, 8, 16, 32]
     var body: some View {
         let sealSize: CGFloat = landscape ? 28 : Theme.Control.sealButtonSize
+        let isUltra = model.speed >= 32
         HStack(spacing: 4) {
             Button {
                 GameFeel.shared.tap()
                 model.cycleSpeed()
             } label: {
                 Text("\(model.speed)×")
-                    .font(landscape ? Theme.kai(13) : Theme.kai(14))
-                    .foregroundStyle(model.speed > 1 ? Theme.seal : Theme.ink)
+                    .font(landscape ? Theme.kai(12.5) : Theme.kai(13.5))
+                    .foregroundStyle(isUltra ? Theme.paperLight : (model.speed > 1 ? Theme.seal : Theme.ink))
                     .monospacedDigit()
-                    .frame(width: landscape ? 30 : 34, height: sealSize)
-                    .background(model.speed > 1 ? Theme.seal.opacity(0.1) : Color.clear, in: Capsule())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(width: landscape ? 36 : 42, height: sealSize)
+                    .background(
+                        isUltra ? Theme.seal : (model.speed > 1 ? Theme.seal.opacity(0.11) : Color.clear),
+                        in: Capsule()
+                    )
                     .contentShape(Capsule())
                     .contentTransition(.numericText())
                     .animation(Motion.tap, value: model.speed)
             }
             .buttonStyle(PressStyle())
+            .contextMenu {
+                ForEach(Self.speedSteps, id: \.self) { step in
+                    Button {
+                        GameFeel.shared.tap()
+                        model.speed = step
+                    } label: {
+                        Text(step == 32 ? "\(step)× 极速看海" : "\(step)× 倍速")
+                    }
+                }
+            }
             PlaySealButton(playing: model.playing, size: sealSize) { model.togglePlay() }
                 .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
         }

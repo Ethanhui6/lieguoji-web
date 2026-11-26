@@ -163,6 +163,312 @@ public enum Regions {
         return nil
     }
 
+    /// 历史国界锁定分州（v6.0.0 真实 GIS 历史剧本专用）：
+    /// 按 `ownerMask`（每格所属历史国家序号，-1 为海）将陆地三角面严格锁定在各自历史国界内聚合分州，
+    /// 绝不跨国界合并；按 `sqrt(nationArea)` 公平分配各国州郡配额，保证列强与中小国均有精致版图分辨率。
+    public static func partitionWithinBorders(
+        _ d: TerrainDocument,
+        elevations: [Int],
+        ownerMask: [Int8],
+        cities: Int
+    ) -> (regions: [Region], owners: [Int])? {
+        guard let res = partitionWithinBordersWithFaces(d, elevations: elevations, ownerMask: ownerMask, cities: cities) else {
+            return nil
+        }
+        return (res.regions, res.owners)
+    }
+
+    /// 与 `partitionWithinBorders` 同源，并额外返回 `faces` 供计算每州真实人口/工业密度均值。
+    public static func partitionWithinBordersWithFaces(
+        _ d: TerrainDocument,
+        elevations: [Int],
+        ownerMask: [Int8],
+        cities: Int,
+        surface known: Climate.Surface? = nil
+    ) -> (regions: [Region], owners: [Int], faces: [Face])? {
+        let faces = landFaces(d, elevations)
+        guard !faces.isEmpty, !ownerMask.isEmpty else { return nil }
+        let surface = known ?? Climate.surface(d, elevations: elevations)
+        let pointCount = min(elevations.count, ownerMask.count)
+
+        // 1. 为每个陆地三角面按其 3 个源顶点的 ownerMask 多数表决确定所属历史国家
+        var faceOwner = [Int](repeating: -1, count: faces.count)
+        for (fi, f) in faces.enumerated() {
+            var votes = [Int: Int]()
+            for v in f.source where v >= 0 && v < pointCount && elevations[v] >= 20 {
+                let o = Int(ownerMask[v])
+                if o >= 0 { votes[o, default: 0] += 1 }
+            }
+            if votes.isEmpty {
+                for v in f.source where v >= 0 && v < pointCount {
+                    let o = Int(ownerMask[v])
+                    if o >= 0 { votes[o, default: 0] += 1 }
+                }
+            }
+            if let best = votes.max(by: { $0.value == $1.value ? $0.key > $1.key : $0.value < $1.value })?.key {
+                faceOwner[fi] = best
+            }
+        }
+
+        // 沿陆地邻接面 BFS 填补极少数未命中面（如恰好落在海陆交界线上的三角）
+        var queue = faceOwner.indices.filter { faceOwner[$0] >= 0 }
+        guard !queue.isEmpty else { return nil }
+        var head = 0
+        while head < queue.count {
+            let cur = queue[head]; head += 1
+            for nb in faces[cur].neighbors where faceOwner[nb] < 0 {
+                faceOwner[nb] = faceOwner[cur]
+                queue.append(nb)
+            }
+        }
+        if faceOwner.contains(where: { $0 < 0 }) {
+            let ownedCells = (0..<pointCount).filter { elevations[$0] >= 20 && ownerMask[$0] >= 0 }
+            for fi in faces.indices where faceOwner[fi] < 0 {
+                let c = middle(faces[fi].ring)
+                var bestO = 0, bestD = Double.infinity
+                for cell in ownedCells {
+                    let dx = d.points[cell].0 - c.0, dy = d.points[cell].1 - c.1
+                    let dd = dx * dx + dy * dy
+                    if dd < bestD { bestD = dd; bestO = Int(ownerMask[cell]) }
+                }
+                faceOwner[fi] = bestO
+            }
+        }
+
+        // 2. 清理国界折角处 1–2 个三角面的极细孤立碎角（仅当该国主体在别处且该碎角被邻国包夹时并入邻国，避免无意义单三角飞地）
+        do {
+            var totalByOwner = [Int: Int]()
+            for o in faceOwner where o >= 0 { totalByOwner[o, default: 0] += 1 }
+            var visited = [Bool](repeating: false, count: faces.count)
+            var compCountsByOwner = [Int: Int]()
+            var comps = [(owner: Int, members: [Int])]()
+            for fi in faces.indices where !visited[fi] {
+                let own = faceOwner[fi]
+                var q = [fi]; visited[fi] = true; var h = 0
+                while h < q.count {
+                    let u = q[h]; h += 1
+                    for nb in faces[u].neighbors where !visited[nb] && faceOwner[nb] == own {
+                        visited[nb] = true; q.append(nb)
+                    }
+                }
+                compCountsByOwner[own, default: 0] += 1
+                comps.append((own, q))
+            }
+            for comp in comps where comp.members.count <= 2 {
+                guard (compCountsByOwner[comp.owner] ?? 0) > 1,
+                      (totalByOwner[comp.owner] ?? 0) > comp.members.count * 4 else { continue }
+                var foreignVotes = [Int: Int]()
+                for fi in comp.members {
+                    for nb in faces[fi].neighbors where faceOwner[nb] != comp.owner && faceOwner[nb] >= 0 {
+                        foreignVotes[faceOwner[nb], default: 0] += 1
+                    }
+                }
+                if let targetOwner = foreignVotes.max(by: { $0.value == $1.value ? $0.key > $1.key : $0.value < $1.value })?.key {
+                    for fi in comp.members { faceOwner[fi] = targetOwner }
+                    compCountsByOwner[comp.owner, default: 1] -= 1
+                    totalByOwner[comp.owner, default: 0] -= comp.members.count
+                    totalByOwner[targetOwner, default: 0] += comp.members.count
+                }
+            }
+        }
+
+        // 3. 统计各国面积、面数与连通分块数，按 sqrt(nationArea) 分配公平的州郡配额 targetPerNation[owner]
+        var nationArea = [Int: Double]()
+        var nationFaceCount = [Int: Int]()
+        var nationCompCount = [Int: Int]()
+        var faceAreas = [Double](repeating: 0, count: faces.count)
+        for (fi, f) in faces.enumerated() {
+            let a = polygonArea(f.ring)
+            faceAreas[fi] = a
+            let o = faceOwner[fi]
+            nationArea[o, default: 0] += a
+            nationFaceCount[o, default: 0] += 1
+        }
+        do {
+            var visited = [Bool](repeating: false, count: faces.count)
+            for fi in faces.indices where !visited[fi] {
+                let own = faceOwner[fi]
+                var q = [fi]; visited[fi] = true; var h = 0
+                while h < q.count {
+                    let u = q[h]; h += 1
+                    for nb in faces[u].neighbors where !visited[nb] && faceOwner[nb] == own {
+                        visited[nb] = true; q.append(nb)
+                    }
+                }
+                nationCompCount[own, default: 0] += 1
+            }
+        }
+
+        let activeOwners = nationArea.keys.sorted()
+        guard !activeOwners.isEmpty else { return nil }
+        var targetPerNation = [Int: Int]()
+        var minTotal = 0
+        for o in activeOwners {
+            let m = min(nationFaceCount[o] ?? 1, max(1, nationCompCount[o] ?? 1))
+            targetPerNation[o] = m
+            minTotal += m
+        }
+        let requestedTotal = max(minTotal, min(480, cities))
+        var sqrtWeights = [Int: Double]()
+        var sumSqrt = 0.0
+        for o in activeOwners {
+            let w = max(1e-6, (nationArea[o] ?? 1.0)).squareRoot()
+            sqrtWeights[o] = w
+            sumSqrt += w
+        }
+        var currentTotal = minTotal
+        while currentTotal < requestedTotal {
+            var bestOwner = -1
+            var bestPriority = -Double.infinity
+            for o in activeOwners {
+                let cur = targetPerNation[o] ?? 1
+                let cap = nationFaceCount[o] ?? 1
+                guard cur < cap else { continue }
+                let ideal = Double(requestedTotal) * ((sqrtWeights[o] ?? 1.0) / max(1e-9, sumSqrt))
+                let priority = ideal / Double(cur)
+                if priority > bestPriority || (priority == bestPriority && o < bestOwner) {
+                    bestPriority = priority
+                    bestOwner = o
+                }
+            }
+            if bestOwner < 0 { break }
+            targetPerNation[bestOwner, default: 1] += 1
+            currentTotal += 1
+        }
+
+        // 4. 初始化聚簇与全图邻接（保留跨国邻接以准确构建 Region.neighbors，但入队合并严格禁止跨国！）
+        var rivers = Set<String>()
+        for (a, b) in surface.rivers.segments {
+            rivers.insert(edgeKey(Vertex(key: "p\(a)", x: 0, y: 0), Vertex(key: "p\(b)", x: 0, y: 0)))
+        }
+        var clusters = faces.enumerated().map { i, f -> Cluster in
+            let p = middle(f.ring)
+            return Cluster(ring: f.ring, area: faceAreas[i], x: p.0, y: p.1, height: f.height, members: [i])
+        }
+        var clusterOwner = faceOwner
+        var liveCount = nationFaceCount
+        var nationTargetArea = [Int: Double]()
+        for o in activeOwners {
+            nationTargetArea[o] = (nationArea[o] ?? 1.0) / Double(max(1, targetPerNation[o] ?? 1))
+        }
+
+        var edgeOwner = [String: Int]()
+        for i in faces.indices {
+            let f = faces[i]
+            for k in f.ring.indices {
+                let a = f.ring[k], b = f.ring[(k + 1) % f.ring.count]
+                let key = edgeKey(a, b)
+                let length = jsHypot(a.x - b.x, a.y - b.y)
+                if let j = edgeOwner[key] {
+                    let resistance = 1 + max(0, (f.height + faces[j].height) / 2 - 55) / 18 + abs(f.height - faces[j].height) / 15 + (rivers.contains(key) ? 3 : 0)
+                    let border = Border(length: length, resistance: length * resistance, edges: 1)
+                    clusters[i].adjacent.set(j, border)
+                    clusters[j].adjacent.set(i, border)
+                } else {
+                    edgeOwner[key] = i
+                }
+            }
+        }
+
+        var heap = Queue()
+        func offer(_ aa: Int, _ bb: Int) {
+            let a = min(aa, bb), b = max(aa, bb)
+            let owner = clusterOwner[a]
+            // 严格国界锁定：不同历史国家的聚簇永不入队、永不合并！
+            guard owner == clusterOwner[b] else { return }
+            guard (liveCount[owner] ?? 0) > (targetPerNation[owner] ?? 1) else { return }
+            let x = clusters[a], y = clusters[b]
+            guard x.live, y.live, let border = x.adjacent[b] else { return }
+            let dx = x.x - y.x, dy = x.y - y.y
+            let ward = (dx * dx + dy * dy) * x.area * y.area / max(1e-9, x.area + y.area)
+            let neck = 1 + min(4, min(x.area, y.area).squareRoot() / max(border.length, 1e-9))
+            let tArea = nationTargetArea[owner] ?? 1.0
+            let minA = min(x.area, y.area), floorA = tArea * 0.48
+            let smallFactor = minA < floorA ? max(0.08, (minA / max(1e-9, floorA)) * 0.40) : 1.0
+            let boundary = Double(x.ring.count + y.ring.count - 2 * border.edges)
+            let r = boundary / 200.0
+            let cost = ward * neck * border.resistance / max(border.length, 1e-9) * (1 + r * r) * smallFactor
+            heap.push(Entry(a: a, b: b, ar: x.revision, br: y.revision, cost: cost))
+        }
+
+        for i in clusters.indices {
+            for j in clusters[i].adjacent.keys where i < j && clusterOwner[i] == clusterOwner[j] {
+                offer(i, j)
+            }
+        }
+
+        while let e = heap.pop() {
+            let a = clusters[e.a], b = clusters[e.b]
+            if !a.live || !b.live || a.revision != e.ar || b.revision != e.br { continue }
+            let owner = clusterOwner[e.a]
+            if owner != clusterOwner[e.b] { continue }
+            if (liveCount[owner] ?? 0) <= (targetPerNation[owner] ?? 1) { continue }
+            guard let ring = mergeRing(a.ring, b.ring) else { continue }
+
+            let area = a.area + b.area
+            clusters[e.a].x = (a.x * a.area + b.x * b.area) / max(1e-9, area)
+            clusters[e.a].y = (a.y * a.area + b.y * b.area) / max(1e-9, area)
+            clusters[e.a].height = (a.height * a.area + b.height * b.area) / max(1e-9, area)
+            clusters[e.a].area = area
+            clusters[e.a].ring = ring
+            clusters[e.a].members.append(contentsOf: b.members)
+            clusters[e.a].revision += 1
+            clusters[e.b].live = false
+            liveCount[owner, default: 1] -= 1
+
+            clusters[e.a].adjacent.delete(e.b)
+            for j in b.adjacent.keys where j != e.a {
+                guard let border = b.adjacent[j] else { continue }
+                let next = clusters[e.a].adjacent[j].map {
+                    Border(length: $0.length + border.length, resistance: $0.resistance + border.resistance, edges: $0.edges + border.edges)
+                } ?? border
+                clusters[e.a].adjacent.set(j, next)
+                clusters[j].adjacent.delete(e.b)
+                clusters[j].adjacent.set(e.a, next)
+            }
+            clusters[e.b].adjacent.clear()
+            if (liveCount[owner] ?? 0) > (targetPerNation[owner] ?? 1) {
+                for j in clusters[e.a].adjacent.keys where clusterOwner[j] == owner {
+                    offer(e.a, j)
+                }
+            }
+        }
+
+        // 5. 生成最终合法 Region 列表与严格 100% 对齐的历史归属数组 owners
+        let liveIds = clusters.indices.filter { clusters[$0].live }
+        guard !liveIds.isEmpty else { return nil }
+        var index = [Int: Int]()
+        index.reserveCapacity(liveIds.count)
+        for (k, id) in liveIds.enumerated() { index[id] = k }
+
+        var regions = [Region]()
+        var owners = [Int]()
+        regions.reserveCapacity(liveIds.count)
+        owners.reserveCapacity(liveIds.count)
+
+        for id in liveIds {
+            let c = clusters[id]
+            guard let firstMember = c.members.first else { continue }
+            var best = firstMember, score = Double.infinity
+            let radius = max(1e-3, (c.area / Double.pi).squareRoot())
+            for fi in c.members {
+                let f = faces[fi], p = middle(f.ring)
+                let hs = f.source.map { $0 >= 0 && $0 < elevations.count ? elevations[$0] : 20 }
+                let slope = Double((hs.max() ?? 20) - (hs.min() ?? 20))
+                let water = f.source.contains { j in
+                    j >= 0 && j < surface.rivers.riverIds.count &&
+                    (surface.rivers.riverIds[j] > 0 || (j < d.neighbors.count && d.neighbors[j].contains { $0 >= 0 && $0 < elevations.count && elevations[$0] < 20 }))
+                }
+                let value = jsHypot(p.0 - c.x, p.1 - c.y) / radius + max(0, f.height - 35) / 30 + slope / 35 - (water ? 0.15 : 0)
+                if value < score { score = value; best = fi }
+            }
+            let nbs = c.adjacent.keys.compactMap { index[$0] }
+            regions.append(Region(ring: c.ring, area: c.area, center: middle(faces[best].ring), height: c.height, members: c.members, neighbors: nbs))
+            owners.append(clusterOwner[id])
+        }
+        return regions.isEmpty ? nil : (regions, owners, faces)
+    }
+
     enum Outcome { case ok([Region]), stalled, failed }
     static func unions(_ d: TerrainDocument, _ elevations: [Int], _ faces: [Face], _ surface: Climate.Surface, _ cities: Int, perimeter: Bool, balanceAreas: Bool = false) -> Outcome {
         let scale = 1000 / max(d.width, d.height)

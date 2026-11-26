@@ -52,7 +52,8 @@ struct NationsSheet: View {
                                         Spacer(minLength: 8)
                                         VStack(alignment: .trailing, spacing: 3) {
                                             EditorialValueText("\(s.provinces) \(nLex.adminUnit)", size: 15.5, color: Theme.ink)
-                                            Text("\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                            Text("\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵")
+                                                .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
                                         }
                                         PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
                                             .foregroundStyle(Theme.ink2.opacity(0.72))
@@ -62,7 +63,7 @@ struct NationsSheet: View {
                                             .padding(.leading, 18)
                                     }
                                 }
-                                .padding(.horizontal, 6).padding(.vertical, 11).contentShape(Rectangle())
+                                .padding(.horizontal, 14).padding(.vertical, 11).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             if i != order.last { Divider2() }
@@ -175,7 +176,7 @@ struct MilitarySheet: View {
                     let manualCount = state.armies.filter(\.manual).count
                     if manualCount > 0 {
                         HStack(spacing: 10) {
-                            Text("亲自指挥 \(manualCount) 支").font(Theme.label).foregroundStyle(Theme.ink2)
+                            Text("亲自指挥 \(manualCount) 支").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
                             Spacer()
                             Button {
                                 Task { let out = await model.releaseToAI(armies: []); released = out.reason }
@@ -184,7 +185,22 @@ struct MilitarySheet: View {
                         .padding(.horizontal, Theme.Layout.sectionInset)
                     }
                     if let released { Text(released).font(Theme.label).foregroundStyle(Theme.jade).padding(.horizontal, Theme.Layout.sectionInset).transition(.opacity) }
-                    if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo, generals: generals) }
+                    if filter == "overview" {
+                        MilitaryOverview(
+                            map: map,
+                            state: state,
+                            select: select,
+                            flyTo: flyTo,
+                            generals: generals,
+                            model: model,
+                            onToast: { released = $0 },
+                            onFocusProvince: { pIdx in
+                                if map.meta.provinces.indices.contains(pIdx) {
+                                    flyTo(Double(map.meta.provinces[pIdx].x), Double(map.meta.provinces[pIdx].y))
+                                }
+                            }
+                        )
+                    }
                     if filter == "wars" {
                         if !state.wars.isEmpty {
                             let involved = Set(state.wars.flatMap { [$0.attacker, $0.defender] + $0.participants.map(\.nation) })
@@ -207,7 +223,8 @@ struct MilitarySheet: View {
                             HStack {
                                 NationChip(map: map, nation: n)
                                 Spacer()
-                                Text("\(rows.count) 支 · \(Names.wan(rows.reduce(0) { $0 + state.armies[$1].troops })) 兵").font(Theme.label).foregroundStyle(Theme.ink2)
+                                Text("\(rows.count) 支 · \(Names.wan(rows.reduce(0) { $0 + state.armies[$1].troops })) 兵")
+                                    .font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
                             }
                             .padding(.horizontal, Theme.Layout.sectionInset)
                             let summary = dutySummary(state, rows)
@@ -296,10 +313,10 @@ struct MilitarySheet: View {
                             ForEach(yards.indices, id: \.self) { i in
                                 let y = yards[i]
                                 HStack {
-                                    Text(y.name).font(Theme.body).foregroundStyle(Theme.ink)
+                                    Text(y.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
                                     Spacer()
-                                    Text(map.meta.nations.indices.contains(y.nation) ? map.meta.nations[y.nation].name : "").font(Theme.label).foregroundStyle(Theme.ink2)
-                                    Text("建造中 · 约 \(max(1, Int(y.months.rounded()))) 月下水").font(Theme.label).foregroundStyle(Theme.seal)
+                                    Text(map.meta.nations.indices.contains(y.nation) ? map.meta.nations[y.nation].name : "").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                                    Text("建造中 · 约 \(max(1, Int(y.months.rounded()))) 月下水").font(Theme.label).foregroundStyle(Theme.seal).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
                                 }
                                 .padding(.horizontal, 14).padding(.vertical, 10)
                                 if i != yards.indices.last { Divider2() }
@@ -382,7 +399,7 @@ private struct NavalDoctrineCard: View {
         } label: {
             HStack(spacing: 5) {
                 Circle().fill(Names.color(meta.color)).frame(width: 7, height: 7)
-                Text(label).font(Theme.caption).foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                Text(label).font(Theme.caption).foregroundStyle(on ? Theme.paperLight : Theme.ink).monospacedDigit().lineLimit(1)
             }
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(on ? Theme.seal : Theme.wash.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -587,15 +604,15 @@ struct DiplomacyOverviewView: View {
                     ForEach(items.indices, id: \.self) { i in
                         HStack(spacing: 6) {
                             RoundedRectangle(cornerRadius: 2).fill(color(items[i].0)).frame(width: 10, height: 10)
-                            Text(name(items[i].0)).font(Theme.body).foregroundStyle(Theme.ink)
-                            Text(items[i].1).font(Theme.label).foregroundStyle(Theme.ink2)
+                            Text(name(items[i].0)).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                            Text(items[i].1).font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
                         }
                     }
                 }
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        .padding(.horizontal, 14).padding(.vertical, 10)
     }
 }
 
@@ -923,7 +940,7 @@ struct WorldSummary: View {
                 HStack {
                     Text("天下大势").font(Theme.section).foregroundStyle(Theme.ink)
                     Spacer()
-                    Text("\(state.nations.filter(\.alive).count) 国 · \(state.wars.count) 场战争").font(Theme.label).foregroundStyle(Theme.ink2)
+                    Text("\(state.nations.filter(\.alive).count) 国 · \(state.wars.count) 场战争").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
                 // The land in one band, each great power its colour.
                 GeometryReader { g in

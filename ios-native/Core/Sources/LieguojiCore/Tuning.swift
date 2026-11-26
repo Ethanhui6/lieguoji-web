@@ -6,9 +6,9 @@ import Foundation
 /// the cloud cannot be reached. Original-parity worlds never read them.
 public struct Tuning: Codable, Sendable, Equatable {
     /// Battle damage (× the original's).
-    public var lethality = 2.0
+    public var lethality = 2.35
     /// Siege damage (× the original's).
-    public var siege = 6.0
+    public var siege = 7.5
     /// Months before a war whose goals are met may end, and before a decisive score forces peace.
     public var peaceGoalMonths = 4
     public var peaceDecisiveMonths = 6

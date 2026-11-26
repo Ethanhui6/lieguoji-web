@@ -14,20 +14,18 @@ import Glibc
 import Darwin
 #endif
 
-// 列国纪在线计算服务器 v11（lieguoji-server/v11 · 差量疆域帧 + 弱网自适应 + 启动目录预热 + Linux 低延迟 TCP 调优 + worldId 秒级热续连）：
-// 1. v11 非阻塞全双工多路复用直连 TCP（端口 8765，支持 `enableMux` 升级）：TCP 读线程 100% 永不阻塞，
-//    <1ms 瞬回 `MUX_PING`、0ms 消化 `MUX_ACK` 滑动窗口确认，所有业务 `MUX_REQ` 派发至独立串行 RPC 队列；
-//    配合疆域差量帧（ownersDelta）+ 事件去重 + 3 Mbps 出向带宽整形 + 64KB 适度缓冲防移动网 Bufferbloat。
-// 2. worldId 感知秒级热续连（`resumeWorld`）+ 启动目录预热（`/app/catalogs.json` / `--catalog-dir` / 磁盘缓存）：
-//    内存命中 0ms / 磁盘 `world-<id>.lgj` 秒载 50ms，0 MB 上传瞬连，彻底消灭切后台重进断联与重复传目录。
-// 3. 云端中转单向推流管道（Cloudflare Pages / Durable Object `/push` -> 手机 WebSocket `MSG_PUSH`）：
-//    外出 4G/5G 省去整趟「手机→中转→PC」请求来回，消除停顿问答感；同时双路长轮询即时处理控制指令。
-// 4. 局域网 UDP 自动发现信标（端口 8766）：同一 Wi-Fi 下无需经过外网中转，10ms 内秒连家用电脑。
-// 5. 专属 24h 云服务器就绪：支持环境变量 `LGJ_PORT` / `LGJ_PAIRING_CODE` / `LGJ_DATA_DIR` / `LGJ_CATALOG_DIR` / `LGJ_DISABLE_RELAY`，
+// 列国纪在线计算服务器 v12（lieguoji-server/v12 · 16 Mbps 满速推流 + 多端口 443/8765/8443 + 32× 爽看海 + 真实历史 GIS 图集预热 + Linux TCP_QUICKACK）：
+// 1. v12 非阻塞全双工多路复用直连 TCP（支持主端口 8765 与 `LGJ_EXTRA_PORTS=443,8443` 多端口并行监听，支持 `enableMux` 升级）：
+//    TCP 读线程 100% 永不阻塞，<1ms 瞬回 `MUX_PING`、0ms 消化 `MUX_ACK` 动态滑动窗口确认（高速 `intervalMs <= 55` 时 `maxInFlight = 3`）；
+//    出向带宽整形解锁至 16 Mbps（2,000,000 B/s）+ 128 KB 读写缓冲 + `TCP_NODELAY` + Linux `TCP_QUICKACK`，彻底释放腾讯云服算力与带宽。
+// 2. 启动自动预热 `HistoricalBasemaps` 离线真实地理图集（`LGJ_ATLAS_DIR` / `/app/HistoricalAtlas`）与全套目录（`catalogs.json`），
+//    配合 `worldId` 秒级热续连（`resumeWorld`），内存命中 0ms / 磁盘秒载 50ms，0 MB 上传瞬连。
+// 3. 云端中转单向推流管道（Cloudflare Pages / Durable Object `/push` -> 手机 WebSocket `MSG_PUSH`）与局域网 UDP 自动发现信标（端口 8766）。
+// 4. 专属 24h 云服务器就绪：支持环境变量 `LGJ_PORT` / `LGJ_EXTRA_PORTS` / `LGJ_ATLAS_DIR` / `LGJ_PAIRING_CODE` / `LGJ_DATA_DIR` / `LGJ_CATALOG_DIR` / `LGJ_DISABLE_RELAY`，
 //    以及服务端每 60 秒自动双写热备（`autosave.lgj` + 最多 10 份 `world-<id>.lgj`）与 SIGTERM/SIGINT 优雅落盘退出。
 
 setvbuf(stdout, nil, _IONBF, 0)
-let serverVersionTag = "lieguoji-server/v11"
+let serverVersionTag = "lieguoji-server/v12"
 let env = ProcessInfo.processInfo.environment
 let cliArgs = Array(CommandLine.arguments.dropFirst())
 let catalogDirArg: String? = {
@@ -358,17 +356,17 @@ func pairingCode() -> String {
 let code = pairingCode()
 let relayPusher = RelayPusher(code: code)
 
-/// 服务端极速微步推流引擎（v8）：
-/// - `NSCondition` 0ms 瞬时唤醒（点击开始 < 30ms 出首帧，绝不空睡）；
-/// - 滑动窗口背压流控（`maxInFlight = 2` + `MUX_ACK` 确认帧）：彻底根除 TCP Bufferbloat、1000ms 队列延迟与一月瞬移七月；
-/// - 自适应微步切片（单次锁表严控 ≤ 50ms，首帧强制 1 日瞬出）+ 控制指令优先抢占锁，实现 15–20 Hz 真·网游级丝滑行军。
+/// 服务端极速微步推流引擎（v12）：
+/// - `NSCondition` 0ms 瞬时唤醒（点击开始 < 20ms 出首帧，绝不空睡）；
+/// - 动态滑动窗口背压流控（`intervalMs <= 55` 时 `maxInFlight = 3`，消除 8×/16×/32× 高速看海 ACK 往返停顿；常规 `maxInFlight = 2`）；
+/// - 16 Mbps（`maxBytesPerSec = 2_000_000`）满速出向整形 + `intervalMs` 下限 28ms（~35fps）+ 单帧最高 32 日爽看海 + 控制指令优先抢占锁。
 final class SimStreamer {
     private let cond = NSCondition()
     private var playing = false
     private var pushEnabled = false
     private var windowEnabled = false
     private var daysPerStep = 1
-    private var intervalSec: Double = 0.08
+    private var intervalSec: Double = 0.068
     private var streamEpoch: UInt32 = 1
     private var streamSeq: UInt32 = 0
     private var ackedSeq: UInt32 = 0
@@ -381,14 +379,14 @@ final class SimStreamer {
     private var pushedBytes = 0
     private var statStarted = Date()
     private var avgStepMs: Double = 0
-    private var avgDayMs: Double = 12.0
+    private var avgDayMs: Double = 10.0
     private var dirtySinceSave = false
     private var cachedProvinces = 0
     private var cachedDay = 0
     private var cachedWorldId = ""
     private var hasCatalogsLoaded = false
     private var worldLoaded = false
-    private let maxInFlight: UInt32 = 2
+    private let maxBytesPerSec: Double = 2_000_000.0
 
     func telemetry() -> (playing: Bool, stepMs: Int, provinces: Int, day: Int, open: Bool, worldId: String, hasCatalogs: Bool) {
         cond.lock()
@@ -423,7 +421,7 @@ final class SimStreamer {
         self.pushEnabled = push
         self.windowEnabled = window
         self.daysPerStep = max(1, min(32, days))
-        self.intervalSec = Double(max(35, min(900, intervalMs))) / 1000.0
+        self.intervalSec = Double(max(28, min(900, intervalMs))) / 1000.0
         if let e = epoch, e >= 0 {
             let nextEpoch = UInt32(e & 0xFF)
             if nextEpoch != self.streamEpoch {
@@ -547,8 +545,9 @@ final class SimStreamer {
                 let period = self.intervalSec
                 let epoch = self.streamEpoch
                 let inFlight = self.streamSeq >= self.ackedSeq ? (self.streamSeq - self.ackedSeq) : 0
+                let effectiveMaxInFlight: UInt32 = (period <= 0.055) ? 3 : 2
                 let ackStalled = tickStart.timeIntervalSince(self.lastPushSentAt) > 1.2
-                let windowFull = doPush && useWindow && inFlight >= self.maxInFlight && !ackStalled
+                let windowFull = doPush && useWindow && inFlight >= effectiveMaxInFlight && !ackStalled
                 let idleSecs = tickStart.timeIntervalSince(self.lastClientActivity)
                 let dayMsEst = self.avgDayMs
                 if active && idleSecs > 300 {
@@ -558,7 +557,7 @@ final class SimStreamer {
                 if !active || idleSecs > 300 || (!doPush && !needsLegacyBuf) || windowFull {
                     let shouldIdleSave = self.dirtySinceSave && !active && idleSecs >= 12
                     if shouldIdleSave { self.dirtySinceSave = false }
-                    let waitSecs: Double = windowFull ? 0.04 : 0.12
+                    let waitSecs: Double = windowFull ? 0.025 : 0.12
                     if !shouldIdleSave {
                         self.cond.wait(until: Date().addingTimeInterval(waitSecs))
                     }
@@ -574,12 +573,13 @@ final class SimStreamer {
                     Thread.sleep(forTimeInterval: 0.002)
                 }
 
-                // 自适应微步切片：首帧强制 1 日瞬出（< 30ms）；后续按单日实测耗时严控单次锁表 ≤ 55ms，绝不锁死 1000ms！
+                // 自适应微步切片：首帧强制 1 日瞬出；16×/32× 极速看海释放算力预算至 90–130ms，常规维持 ≤ 55ms 零锁表！
                 let sliceDays: Int
                 if isFirst {
                     sliceDays = 1
                 } else {
-                    let maxForBudget = max(1, Int((55.0 / max(4.0, dayMsEst)).rounded(.down)))
+                    let sliceBudgetMs: Double = reqDays >= 12 ? 130.0 : (reqDays >= 6 ? 90.0 : 55.0)
+                    let maxForBudget = max(1, Int((sliceBudgetMs / max(3.0, dayMsEst)).rounded(.down)))
                     sliceDays = max(1, min(reqDays, maxForBudget))
                 }
 
@@ -609,8 +609,8 @@ final class SimStreamer {
                 if reply.ok, let rawData = reply.data, !rawData.isEmpty {
                     if doPush {
                         let compressed = WireCodec.compress(rawData)
-                        // v10 3 Mbps 出向带宽整形器（3 Mbps = 375 KB/s，安全水位 260 KB/s，彻底杜绝打满带宽导致 1000ms TCP Bufferbloat）
-                        wireSec = Double(compressed.count) / 260_000.0
+                        // v12 16 Mbps 满速出向整形（maxBytesPerSec = 2,000,000 B/s），彻底释放腾讯云服网速与 32× 爽看海吞吐！
+                        wireSec = Double(compressed.count) / self.maxBytesPerSec
                         self.cond.lock()
                         let stillValid = self.playing && self.streamEpoch == epoch
                         var tag: UInt32 = 0
@@ -623,7 +623,7 @@ final class SimStreamer {
                             self.pushedBytes += compressed.count
                             if tickStart.timeIntervalSince(self.statStarted) >= 30 {
                                 let avgKB = Double(self.pushedBytes) / Double(max(1, self.pushedCount)) / 1024.0
-                                print(String(format: "（v11 差量全双工推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
+                                print(String(format: "（v12 16Mbps 极速推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
                                 self.pushedCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
                             }
                         }
@@ -648,9 +648,9 @@ final class SimStreamer {
                     }
                 }
 
-                // 精确按目标周期与 3 Mbps 带宽整形等待（可被新指令或暂停瞬间打断，0ms 浪费）
+                // 精确按目标周期与 16 Mbps 满速整形等待（可被新指令或暂停瞬间打断，0ms 浪费）
                 let elapsed = Date().timeIntervalSince(tickStart)
-                let remain = doPush ? (max(period, wireSec * 1.15) - elapsed) : 0.012
+                let remain = doPush ? (max(period, wireSec * 1.05) - elapsed) : 0.010
                 if remain > 0.002 {
                     self.cond.lock()
                     if self.playing && self.streamEpoch == epoch {
@@ -714,7 +714,30 @@ func preloadBootCatalogs() {
         }
     }
 }
+
+/// 启动预载 1:10m Natural Earth 离线真实历史地理图集（`LGJ_ATLAS_DIR` / `/app/HistoricalAtlas` / 程序同级目录）。
+func preloadBootAtlas() {
+    var candidates: [URL] = []
+    if let envDir = env["LGJ_ATLAS_DIR"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envDir.isEmpty {
+        candidates.append(URL(fileURLWithPath: envDir, isDirectory: true))
+    }
+    candidates.append(URL(fileURLWithPath: "/app/HistoricalAtlas", isDirectory: true))
+    candidates.append(serverDir.appendingPathComponent("HistoricalAtlas", isDirectory: true))
+    candidates.append(saveDirURL.appendingPathComponent("HistoricalAtlas", isDirectory: true))
+    let fm = FileManager.default
+    for dir in candidates {
+        var isDir: ObjCBool = false
+        if fm.fileExists(atPath: dir.path, isDirectory: &isDir), isDir.boolValue {
+            HistoricalBasemaps.loadAtlasDirectory(dir)
+            if HistoricalBasemaps.hasBakedAtlas() || !HistoricalBasemaps.globalCities().isEmpty {
+                print("（\(serverVersionTag) 地理图集预热）已从 \(dir.path) 载入真实历史地理底图与 \(HistoricalBasemaps.globalCities().count) 座城市志")
+                return
+            }
+        }
+    }
+}
 preloadBootCatalogs()
+preloadBootAtlas()
 streamer.start()
 if !disableRelay {
     relayPusher.start { streamer.stopForIdle() }
@@ -775,7 +798,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         return service.handle("park", args, payload: nil)
     }
     if call == "enableMux" {
-        return EngineService.Reply(ok: true, reason: "mux-v11")
+        return EngineService.Reply(ok: true, reason: "mux-v12")
     }
     if call == "resumeWorld" {
         let reqWorldId = (args["worldId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -790,7 +813,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
             let pCount = service.engine?.run.world.provinces.length ?? 0
             let curDay = service.currentDay
             streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: reqWorldId)
-            print("（v11 秒级热续连）命中内存世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
+            print("（v12 秒级热续连）命中内存世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
             return reply
         }
         // 2) 本地 SSD 磁盘秒载（~50ms，0 MB 上传恢复）
@@ -816,7 +839,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
                     let pCount = candidate.run.world.provinces.length
                     let curDay = service.currentDay
                     streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: reqWorldId)
-                    print("（v11 秒级热续连）从本地磁盘秒载世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
+                    print("（v12 秒级热续连）从本地磁盘秒载世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
                     return reply
                 }
             }
@@ -830,7 +853,8 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         "provinceBreakdown", "warCompare", "grandInfo", "replayTimeline", "statistics", "route",
         "regime", "posts", "postCandidates", "officeCandidates", "allianceList", "districtList",
         "familyList", "placeNames", "mapExtras", "extraUnits", "unitProfile", "catalogEdits",
-        "mapLabels", "throneCandidates", "nationProvinces", "profileReport", "worldInfo"
+        "mapLabels", "throneCandidates", "nationProvinces", "profileReport", "worldInfo",
+        "nuclearInfo", "eraMilitaryInfo"
     ]
     if !readOnly.contains(call) { streamer.invalidatePending() }
 
@@ -1099,7 +1123,7 @@ func startUDPDiscovery(tcpPort: UInt16, roomCode: String) {
 
 func tuneClientSocket(_ s: Socket) {
     var one: Int32 = 1
-    var sockBuf: Int32 = 65_536
+    var sockBuf: Int32 = 131_072
     #if os(Windows)
     withUnsafePointer(to: &one) {
         $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
@@ -1125,6 +1149,7 @@ func tuneClientSocket(_ s: Socket) {
     var keepIntvl: Int32 = 5
     var keepCnt: Int32 = 3
     setsockopt(s, Int32(IPPROTO_TCP), TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
+    setsockopt(s, Int32(IPPROTO_TCP), TCP_QUICKACK, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, Int32(IPPROTO_TCP), TCP_KEEPIDLE, &keepIdle, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, Int32(IPPROTO_TCP), TCP_KEEPINTVL, &keepIntvl, socklen_t(MemoryLayout<Int32>.size))
@@ -1182,42 +1207,59 @@ func localAddresses() -> [String] {
     return list
 }
 
-#if os(Windows)
-let listener = socket(AF_INET, Int32(SOCK_STREAM), Int32(IPPROTO_TCP.rawValue))
-#elseif canImport(Glibc)
-let listener = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
-#else
-let listener = socket(AF_INET, SOCK_STREAM, 0)
-#endif
-guard listener != invalidSocket else { print("无法创建监听端口"); exit(1) }
-var yes: Int32 = 1
-#if os(Windows)
-withUnsafePointer(to: &yes) {
-    $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
-        _ = setsockopt(listener, Int32(SOL_SOCKET), Int32(SO_REUSEADDR), ptr, 4)
+func createTCPListener(on listenPort: UInt16) -> Socket? {
+    #if os(Windows)
+    let sock = socket(AF_INET, Int32(SOCK_STREAM), Int32(IPPROTO_TCP.rawValue))
+    #elseif canImport(Glibc)
+    let sock = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+    #else
+    let sock = socket(AF_INET, SOCK_STREAM, 0)
+    #endif
+    guard sock != invalidSocket else { return nil }
+    var yes: Int32 = 1
+    #if os(Windows)
+    withUnsafePointer(to: &yes) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
+            _ = setsockopt(sock, Int32(SOL_SOCKET), Int32(SO_REUSEADDR), ptr, 4)
+        }
     }
+    #else
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, socklen_t(MemoryLayout<Int32>.size))
+    #endif
+    var addr = sockaddr_in()
+    #if os(Windows)
+    addr.sin_family = ADDRESS_FAMILY(AF_INET)
+    let addrLen = Int32(MemoryLayout<sockaddr_in>.size)
+    addr.sin_addr.S_un.S_addr = 0
+    #else
+    addr.sin_family = sa_family_t(AF_INET)
+    let addrLen = socklen_t(MemoryLayout<sockaddr_in>.size)
+    addr.sin_addr.s_addr = 0
+    #endif
+    addr.sin_port = listenPort.bigEndian
+    let ok = withUnsafePointer(to: &addr) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(sock, $0, addrLen) } }
+    guard ok == 0 && listen(sock, 32) == 0 else {
+        closeSocket(sock)
+        return nil
+    }
+    return sock
 }
-#else
-setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, socklen_t(MemoryLayout<Int32>.size))
-#endif
-var address = sockaddr_in()
-#if os(Windows)
-address.sin_family = ADDRESS_FAMILY(AF_INET)
-let addressLength = Int32(MemoryLayout<sockaddr_in>.size)
-#else
-address.sin_family = sa_family_t(AF_INET)
-let addressLength = socklen_t(MemoryLayout<sockaddr_in>.size)
-#endif
-address.sin_port = port.bigEndian
-#if os(Windows)
-address.sin_addr.S_un.S_addr = 0
-#else
-address.sin_addr.s_addr = 0
-#endif
-let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(listener, $0, addressLength) } }
-if bound != 0 || listen(listener, 16) != 0 {
+
+guard let listener = createTCPListener(on: port) else {
     print("直连端口 \(port) 不可用（可在命令后加其他端口号，例如 LieguojiServer 8766）；云端中转不受影响。")
     while true { Thread.sleep(forTimeInterval: 3600) }
+}
+
+var extraListeners: [(port: UInt16, sock: Socket)] = []
+if let rawExtra = env["LGJ_EXTRA_PORTS"]?.trimmingCharacters(in: .whitespacesAndNewlines), !rawExtra.isEmpty {
+    let parsedPorts = rawExtra.split(separator: ",").compactMap { UInt16($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+    for ep in parsedPorts where ep != port && ep > 0 && !extraListeners.contains(where: { $0.port == ep }) {
+        if let es = createTCPListener(on: ep) {
+            extraListeners.append((ep, es))
+        } else {
+            print("（\(serverVersionTag) 多端口）附加端口 TCP \(ep) 绑定失败（可能被占用或无权限），继续使用主端口 \(port)")
+        }
+    }
 }
 
 startUDPDiscovery(tcpPort: port, roomCode: code)
@@ -1245,6 +1287,7 @@ func installShutdownSignals() {
         clientLock.unlock()
         cur?.markClosed()
         closeSocket(listener)
+        for item in extraListeners { closeSocket(item.sock) }
         print("世界已安全落盘，服务器退出。")
         fflush(stdout)
         exit(0)
@@ -1259,11 +1302,12 @@ func installShutdownSignals() {
 installShutdownSignals()
 #endif
 
-print("列国纪在线计算服务器 v11（\(serverVersionTag) · 差量疆域帧 + 弱网自适应 + 启动目录预热 + worldId 秒级热续连 + 3Mbps 整形 + LZ4 压缩）已启动")
+let allListeningPorts = ([port] + extraListeners.map(\.port)).map(String.init).joined(separator: " / ")
+print("列国纪在线计算服务器 v12（\(serverVersionTag) · 16 Mbps 满速推流 + 动态滑窗 3 帧 + 32× 爽看海 + 真实历史 GIS 图集预热 + LZ4 差量压缩）已启动")
 print("配对码：\(code)\(disableRelay ? "（纯直连专属云服模式）" : "")")
-print("手机打开游戏即自动接入；同一 Wi-Fi 自动毫秒级直连推流，切后台再返回秒级无感重连。")
+print("手机打开游戏即自动接入；支持多端口 443/8765/8443 运营商优先专线，切后台再返回秒级无感重连。")
 installStartup()
-print("直连监听端口：TCP \(port) · 局域网发现 UDP \(port < 65535 ? port + 1 : 8766)")
+print("直连监听端口：TCP \(allListeningPorts) · 局域网发现 UDP \(port < 65535 ? port + 1 : 8766)")
 let addresses = localAddresses()
 if addresses.isEmpty {
     print("本机地址：可用 ipconfig / hostname -I 查看 IP，端口 \(port)")
@@ -1338,7 +1382,7 @@ func handleLANClient(_ conn: DirectClient) {
         if isMuxUpgrade {
             conn.mux = true
             conn.compress = true
-            print("（直连 TCP [#\(conn.gen)]）已升级至 v11 差量非阻塞全双工推流 + 滑动窗口背压 + 3Mbps 整形模式")
+            print("（直连 TCP [#\(conn.gen)]）已升级至 v12 16Mbps 非阻塞全双工推流 + 动态滑窗背压 + 32× 爽看海模式")
             break
         }
         if call == "health" { break }
@@ -1377,12 +1421,12 @@ func handleLANClient(_ conn: DirectClient) {
                     }
                     let reply = serve(req.call, req.args, req.payload)
                     if req.call == "open" {
-                        print(reply.ok ? "（v11 差量全双工推流）世界已载入，随时高速开推" : "（v11 差量全双工推流）世界载入失败：\(reply.reason)")
+                        print(reply.ok ? "（v12 16Mbps 全双工推流）世界已载入，随时高速开推" : "（v12 16Mbps 全双工推流）世界载入失败：\(reply.reason)")
                     }
-                    if req.call == "park" { print("（v11 差量全双工推流）手机已切入后台，世界热保留并已落盘") }
+                    if req.call == "park" { print("（v12 16Mbps 全双工推流）手机已切入后台，世界热保留并已落盘") }
                     rpcStats.calls += 1
                     if Date().timeIntervalSince(rpcStats.started) > 30 {
-                        print("（v11 差量全双工推流）近 30 秒处理 \(rpcStats.calls) 次指令/查询")
+                        print("（v12 16Mbps 全双工推流）近 30 秒处理 \(rpcStats.calls) 次指令/查询")
                         rpcStats.calls = 0; rpcStats.started = Date()
                     }
                     if !conn.sendMux(type: EngineWire.muxReply, id: reqFrameId, body: EngineWire.reply(reply, compress: true)) {
@@ -1409,22 +1453,30 @@ func handleLANClient(_ conn: DirectClient) {
     }
 }
 
-while true {
-    let client = accept(listener, nil, nil)
-    if client == invalidSocket {
-        #if !os(Windows) && canImport(Dispatch)
-        shutdownLock.lock()
-        let stopping = serverShuttingDown
-        shutdownLock.unlock()
-        if stopping { break }
-        #endif
-        Thread.sleep(forTimeInterval: 0.05)
-        continue
+func acceptLoop(on sock: Socket) {
+    while true {
+        let client = accept(sock, nil, nil)
+        if client == invalidSocket {
+            #if !os(Windows) && canImport(Dispatch)
+            shutdownLock.lock()
+            let stopping = serverShuttingDown
+            shutdownLock.unlock()
+            if stopping { break }
+            #endif
+            Thread.sleep(forTimeInterval: 0.05)
+            continue
+        }
+        clientLock.lock()
+        clientGeneration &+= 1
+        let gen = clientGeneration
+        clientLock.unlock()
+        let conn = DirectClient(socket: client, gen: gen)
+        Thread.detachNewThread { handleLANClient(conn) }
     }
-    clientLock.lock()
-    clientGeneration &+= 1
-    let gen = clientGeneration
-    clientLock.unlock()
-    let conn = DirectClient(socket: client, gen: gen)
-    Thread.detachNewThread { handleLANClient(conn) }
 }
+
+for item in extraListeners {
+    let extraSock = item.sock
+    Thread.detachNewThread { acceptLoop(on: extraSock) }
+}
+acceptLoop(on: listener)

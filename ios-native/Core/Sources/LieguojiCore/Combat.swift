@@ -67,6 +67,8 @@ public struct ContactMotion {
     public struct Result { public var contacts: [ForceContact]; public var held: Set<String>; public var elapsed: Double; public var unused: Double; var positions: [String: Position]? = nil }
     /// The last sort of the forces by key (the set rarely changes between calls).
     nonisolated(unsafe) static var orderCache: (keys: [String], order: [Int])?
+    /// App-only hook: amphibious sea crossing / landing speed multiplier by nation index (e.g. +40% when navTech >= 4).
+    public nonisolated(unsafe) static var amphibiousSpeedMultiplier: ((Int) -> Double)?
 
     let graph: TravelGraph
     public init(graph: TravelGraph) { self.graph = graph }
@@ -202,7 +204,15 @@ public struct ContactMotion {
                 let over = s.crossed ? seg.b : seg.a
                 var v = 0.0
                 if left != 0 {
-                    if speedAt[i].cell == over { v = speedAt[i].v } else { v = rules.speed(forces[i], over); speedAt[i] = (over, v) }
+                    if speedAt[i].cell == over { v = speedAt[i].v } else {
+                        v = rules.speed(forces[i], over)
+                        if rules.physicalContact, forces[i].kind == .army,
+                           graph.provinces.indices.contains(over), graph.provinces[over] < 0,
+                           let mult = ContactMotion.amphibiousSpeedMultiplier?(forces[i].nation) {
+                            v *= mult
+                        }
+                        speedAt[i] = (over, v)
+                    }
                 }
                 let bonus = credit.isEmpty ? 0 : credit[i], time = left == 0 ? 0 : v > 0 ? left / v : Double.infinity
                 movers.append(Mover(f: i, seg: seg, speed: v, end: end, time: max(0, time - bonus), bonus: bonus))
@@ -374,8 +384,17 @@ public enum Volley {
     public struct Hit: Sendable, Equatable { public let attacker: String; public let victim: String; public let damage: Double }
     public struct ArmyInput: Sendable { public let efficiency: Double; public let damageToArmy: Double; public let multiplier: Double
         public init(efficiency: Double, damageToArmy: Double, multiplier: Double) { self.efficiency = efficiency; self.damageToArmy = damageToArmy; self.multiplier = multiplier } }
-    public struct NavalInput: Sendable { public let destiny: Double; public let maritime: Bool; public let leader: Double?
-        public init(destiny: Double, maritime: Bool, leader: Double?) { self.destiny = destiny; self.maritime = maritime; self.leader = leader } }
+    public struct NavalInput: Sendable { public let destiny: Double; public let maritime: Bool; public let leader: Double?; public let powerBonus: Double
+        public init(destiny: Double, maritime: Bool, leader: Double?, powerBonus: Double = 0) { self.destiny = destiny; self.maritime = maritime; self.leader = leader; self.powerBonus = powerBonus } }
+
+    /// 军备科技代差战力倍率（每差 1 阶 ±11%，钳制 −35%…+45%）。
+    public static func techGapMultiplier(attackerTech: Int, defenderTech: Int) -> Double {
+        1.0 + max(-0.35, min(0.45, Double(attackerTech - defenderTech) * 0.11))
+    }
+    /// 航海科技代差海战倍率（每差 1 阶 ±12%，钳制 −25%…+40%）。
+    public static func navalTechGapMultiplier(attackerTech: Int, defenderTech: Int) -> Double {
+        1.0 + max(-0.25, min(0.40, Double(attackerTech - defenderTech) * 0.12))
+    }
 
     static func armyHit(_ efficiency: Double, _ enemies: Int, _ elite: Bool, _ damageToArmy: Double, _ multiplier: Double) -> Double {
         let f = Native.fr
@@ -388,6 +407,8 @@ public enum Volley {
         if v.maritime { factor = f(factor * f(1.5)) }
         let modifier = v.leader.map(f) ?? 0
         if abs(modifier) > f(0.001) { factor = f(factor * max(f(0.1), f(1 + modifier))) }
+        let power = f(v.powerBonus)
+        if abs(power) > f(0.001) { factor = f(factor * max(f(0.2), f(1 + power))) }
         return factor
     }
     static func navyHit(_ factor: Double, _ victims: Int, army: Bool) -> Double { let f = Native.fr; return f(f(f(factor) * f(army ? 320 : 40)) / f(Double(victims))) }

@@ -12,6 +12,12 @@ struct MilitaryOverview: View {
     let flyTo: (Double, Double) -> Void
     /// 名将谱: the commanders who earned a rank in their states' wars.
     var generals: [GeneralEntry] = []
+    /// 可选接入 GameModel 以展示时代军制、动员法令与战略核威慑指挥台。
+    var model: GameModel? = nil
+    var onToast: ((String) -> Void)? = nil
+    var onFocusProvince: ((Int) -> Void)? = nil
+
+    @State private var strategicNation: Int = -1
 
     struct Power: Identifiable { let id: Int; let troops: Int; let armies: Int }
     struct Share: Identifiable { let id: String; let troops: Int }
@@ -76,13 +82,73 @@ struct MilitaryOverview: View {
         return Array(bad.sorted { state.armies[$0].troops > state.armies[$1].troops }.prefix(4))
     }
 
+    private var strategicPowers: [Int] {
+        state.nations.indices
+            .filter { state.nations[$0].alive && $0 < map.meta.nations.count }
+            .sorted {
+                let sa = state.nations[$0].troops + state.nations[$0].provinces * 600
+                let sb = state.nations[$1].troops + state.nations[$1].provinces * 600
+                return sa != sb ? sa > sb : $0 < $1
+            }
+            .prefix(6)
+            .map { $0 }
+    }
+
     var body: some View {
         let powers = self.powers, kinds = self.kinds, clashes = self.clashes, troubled = self.troubled
+        let stratList = strategicPowers
         LazyVStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 ForEach(counts, id: \.0) { c in CountTile(title: c.title, value: c.value, hot: c.hot) }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Theme.Layout.pageInset)
+
+            if let model, let firstNation = stratList.first {
+                let chosen = stratList.contains(strategicNation) ? strategicNation : firstNation
+                if stratList.count > 1 {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(stratList, id: \.self) { nid in
+                                let on = nid == chosen
+                                let meta = map.meta.nations[nid]
+                                Button {
+                                    GameFeel.shared.tap()
+                                    withAnimation(Motion.tap) { strategicNation = nid }
+                                } label: {
+                                    HStack(spacing: 5) {
+                                        Circle().fill(Names.color(meta.color)).frame(width: 7, height: 7)
+                                        Text(MapLayers.stateLabel(meta.name, full: false))
+                                            .font(Theme.caption)
+                                            .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                            .lineLimit(1)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .frame(height: 28)
+                                    .background(on ? Theme.seal : Theme.wash.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.65))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                    }
+                }
+                StrategicNuclearCard(
+                    model: model,
+                    map: map,
+                    state: state,
+                    nation: chosen,
+                    alive: state.nations.indices.contains(chosen) && state.nations[chosen].alive,
+                    onFocusProvince: { pIdx in
+                        if let onFocusProvince {
+                            onFocusProvince(pIdx)
+                        } else {
+                            go(province: pIdx)
+                        }
+                    },
+                    onToast: { msg in onToast?(msg) }
+                )
+            }
 
             if !powers.isEmpty {
                 SectionLabel("列国兵势")
@@ -104,16 +170,16 @@ struct MilitaryOverview: View {
                             RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(color(grp.nation)).frame(width: 8, height: 24)
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 5) {
-                                    Text("\(name(grp.nation)) · \(grp.name)").font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                    Text("\(name(grp.nation)) · \(grp.name)").font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
                                     PaperTag(text: "总协同+\(grp.bonus)%", color: Theme.seal, size: 10)
                                 }
                                 Text("\(grp.count) 支军团\(grp.composition.isEmpty ? "" : "（\(grp.composition)）")\(grp.synergy.isEmpty ? "" : " · \(grp.synergy)")")
-                                    .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
+                                    .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(2)
                             }
                             Spacer(minLength: 4)
-                            Text(Names.wan(grp.troops)).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                            Text(Names.wan(grp.troops)).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 9)
+                        .padding(.horizontal, 14).padding(.vertical, 9)
                         if idx < groups.count - 1 { Divider2() }
                     }
                 }
@@ -254,8 +320,8 @@ struct CountTile: View {
     let hot: Bool
     var body: some View {
         VStack(spacing: 2) {
-            Text("\(value)").font(Theme.kai(22)).foregroundStyle(hot ? Theme.seal : Theme.ink).monospacedDigit()
-            Text(title).font(Theme.label).foregroundStyle(Theme.ink2)
+            Text("\(value)").font(Theme.kai(22)).foregroundStyle(hot ? Theme.seal : Theme.ink).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+            Text(title).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 10)
         .paperCard(tint: hot ? Theme.seal : nil)
@@ -272,9 +338,9 @@ private struct ShareBar: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 10, height: 10)
-                Text(title).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                Text(title).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 6)
-                Text(value).font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
+                Text(value).font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
             }
             InkBar(fraction: share, color: color.opacity(0.9), track: Theme.ink.opacity(0.08), height: 6)
         }
@@ -293,16 +359,16 @@ private struct SiegeRow: View {
             RoundedRectangle(cornerRadius: 3).fill(color).frame(width: 10, height: 30)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(place).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                    Text(by + "围攻").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                    Text(place).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
+                    Text(by + "围攻").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
                     Spacer(minLength: 4)
-                    Text("\(Int((share * 100).rounded()))%").font(Theme.label).foregroundStyle(Theme.seal).monospacedDigit()
+                    Text("\(Int((share * 100).rounded()))%").font(Theme.label).foregroundStyle(Theme.seal).monospacedDigit().frame(minWidth: 38, alignment: .trailing)
                 }
                 InkBar(fraction: share, color: Theme.seal.opacity(0.85), track: Theme.ink.opacity(0.08), height: 5)
             }
             InkIcon(glyph: .locate, size: 14, weight: 1.75).foregroundStyle(Theme.seal)
         }
-        .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+        .padding(.horizontal, 14).padding(.vertical, 10).contentShape(Rectangle())
     }
 }
 

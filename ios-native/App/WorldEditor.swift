@@ -33,6 +33,8 @@ struct WorldEditorSheet: View {
     @State private var exported: URL?
     @State private var importing = false
     @State private var newName = ""
+    @State private var rebelMode: String = "historical"
+    @State private var rebelBusy = false
     private var baseCultures: [String] { Names.cultureIds.filter { !$0.hasPrefix("custom") } }
 
     private func report(_ e: String?, _ ok: String) { flash = e ?? ok; GameFeel.shared.notify(e == nil ? .success : .error) }
@@ -70,7 +72,16 @@ struct WorldEditorSheet: View {
             .padding(.bottom, 28)
         }
         .paperToast($flash)
-        .task { await model.refreshCustom() }
+        .task {
+            await model.refreshCustom()
+            if let ws = await model.worldSettings() {
+                if let m = ws.rebelMode, ["off", "historical", "classic"].contains(m) {
+                    rebelMode = m
+                } else if ws.rebellion == false {
+                    rebelMode = "off"
+                }
+            }
+        }
         .onAppear { if let t = Self.tourTab { tab = t } }
         .sheet(item: $choice) { c in
             ScrollView {
@@ -121,6 +132,23 @@ struct WorldEditorSheet: View {
     // MARK: 笔刷
     private var brushes: some View {
         LazyVStack(spacing: 14) {
+            quickSection("叛乱规则") {
+                RebelModeSelector(selection: $rebelMode, compact: true, disabled: rebelBusy) { nextMode in
+                    guard !rebelBusy else { return }
+                    rebelBusy = true
+                    Task {
+                        let err = await model.setRebelMode(nextMode)
+                        rebelBusy = false
+                        if err == nil { rebelMode = nextMode }
+                        let ok = nextMode == "off" ? "已关闭全局叛乱" : (nextMode == "historical" ? "已切为历史拟真叛乱" : "已切为经典乱世叛乱")
+                        report(err, ok)
+                    }
+                }
+                Text("可随时在局中实时切换「关闭叛乱 / 历史拟真 / 经典乱世」，即时生效。")
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.ink2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             quickSection("归属与文化") {
                 editorToolGrid(columns: 2) {
                     editorToolButton("绘制国家", glyph: .brush) { target = -1; picking = true }

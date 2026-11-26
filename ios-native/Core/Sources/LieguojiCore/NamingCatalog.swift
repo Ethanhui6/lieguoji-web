@@ -74,10 +74,34 @@ public enum NamingCatalog {
         return s
     }
 
-    /// 家族对外称谓：单双字东亚姓称「李氏」「司马氏」「藤原氏」，长音译姓称「哈布斯堡家族」或简洁「哈布斯堡氏」。
+    /// 现代组织/派系/皇室/军团后缀（本身即为完整派系或政经实体名称，绝不机械拼接「氏」或「家族」）。
+    private static let nonClanEntitySuffixes: [String] = [
+        "皇室", "王室", "宗室", "王庭", "财阀", "财团", "集团", "公司", "工会",
+        "派系", "统制派", "皇道派", "舰队派", "条约派", "重臣", "元老",
+        "军委", "总部", "军部", "司令部", "集团军", "纵队", "军团", "参谋部", "总督府", "国防军",
+        "政治局", "国务院", "政务院", "委员会", "内阁", "议会", "联盟", "同盟", "战线", "协会", "政府",
+        "公爵世家", "政治世家", "将门", "勋贵", "军官团", "工团", "商团", "学派", "教团",
+    ]
+
+    /// 判断某个家族/派系称谓本身是否已经是完整的现代组织或派系名（不应附加「氏/家族」）。
+    public static func isInstitutionalLabel(_ raw: String) -> Bool {
+        let s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !s.isEmpty else { return false }
+        if nonClanEntitySuffixes.contains(where: { s.hasSuffix($0) }) { return true }
+        if let last = s.last, "派党军团阀部府会盟系院司社厅局室庭".contains(last), s.count >= 3 {
+            return true
+        }
+        return false
+    }
+
+    /// 家族对外称谓：单双字东亚姓称「李氏」「司马氏」「藤原氏」，长音译姓称「哈布斯堡家族」或简洁「哈布斯堡氏」；
+    /// 现代派系/财阀/皇室/军部（如「陆军统制派」「海军舰队派」「日本皇室」「三菱重工财阀」）直接原样呈现。
     public static func houseLabel(_ surname: String, long: Bool = false) -> String {
-        let s = cleanSurname(surname)
+        let trimmed = surname.trimmingCharacters(in: .whitespacesAndNewlines)
+        if isInstitutionalLabel(trimmed) { return trimmed }
+        let s = cleanSurname(trimmed)
         if s.isEmpty { return "无名氏" }
+        if isInstitutionalLabel(s) { return s }
         return long ? s + "家族" : s + "氏"
     }
 

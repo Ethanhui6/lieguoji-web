@@ -31,7 +31,7 @@ public struct MapCamera: Equatable, Sendable {
         let vw = max(1, viewport.width.isFinite ? viewport.width : 390), vh = max(1, viewport.height.isFinite ? viewport.height : 844)
         let rawFit = max(1e-4, min(vw / mw, vh / mh))
         let framedFit = max(1e-4, min(vw / (mw * 1.11), vh / (mh * 1.11)))
-        return framedFit...(rawFit * 40)
+        return framedFit...(rawFit * 140)
     }
     public static func fit(map: (width: Double, height: Double), viewport: (width: Double, height: Double)) -> MapCamera {
         MapCamera(centerX: map.width / 2, centerY: map.height / 2, scale: scaleBounds(map: map, viewport: viewport).lowerBound)

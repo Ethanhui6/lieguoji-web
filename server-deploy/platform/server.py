@@ -99,19 +99,19 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
-DEFAULT_LATEST_VERSION = "6.0.1"
-DEFAULT_LATEST_BUILD = 190
+DEFAULT_LATEST_VERSION = "7.0.0"
+DEFAULT_LATEST_BUILD = 191
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【热更新提速 50 倍 × 69 项 229MB GIS 图集全线上镜】正式发布 GitHub Release hotpack-v5 全量 69 项真实地理图集并剔除超时死节点，接入 gh-proxy.com / cdn.gh-proxy.org / gh-proxy.org / EdgeOne / Cloudflare 五路 HTTP 206 满速分片并发，首包 < 0.5 秒起跑、1 MB 细粒度分片与流式字节回调让进度条丝滑飙升。",
-    "【九州云服 v12 全界面统一显示】修正行宫链路卡、设置页与司礼监监控页残留的旧版 v9/v10 文案，全面同步显示「九州云服 v12（16 Mbps 五路竞速 · 断链自动续连）」及动态典藏热更包总体积。",
-    "【全面消除界面文字挤压与错乱】重排热更新进度卡片线路胶囊与状态行层级、标题页公告栏改为圆角卷幅防圆弧裁切、精炼设置页模式切换标签并锁齐模块体积列宽，iPhone 竖屏零重叠零竖折。",
+    "【HOI4/历史时代3级地图革命 × 60K/120K 超精网格 × 14K 卫星地貌 GPU 瓦片】彻底突破旧版 20K 细胞 / 480 州 / 24 国上限：全新支持 6 万(1,200 州)与 12 万(2,400 州) Voronoi 高精网格、7 大历史分区 14K 卫星山川与海深 GPU 瓦片金字塔、64 国自绘工坊 3.0 与 1 格微操画笔，拉近至 100× 细节纤毫毕现。",
+    "【极致丝滑零延迟革命 × 本机 0ms 64× 看海 + 广州 4C4G 3Mbps 云服 v13 二进制+UDP】默认切回「本机极致流畅 0ms（最高 64× 推进，账号/云档/热更/工坊全程在线）」；云服升级至 v13，引入 LGB1 紧凑二进制增量帧（<1 KB/帧、<0.05 ms 解码）、Linux TCP_QUICKACK、UDP 8767 零队头阻塞推流与 2480 kbps 精准限速，彻底消除 3 Mbps 带宽突发丢包。",
+    "【真·历史深度考据 × 双元首制 × 家族派系纯净 × 真实军事代差 × 1.1 GB 全生效热更包 v6】1943 年前严格禁核；1941 日本实装「昭和天皇 裕仁 + 内阁总理大臣 东条英机」双元首、满洲国爱新觉罗·溥仪傀儡制、陆海军派系剧烈对立与零外籍宗室；真实还原 1941 日中陆海空科技代差与山地衰减；发布 1.1 GB 100% 真实生效 hotpack-v6（45 纪元全可玩 + 6 时代兵模 + 12 首交响双乐章 + 游戏内实时自检面板）。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 16,
-    "notice": "v6.0.1 上线：热更五路满速秒动 · 云服 v12 显示同步 · 界面排版零错乱",
+    "version": 17,
+    "notice": "v7.0.0 史诗大改版上线：60K/120K 超精舆图 · 14K 卫星瓦片 · 本机 0ms 64× + 云服 v13 · 1.1GB 全生效典藏热更 v6",
     "computeHost": COMPUTE_HOST,
-    "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16},
+    "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16, "64": 32},
     "tuning": {
         "lethality": 2.35,
         "siege": 7.5,
@@ -157,6 +157,13 @@ def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
 
 
 CHANGELOG_HISTORY: list[dict[str, Any]] = [
+    {
+        "version": "7.0.0",
+        "build": 191,
+        "date": "2026-11-26",
+        "title": "史诗大改版：60K/120K 超精地图 × 14K GPU 瓦片 × 本机 0ms 64× / 云服 v13 × 真实历史双元首 × 1.1GB 全生效热更 v6",
+        "notes": DEFAULT_RELEASE_NOTES,
+    },
     {
         "version": DEFAULT_LATEST_VERSION,
         "build": DEFAULT_LATEST_BUILD,
@@ -734,10 +741,16 @@ def save_release_config(cfg: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# HotPack v5 Resource Manifest Engine (228+ MB real GIS & 5000-Year Atlas + SHA256 delta sync)
+# HotPack v6 Resource Manifest Engine (1.1+ GB 100%-active HD Meshes, 14K GPU Relief Tiles, 45 Playable Eras, Era Units & Symphonic Audio)
 # ---------------------------------------------------------------------------
 
 MODULE_META = {
+    "hd-meshes": ("60K / 120K 超精网格拓扑与真地形", "突破 20K 限制：6 万/12 万 Voronoi 网格、1:10m 真地形与 10 大官方剧本高精国界"),
+    "relief-tiles": ("20K 真实卫星山川地貌 GPU 瓦片", "7 大历史分区 5 级金字塔（2,387 块 1280×720 HD 瓦片），Metal 零卡顿流式渲染"),
+    "eras-45": ("五千年 45 纪元真实可玩剧本库", "公元前 3000 年至公元 2010 年全 45 纪元真实世界疆域与 20K/60K/120K 掩码"),
+    "encyclopedia": ("全球真实城市志与五千年人物志", "14,900+ 真实世界双语城市坐标与 5,320 位历代人物百科全典"),
+    "era-units": ("6 时代高清雕漆兵模与战舰贴图", "青铜/中古/火药/一战/二战/现代 84 套 1024×1024 Retina 立体兵模与舰船棋子"),
+    "audio-hd": ("时代自适应交响三乐章与高清音效", "6 时代 18 首 44.1kHz 立体声交响配乐与 49 条时代战场交互音效"),
     "gis-basemaps-10m": ("Natural Earth 1:10m 高精地貌图集", "Natural Earth 1:10m 全球高精地貌与水文矢量化图集"),
     "gis-historical-45eras": ("世界五千年 45 纪元历史国界图集", "世界五千年 45 纪元真实历史国界图集（3000 BCE – 2010 CE）"),
     "gis-cities-encyclopedia": ("全球 7,342 城双语地理志与名将全典", "全球 7,342 城双语地理志与历代名将史料全典"),
@@ -754,7 +767,9 @@ MODULE_META = {
     "music": ("古风史诗配乐包", "高音质典藏原声配乐与古风交互音效"),
 }
 
-HOTPACK_V5_RELEASE_TAG = os.environ.get("LGJ_HOTPACK_RELEASE_TAG", "hotpack-v5")
+HOTPACK_V5_RELEASE_TAG = os.environ.get("LGJ_HOTPACK_V5_RELEASE_TAG", "hotpack-v5")
+HOTPACK_V6_RELEASE_TAG = os.environ.get("LGJ_HOTPACK_RELEASE_TAG", "hotpack-v6")
+BUNDLED_HOTPACK_V6_MANIFEST = Path(__file__).resolve().parent / "hotpack-v6-manifest.json"
 
 _hotpack_lock = threading.Lock()
 _hotpack_cache: Optional[dict[str, Any]] = None
@@ -766,13 +781,15 @@ def _get_hotpack_version_meta() -> tuple[int, str, str]:
     if row:
         try:
             d = json.loads(row["v"])
-            return int(d.get("packVersion", 5)), str(d.get("releaseTag", "v6.0 · 228MB 真实世界 GIS 与五千年史典热更包 v5")), str(d.get("summary", ""))
+            ver = int(d.get("packVersion", 6))
+            if ver >= 6:
+                return ver, str(d.get("releaseTag", "v7.0 · 1.1GB 史诗超精舆图与五千年典藏热更包 v6")), str(d.get("summary", ""))
         except Exception:
             pass
     return (
-        5,
-        "v6.0 · 228MB 真实世界 GIS 与五千年史典热更包 v5",
-        "含 Natural Earth 1:10m 全球高精地貌与水文矢量化图集、世界五千年 45 纪元真实历史国界图集（3000 BCE – 2010 CE）、全球 7,342 城双语地理志与历代名将史料全典（支持分模块免换包下载）",
+        6,
+        "v7.0 · 1.2GB 史诗超精舆图与五千年典藏热更包 v6",
+        "全量 100% 实时挂载生效：60K/120K 超精网格拓扑、7 大分区 20K 卫星地貌 GPU 瓦片金字塔、五千年 45 纪元真实国界自由开局、14,900+ 全球双语城市与人物志、6 时代 84 套 1024×1024 高清兵模及 18 首时代交响三乐章",
     )
 
 
@@ -788,13 +805,25 @@ def _save_hotpack_version_meta(ver: int, tag: str, summary: str) -> None:
 
 def _resolve_hotpack_module(rel: str) -> str:
     top = rel.split("/", 1)[0].lower() if "/" in rel else "content"
+    if top == "hdmeshes":
+        return "hd-meshes"
+    if top == "relieftiles":
+        return "relief-tiles"
+    if top == "eras45":
+        return "eras-45"
+    if top == "encyclopedia":
+        return "encyclopedia"
+    if top == "eraunits":
+        return "era-units"
+    if top == "audiohd":
+        return "audio-hd"
     if top in MODULE_META:
         return top
     if top in ("historicalatlas", "atlas", "gis_basemaps", "basemaps"):
         return "gis-basemaps-10m"
     if top in ("gis_historical", "historical_45eras", "eras"):
         return "gis-historical-45eras"
-    if top in ("gis_cities", "cities", "encyclopedia"):
+    if top in ("gis_cities", "cities"):
         return "gis-cities-encyclopedia"
     if top in ("sfx", "sound"):
         return "audio"
@@ -808,6 +837,20 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
     quoted_rel = urllib.parse.quote(rel, safe="/")
     direct_download_url = f"http://{PUBLIC_HOST}/api/v1/hotpack/download/{quoted_rel}"
     top_low = top.lower()
+
+    # Hotpack v6 1.1+ GB 全生效六大典藏模块：国内实测最快五路 CDN 并发，零消耗广州 3 Mbps 源站出向带宽
+    if top_low in ("hdmeshes", "relieftiles", "eras45", "encyclopedia", "eraunits", "audiohd"):
+        flat_asset = urllib.parse.quote(rel.replace("/", "__"), safe="")
+        gh_release_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/{HOTPACK_V6_RELEASE_TAG}/{flat_asset}"
+        return [
+            f"https://gh-proxy.com/{gh_release_asset}",
+            f"https://cdn.gh-proxy.org/{gh_release_asset}",
+            f"https://gh-proxy.org/{gh_release_asset}",
+            f"https://edgeone.gh-proxy.com/{gh_release_asset}",
+            f"https://lieguoji-edge.pages.dev/api/cdn/hotpack/{quoted_rel}",
+            gh_release_asset,
+            direct_download_url,
+        ]
 
     # Hotpack v5 229+ MB GIS & 5000-Year Atlas modules: 实测最快国内多镜像优先（剔除超时死节点）
     if top_low in ("gis-basemaps-10m", "gis-historical-45eras", "gis-cities-encyclopedia"):
@@ -860,14 +903,51 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
         _save_hotpack_version_meta(ver, cur_tag, cur_summary)
 
     files: list[dict[str, Any]] = []
+    seen_paths: set[str] = set()
     mod_acc: dict[str, dict[str, Any]] = {}
     total_bytes = 0
 
+    # 1) 优先载入随服务端打包的权威 1.1GB+ HotPack v6 清单（无需在 40GB/3Mbps 轻量云磁盘冗余存放 1.1GB 静态大包，客户端直走国内 5 路满速 CDN）
+    if BUNDLED_HOTPACK_V6_MANIFEST.exists():
+        try:
+            bundled = json.loads(BUNDLED_HOTPACK_V6_MANIFEST.read_text(encoding="utf-8"))
+            bver = int(bundled.get("packVersion", 6))
+            if bver > ver:
+                ver = bver
+            for item in bundled.get("files", []):
+                rel = str(item.get("path", "")).strip()
+                if not rel or rel in seen_paths:
+                    continue
+                seen_paths.add(rel)
+                mod_id = str(item.get("module") or _resolve_hotpack_module(rel))
+                sz = int(item.get("size", 0))
+                sha = str(item.get("sha256", ""))
+                cdns = item.get("cdnUrls") or _cdn_urls_for_hotpack_rel(rel)
+                entry = {"path": rel, "module": mod_id, "size": sz, "sha256": sha}
+                if cdns:
+                    entry["cdnUrls"] = cdns
+                files.append(entry)
+                total_bytes += sz
+                if mod_id not in mod_acc:
+                    name, detail = MODULE_META.get(mod_id, (mod_id, "游戏扩展资源"))
+                    mod_acc[mod_id] = {"id": mod_id, "name": name, "detail": detail, "bytes": 0, "fileCount": 0}
+                mod_acc[mod_id]["bytes"] += sz
+                mod_acc[mod_id]["fileCount"] += 1
+        except Exception:
+            pass
+
+    # 2) 合并磁盘 /data/hotpack 中的本地增量自定义内容（如管理员热更的 Content/scenarios.json、hot-rules.json 等；跳过旧版未生效的 v5 原始 GeoJSON 目录）
     if HOTPACK_DIR.exists():
         for fp in sorted(HOTPACK_DIR.rglob("*")):
             if not fp.is_file() or fp.name.startswith(".") or fp.suffix.lower() == ".mp4":
                 continue
             rel = fp.relative_to(HOTPACK_DIR).as_posix()
+            top_low = rel.split("/", 1)[0].lower() if "/" in rel else ""
+            if top_low in ("gis-basemaps-10m", "gis-historical-45eras", "gis-cities-encyclopedia"):
+                continue
+            if rel in seen_paths:
+                continue
+            seen_paths.add(rel)
             mod_id = _resolve_hotpack_module(rel)
             h = hashlib.sha256()
             sz = 0
@@ -891,9 +971,12 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
             mod_acc[mod_id]["fileCount"] += 1
 
     order = [
-        "gis-basemaps-10m",
-        "gis-historical-45eras",
-        "gis-cities-encyclopedia",
+        "hd-meshes",
+        "relief-tiles",
+        "eras-45",
+        "encyclopedia",
+        "era-units",
+        "audio-hd",
         "content",
         "scenarios",
         "lore",

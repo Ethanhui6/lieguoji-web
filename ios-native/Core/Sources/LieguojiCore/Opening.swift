@@ -154,11 +154,14 @@ public enum Opening {
     }
 
     /// initialCivilization47 for the default choices (each nation takes its culture's suggested religion and polity).
-    public static func civilization(seed: String, count: Int, owners: [Int], mode: String, enabled: [String], cultures: [Culture]) -> (nations: [Nation], cities: [(name: String, culture: String, sourceKey: String)])? {
+    /// `preferredCultures`: optional per-nation culture override (e.g. historical scenarios) so initial families are born in the authentic culture from tick 0.
+    public static func civilization(seed: String, count: Int, owners: [Int], mode: String, enabled: [String], cultures: [Culture], preferredCultures: [String]? = nil) -> (nations: [Nation], cities: [(name: String, culture: String, sourceKey: String)])? {
         let byId = Dictionary(uniqueKeysWithValues: cultures.map { ($0.id, $0) })
         var nations = [Nation](), states = Set<String>()
         for i in 0..<count {
-            guard let profile = byId[enabled[i % enabled.count]], let name = freshName(profile, mode, "state", "\(seed)/state/n-\(i)", states) else { return nil }
+            let preferredId = (preferredCultures != nil && i < preferredCultures!.count) ? preferredCultures![i] : nil
+            let chosenId = (preferredId != nil && byId[preferredId!] != nil) ? preferredId! : enabled[i % enabled.count]
+            guard let profile = byId[chosenId], let name = freshName(profile, mode, "state", "\(seed)/state/n-\(i)", states) else { return nil }
             states.insert(name.value)
             nations.append(Nation(cultureId: profile.id, religionId: profile.suggestedReligion, polity: profile.suggestedPolity, name: name.value, sourceKey: name.sourceKey,
                                   full: stateTitle(name.value, polity: profile.suggestedPolity, religion: profile.suggestedReligion)))

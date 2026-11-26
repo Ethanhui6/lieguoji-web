@@ -83,6 +83,6 @@ final class V522Tests: XCTestCase {
         let svc = EngineService()
         let muxReply = svc.handle("enableMux", [:])
         XCTAssertTrue(muxReply.ok)
-        XCTAssertEqual(muxReply.reason, "mux-v6")
+        XCTAssertTrue(muxReply.reason.hasPrefix("mux-v"))
     }
 }

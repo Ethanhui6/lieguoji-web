@@ -38,8 +38,9 @@ extension Regimes {
             // 君主立宪: the crown reigns, the prime minister governs.
             return Seats(head: sovereign(r, id, culture == "japanese" ? "天皇" : crown("Kingdom")), premier: culture == "chinese" ? "内阁总理" : culture == "german" ? "宰相" : "首相", premierRules: true, elected: true)
         case "dualMonarchy":
-            // 二元君主立宪：君主握实权兼设议会宰相（如德意志帝国、明治维新体制）
-            return Seats(head: sovereign(r, id, culture == "japanese" ? "天皇" : crown("Empire")), premier: culture == "chinese" ? "内阁总理大臣" : culture == "german" ? "帝国宰相" : "首相", premierRules: false, elected: true)
+            // 二元君主立宪：君主为国家元首，内阁总理大臣/帝国宰相组阁施政（如大日本帝国昭和体制、德意志帝国）
+            let pm = (culture == "japanese" || culture == "chinese") ? "内阁总理大臣" : (culture == "german" ? "帝国宰相" : "首相")
+            return Seats(head: sovereign(r, id, culture == "japanese" ? "天皇" : crown("Empire")), premier: pm, premierRules: true, elected: true)
         case "semiPresidential":
             // 半总统共和：民选总统掌外交国防，总理主内政
             return Seats(head: "总统", premier: "总理", premierRules: false, elected: true)
@@ -100,7 +101,7 @@ extension Regimes {
     }
 
     /// The forms in which the head of government, not the head of state, holds power.
-    static let premierStyles: Set<String> = ["constitutional", "union", "parliamentary", "shogunate", "regency"]
+    static let premierStyles: Set<String> = ["constitutional", "dualMonarchy", "union", "parliamentary", "shogunate", "regency"]
     /// 实际掌权者 (本作规则): the living head of government where the form gives him power; nil where the
     /// head of state governs (and in a plain run, which keeps the original's single ruler). The state's
     /// leverage, its temper, its diplomacy, its taxes, its fortune and its command in battle read his

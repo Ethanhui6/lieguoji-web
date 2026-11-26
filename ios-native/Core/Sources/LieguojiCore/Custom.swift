@@ -417,15 +417,16 @@ public enum Regimes {
         // 兵力悬殊：在 App 模式下叠加科技代差、工业产能质量、制空权与海军舰炮岸轰（+18%），彻底杜绝无工业纯面积碾压。
         let rawOdds: Double = odds(r, attacker, victim)
         if appMode {
+            let era = HistoricalEra.current(r)
             let milA = WorldDepth.techLevel(r, nation: attacker, branch: .military)
             let milB = WorldDepth.techLevel(r, nation: victim, branch: .military)
-            let techMult = Volley.techGapMultiplier(attackerTech: milA, defenderTech: milB)
+            let techMult = Volley.techGapMultiplier(attackerTech: milA, defenderTech: milB, era: era)
             let indMult = NuclearWarfare.industrialCombatRatio(r, attacker: attacker, victim: victim)
             let airMult = NuclearWarfare.airSuperiorityBonus(r, attacker: attacker, victim: victim)
-            let shoreMult = Naval.hasShoreBombardment(r, attacker: attacker, against: victim) ? 1.18 : 1.0
+            let shoreMult = Naval.hasShoreBombardment(r, attacker: attacker, against: victim) ? (era.isModernAirEra ? 1.28 : 1.18) : 1.0
             let strategicMult = techMult * indMult * airMult * shoreMult
             scaled *= strategicMult
-            let qualityScale = max(0.25, min(4.0, (1 + customAtk / 100) / max(0.25, 1 + customDef / 100) * strategicMult))
+            let qualityScale = max(0.22, min(5.5, (1 + customAtk / 100) / max(0.22, 1 + customDef / 100) * strategicMult))
             let effOdds = rawOdds * qualityScale
             return scaled * overwhelm(effOdds) / (effOdds >= 6 ? 1 : grit(r, victim))
         }

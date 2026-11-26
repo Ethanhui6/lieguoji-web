@@ -18,12 +18,22 @@ interface GitHubRelease {
 }
 
 const REPO = 'Ethanhui6/lieguoji-web';
-const CDN_USER_AGENT = 'Lieguoji-CDN/5.7';
+const CDN_USER_AGENT = 'Lieguoji-CDN/7.0';
 
 const ROUTE_IPA_TAG = /^\/api\/cdn\/ipa\/([A-Za-z0-9._-]{1,40})\/([A-Za-z0-9._-]{1,120}\.ipa)$/;
 const ROUTE_IPA_LATEST = /^\/api\/cdn\/ipa\/latest\/?$/;
 const ROUTE_RAW = /^\/api\/cdn\/raw\/(.+)$/;
 const ROUTE_HOTPACK = /^\/api\/cdn\/hotpack\/(.+)$/;
+
+const HOTPACK_V6_RELEASE_TAG = 'hotpack-v6';
+const HOTPACK_V6_PREFIXES = [
+  'HDMeshes/',
+  'ReliefTiles/',
+  'Eras45/',
+  'Encyclopedia/',
+  'EraUnits/',
+  'AudioHD/',
+] as const;
 
 const HOTPACK_RELEASE_TAG = 'hotpack-v5';
 const HOTPACK_ALLOWED_PREFIXES = [
@@ -323,16 +333,18 @@ async function handleHotpackAsset(request: Request, rawSubpath: string): Promise
   ) {
     return jsonError('Forbidden hotpack path', 400);
   }
-  const allowed = HOTPACK_ALLOWED_PREFIXES.some((prefix) => decoded.startsWith(prefix));
-  if (!allowed) {
+  const isV6 = HOTPACK_V6_PREFIXES.some((prefix) => decoded.startsWith(prefix));
+  const isV5 = !isV6 && HOTPACK_ALLOWED_PREFIXES.some((prefix) => decoded.startsWith(prefix));
+  if (!isV6 && !isV5) {
     return jsonError('Path outside allowed hotpack modules', 403);
   }
   const segments = decoded.split('/');
-  if (segments.length !== 2 || segments.some((s) => !s || s === '.' || s === '..')) {
+  if (segments.length < 2 || segments.length > 4 || segments.some((s) => !s || s === '.' || s === '..')) {
     return jsonError('Invalid hotpack asset segment', 400);
   }
-  const assetName = segments[1];
-  const upstreamUrl = `https://github.com/${REPO}/releases/download/${HOTPACK_RELEASE_TAG}/${encodeURIComponent(assetName)}`;
+  const releaseTag = isV6 ? HOTPACK_V6_RELEASE_TAG : HOTPACK_RELEASE_TAG;
+  const assetName = isV6 ? segments.join('__') : segments[1];
+  const upstreamUrl = `https://github.com/${REPO}/releases/download/${releaseTag}/${encodeURIComponent(assetName)}`;
   const upstream = await cfFetch(upstreamUrl, {
     method: request.method.toUpperCase() === 'HEAD' ? 'HEAD' : 'GET',
     headers: buildUpstreamRequestHeaders(request),
@@ -343,7 +355,7 @@ async function handleHotpackAsset(request: Request, rawSubpath: string): Promise
     },
   });
   return buildProxiedResponse(request, upstream, {
-    routeTag: 'hotpack-v5',
+    routeTag: releaseTag,
     cacheControl: 'public, max-age=86400',
     fallbackContentType: 'application/octet-stream',
   });

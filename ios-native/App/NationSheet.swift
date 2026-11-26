@@ -632,12 +632,16 @@ struct NationSheet: View {
         }()
         let myFleets = (state.fleets ?? []).filter { $0.nation == nation && $0.status != "lost" }
         let rulerSummary: String = {
+            var base = "中枢摄理"
             if let r = info.ruler {
                 let display = (r.styledName ?? r.name).trimmingCharacters(in: .whitespaces)
                 let title = r.title.trimmingCharacters(in: .whitespaces)
-                return (!title.isEmpty && !display.contains(title)) ? "\(title) \(display)" : display
+                base = (!title.isEmpty && !display.contains(title)) ? "\(title) \(display)" : display
             }
-            return "中枢摄理"
+            if let h = info.heads, let pm = h.premierName, !pm.isEmpty, pm != info.ruler?.name {
+                return "\(base) · \(h.premierTitle) \(pm)"
+            }
+            return base
         }()
         let postureSummary: String = {
             let navy = myFleets.isEmpty ? "" : " · 水师 \(myFleets.reduce(0) { $0 + $1.ships }) 艘"

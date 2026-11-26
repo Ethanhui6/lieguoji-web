@@ -30,10 +30,46 @@ import LieguojiCore
 
     static let tracks = ["deplasa-pe", "final-stance", "guild-of-adventurers", "land-of-heroes", "wonders-and-mysteries-alt"]
     static let trackNames = ["deplasa-pe": "Deplasa Pe", "final-stance": "Final Stance", "guild-of-adventurers": "Guild of Adventurers",
-                             "land-of-heroes": "Land of Heroes", "wonders-and-mysteries-alt": "Wonders and Mysteries"]
+                             "land-of-heroes": "Land of Heroes", "wonders-and-mysteries-alt": "Wonders and Mysteries",
+                             "era-antiquity-1": "编钟古韵 · 青铜纪元交响", "era-antiquity-2": "战车金戈 · 远古征伐乐章", "era-antiquity-3": "礼乐大同 · 青铜终章",
+                             "era-medieval-1": "丝路胡笳 · 中古礼乐", "era-medieval-2": "铁骑长歌 · 封建史诗", "era-medieval-3": "盛世朝议 · 中古变奏",
+                             "era-gunpowder-1": "远洋战鼓 · 线列交响", "era-gunpowder-2": "炮火海权 · 帝国远征", "era-gunpowder-3": "启蒙长风 · 航海终章",
+                             "era-ww1-1": "铁血战壕 · 工业号角", "era-ww1-2": "无畏海疆 · 大战序曲", "era-ww1-3": "凡尔赛余晖 · 工业挽歌",
+                             "era-ww2-1": "钢铁风暴 · 二战史诗", "era-ww2-2": "决战风云 · 太平洋与东线", "era-ww2-3": "破晓凯歌 · 大战终章",
+                             "era-modern-1": "铁幕电波 · 冷战深空", "era-modern-2": "多极穹顶 · 现代风云", "era-modern-3": "星河远望 · 世纪新章"]
+    @Published private(set) var activeEraAudio: String = ""
     private var player: AVAudioPlayer?
     private var sfxPlayers = [InkSound: AVAudioPlayer]()
     private var queue: [String] = []
+
+    /// 切换历史时代时自动优先播放 HotPack v6 `AudioHD/` 中对应时代的高清交响三乐章与战场音效（实时热生效）。
+    func setHistoricalEra(_ eraId: String) {
+        let clean = eraId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard clean != activeEraAudio else { return }
+        activeEraAudio = clean
+        sfxPlayers.removeAll()
+        let eraTrack1 = "era-\(clean)-1"
+        let eraTrack2 = "era-\(clean)-2"
+        let eraTrack3 = "era-\(clean)-3"
+        for t in [eraTrack3, eraTrack2] where hotPackEraTrackURL(t) != nil {
+            queue.removeAll { $0 == t }
+            queue.insert(t, at: 0)
+        }
+        if music, let url = hotPackEraTrackURL(eraTrack1) {
+            player?.stop()
+            player = nil
+            startTrack(name: eraTrack1, url: url)
+        }
+    }
+
+    private func hotPackEraTrackURL(_ name: String) -> URL? {
+        for ext in ["m4a", "wav", "caf"] {
+            if let u = HotPackManager.resourceURL(name: name, ext: ext, subdirectory: "AudioHD/Music") {
+                return u
+            }
+        }
+        return nil
+    }
 
     private override init() {
         let d = UserDefaults.standard
@@ -70,9 +106,18 @@ import LieguojiCore
         guard music else { return }
         if let player, !player.isPlaying { player.play(); fade(to: Float(volume)); return }
         if player != nil { return }
-        if queue.isEmpty { queue = Self.tracks.shuffled() }
+        if queue.isEmpty {
+            var pool = Self.tracks.shuffled()
+            if !activeEraAudio.isEmpty {
+                for idx in [3, 2, 1] {
+                    let tk = "era-\(activeEraAudio)-\(idx)"
+                    if hotPackEraTrackURL(tk) != nil { pool.insert(tk, at: 0) }
+                }
+            }
+            queue = pool
+        }
         let name = queue.removeFirst()
-        if let url = HotPackManager.resourceURL(name: name, ext: "m4a", subdirectory: "Music") {
+        if let url = hotPackEraTrackURL(name) ?? HotPackManager.resourceURL(name: name, ext: "m4a", subdirectory: "Music") {
             startTrack(name: name, url: url)
             return
         }
@@ -117,7 +162,10 @@ import LieguojiCore
             cached.play()
             return
         }
-        guard let url = HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "Audio")
+        let eraSfxName = activeEraAudio.isEmpty ? "" : "\(sound.rawValue)-\(activeEraAudio)"
+        guard let url = (!eraSfxName.isEmpty ? HotPackManager.resourceURL(name: eraSfxName, ext: "wav", subdirectory: "AudioHD/SFX") : nil)
+                ?? HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "AudioHD/SFX")
+                ?? HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "Audio")
                 ?? Bundle.main.url(forResource: sound.rawValue, withExtension: "wav"),
               let p = try? AVAudioPlayer(contentsOf: url) else { return }
         p.volume = Float(sfxVolume) * gain
@@ -181,18 +229,18 @@ struct RemoteSettings: View {
     private var statusTitle: String {
         if model.remoteAddress != nil {
             let rtt = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
-            let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.1fKB/帧", model.remoteFrameKB ?? 0) : ""
-            return "已连服务器（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
+            let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.2fKB/帧", model.remoteFrameKB ?? 0) : ""
+            return "九州云服 v13 在线（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
         }
-        if model.remoteReconnecting { return "正在自动续连九州云服 v12…" }
-        return model.autoRemote ? "正在待命连接九州云服 v12" : "离线单机 · 本机满帧 0ms"
+        if model.remoteReconnecting { return "正在自动续连九州云服 v13…" }
+        return model.autoRemote ? "正在待命连接九州云服 v13" : "本机满帧直演 · 0ms 零延迟"
     }
     private var statusSubtitle: String {
         if let addr = model.remoteAddress {
-            return "\(addr) · v12 16Mbps 五路竞速 + worldId 热续连 + LZ4 压缩，手机零计算负担"
+            return "\(addr) · v13 LGB1 二进制差量 (<1KB/帧) + UDP 零队头阻塞，专为 3Mbps 云服调校，手机零发热"
         }
         if model.remoteReconnecting { return "世界进度安全托管云端，网络就绪后自动秒连续推" }
-        return model.autoRemote ? "默认五路专线竞速（443/8765/8443/局域网/Cloudflare），断链自动持久重连" : "当前由手机本机满帧直演（0ms 零延迟）；开启九州云服 v12 后可享 32× 爽看海与省电挂机"
+        return model.autoRemote ? "LGB1+UDP 3Mbps 专调推流，断链自动持久重连" : "推荐看海默认模式：满血发挥手机 A 系芯片算力（0ms 延迟 · 最高 64× 极速），账号/云档/热更仍全程在线"
     }
 
     var body: some View {
@@ -214,7 +262,7 @@ struct RemoteSettings: View {
                             let ok = await model.findComputerNow()
                             busy = false
                             messageGood = ok
-                            message = ok ? "已接通在线服务器（九州云服 v12 满血推流模式），大地图由服务器全速承担。" : "未发现服务器在线：可填入专属云服务器 IP:8765，或在电脑运行「列国纪远程计算 v12」（配对码 \(NativeHost.activeRoomCode)）。"
+                            message = ok ? "已接通在线服务器（九州云服 v13 二进制+UDP 极速推流模式），大地图由服务器全速承担。" : "未发现服务器在线：可填入专属云服务器 IP:8765，或在电脑运行「列国纪远程计算 v13」（配对码 \(NativeHost.activeRoomCode)）。"
                             GameFeel.shared.notify(ok ? .success : .warning)
                         }
                     }
@@ -249,11 +297,11 @@ struct RemoteSettings: View {
                 HStack {
                     Text("算力与运行模式").font(Theme.body).foregroundStyle(Theme.ink)
                     Spacer()
-                    Text(model.autoRemote ? "九州云服 v12 · 断链自动续连" : "离线单机 · 本机满帧 0ms")
+                    Text(model.autoRemote ? "九州云服 v13 · 零发热挂机" : "本机引擎 · 0ms 满帧直演")
                         .font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 ChipPicker(
-                    items: [(true, "在线云服 v12（自动续连）"), (false, "离线单机（本机 0ms）")],
+                    items: [(false, "本机满帧 0ms（推荐）"), (true, "云服 v13（零发热托管）")],
                     selection: Binding(
                         get: { model.autoRemote },
                         set: { on in
@@ -271,7 +319,7 @@ struct RemoteSettings: View {
                         }
                     )
                 )
-                Text("默认开启「在线云服 v12」，切后台返回或网络波动时自动续连且绝不误踢单机；需离线游玩时可手动切至「离线单机」。")
+                Text("默认「本机满帧 0ms」发挥手机芯片最高 64× 推演速度且 0 网络延迟；长时间省电看海可一键切至「云服 v13」（LGB1 <1KB/帧 + UDP 零阻塞）。")
                     .font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 16).padding(.vertical, 11)

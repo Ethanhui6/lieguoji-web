@@ -478,20 +478,20 @@ import LieguojiCore
         let farRelay = remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
         let base: (days: Int, intervalMs: Int)
         if farRelay {
-            let wanted = [1: 2, 2: 4, 4: 8, 8: 14, 16: 22, 32: 32][speed] ?? 2
-            let intervalMs = [1: 120, 2: 125, 4: 135, 8: 150, 16: 165, 32: 180][speed] ?? 120
+            let wanted = [1: 2, 2: 4, 4: 8, 8: 14, 16: 22, 32: 32, 64: 48][speed] ?? 2
+            let intervalMs = [1: 110, 2: 115, 4: 120, 8: 130, 16: 145, 32: 160, 64: 175][speed] ?? 110
             base = (wanted, intervalMs)
         } else {
-            // v12 满血 16 Mbps 专属云服 / 局域网全双工推流（配合动态 3 帧滑动窗口 + 32× 爽看海）：
-            // 1×=1日/68ms (~15日/秒) · 2×=1日/36ms (~28日/秒) · 4×=2日/38ms (~52日/秒) ·
-            // 8×=4日/40ms (~100日/秒) · 16×=8日/42ms (~190日/秒) · 32×=16日/45ms (~355日/秒，1秒推演整年！)
+            // v13 LGB1 二进制差量 (<1KB/帧) + UDP 零队头阻塞（专为 4C4G 3Mbps 国内轻量云服调校，最高 64× 极速看海）：
+            // 1×=1日/60ms · 2×=1日/32ms · 4×=2日/34ms · 8×=4日/36ms · 16×=8日/38ms · 32×=16日/40ms · 64×=32日/44ms（~720日/秒）
             switch speed {
-            case 1: base = (1, 68)
-            case 2: base = (1, 36)
-            case 4: base = (2, 38)
-            case 8: base = (4, 40)
-            case 16: base = (8, 42)
-            default: base = (16, 45)
+            case 1: base = (1, 60)
+            case 2: base = (1, 32)
+            case 4: base = (2, 34)
+            case 8: base = (4, 36)
+            case 16: base = (8, 38)
+            case 32: base = (16, 40)
+            default: base = (32, 44)
             }
         }
         if let rtt = remoteRTTMs, rtt > 300 {
@@ -617,11 +617,12 @@ import LieguojiCore
         }
         if shouldResumePlay && !playing { play() }
     }
-    /// 自动接入在线计算：真网游零配置默认开启，断线持续自动重连，仅在玩家主动切换离线模式时退回本机。
+    /// 自动接入云服托管：v7.0 默认优先「本机满帧直演（0ms 延迟，A 系芯片 3× 极速看海）」同时保留全部账号/云存档/工坊/热更在线服务；
+    /// 玩家可在设置或行宫一键开启「九州云服 v13 零发热挂机（LGB1+UDP · 3Mbps 专调）」。
     var autoRemote: Bool {
         get {
             if remoteOfflineManual { return false }
-            return UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true
+            return UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? false
         }
         set {
             objectWillChange.send()
@@ -1017,23 +1018,20 @@ import LieguojiCore
     private(set) var lastFounding: (path: String, seconds: Double)?
 
     init() {
-        // v6.0.0 零配置直连默认策略：除非玩家曾主动点击「离线单机」，否则自动开启 remote.auto / remote.autoAll 并一进游戏即刻竞速直连！
-        if !UserDefaults.standard.bool(forKey: "v600.defaultAutoConnect") {
-            let manualOff = UserDefaults.standard.bool(forKey: "remote.offlineManual")
-            if !manualOff {
-                UserDefaults.standard.set(true, forKey: "remote.auto")
-                UserDefaults.standard.set(true, forKey: "remote.autoAll")
-            }
-            UserDefaults.standard.set(true, forKey: "v570.defaultOnlineRestored")
-            UserDefaults.standard.set(true, forKey: "v600.defaultAutoConnect")
+        // v7.0.0 本机优先极速看海默认策略（0ms 零延迟 + 64× 满速直演；账号/云存档/工坊/热更 100% 保持在线；随时可一键开启九州云服 v13 零发热挂机）：
+        if !UserDefaults.standard.bool(forKey: "v700.localFirstEngine") {
+            UserDefaults.standard.set(false, forKey: "remote.auto")
+            UserDefaults.standard.set(false, forKey: "remote.autoAll")
+            UserDefaults.standard.set(true, forKey: "remote.offlineManual")
+            UserDefaults.standard.set(true, forKey: "v700.localFirstEngine")
         }
         if UserDefaults.standard.object(forKey: "remote.auto") == nil {
-            UserDefaults.standard.set(true, forKey: "remote.auto")
+            UserDefaults.standard.set(false, forKey: "remote.auto")
         }
         if UserDefaults.standard.object(forKey: "remote.autoAll") == nil {
-            UserDefaults.standard.set(true, forKey: "remote.autoAll")
+            UserDefaults.standard.set(false, forKey: "remote.autoAll")
         }
-        remoteOfflineManual = UserDefaults.standard.bool(forKey: "remote.offlineManual")
+        remoteOfflineManual = UserDefaults.standard.object(forKey: "remote.offlineManual") as? Bool ?? true
         let watcher = NetworkPathWatcher { [weak self] interfaceSig in
             Task { @MainActor [weak self] in
                 self?.handleNetworkPathRecovered(interfaceSig: interfaceSig)
@@ -1078,15 +1076,27 @@ import LieguojiCore
 
     /// Opens the map editor on a template terrain (drawn over, or replaced by open sea).
     func openEditor(_ options: NewWorld) {
-        guard let inputs = previewInputs else { failure = "缺少原作地图网格，无法绘制"; return }
+        let tier = NativeHost.selectedResolutionTier
+        let activeInputs: PreviewWorld.Inputs
+        if tier != .standard20K, let worldURL = Bundle.main.url(forResource: "World", withExtension: nil),
+           let hd = try? MeshCatalog.loadPreviewInputs(tier: tier, hotPackRoot: HotPackManager.rootURL, bundleWorldURL: worldURL) {
+            activeInputs = hd.inputs
+        } else if let fallback = previewInputs {
+            activeInputs = fallback
+        } else {
+            failure = "缺少原作地图网格，无法绘制"
+            return
+        }
         pause()
         worldEpoch &+= 1
         state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.viewFills = nil; controller.viewLabels = nil
+        controller.activeHistoricalRegion = ""
         editorOptions = options
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
-        let heights = TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: options.template)
-        let ed = MapEditor(inputs: inputs, heights: heights, seed: seed, template: options.template, controller: controller)
-        ed.nations = options.nations; ed.provinces = options.provinceCount
+        let heights = TerrainGenerator.generate(graph: activeInputs.grid, seed: seed, template: options.template)
+        let ed = MapEditor(inputs: activeInputs, heights: heights, seed: seed, template: options.template, controller: controller)
+        ed.nations = min(ed.maxNations, options.nations)
+        ed.provinces = min(ed.maxProvinces, options.provinceCount)
         editor = ed; switchWorld(to: ed.map)
         controller.drifting = false; controller.mode = .terrain; controller.reveal = 1; controller.interactive = true
         controller.terrainBrush = true
@@ -1250,17 +1260,21 @@ import LieguojiCore
         var rebelMode: String = "historical"
         /// 真实历史剧本或创意工坊自定义地图（非空时跳过随机模板并直接按剧本山河/列国开局）。
         var historicalScenario: HistoricalScenario? = nil
-        /// One city per province; the web engine (native-bridge generate) clamps to nations…480.
-        var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
+        /// One city per province; dynamically scales with selected mesh tier (20K=480, 60K=1200, 120K=2400).
+        var provinceCount: Int {
+            let cap = NativeHost.selectedResolutionTier.maxProvinces
+            return max(nations, min(cap, Int(provinces) ?? nations * 10))
+        }
     }
 
-    /// 一键开局历史剧本或创意工坊地图。
+    /// 一键开局历史剧本或创意工坊地图（支持 100 国与 20K/60K/120K 高精州郡）。
     func generateHistorical(_ scenario: HistoricalScenario) async {
+        let cap = NativeHost.selectedResolutionTier.maxProvinces
         var nw = NewWorld()
         nw.historicalScenario = scenario
         nw.rebelMode = scenario.rebelMode ?? "historical"
-        nw.nations = max(2, min(24, scenario.nations.count))
-        nw.provinces = String(max(nw.nations, min(480, scenario.provinceCount)))
+        nw.nations = max(2, min(100, scenario.nations.count))
+        nw.provinces = String(max(nw.nations, min(cap, scenario.provinceCount)))
         await generate(nw)
     }
 
@@ -1289,6 +1303,11 @@ import LieguojiCore
         controller.troopRatios = [:]
         controller.troopBarColors = [:]
         controller.effects = MapEffects()
+        controller.activeHistoricalRegion = options.historicalScenario?.region.rawValue ?? ""
+        if let eraOverride = options.historicalScenario?.eraOverride, !eraOverride.isEmpty {
+            controller.activeHistoricalEra = eraOverride
+            GameFeel.shared.setHistoricalEra(eraOverride)
+        }
         phase = .founding
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
@@ -1681,8 +1700,8 @@ import LieguojiCore
                         guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
                         let spent = Date().timeIntervalSince(started)
                         let basePeriod = Double(p.intervalMs) / 1000.0
-                        // v9 严格匀速消费：就算队列有 2 帧也坚持按 0.88× 恒速逐帧滑出，彻底禁止连续爆发跳月！
-                        let targetPeriod: Double = stats.buffered >= 2 ? basePeriod * 0.88 : (stats.buffered == 1 ? basePeriod * 0.96 : basePeriod * 0.55)
+                        // v13 零冗余等待：队列已就绪帧以 0.72× 丝滑追帧，队列空时 0ms 立即等下一帧，彻底消除双倍休眠延迟！
+                        let targetPeriod: Double = stats.buffered >= 2 ? basePeriod * 0.72 : (stats.buffered == 1 ? basePeriod * 0.88 : 0.0)
                         let rest = max(0.0, targetPeriod - spent)
                         if rest > 0.004 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) }
                         else { await Task.yield() }
@@ -1708,14 +1727,15 @@ import LieguojiCore
                     self.remotePushActive = false
                 }
 
-                // 本机 0ms 引擎 / 降级轮询同比提速并支持 32× 爽看海（1/1/2/4/8/16 日），云端与本机一样丝滑轻快。
+                // 本机 0ms 极速引擎：全面解锁 A 系列芯片潜能，支持 1×/2×/4×/8×/16×/32×/64× 极速看海（64× 满速可达 2–3 年/秒！）
                 let far = self.remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
-                let wanted = [1: 1, 2: 1, 4: 2, 8: 4, 16: 8, 32: 16][self.speed] ?? 1
-                let stepTime = [1: 0.068, 2: 0.036, 4: 0.038, 8: 0.040, 16: 0.042, 32: 0.045][self.speed] ?? 0.068
+                let wanted = [1: 1, 2: 1, 4: 2, 8: 4, 16: 8, 32: 16, 64: 32][self.speed] ?? 1
+                let stepTime = [1: 0.060, 2: 0.032, 4: 0.034, 8: 0.036, 16: 0.038, 32: 0.040, 64: 0.044][self.speed] ?? 0.060
                 let isRemoteNow = self.remoteAddress != nil
-                let affordable = isRemoteNow ? wanted : max(1, Int((max(0.068, stepTime) * Energy.duty / max(0.003, self.dayCost)).rounded(.down)))
+                let effectiveDuty = (self.speed >= 16 && !Energy.hot) ? max(Energy.duty, 0.90) : Energy.duty
+                let affordable = isRemoteNow ? wanted : max(1, Int((max(0.060, stepTime) * effectiveDuty / max(0.0008, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
-                let days = far ? min(32, pace * 2) : pace
+                let days = far ? min(48, pace * 2) : pace
                 self.lastDays = days
                 do {
                     let activeAhead = ahead ?? self.requestStep(days: days, ticket: ticket, revision: revision)
@@ -1763,7 +1783,7 @@ import LieguojiCore
         if saving, was, let day = state?.day { save(); lastSavedDay = day }
     }
     func cycleSpeed() {
-        speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : speed == 16 ? 32 : 1
+        speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : speed == 16 ? 32 : speed == 32 ? 64 : 1
     }
     func stepOnce() {
         guard !replayActive, !playing, phase == .playing, state != nil else { return }
@@ -1934,6 +1954,12 @@ import LieguojiCore
         }
         let dayOfYear = ((max(1, min(12, next.date.month)) - 1) * 30 + max(1, min(30, next.date.day)) - 1) % 360
         controller.seasonPhase = Float(dayOfYear) / 360.0
+        if let eraId = next.historicalEra, !eraId.isEmpty {
+            if controller.activeHistoricalEra != eraId {
+                controller.activeHistoricalEra = eraId
+            }
+            GameFeel.shared.setHistoricalEra(eraId)
+        }
         var newEvents: [GameState.Event] = []
         if let previous {
             if previous.events != next.events {

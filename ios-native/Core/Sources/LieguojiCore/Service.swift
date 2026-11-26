@@ -175,6 +175,68 @@ public final class EngineService {
         }
         return Profile.measure("s.json") { (try? JSONEncoder().encode(gs)) ?? Data() }
     }
+
+    /// v13 紧凑二进制推流帧（`LGB1`）：跳过 JSON 编码直接输出约 1.2–2.2 KB 二进制流（LZ4 后 0.5–1.1 KB/帧），
+    /// 专为 3 Mbps（375 KB/s）国内轻量云服务器与 4G/5G 极低延迟看海设计。
+    public func stateBinary(stepping: Bool = true) -> Data {
+        guard let e = engine else { return Data() }
+        let includeLabels = labelsDue(e, stepping: stepping)
+        var gs = e.gameState(includeLabels: includeLabels, slim: true)
+        if !slimStaticInitialized || slimFramesSinceFullStatic >= 24 {
+            gs.ownersDelta = nil
+            gs.ports = gs.ports ?? []
+            gs.forts = gs.forts ?? []
+            gs.holy = gs.holy ?? []
+            gs.wonders = gs.wonders ?? []
+            gs.ruins = gs.ruins ?? []
+            gs.yards = gs.yards ?? []
+            recordSlimStaticBaseline(from: gs)
+        } else {
+            slimFramesSinceFullStatic += 1
+            if gs.owners.count == lastSlimOwners.count && !lastSlimOwners.isEmpty {
+                var diff: [Int] = []
+                for idx in gs.owners.indices where gs.owners[idx] != lastSlimOwners[idx] {
+                    diff.append(idx)
+                    diff.append(gs.owners[idx])
+                }
+                if diff.count <= max(24, gs.owners.count / 4) {
+                    lastSlimOwners = gs.owners
+                    gs.owners = []
+                    gs.ownersDelta = diff
+                } else {
+                    lastSlimOwners = gs.owners
+                    gs.ownersDelta = nil
+                }
+            } else {
+                lastSlimOwners = gs.owners
+                gs.ownersDelta = nil
+            }
+            if let lastEv = gs.events.last {
+                if lastEv.day == lastSlimEventDay && lastEv.text == lastSlimEventText && lastSlimEventDay >= 0 {
+                    gs.events = []
+                } else {
+                    lastSlimEventDay = lastEv.day
+                    lastSlimEventText = lastEv.text
+                }
+            } else {
+                lastSlimEventDay = -1
+                lastSlimEventText = ""
+            }
+            let curPorts = gs.ports ?? []
+            if curPorts == lastSlimPorts { gs.ports = nil } else { lastSlimPorts = curPorts; gs.ports = curPorts }
+            let curForts = gs.forts ?? []
+            if curForts == lastSlimForts { gs.forts = nil } else { lastSlimForts = curForts; gs.forts = curForts }
+            let curHoly = gs.holy ?? []
+            if curHoly == lastSlimHoly { gs.holy = nil } else { lastSlimHoly = curHoly; gs.holy = curHoly }
+            let curWonders = gs.wonders ?? []
+            if curWonders == lastSlimWonders { gs.wonders = nil } else { lastSlimWonders = curWonders; gs.wonders = curWonders }
+            let curRuins = gs.ruins ?? []
+            if curRuins == lastSlimRuins { gs.ruins = nil } else { lastSlimRuins = curRuins; gs.ruins = curRuins }
+            let curYards = gs.yards ?? []
+            if curYards == lastSlimYards { gs.yards = nil } else { lastSlimYards = curYards; gs.yards = curYards }
+        }
+        return Profile.measure("s.bin") { BinaryStateWire.encode(gs) }
+    }
     /// 这一步是否要带国名框（领土易主、新国立国、或国名改称均触发刷新，避免改名或新独立小国漏掉国名）。
     private func labelsDue(_ e: NativeEngine, stepping: Bool) -> Bool {
         let nations = e.run.world.nations.asArray
@@ -278,12 +340,17 @@ public final class EngineService {
             resetSlimStaticCache()
             return Reply(ok: true, reason: "ok")
         case "enableMux":
-            return Reply(ok: true, reason: "mux-v12")
+            return Reply(ok: true, reason: "mux-v13")
         case "pullLatest":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
-            let days = max(1, min(60, optInt("days") ?? 3))
+            let days = max(1, min(64, optInt("days") ?? 3))
             advanceDays(e, days: days)
+            if bool("binary") { return data(stateBinary(stepping: true)) }
             return data(state(stepping: true, slim: bool("slim")))
+        case "stepBinary":
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
+            advanceDays(e, days: max(1, min(64, int("days"))))
+            return data(stateBinary(stepping: true))
         case "catalogs":
             guard let rawPayload = payload else { return Reply(ok: false, reason: "目录数据缺失。") }
             let unpacked = WireCodec.decompressIfNeeded(rawPayload)
@@ -567,6 +634,8 @@ public enum EngineWire {
     public static let muxPong: UInt8 = 5
     /// v8 滑动窗口背压确认帧（客户端消费完一帧立刻回传 9 字节 ACK，彻底根除 TCP Bufferbloat 与跳月瞬移）。
     public static let muxAck: UInt8 = 6
+    /// v13 紧凑二进制 `LGB1` 差量推流帧（单帧 < 1 KB，3 Mbps 轻量云服满帧无排队）。
+    public static let muxBinaryPush: UInt8 = 7
 
     public static func u32(_ n: Int) -> Data { var v = UInt32(n).bigEndian; return Data(bytes: &v, count: 4) }
     public static func readU32(_ d: Data, at i: Int) -> Int { d[d.startIndex + i..<d.startIndex + i + 4].reduce(0) { $0 << 8 | Int($1) } }

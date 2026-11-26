@@ -177,28 +177,53 @@ public enum HistoricalBasemaps {
         private var scenarios: [String: BakedScenarioGIS] = [:]
         private var cities: [GazetteerCity] = []
 
+        func mergeBasemaps(_ map: [String: BakedBasemap]) {
+            lock.lock(); defer { lock.unlock() }
+            for (k, v) in map {
+                basemaps["\(k)@\(v.heights.count)"] = v
+                if basemaps[k] == nil || v.heights.count == 19_928 { basemaps[k] = v }
+            }
+        }
+
+        func mergeScenarios(_ map: [String: BakedScenarioGIS], cellCount: Int? = nil) {
+            lock.lock(); defer { lock.unlock() }
+            for (k, v) in map {
+                let cnt = cellCount ?? v.ownerMask.count
+                scenarios["\(k)@\(cnt)"] = v
+                if scenarios[k] == nil || cnt == 19_928 { scenarios[k] = v }
+            }
+        }
+
         func setBasemaps(_ map: [String: BakedBasemap]) {
             lock.lock(); defer { lock.unlock() }
-            basemaps = map
+            for (k, v) in map {
+                basemaps["\(k)@\(v.heights.count)"] = v
+                basemaps[k] = v
+            }
         }
 
         func setScenarios(_ map: [String: BakedScenarioGIS]) {
             lock.lock(); defer { lock.unlock() }
-            scenarios = map
+            for (k, v) in map {
+                scenarios["\(k)@\(v.ownerMask.count)"] = v
+                scenarios[k] = v
+            }
         }
 
         func setCities(_ list: [GazetteerCity]) {
             lock.lock(); defer { lock.unlock() }
-            cities = list
+            if list.count >= cities.count { cities = list }
         }
 
-        func basemap(for key: String) -> BakedBasemap? {
+        func basemap(for key: String, expectedCount: Int? = nil) -> BakedBasemap? {
             lock.lock(); defer { lock.unlock() }
+            if let expectedCount, let exact = basemaps["\(key)@\(expectedCount)"] { return exact }
             return basemaps[key]
         }
 
-        func scenario(for id: String) -> BakedScenarioGIS? {
+        func scenario(for id: String, expectedCount: Int? = nil) -> BakedScenarioGIS? {
             lock.lock(); defer { lock.unlock() }
+            if let expectedCount, let exact = scenarios["\(id)@\(expectedCount)"] { return exact }
             return scenarios[id]
         }
 
@@ -215,25 +240,36 @@ public enum HistoricalBasemaps {
 
     private static let store = AtlasStore()
 
-    /// 安全读取 `HistoricalAtlas` 目录下的 `basemaps.bin`、`scenarios_gis.bin` 与 `cities_zh.json`。
+    /// 安全读取 `HistoricalAtlas` / `HDMeshes` / `Encyclopedia` 目录下的多分辨率底图、剧本 GIS 与 50,000+ 真实城市地名库。
     public static func loadAtlasDirectory(_ dirURL: URL) {
-        let basemapsURL = dirURL.appendingPathComponent("basemaps.bin")
-        if let data = try? Data(contentsOf: basemapsURL), let parsed = parseBasemaps(data) {
-            store.setBasemaps(parsed)
+        for bmFile in ["basemaps.bin", "basemaps_60k.bin", "basemaps_120k.bin"] {
+            let url = dirURL.appendingPathComponent(bmFile)
+            if let data = try? Data(contentsOf: url), let parsed = parseBasemaps(data) {
+                store.mergeBasemaps(parsed)
+            }
         }
-        let scenariosURL = dirURL.appendingPathComponent("scenarios_gis.bin")
-        if let data = try? Data(contentsOf: scenariosURL), let parsed = parseScenariosGIS(data) {
-            store.setScenarios(parsed)
+        for scFile in ["scenarios_gis.bin", "scenarios_gis_60k.bin", "scenarios_gis_120k.bin"] {
+            let url = dirURL.appendingPathComponent(scFile)
+            if let data = try? Data(contentsOf: url), let parsed = parseScenariosGIS(data) {
+                store.mergeScenarios(parsed)
+            }
         }
-        let citiesURL = dirURL.appendingPathComponent("cities_zh.json")
-        if let data = try? Data(contentsOf: citiesURL),
-           let decoded = try? JSONDecoder().decode([GazetteerCity].self, from: data) {
-            store.setCities(decoded)
+        for cityFile in ["cities_50k_zh.json", "cities_zh.json"] {
+            let citiesURL = dirURL.appendingPathComponent(cityFile)
+            if let data = try? Data(contentsOf: citiesURL),
+               let decoded = try? JSONDecoder().decode([GazetteerCity].self, from: data),
+               !decoded.isEmpty {
+                store.setCities(decoded)
+            }
         }
     }
 
-    public static func bakedScenarioGIS(id: String) -> BakedScenarioGIS? {
-        store.scenario(for: id)
+    public static func registerBakedScenario(_ gis: BakedScenarioGIS, cellCount: Int? = nil) {
+        store.mergeScenarios([gis.id: gis], cellCount: cellCount)
+    }
+
+    public static func bakedScenarioGIS(id: String, expectedCount: Int? = nil) -> BakedScenarioGIS? {
+        store.scenario(for: id, expectedCount: expectedCount)
     }
 
     public static func globalCities() -> [GazetteerCity] {
@@ -245,7 +281,7 @@ public enum HistoricalBasemaps {
     }
 
     public static func bakedHeights(region: HistoricalRegion, expectedCount: Int) -> [UInt8]? {
-        guard let bm = store.basemap(for: region.rawValue), bm.heights.count == expectedCount else { return nil }
+        guard let bm = store.basemap(for: region.rawValue, expectedCount: expectedCount), bm.heights.count == expectedCount else { return nil }
         return bm.heights
     }
 

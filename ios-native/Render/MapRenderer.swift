@@ -88,10 +88,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let coloredPipeline: MTLRenderPipelineState
     private let deskPipeline: MTLRenderPipelineState
     private let seaPipeline: MTLRenderPipelineState
+    private let reliefTilePipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
     private let scrollBorderPipeline: MTLRenderPipelineState
     private let scrollArtPipeline: MTLRenderPipelineState
+    /// 当前激活的真实地理分区（用于流式挂载 HotPack v6 `ReliefTiles/{region}.lgtr` 8K–16K 卫星地貌瓦片）。
+    var activeHistoricalRegion: String = ""
+    private var loadedUnitEra: String = ""
+    private var loadedUnitRootPath: String = ""
 
     /// Army icons grouped by unit type: texture, vertex buffer, count, and pool.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)] = []
@@ -186,6 +191,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let coloredPipeline: MTLRenderPipelineState
         let deskPipeline: MTLRenderPipelineState
         let seaPipeline: MTLRenderPipelineState
+        let reliefTilePipeline: MTLRenderPipelineState
         let multiplyPipeline: MTLRenderPipelineState
         let spritePipeline: MTLRenderPipelineState
         let scrollBorderPipeline: MTLRenderPipelineState
@@ -374,6 +380,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     coloredPipeline: try pipeline("coloredVertex", "colorFragment", .alpha),
                     deskPipeline: try pipeline("deskVertex", "deskFragment", .none),
                     seaPipeline: try pipeline("seaVertex", "seaFragment", .none),
+                    reliefTilePipeline: try pipeline("seaVertex", "reliefTileFragment", .alpha),
                     multiplyPipeline: try pipeline("seaVertex", "parchmentFragment", .multiply),
                     spritePipeline: try pipeline("spriteVertex", "spriteFragment", .alpha),
                     scrollBorderPipeline: try pipeline("scrollRingVertex", "scrollShadowFragment", .alpha),
@@ -404,6 +411,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         coloredPipeline = assets.coloredPipeline
         deskPipeline = assets.deskPipeline
         seaPipeline = assets.seaPipeline
+        reliefTilePipeline = assets.reliefTilePipeline
         multiplyPipeline = assets.multiplyPipeline
         spritePipeline = assets.spritePipeline
         scrollBorderPipeline = assets.scrollBorderPipeline
@@ -419,6 +427,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         repeatSampler = assets.repeatSampler
         mirrorSampler = assets.mirrorSampler
         unitTextures = assets.unitTextures
+        loadedUnitEra = UnitArt.activeEra
+        loadedUnitRootPath = UnitArt.hotPackEraUnitsRoot?.path ?? ""
 
         let mesh = CellMesh(map: map)
         guard let p = Self.makeSafeBuffer(device: device, mesh.positions, minLength: 16),
@@ -454,6 +464,37 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
         }
+    }
+
+    /// 热更下载完成或切换时代时清理共享管线里的旧兵模贴图缓存，确保新 `EraUnits/` 即刻生效。
+    static func invalidateUnitTextureCache() {
+        sharedAssets = nil
+        UnitArt.clearCache()
+    }
+
+    /// 当历史时代切换或 HotPack v6 `EraUnits/` 刚刚挂载时，原地热替换 GPU 兵模贴图（保留盾牌底托与战舰尾浪）。
+    @discardableResult
+    func reloadUnitTexturesIfNeeded() -> Bool {
+        let curEra = UnitArt.activeEra
+        let curRoot = UnitArt.hotPackEraUnitsRoot?.path ?? ""
+        guard curEra != loadedUnitEra || curRoot != loadedUnitRootPath else { return false }
+        loadedUnitEra = curEra
+        loadedUnitRootPath = curRoot
+        let loader = MTKTextureLoader(device: device)
+        var next = unitTextures
+        for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Transport", "Port", "Merchant"] {
+            let probe = ["Fleet", "Transport", "Port", "Merchant"].contains(role) ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
+            guard let image = UnitArt.image(probe, era: curEra) else { continue }
+            if let texture = try? loader.newTexture(cgImage: image, options: [.SRGB: false, .generateMipmaps: true]) {
+                next[role] = texture
+            } else if let texture = Self.texture(device, image) {
+                next[role] = texture
+            }
+        }
+        next["banner"] = next["elite"]
+        unitTextures = next
+        rebuildArmies()
+        return true
     }
 
     private var released = false
@@ -1470,6 +1511,25 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
             }
 
+            // 2.5. 8K–16K 真实卫星地貌与海深 GPU 瓦片金字塔叠层（HotPack v6 ReliefTiles/*.lgtr，按视口流式采样）
+            if stage >= 0.95 && !activeHistoricalRegion.isEmpty && (display.mapDetail ?? true) {
+                let tiles = MapTileStreamer.shared.visibleTiles(
+                    region: activeHistoricalRegion,
+                    device: device,
+                    camera: camera,
+                    viewport: size,
+                    mapWidth: map.width,
+                    mapHeight: map.height
+                )
+                if !tiles.isEmpty {
+                    u.alpha = isTerrainMode ? 0.56 : (fills == nil ? 0.24 : 0.14)
+                    for tile in tiles {
+                        quad(tile.texture, reliefTilePipeline, x: tile.x, y: tile.y, width: tile.w, height: tile.h)
+                    }
+                    u.alpha = 1
+                }
+            }
+
             // 3. 战争晕染与易主扫色（Claude 原版单 Pass 墨场）
             if stage >= 1 && (display.battleGround ?? true) && fills == nil {
                 let t0 = CACurrentMediaTime()
@@ -1895,6 +1955,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             rgb *= 1.0 - smoothstep(0.32, 0.94, (sc1 + sc2) * 0.5) * 0.055 * k;
         }
         return float4(clamp(rgb, 0.0, 1.0), 1.0);
+    }
+
+    // 8K–16K 真实地球卫星地貌与水深瓦片叠层着色器（HotPack v6 ReliefTiles/*.lgtr 流式采样，零全量显存占用）
+    fragment float4 reliefTileFragment(SeaOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]], constant Uniforms& u [[buffer(2)]]) {
+        float3 rgb = t.sample(s, in.uv).rgb;
+        if (u.lighting > 0.01) {
+            float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
+            rgb *= studioLight(mapUV, u.lighting * 0.52);
+        }
+        return float4(clamp(rgb, 0.0, 1.0), clamp(u.alpha, 0.0, 1.0));
     }
 
     // 高倍缩放无缝古宣纸肌理正片叠底：远景单纹理保留古卷明暗，近景渐进混入双尺度无缝宣纸纤维（零糊块、零色偏）

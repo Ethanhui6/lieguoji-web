@@ -397,11 +397,20 @@ public enum Nobility {
             if !unmarried(r, p) || !p.isAlive.asBool { continue }
             if p.spouseId.asInt != 0 && !alive(r, p.spouseId.asInt) { p.spouseId = JS(0) }
             let own = r.kin.families[p.familyId.asInt.description], head = !own.isNull && own.headId.asInt == p.id.asInt
+            let isHistorical = UnitKinds.enabled && !r.regimes.isNull && !r.regimes.historicalScenarioId.isNull
+            let myCulture = p.cultureName.optionalString ?? ""
+            let myState = p.stateId.asInt
             // Split for the type checker (Xcode's solver times out on the single chain).
             func eligible(_ c: JS) -> Bool {
                 if !c.isAlive.asBool || c.gender.asInt == p.gender.asInt { return false }
                 let age = c.age.asInt
                 if age < 18 || age > 45 || !unmarried(r, c) || c.id.asInt == p.id.asInt || closeRelative(p, c) { return false }
+                if isHistorical {
+                    // 历史剧本禁止日常自动婚配把外邦异族人随机塞进本国宗室/派系（跨国王室联姻仍可通过外交指令主动缔结）
+                    if c.stateId.asInt != myState { return false }
+                    let cc = c.cultureName.optionalString ?? ""
+                    if !myCulture.isEmpty && !cc.isEmpty && cc != myCulture { return false }
+                }
                 if !head { return true }
                 let headId: Int? = r.kin.families[c.familyId.asInt.description].headId.optionalNumber.map { Int($0) }
                 return headId != c.id.asInt

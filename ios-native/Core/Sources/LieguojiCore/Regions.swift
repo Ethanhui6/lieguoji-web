@@ -59,15 +59,15 @@ public enum Regions {
         return faces
     }
 
-    /// mergeRing: union along shared edges; nil for holes, point contacts or more than 200 vertices.
-    static func mergeRing(_ a: [Vertex], _ b: [Vertex]) -> [Vertex]? {
+    /// mergeRing: union along shared edges; nil for holes, point contacts or more than `maxVertices` vertices (200 for 20K parity, 480 for 60K/120K high-res meshes).
+    static func mergeRing(_ a: [Vertex], _ b: [Vertex], maxVertices: Int = 200) -> [Vertex]? {
         var keys = [String](), edges = [String: (Vertex, Vertex)](), shared = 0
         for ring in [a, b] { for i in ring.indices {
             let from = ring[i], to = ring[(i + 1) % ring.count], key = edgeKey(from, to)
             if edges[key] != nil { edges[key] = nil; shared += 1 } else { edges[key] = (from, to); keys.append(key) }
         } }
         let live = keys.filter { edges[$0] != nil }
-        if shared == 0 || live.count < 3 || live.count > 200 { return nil }
+        if shared == 0 || live.count < 3 || live.count > maxVertices { return nil }
         var outgoing = [String: (Vertex, Vertex)]()
         for k in live { let e = edges[k]!; if outgoing[e.0.key] != nil { return nil }; outgoing[e.0.key] = e }
         let start = edges[live[0]]!.0
@@ -308,7 +308,9 @@ public enum Regions {
             targetPerNation[o] = m
             minTotal += m
         }
-        let requestedTotal = max(minTotal, min(480, cities))
+        let provCap = d.points.count > 80_000 ? 2400 : (d.points.count > 25_000 ? 1200 : 480)
+        let ringVertexCap = d.points.count > 25_000 ? 480 : 200
+        let requestedTotal = max(minTotal, min(provCap, cities))
         var sqrtWeights = [Int: Double]()
         var sumSqrt = 0.0
         for o in activeOwners {
@@ -403,7 +405,7 @@ public enum Regions {
             let owner = clusterOwner[e.a]
             if owner != clusterOwner[e.b] { continue }
             if (liveCount[owner] ?? 0) <= (targetPerNation[owner] ?? 1) { continue }
-            guard let ring = mergeRing(a.ring, b.ring) else { continue }
+            guard let ring = mergeRing(a.ring, b.ring, maxVertices: ringVertexCap) else { continue }
 
             let area = a.area + b.area
             clusters[e.a].x = (a.x * a.area + b.x * b.area) / max(1e-9, area)
@@ -518,6 +520,7 @@ public enum Regions {
             heap.push(Entry(a: a, b: b, ar: x.revision, br: y.revision, cost: cost))
         }
         for i in clusters.indices { for j in clusters[i].adjacent.keys where i < j { offer(i, j) } }
+        let ringVertexCap = d.points.count > 25_000 ? 480 : 200
         var count = clusters.count
         while count > cities {
             guard let e = heap.pop() else {
@@ -535,7 +538,7 @@ public enum Regions {
             }
             let a = clusters[e.a], b = clusters[e.b]
             if !a.live || !b.live || a.revision != e.ar || b.revision != e.br { continue }
-            guard let ring = mergeRing(a.ring, b.ring) else { continue }
+            guard let ring = mergeRing(a.ring, b.ring, maxVertices: ringVertexCap) else { continue }
             let area = a.area + b.area
             clusters[e.a].x = (a.x * a.area + b.x * b.area) / area
             clusters[e.a].y = (a.y * a.area + b.y * b.area) / area
@@ -572,7 +575,7 @@ public enum Regions {
         if perimeter {
             var seen = [Int](repeating: 0, count: faces.count)
             for r in regions {
-                if r.ring.count < 3 || r.ring.count > 200 { return .failed }
+                if r.ring.count < 3 || r.ring.count > ringVertexCap { return .failed }
                 var faceArea = 0.0
                 for m in r.members { if m < 0 || m >= faces.count { return .failed }; seen[m] += 1; if seen[m] > 1 { return .failed }; faceArea += polygonArea(faces[m].ring) }
                 if abs(faceArea - polygonArea(r.ring)) > max(1e-6, faceArea * 1e-8) { return .failed }

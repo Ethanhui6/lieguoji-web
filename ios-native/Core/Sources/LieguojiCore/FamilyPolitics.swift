@@ -168,8 +168,8 @@ public enum FamilyPolitics {
             if j >= i { j += 1 }
             let a = houses[i], b = houses[j]
             let fa = r.nobility.families[a], fb = r.nobility.families[b]
-            let na = NamingCatalog.houseLabel(r.kin.families[a].surname.optionalString ?? "")
-            let nb = NamingCatalog.houseLabel(r.kin.families[b].surname.optionalString ?? "")
+            let na = houseDisplayName(r, familyId: a)
+            let nb = houseDisplayName(r, familyId: b)
             let stateName = n.name.asString
             let score = relationScore(r, a, b)
             let married = hasMarriageTie(r, a, b)
@@ -223,6 +223,16 @@ public enum FamilyPolitics {
         return r.world.nations.asArray.first(where: { $0.id.asString == nid })?.name.optionalString ?? ""
     }
 
+    /// 统一读取世家/现代派系展示名（历史剧本优先读取史实派系名如「陆军统制派」「海军舰队派」「日本皇室」）。
+    public static func houseDisplayName(_ r: JS, familyId: String) -> String {
+        let kf = r.kin.families[familyId]
+        if !r.regimes.isNull && !r.regimes.historicalScenarioId.isNull,
+           let label = kf.label.optionalString, !label.isEmpty {
+            return label
+        }
+        return NamingCatalog.houseLabel(kf.surname.optionalString ?? "")
+    }
+
     /// 导出某家族的「世家往来列表」（优先同国世家，附已结姻亲或交恶的外邦世家）。
     static func relationsView(_ r: JS, familyId: String) -> JS {
         guard !r.nobility.isNull, !r.world.provinces.isNull else { return .array() }
@@ -243,7 +253,7 @@ public enum FamilyPolitics {
             let isRuling = otherId == rulingId && same
             let o = JS.object()
             o.id = JS(otherId)
-            o.name = JS(NamingCatalog.houseLabel(r.kin.families[otherId].surname.optionalString ?? ""))
+            o.name = JS(houseDisplayName(r, familyId: otherId))
             o.nation = JS(same ? "" : nationName(r, otherNation))
             o.ruling = JS(isRuling)
             o.score = JS(score)

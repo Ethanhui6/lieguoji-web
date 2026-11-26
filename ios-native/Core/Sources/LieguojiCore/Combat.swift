@@ -387,13 +387,23 @@ public enum Volley {
     public struct NavalInput: Sendable { public let destiny: Double; public let maritime: Bool; public let leader: Double?; public let powerBonus: Double
         public init(destiny: Double, maritime: Bool, leader: Double?, powerBonus: Double = 0) { self.destiny = destiny; self.maritime = maritime; self.leader = leader; self.powerBonus = powerBonus } }
 
-    /// 军备科技代差战力倍率（每差 1 阶 ±11%，钳制 −35%…+45%）。
-    public static func techGapMultiplier(attackerTech: Int, defenderTech: Int) -> Double {
-        1.0 + max(-0.35, min(0.45, Double(attackerTech - defenderTech) * 0.11))
+    /// 军备科技代差战力倍率：
+    /// - 古代/火器时代温和递进（每阶 ±11%，钳制 0.65…1.45）；
+    /// - 近现代热兵器与机械化时代（一战/二战/现代）按指数火力代差放大（每阶 ×1.24，钳制 0.42…2.35），真实呈现代差降维打击。
+    public static func techGapMultiplier(attackerTech: Int, defenderTech: Int, era: HistoricalEra = .medieval) -> Double {
+        let diff = attackerTech - defenderTech
+        if era == .ww1 || era == .ww2 || era == .modern {
+            return max(0.42, min(2.35, pow(1.24, Double(diff))))
+        }
+        return 1.0 + max(-0.35, min(0.45, Double(diff) * 0.11))
     }
-    /// 航海科技代差海战倍率（每差 1 阶 ±12%，钳制 −25%…+40%）。
-    public static func navalTechGapMultiplier(attackerTech: Int, defenderTech: Int) -> Double {
-        1.0 + max(-0.25, min(0.40, Double(attackerTech - defenderTech) * 0.12))
+    /// 航海科技代差海战倍率（近现代舰炮/航母/雷达时代代差钳制 0.35…2.50，古代风帆/楼船时代 0.75…1.40）。
+    public static func navalTechGapMultiplier(attackerTech: Int, defenderTech: Int, era: HistoricalEra = .medieval) -> Double {
+        let diff = attackerTech - defenderTech
+        if era == .ww1 || era == .ww2 || era == .modern {
+            return max(0.35, min(2.50, pow(1.26, Double(diff))))
+        }
+        return 1.0 + max(-0.25, min(0.40, Double(diff) * 0.12))
     }
 
     static func armyHit(_ efficiency: Double, _ enemies: Int, _ elite: Bool, _ damageToArmy: Double, _ multiplier: Double) -> Double {

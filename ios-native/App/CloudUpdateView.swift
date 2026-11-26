@@ -189,6 +189,12 @@ struct HotUpdateSheet: View {
                                 .padding(.horizontal, Theme.Layout.pageInset)
                         }
 
+                        // 已生效资产实时自检面板（让每次 1GB+ 热更的 Metal GPU / 核心引擎 / 音画挂载状态清晰可见）
+                        if !hotPack.activeAssetReport.isEmpty {
+                            activeAssetSelfCheckSection
+                                .padding(.horizontal, Theme.Layout.pageInset)
+                        }
+
                         HStack {
                             SectionLabel("本次包含典藏模块（\(m.modules.count)）", inset: false)
                                 .monospacedDigit()
@@ -391,6 +397,55 @@ struct HotUpdateSheet: View {
             RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
                 .strokeBorder(hotPack.updating ? Theme.seal.opacity(0.32) : Theme.hairline, lineWidth: 0.75)
         )
+    }
+
+    private var activeAssetSelfCheckSection: some View {
+        let activeCount = hotPack.activeAssetReport.filter(\.active).count
+        let totalCount = hotPack.activeAssetReport.count
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                SectionLabel("已生效资产实时自检（\(activeCount)/\(totalCount)）", inset: false)
+                    .monospacedDigit()
+                Spacer()
+                if hotPack.mountedActiveBytes > 0 {
+                    Text("已挂载 \(HotPackManager.formatBytes(hotPack.mountedActiveBytes))")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.jade)
+                        .monospacedDigit()
+                }
+            }
+            Group2 {
+                ForEach(Array(hotPack.activeAssetReport.enumerated()), id: \.element.id) { idx, item in
+                    if idx > 0 { Divider2() }
+                    HStack(alignment: .top, spacing: 10) {
+                        Circle()
+                            .fill(item.active ? Theme.jade : Theme.ink2.opacity(0.30))
+                            .frame(width: 8, height: 8)
+                            .padding(.top, 5)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 6) {
+                                Text(item.title)
+                                    .font(Theme.serif(14.5))
+                                    .foregroundStyle(item.active ? Theme.ink : Theme.ink2)
+                                Spacer(minLength: 4)
+                                PaperTag(
+                                    text: item.active ? (item.sizeBytes > 0 ? "已生效 · \(HotPackManager.formatBytes(item.sizeBytes))" : "已生效") : "待同步",
+                                    color: item.active ? Theme.jade : Theme.ink2,
+                                    size: 10
+                                )
+                            }
+                            Text(item.detail)
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 8)
+                }
+            }
+        }
+        .onAppear { hotPack.refreshActiveAssetReport() }
     }
 }
 

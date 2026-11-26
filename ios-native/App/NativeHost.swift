@@ -16,9 +16,9 @@ struct ComputeRouteInfo: Identifiable, Equatable, Sendable {
     var active: Bool
 
     static let builtInRoutes: [ComputeRouteInfo] = [
-        ComputeRouteInfo(id: "tencent-443", name: "九州云服 · 443 运营商优先专线", address: "111.230.153.235:443", tag: "电信/移动/联通防限速", rttMs: nil, active: false),
-        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "原生二进制 MUX v12", rttMs: nil, active: false),
-        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 · 8443 备用高速专线", address: "111.230.153.235:8443", tag: "双端口容灾专线", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-443", name: "九州云服 v13 · 443 运营商优先专线", address: "111.230.153.235:443", tag: "LGB1+UDP · 3Mbps 专调", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 v13 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "二进制 MUX v13 + UDP", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 v13 · 8443 备用高速专线", address: "111.230.153.235:8443", tag: "双端口容灾专线", rttMs: nil, active: false),
         ComputeRouteInfo(id: "lan-udp", name: "局域网毫秒直连", address: "lan", tag: "同 Wi-Fi 自动发现", rttMs: nil, active: false),
         ComputeRouteInfo(id: "cf-relay", name: "Cloudflare 全球边缘推流", address: "relay", tag: "弱网/海外穿透备用", rttMs: nil, active: false),
     ]
@@ -225,7 +225,7 @@ final class StreamFrameBuffer: @unchecked Sendable {
         decodeQueue.async { [weak self] in
             guard let self else { return }
             let raw = WireCodec.decompressIfNeeded(compressedPayload)
-            guard !raw.isEmpty, var decoded = try? JSONDecoder().decode(GameState.self, from: raw) else { return }
+            guard !raw.isEmpty, var decoded = BinaryStateWire.decode(raw) else { return }
             self.lock.lock()
             guard frameEpoch == self.epoch else {
                 self.lock.unlock()
@@ -1208,11 +1208,12 @@ actor NativeHost {
         }
         _ = await call("streamConfig", [
             "playing": playing,
-            "days": max(1, min(32, days)),
-            "intervalMs": max(28, min(900, adaptedIntervalMs)),
+            "days": max(1, min(64, days)),
+            "intervalMs": max(24, min(900, adaptedIntervalMs)),
             "epoch": Int(streamEpoch),
             "push": serverSupportsPush && playing,
-            "window": useWindow
+            "window": useWindow,
+            "binary": serverSupportsPush && serverSupportsLZ4
         ])
     }
 
@@ -1286,29 +1287,58 @@ actor NativeHost {
 
     private static let inputsLock = NSLock()
     private static var sharedGrid: (base: WorldMap, grid: TerrainGraph, document: TerrainDocument)?
-    private static var creationInputs: CreationMap.Inputs?
+    private static var creationInputsCache: [MapResolutionTier: CreationMap.Inputs] = [:]
+
+    /// 当前选中的地图拓扑分辨率档位（支持 20K 标准 / 60K 高精 / 120K 史诗；安装 60K 后自动优先推荐 60K）。
+    nonisolated static var selectedResolutionTier: MapResolutionTier {
+        get {
+            if let raw = UserDefaults.standard.string(forKey: "map.resolutionTier"),
+               let tier = MapResolutionTier(rawValue: raw),
+               MeshCatalog.isAvailable(tier, hotPackRoot: HotPackManager.rootURL) {
+                return tier
+            }
+            if MeshCatalog.isAvailable(.high60K, hotPackRoot: HotPackManager.rootURL) {
+                return .high60K
+            }
+            return .standard20K
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: "map.resolutionTier")
+        }
+    }
+
+    nonisolated static func invalidateCreationInputsCache() {
+        inputsLock.lock()
+        creationInputsCache.removeAll()
+        inputsLock.unlock()
+    }
+
     nonisolated static func seedSharedInputs(base: WorldMap, grid: TerrainGraph, document: TerrainDocument) {
         inputsLock.lock()
         if sharedGrid == nil { sharedGrid = (base, grid, document) }
         inputsLock.unlock()
     }
-    static func loadCreationInputs() throws -> CreationMap.Inputs {
+    static func loadCreationInputs(tier: MapResolutionTier? = nil) throws -> CreationMap.Inputs {
+        let wanted = tier ?? selectedResolutionTier
         inputsLock.lock()
-        if let existing = creationInputs { inputsLock.unlock(); return existing }
-        let cached = sharedGrid
+        if let existing = creationInputsCache[wanted] { inputsLock.unlock(); return existing }
+        let cached = (wanted == .standard20K) ? sharedGrid : nil
         inputsLock.unlock()
         try loadCatalogs()
         guard let world = Bundle.main.url(forResource: "World", withExtension: nil),
               let resources = Bundle.main.url(forResource: "biome-resources", withExtension: "json", subdirectory: "Catalog") else { throw EngineError.message("安装包缺少建世界数据") }
         try OpeningGovernment.loadResources(Data(contentsOf: resources))
-        let base = try cached?.base ?? WorldMap.load(directory: world)
-        let grid = try cached?.grid ?? TerrainGraph(data: Data(contentsOf: world.appendingPathComponent("grid20k.bin")))
-        let edges = try CreationMap.GridEdges(data: Data(contentsOf: world.appendingPathComponent("edges20k.bin")))
-        let document = try cached?.document ?? TerrainDocument(data: Data(contentsOf: world.appendingPathComponent("doc20k.bin")))
-        let x = CreationMap.Inputs(base: base, grid: grid, edges: edges, document: document)
+        let x: CreationMap.Inputs
+        if let cached {
+            let edges = try CreationMap.GridEdges(data: Data(contentsOf: world.appendingPathComponent("edges20k.bin")))
+            x = CreationMap.Inputs(base: cached.base, grid: cached.grid, edges: edges, document: cached.document)
+        } else {
+            let loaded = try MeshCatalog.loadInputs(tier: wanted, hotPackRoot: HotPackManager.rootURL, bundleWorldURL: world)
+            x = loaded.inputs
+        }
         inputsLock.lock()
-        creationInputs = x
-        sharedGrid = nil
+        creationInputsCache[wanted] = x
+        if wanted == .standard20K { sharedGrid = nil }
         inputsLock.unlock()
         return x
     }
@@ -1849,6 +1879,7 @@ final class RelayLink: EngineLink, @unchecked Sendable {
 /// 握手后自动升级 `enableMux`，同时接收服务器 `MUX_PUSH` 主动压缩推流帧与并发指令回包；
 /// 内置请求 12s / 心跳 2.5s（连续 3 次失答判定断链，抗单次抖动、~7.5s 精准识别真断联）。
 final class RemoteLink: EngineLink, @unchecked Sendable {
+    private let hostString: String
     private let connection: NWConnection
     private let queue = DispatchQueue(label: "lieguoji.remote")
     private let lock = NSLock()
@@ -1858,6 +1889,8 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
     private var nextId: UInt32 = 1
     private var pending: [UInt32: (cont: CheckedContinuation<Data, Error>, watchdog: DispatchWorkItem)] = [:]
     private var heartbeatTask: Task<Void, Never>?
+    private var udpConn: NWConnection?
+    private var udpKeepaliveTask: Task<Void, Never>?
     var onPushFrame: (@Sendable (UInt32, Data) -> Void)?
     var onRTTMeasured: (@Sendable (Int) -> Void)?
     var onUnexpectedClose: (@Sendable () -> Void)?
@@ -1884,6 +1917,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
     }
 
     init(host: String, port: UInt16) {
+        self.hostString = host
         let tcp = NWProtocolTCP.Options()
         tcp.noDelay = true
         tcp.enableKeepalive = true
@@ -1917,14 +1951,72 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         }
     }
 
-    /// 协商升级为 v10 非阻塞全双工多路复用主动推流模式。
+    /// 协商升级为 v13 非阻塞全双工多路复用 + `LGB1` 二进制差量 + UDP 零队头阻塞推流模式。
     func upgradeToMux() async throws -> Bool {
         let r = try await legacyCall("enableMux", [:], payload: nil)
         guard r.ok else { return false }
         lock.lock(); mux = true; lock.unlock()
         startMuxReader()
         startMuxHeartbeat()
+        if let meta = r.text, !meta.isEmpty {
+            var uPort: UInt16 = 0
+            var uTok: UInt64 = 0
+            for part in meta.split(separator: "|") {
+                if part.hasPrefix("udp:"), let p = UInt16(part.dropFirst(4)) { uPort = p }
+                else if part.hasPrefix("tok:"), let t = UInt64(part.dropFirst(4)) { uTok = t }
+            }
+            if uPort > 0 && uTok > 0 {
+                startUDPPushChannel(port: uPort, token: uTok)
+            }
+        }
         return true
+    }
+
+    private func startUDPPushChannel(port: UInt16, token: UInt64) {
+        guard let nwPort = NWEndpoint.Port(rawValue: port) else { return }
+        let udp = NWConnection(host: NWEndpoint.Host(hostString), port: nwPort, using: .udp)
+        lock.lock()
+        udpConn?.cancel()
+        udpConn = udp
+        lock.unlock()
+
+        var reg = Data(capacity: 12)
+        reg.append(contentsOf: [0x4C, 0x47, 0x4A, 0x55]) // "LGJU"
+        var tokBE = token.bigEndian
+        withUnsafeBytes(of: &tokBE) { reg.append(contentsOf: $0) }
+        let regPacket = reg
+
+        func receiveNextDatagram() {
+            udp.receiveMessage { [weak self] data, _, _, err in
+                guard let self, err == nil, self.isMuxActive else { return }
+                if let d = data, d.count >= 8 {
+                    let s = d.startIndex
+                    if d[s] == 0x4C && d[s + 1] == 0x47 && d[s + 2] == 0x55 && d[s + 3] == 0x46 { // "LGUF"
+                        let tag = UInt32(EngineWire.readU32(d, at: 4))
+                        let payload = d.subdata(in: (s + 8)..<d.endIndex)
+                        self.onPushFrame?(tag, payload)
+                    }
+                }
+                receiveNextDatagram()
+            }
+        }
+
+        udp.stateUpdateHandler = { [weak udp] state in
+            if case .ready = state {
+                udp?.send(content: regPacket, completion: .contentProcessed { _ in })
+                receiveNextDatagram()
+            }
+        }
+        udp.start(queue: queue)
+
+        udpKeepaliveTask?.cancel()
+        udpKeepaliveTask = Task.detached(priority: .utility) { [weak self, weak udp] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                guard let self, self.isMuxActive, let udp else { return }
+                udp.send(content: regPacket, completion: .contentProcessed { _ in })
+            }
+        }
     }
 
     func muxPingRTT(timeoutSeconds: Double = 3.5) async -> Int? {
@@ -1980,8 +2072,12 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         let shouldNotify = !userCancelled
         let closeCb = shouldNotify ? onUnexpectedClose : nil
         onUnexpectedClose = nil
+        let udp = udpConn
+        udpConn = nil
         lock.unlock()
         heartbeatTask?.cancel()
+        udpKeepaliveTask?.cancel()
+        udp?.cancel()
         for (_, entry) in map {
             entry.watchdog.cancel()
             entry.cont.resume(throwing: err)
@@ -2024,7 +2120,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
                         throw EngineError.message("服务器帧长异常")
                     }
                     let body = try await self.receive(bodyLen)
-                    if type == EngineWire.muxPush {
+                    if type == EngineWire.muxPush || type == EngineWire.muxBinaryPush {
                         self.onPushFrame?(frameId, body)
                     } else if type == EngineWire.muxReply || type == EngineWire.muxPong {
                         self.lock.lock()

@@ -12,6 +12,9 @@ import LieguojiCore
         UISegmentedControl.appearance().setTitleTextAttributes([.font: segFont], for: .normal)
         UINavigationBar.appearance().titleTextAttributes = [.font: barFont]
         // 后台异步预热宣纸 256px 纹理、核心 Phosphor 矢量路径与 1:10m 真实历史地理图集（优先热更新包，回退内置包）。
+        Task { @MainActor in
+            _ = HotPackManager.shared
+        }
         DispatchQueue.global(qos: .utility).async {
             MemorialPaper.prewarm()
             PhosphorPathCache.prewarmCore()
@@ -624,6 +627,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("7.0.0", [
+            "【HOI4 / 历史时代3 级超精舆图革命 × 60K/120K 网格 × 20K 卫星地貌 GPU 瓦片】彻底突破 20K 细胞 / 480 州 / 24 国限制：全新支持 6 万（1,200 州）与 12 万（2,400 州）高精 Voronoi 网格、7 大历史地理分区 20K 真实山川与海深 Metal GPU 流式瓦片金字塔（0 闪烁 LRU 显存池），自绘地图工坊 3.0 升级 1 格微观画笔、64 国与 2,400 州上限，五千年 45 纪元全球真实疆界均可一键开局。",
+            "【极致丝滑零延迟 × 本机 0ms 64× 看海 + 广州 4C4G 3Mbps 云服 v13 二进制+UDP】默认切换为「本机极致流畅 0ms 直演（最高 64× 推进，账号/云档/热更/工坊全天候在线）」；云服升级至 v13，引入 LGB1 紧凑二进制增量帧（<1 KB/帧、<0.05 ms 解码）、Linux 每包 TCP_QUICKACK、UDP 8767 零队头阻塞推流通道及 2480 kbps 精准限速（适配广州 3 Mbps 带宽 + Ubuntu 24.04 BBR），彻底根治联机抖动与卡顿。",
+            "【真实历史深度考据 × 双元首制 × 家族派系纯净 × 真实军事科技代差 × 1.15GB+ 全生效热更 v6】1943 年前严格禁核（1941 二战零核武，1950 冷战仅美苏拥核）；实装君主/首相双元首制（1941 日本昭和天皇裕仁 + 内阁总理大臣东条英机、伪满洲国爱新觉罗·溥仪傀儡制、1939 英国乔治六世+张伯伦等）；彻底清零历史国家宗室外籍人员与地名姓氏、还原日本陆海军派系剧烈对立及 1941 日中陆海空与科技降维打击（山地衰减）；发布 1.15 GB+ 100% 真实生效 hotpack-v6，热更页新增「已生效资产实时自检面板」眼见为实。"
+        ]),
         ("6.0.1", [
             "【热更新提速 50 倍 × 进度条点击秒动】发布 GitHub Release `hotpack-v5` 全量 69 项 229 MB 真实地理图集并剔除超时死节点，接入五路 HTTP 206 满速分片并发；测速拿到 3 节点即 `< 0.5s` 抢跑，1 MB/512 KB 细粒度 6 路分片让进度条丝滑上涨不再卡顿。",
             "【九州云服 v12 全界面统一显示】清理行宫链路卡、设置页与司礼监监控页残留的 v9/v10 与旧体积字样，全面同步展示「九州云服 v12（16 Mbps 五路竞速 · 断链自动续连）」及动态典藏包体积。",

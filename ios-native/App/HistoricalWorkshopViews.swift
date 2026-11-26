@@ -26,7 +26,7 @@ final class HistoricalThumbnailCache {
         } else {
             heights = HistoricalBasemaps.generateHeights(region: scenario.region, graph: inputs.grid)
         }
-        let nationCount = max(2, min(24, scenario.nations.count))
+        let nationCount = max(2, min(100, scenario.nations.count))
         let thumb = PreviewWorld.thumbnail(inputs, heights: heights, width: 400, nations: nationCount, seed: scenario.id)
         return makeUIImage(rgba: thumb.rgba, width: thumb.width, height: thumb.height)
     }
@@ -183,6 +183,9 @@ struct HistoricalAtlasBrowserView: View {
     @State private var filter: AtlasRegionFilter = .all
     @State private var expandedId: String? = nil
     @State private var rebelMode: String = "historical"
+    @State private var selectedTier: MapResolutionTier = NativeHost.selectedResolutionTier
+    @State private var showAll45Eras = false
+    @ObservedObject private var hotPack = HotPackManager.shared
 
     private var filteredScenarios: [HistoricalScenario] {
         HistoricalScenarios.officialScenarios.filter { filter.matches($0.region) }
@@ -191,6 +194,12 @@ struct HistoricalAtlasBrowserView: View {
     private func scenarioWithRebelMode(_ sc: HistoricalScenario) -> HistoricalScenario {
         var copy = sc
         copy.rebelMode = rebelMode
+        // 高精 60K/120K 网格下按比例放大州郡粒度，获得钢铁雄心4 / 历史时代3 级细密版图
+        if selectedTier == .high60K && copy.provinceCount < 320 {
+            copy.provinceCount = min(1200, max(copy.provinceCount * 2, 320))
+        } else if selectedTier == .ultra120K && copy.provinceCount < 540 {
+            copy.provinceCount = min(2400, max(copy.provinceCount * 3, 540))
+        }
         return copy
     }
 
@@ -218,6 +227,63 @@ struct HistoricalAtlasBrowserView: View {
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
+
+            // 地图精细度档位切换（标准 20K / 高精 60K / 史诗 120K，支持 HOI4 / AoH3 级细密州郡）
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 6) {
+                    InkIcon(glyph: .region, size: 13.5, weight: 1.7)
+                        .foregroundStyle(Theme.seal)
+                        .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                    Text("地图精图档位")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+                    Spacer(minLength: 4)
+                    Text(selectedTier.subtitle)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                HStack(spacing: 6) {
+                    ForEach(MapResolutionTier.allCases) { tier in
+                        let installed = MeshCatalog.isAvailable(tier, hotPackRoot: HotPackManager.rootURL)
+                        let on = selectedTier == tier
+                        Button {
+                            GameFeel.shared.tap()
+                            if installed {
+                                selectedTier = tier
+                                NativeHost.selectedResolutionTier = tier
+                            } else {
+                                hotPack.showHotUpdateSheet = true
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(tier == .standard20K ? "20K 标准" : (tier == .high60K ? "60K 高精" : "120K 史诗"))
+                                    .font(Theme.caption)
+                                    .foregroundStyle(on ? Theme.paperLight : (installed ? Theme.ink : Theme.ink2))
+                                if !installed {
+                                    Text("热更")
+                                        .font(Theme.sans(10))
+                                        .foregroundStyle(Theme.seal)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 1)
+                                        .background(Theme.seal.opacity(0.10), in: Capsule())
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 30)
+                            .background(on ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.65))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
+            .padding(.horizontal, Theme.Layout.pageInset)
 
             // 开局叛乱规则一键切换条（默认历史拟真，零开局内爆；亦可一键关闭叛乱）
             VStack(alignment: .leading, spacing: 7) {
@@ -279,6 +345,84 @@ struct HistoricalAtlasBrowserView: View {
                 )
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
+
+            // 五千年 45 纪元自由开局（挂载 HotPack v6 Eras45/ 后全部 45 个真实历史时间切面均可一键启世）
+            let eras = HistoricalErasCatalog.mountedEras()
+            let erasReady = HistoricalErasCatalog.isPackMounted
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    SectionLabel("五千年 45 纪元自由开局（\(eras.count) 纪元）", inset: false)
+                        .monospacedDigit()
+                    Spacer()
+                    PaperTag(text: erasReady ? "已挂载可玩" : "热更解锁", color: erasReady ? Theme.jade : Theme.seal, size: 10.5)
+                }
+                .padding(.horizontal, Theme.Layout.sectionInset)
+
+                let shownEras = showAll45Eras ? eras : Array(eras.suffix(8).reversed())
+                Group2 {
+                    ForEach(Array(shownEras.enumerated()), id: \.element.id) { idx, era in
+                        if idx > 0 { Divider2() }
+                        HStack(spacing: 10) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text(era.yearDisplayText)
+                                        .font(Theme.caption)
+                                        .monospacedDigit()
+                                        .foregroundStyle(Theme.seal)
+                                    Text(era.title)
+                                        .font(Theme.serif(14.5))
+                                        .foregroundStyle(Theme.ink)
+                                        .lineLimit(1)
+                                }
+                                Text(era.subtitle)
+                                    .font(Theme.caption)
+                                    .foregroundStyle(Theme.ink2)
+                                    .lineLimit(1)
+                            }
+                            Spacer(minLength: 6)
+                            Button {
+                                GameFeel.shared.tap()
+                                if let sc = HistoricalErasCatalog.buildPlayableScenario(
+                                    eraId: era.id,
+                                    provinceCount: selectedTier.defaultHistoricalProvinces,
+                                    rebelMode: rebelMode
+                                ) {
+                                    onPlayScenario(sc)
+                                } else {
+                                    hotPack.showHotUpdateSheet = true
+                                }
+                            } label: {
+                                Text(erasReady && era.nationCount > 0 ? "开局(\(era.nationCount)国)" : "下载包")
+                                    .font(Theme.caption)
+                                    .foregroundStyle(erasReady ? Theme.paperLight : Theme.seal)
+                                    .padding(.horizontal, 10)
+                                    .frame(height: 28)
+                                    .background(erasReady ? Theme.seal : Theme.seal.opacity(0.10), in: Capsule())
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 8)
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                Button {
+                    GameFeel.shared.tap()
+                    withAnimation(Motion.panel) { showAll45Eras.toggle() }
+                } label: {
+                    Text(showAll45Eras ? "收起 45 纪元年表" : "展开全部 45 个历史纪元（公元前3000年–1994年）")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.seal)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+            .padding(.top, 6)
         }
     }
 }

@@ -8,22 +8,44 @@ import LieguojiCore
 enum UnitArt {
     static let size = 256
     private static var cache = [String: CGImage]()
+    /// 热更目录 `EraUnits/{era}/{role}.png`（按时代切换真实二战坦克/零战/航母、一战无畏舰、拿破仑线列炮、古代战车棋子）。
+    static var hotPackEraUnitsRoot: URL?
+    static var activeEra: String = "medieval" {
+        didSet { if oldValue != activeEra { cache.removeAll() } }
+    }
+
+    static func clearCache() { cache.removeAll() }
 
     static func role(_ unit: String) -> String {
         if ["Fleet", "Transport", "Port", "Merchant"].contains(unit) { return unit }
         return UnitKinds.byKey[unit]?.role.rawValue ?? "infantry"
     }
 
-    static func image(_ unit: String) -> CGImage? {
+    static func image(_ unit: String, era: String? = nil) -> CGImage? {
         let key = role(unit)
-        if let c = cache[key] { return c }
+        let eraKey = era ?? activeEra
+        let cacheKey = "\(eraKey)|\(key)"
+        if let c = cache[cacheKey] { return c }
+        // 优先加载 HotPack v6 时代高清兵模贴图（下载即生效，支持任意 6 时代兵种视觉换装）
+        if let root = hotPackEraUnitsRoot {
+            let candidates = [
+                root.appendingPathComponent(eraKey, isDirectory: true).appendingPathComponent("\(key).png"),
+                root.appendingPathComponent("common", isDirectory: true).appendingPathComponent("\(key).png"),
+            ]
+            for url in candidates where FileManager.default.fileExists(atPath: url.path) {
+                if let ui = UIImage(contentsOfFile: url.path), let cg = ui.cgImage {
+                    cache[cacheKey] = cg
+                    return cg
+                }
+            }
+        }
         guard let g = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: size * 4,
                                 space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         g.translateBy(x: 0, y: CGFloat(size)); g.scaleBy(x: 1, y: -1)
         g.setLineCap(.round); g.setLineJoin(.round)
         draw(key, g)
         guard let cg = g.makeImage() else { return nil }
-        cache[key] = cg
+        cache[cacheKey] = cg
         return cg
     }
 

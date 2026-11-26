@@ -168,8 +168,9 @@ public enum Naval {
         }
         var powerBonus = 0.0
         if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy {
+            let era = HistoricalEra.current(r)
             powerBonus += historicalNavalBonus(r, nation: nation)
-            // 对比当前交战敌国的航海科技均差，赋予海上代差火力倍率（每阶 ±12%）
+            // 对比当前交战敌国的航海科技均差，赋予真实海上科技代差倍率（二战/现代航母舰炮雷达代差高达 0.35…2.50 倍）
             let myTech = WorldDepth.techLevel(r, nation: nation, branch: .naval)
             var enemyTechSum = 0.0, enemyCount = 0
             if !r.world.statecraft.isNull && !r.world.statecraft.relations.isNull {
@@ -182,9 +183,16 @@ public enum Naval {
                 }
             }
             if enemyCount > 0 {
-                let avgEnemy = enemyTechSum / Double(enemyCount)
-                let techGap = max(-0.25, min(0.40, (Double(myTech) - avgEnemy) * 0.12))
-                powerBonus += techGap
+                let avgEnemy = Int((enemyTechSum / Double(enemyCount)).rounded())
+                let techMult = Volley.navalTechGapMultiplier(attackerTech: myTech, defenderTech: avgEnemy, era: era)
+                powerBonus += (techMult - 1.0)
+            }
+            if era.isModernAirEra {
+                // 二战/现代海战叠加密接航空与舰队航空兵制空加成（航母舰队对无空掩护舰船具压倒性优势）
+                let air = NuclearWarfare.airPower(r, nationId: nation)
+                if air >= 50.0 {
+                    powerBonus += min(0.45, (air - 40.0) / 100.0 * 0.65)
+                }
             }
         }
         return Volley.NavalInput(destiny: r.upperCombat.nations[nation].destiny.asNumber, maritime: r.economy.nations[nation].ethnic.optionalString == "Maritime", leader: leader, powerBonus: powerBonus)

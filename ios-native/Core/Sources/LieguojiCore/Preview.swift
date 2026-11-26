@@ -65,10 +65,11 @@ public enum PreviewWorld {
         var province = [Int32](repeating: -1, count: m.cellCount)
         var provinces = [WorldMeta.Province](), owners = [Int](), seeds = [Int]()
         // Too few provinces for this land: the same steps up as the engine, so the two still agree.
+        let provCap = input.document.points.count > 80_000 ? 2400 : (input.document.points.count > 25_000 ? 1200 : 480)
         var target = cities
         var found = Regions.partition(input.document, elevations: elevations, cities: target, surface: surface, balanceAreas: true)
-        while found == nil && target < 480 {
-            target = raisedCities(target)
+        while found == nil && target < provCap {
+            target = raisedCities(target, cap: provCap)
             found = Regions.partition(input.document, elevations: elevations, cities: target, surface: surface, balanceAreas: true)
         }
         if let part = found {
@@ -252,7 +253,7 @@ public enum PreviewWorld {
     }
 
     /// engine.ts raisedCities.
-    static func raisedCities(_ n: Int) -> Int { min(480, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
+    static func raisedCities(_ n: Int, cap: Int = 480) -> Int { min(cap, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
 
     /// 新世界地形预览统计（用于开局选图页实时展示陆地占比、山地比例与海岸形态）。
     public struct ThumbnailStats: Sendable {

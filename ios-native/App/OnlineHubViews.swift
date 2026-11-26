@@ -354,7 +354,7 @@ private struct HubProfileTabView: View {
             let detail = !custom.isEmpty
                 ? custom
                 : ((model.remoteTransport.isEmpty ? "全双工主动推流" : model.remoteTransport) + kb)
-            return ("九州云服 v12 · 实时在线", detail, bars, tone, true)
+            return ("九州云服 v13 · 实时在线", detail, bars, tone, true)
         }
         if model.remoteReconnecting {
             let custom = model.remoteConnectionDetail.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -362,19 +362,19 @@ private struct HubProfileTabView: View {
             return ("自动重连中 · 第 \(max(1, model.remoteReconnectAttempt)) 次", detail, 1, Theme.seal, false)
         }
         if model.remoteOfflineManual {
-            return ("离线单机模式", "已手动切至本机运算 · 随时可一键连回九州云服", 0, Theme.ink2, false)
+            return ("本机极致流畅 · 0ms 直演", "最高 64× 看海（账号/云档/热更全程在线 · 随时可切云服 v13）", 3, Theme.jade, false)
         }
         if model.state == nil {
             let online = platform.server?.computeOnline == true
             return (
-                online ? "九州云服 v12 · 随时待命" : "云端行宫 · 本机待命",
-                online ? "进入世界自动接入云服 v12，断链自动保活重连" : "云服暂休整，进图默认本机满帧直演",
+                online ? "本机 0ms 优先 · 云服 v13 待命" : "云端行宫 · 本机 0ms 待命",
+                online ? "默认本机 0ms 满帧直演（64×），可随时一键接入云服 v13（UDP+二进制）" : "云服暂休整，进图默认本机 0ms 满帧直演",
                 online ? 3 : 0,
                 online ? Theme.jade : Theme.ink2,
                 false
             )
         }
-        return ("本机演算中 · 可接入云服 v12", "轻点下方按钮即可连接九州云服 v12 享受断链续推", 0, Theme.ink2, false)
+        return ("本机 0ms 极致流畅中", "最高 64× 零延迟直演 · 可随时一键切换至九州云服 v13 省电挂机", 3, Theme.jade, false)
     }
 
     private var bestMirrorHint: String {
@@ -862,21 +862,21 @@ private struct HubProfileTabView: View {
                 // 在线云服 / 离线单机清晰切换
                 HStack(spacing: 8) {
                     linkModeChip(
-                        title: "在线云服 v12",
-                        subtitle: "16Mbps · 断链自动续连",
+                        title: "本机 0ms 极速",
+                        subtitle: "推荐 · 最高 64×",
+                        active: isOfflineSelected
+                    ) {
+                        model.switchToOfflineLocal()
+                        onToast("已切换至本机 0ms 极致流畅模式（账号/云档/热更保持在线）")
+                    }
+                    linkModeChip(
+                        title: "云服 v13 省电",
+                        subtitle: "二进制+UDP · 挂机",
                         active: !isOfflineSelected
                     ) {
                         model.autoRemote = true
                         model.reconnectCloudNow()
-                        onToast("已切换至在线云服 v12（断链自动重连）")
-                    }
-                    linkModeChip(
-                        title: "离线单机",
-                        subtitle: "纯本机 0ms",
-                        active: isOfflineSelected
-                    ) {
-                        model.switchToOfflineLocal()
-                        onToast("已切换至离线单机模式")
+                        onToast("已切换至九州云服 v13（LGB1 二进制+UDP 零队头阻塞推流）")
                     }
                 }
 

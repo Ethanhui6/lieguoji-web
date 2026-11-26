@@ -97,10 +97,16 @@ extension NativeEngine {
             let e = JS.object()
             let kFam = r.kin.families[key]
             let surname = NamingCatalog.cleanSurname(kFam.surname.optionalString ?? "")
+            let histLabel = (!r.regimes.isNull && !r.regimes.historicalScenarioId.isNull) ? (kFam.label.optionalString ?? "") : ""
             let fidInt = Int(key) ?? -1
             let isRuling = fidInt == ruling
             let imperialNoSurname = isRuling && isJPImperialRuler
-            e.name = JS(imperialNoSurname ? "皇室" : NamingCatalog.houseLabel(surname))
+            let displayHouseName: String = {
+                if !histLabel.isEmpty { return histLabel }
+                if imperialNoSurname { return "日本皇室" }
+                return NamingCatalog.houseLabel(surname)
+            }()
+            e.name = JS(displayHouseName)
             e.surname = JS(imperialNoSurname ? "" : surname)
             e.id = JS(key)
             var headLabel = ""
@@ -149,7 +155,15 @@ extension NativeEngine {
             e.members = JS(kFam.isNull ? 0 : Nobility.living(r, key).count)
             // 宿敌: the house it is on the worst terms with, if they are bad.
             let foes = houses.filter { $0.0 != key }.map { (k: $0.0, rel: r.nobility.relations[key][$0.0].optionalNumber ?? 0) }.filter { $0.rel <= -20 }
-            if let foe = foes.min(by: { $0.rel < $1.rel }), let foeSurname = r.kin.families[foe.k].surname.optionalString { e.rival = JS(NamingCatalog.houseLabel(foeSurname)) }
+            if let foe = foes.min(by: { $0.rel < $1.rel }) {
+                let foeFam = r.kin.families[foe.k]
+                let foeLabel = (!r.regimes.isNull && !r.regimes.historicalScenarioId.isNull) ? (foeFam.label.optionalString ?? "") : ""
+                if !foeLabel.isEmpty {
+                    e.rival = JS(foeLabel)
+                } else if let foeSurname = foeFam.surname.optionalString {
+                    e.rival = JS(NamingCatalog.houseLabel(foeSurname))
+                }
+            }
             return e
         })
         c.aiAutoGovern = JS(Regimes.isAutoGoverned(r, id))
@@ -231,12 +245,16 @@ extension NativeEngine {
             let seat = Regimes.seats(r, id)
             if let title = seat.premier {
                 let h = JS.object()
-                h.premierTitle = JS(title); h.premierRules = JS(seat.premierRules); h.elected = JS(seat.elected)
+                var effectiveTitle = title
                 if let p = Regimes.premier(r, id) {
+                    if let ht = p.historicalTitle.optionalString, !ht.isEmpty, ht.count <= 10 {
+                        effectiveTitle = ht
+                    }
                     h.premierName = JS(Regimes.personName(p))
                     h.premierId = JS(p.id.asInt)
                     if p.familyId.asInt > 0 { h.premierHouseId = JS(String(p.familyId.asInt)) }
                 }
+                h.premierTitle = JS(effectiveTitle); h.premierRules = JS(seat.premierRules); h.elected = JS(seat.elected)
                 o.heads = h
             }
         }

@@ -1,5 +1,24 @@
 # 更新日志
 
+## 7.0.0 (Build 191)
+
+### 史诗大改版：HOI4/历史时代3级 60K/120K 超精舆图与 20K GPU 瓦片 × 本机 0ms 64× / 广州 3Mbps 云服 v13 × 真·历史双元首与军事代差 × 1.15GB+ 100% 全生效热更包 v6
+- **HOI4 / 历史时代3 级地图分辨率、20K 卫星地貌 GPU 瓦片与自绘工坊 3.0（`MeshCatalog.swift`、`MapTileStreamer.swift`、`MapRenderer.swift`、`MapView.swift`、`MapEditor.swift`、`HistoricalWorkshopViews.swift`）**：
+  - 彻底打破旧版 20K 网格 / 480 州 / 24 国天花板：原生扩展至 **60K（59,984 格 · 至多 1,200 州）**与 **120K（120,120 格 · 至多 2,400 州）**行主序高精 Voronoi 网格，历史剧本与 45 纪元最高支持 **100 国**、自绘地图支持 **64 国**，最大缩放倍率提升至 `100×`；
+  - 新增 `MapTileStreamer` 零拷贝 `.lgtr` GPU 瓦片金字塔流式渲染器（48 块有界 LRU `MTLTexture` 显存池 + 异步解码就绪自动触发重绘 + 祖先瓦片无缝垫底），Metal 新增 `reliefTilePipeline` 在陆海底层叠加 7 大历史分区 20K（`z=0..4`、341 块 `1280×720` 瓦片/区）真实山川浮雕、海沟水深与江河水系；
+  - 自绘地图工坊 3.0 新增 1 格微观精细画笔（最小半径 `4` + `「微」` 快捷档）、分辨率档位徽章与 60K/120K 动态规模预设；历史工坊新增「五千年 45 纪元自由开局」列表，覆盖公元前 3000 年至公元 2010 年全 45 真实世界史切面。
+- **极致流畅零延迟方案：本机 0ms 64× 看海优先 + 广州 4C4G 3Mbps 专属云服 v13（`BinaryWire.swift`、`Service.swift`、`LieguojiServer/main.swift`、`NativeHost.swift`、`GameModel.swift`、`server-deploy/tune-ubuntu-lowlatency.sh`）**：
+  - 默认切换至**本机极致流畅 0ms 直演**（最高支持 `64×` 极速看海、消除缓冲双睡，同时保持云端账号、云存档、工坊与 1.1 GB 热更新 100% 在线），并可随时一键切至「云服 v13 省电挂机」；
+  - 远端计算引擎全面升级至 `lieguoji-server/v13`：新增 `LGB1` 紧凑二进制增量帧协议（`<1 KB/帧`、客户端 `<0.05 ms` 零分配解码，较 JSON+LZ4 再降 5–8 倍流量）、Linux 每包重装 `TCP_QUICKACK`、`UDPPushGateway`（UDP `8767` 零队头阻塞推流端口）以及专为腾讯云广州 3 Mbps 出向带宽定制的 `LGJ_MAX_KBPS=2480`（`310 KB/s`）精准限速；附带一键 Ubuntu 24.04 BBR + `fq` 内核低延迟调优部署脚本 `server-deploy/tune-ubuntu-lowlatency.sh`。
+- **真·历史深度考据：严格核门槛 × 双元首制 × 纯净宗室派系 × 1941 日中真实军事科技代差（`NuclearWarfare.swift`、`Heads.swift`、`NamingCatalog.swift`、`Nobility.swift`、`FamilyPolitics.swift`、`HistoricalRoster.swift`、`HistoricalScenarios.swift`、`Combat.swift`、`Naval.swift`、`NationSheet.swift`）**：
+  - **严格核武年代锁**：1943 年前彻底锁死核时代（1941 二战亚太、1939 二战欧陆、1914 一战、1812 拿破仑等全部 0 反应堆 0 核弹），1950 冷战精确还原仅美苏拥核、英国仅 1 座反应堆研发中、其余各国 0 核弹；
+  - **历史双元首与傀儡制**：实装国家元首（君主/天皇）+ 政府首脑（首相/总理）双元首模型与年号显示——1941 日本精确为**昭和天皇 裕仁** + **内阁总理大臣 东条英机**（再也不会出现东条英机当天皇的谬误），伪满洲国为**皇帝 爱新觉罗·溥仪** + **关东军司令 梅津美治郎**（日本附庸），1939 英国为**乔治六世 + 张伯伦**，意大利为**维托里奥·埃马努埃莱三世 + 墨索里尼**；
+  - **纯净宗室、真实派系与零地名姓氏**：按各历史国家真实文化锁死宗室、旁支与联姻池，彻底清除日本等历史国家家族中混入外籍人员与「上海氏 / 东京都」等地名姓氏；1941 日本精确还原**帝国陆军统制派 / 皇道派 / 帝国海军舰队派 / 财阀政党**及陆海军 `-48` 尖锐宿怨；
+  - **真实陆海空与科技代差**：补全各历史国家独立开局科技等级、陆海空制空与舰队代差——1941 日本对中国在平原与近海拥有真实压倒性现代化代差优势（陆军、海军、制空全面领先），但在西南/华中山地地形受到真实地形衰减，还原持久战韧性。
+- **真·1.15 GB+ 零凑数 100% 全生效典藏热更包 `hotpack-v6` 与「已生效资产实时自检面板」（`scripts/build-hotpack-v6.mjs`、`HotPackManager.swift`、`CloudUpdateView.swift`、`UnitArt.swift`、`Feel.swift`、`server.py`、`functions/api/cdn/[[path]].ts`）**：
+  - 彻底摒弃旧版 `hotpack-v5` 中 iOS 未解析的原始 GeoJSON 冗余文件，构建并发布 **> 1.1 GB** 的 `hotpack-v6` 六大 100% 真实生效模块：`HDMeshes`（60K/120K 拓扑与底图）、`ReliefTiles`（7 区 20K Metal 瓦片金字塔）、`Eras45`（45 纪元全可玩二进制掩码）、`Encyclopedia`（14,900+ 全球双语城市志与 5,320 位历代人物志）、`EraUnits`（6 时代 × 14 兵种 = 84 套 1024×1024 Retina 雕漆兵模）、`AudioHD`（6 时代 18 首立体声交响三乐章 + 49 条时代战场音效）；
+  - 启动与热更完成后即时挂载全部六大模块并清理 Metal/AVAudio 缓存，在「热更管理」页全新实装**「已生效资产实时自检面板」**，实时校验并显示磁盘体积与内存/GPU 挂载灯状态；云端平台直接内置 `hotpack-v6-manifest.json` 走五路国内满速 CDN（不占广州 3 Mbps 源站带宽）。
+
 ## 6.0.1 (Build 190)
 
 ### 热更五路满速秒动 × 九州云服 v12 全界面同步 × 排版文字错乱清零

@@ -24,10 +24,10 @@ public enum Creation {
     /// The base run `{id, scale, world, clock, civilization, chronicle, people, life}`.
     /// `worldId` is the terrain document's world id (the naming and people seed); `runId` the new run's id (`fms-` + UUID).
     public static func base(regions: [Regions.Region], seeds: [Int], owners: [Int], width: Double, height: Double, worldId: String, runId: String,
-                            relations: String, mode: String, enabled: [String], cultures: [Opening.Culture]) -> JS? {
+                            relations: String, mode: String, enabled: [String], cultures: [Opening.Culture], preferredCultures: [String]? = nil) -> JS? {
         let count = seeds.count
-        guard count >= 2, count <= 24, count <= regions.count, ["peace", "war"].contains(relations),
-              let names = Opening.civilization(seed: worldId, count: count, owners: owners, mode: mode, enabled: enabled, cultures: cultures) else { return nil }
+        guard count >= 2, count <= 100, count <= regions.count, ["peace", "war"].contains(relations),
+              let names = Opening.civilization(seed: worldId, count: count, owners: owners, mode: mode, enabled: enabled, cultures: cultures, preferredCultures: preferredCultures) else { return nil }
         let scale = 1000 / max(width, height)
 
         // civilization (initialCivilization47; rulers are added with the chronicle).
@@ -54,7 +54,7 @@ public enum Creation {
                     ("label", point(r.center.0, r.center.1, scale)), ("fort", JS(seeds.contains(i) ? 2 : 0))])
         })
         let nations = JS.array(seeds.enumerated().map { i, s in
-            object([("id", JS("n-\(i)")), ("name", JS(names.nations[i].full)), ("color", JS(PreviewWorld.palette[i])), ("capitalId", JS("c-\(s)")),
+            object([("id", JS("n-\(i)")), ("name", JS(names.nations[i].full)), ("color", JS(PreviewWorld.palette[i % PreviewWorld.palette.count])), ("capitalId", JS("c-\(s)")),
                     ("regimeId", JS("regime-\(i)")), ("dynastyId", JS("dynasty-\(i)"))])
         })
         let custom = object([("id", JS(runId)), ("name", JS("我的诸国世界")), ("seed", JS(worldId)), ("rivers", .array())])

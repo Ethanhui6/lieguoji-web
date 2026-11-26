@@ -25,8 +25,16 @@ import Darwin
 //    以及服务端每 60 秒自动双写热备（`autosave.lgj` + 最多 10 份 `world-<id>.lgj`）与 SIGTERM/SIGINT 优雅落盘退出。
 
 setvbuf(stdout, nil, _IONBF, 0)
-let serverVersionTag = "lieguoji-server/v12"
+let serverVersionTag = "lieguoji-server/v13"
 let env = ProcessInfo.processInfo.environment
+let udpPushPort: UInt16 = UInt16(env["LGJ_UDP_PORT"] ?? "") ?? 8767
+/// 出向带宽整形上限（默认 2480 kbps = 310 KB/s，专为 3 Mbps 腾讯云轻量云服留出 17% 防拥塞余量，杜绝 policer 丢包抖动；高带宽服可通过 `LGJ_MAX_KBPS` 调高）。
+let configuredMaxBytesPerSec: Double = {
+    if let kbps = Double(env["LGJ_MAX_KBPS"] ?? ""), kbps >= 400 {
+        return kbps * 125.0
+    }
+    return 310_000.0
+}()
 let cliArgs = Array(CommandLine.arguments.dropFirst())
 let catalogDirArg: String? = {
     for (idx, arg) in cliArgs.enumerated() {
@@ -184,6 +192,11 @@ func receiveExactly(_ s: Socket, _ count: Int) -> Data? {
             let n = Int(recv(s, base.advanced(by: got).assumingMemoryBound(to: CChar.self), Int32(chunk), 0))
             #elseif canImport(Glibc)
             let n = Glibc.recv(s, base.advanced(by: got), chunk, 0)
+            if n > 0 {
+                // Linux TCP_QUICKACK 为单次触发：每次 recv() 后立即重新启用，彻底消除 40ms 延迟确认毛刺！
+                var qa: Int32 = 1
+                _ = setsockopt(s, Int32(IPPROTO_TCP), TCP_QUICKACK, &qa, socklen_t(MemoryLayout<Int32>.size))
+            }
             #else
             let n = Darwin.recv(s, base.advanced(by: got), chunk, 0)
             #endif
@@ -264,6 +277,143 @@ final class DirectClient: @unchecked Sendable {
 let clientLock = NSLock()
 var activeDirect: DirectClient?
 var clientGeneration: UInt64 = 0
+
+/// v13 UDP 零队头阻塞实时推流网关（端口 LGJ_UDP_PORT，默认 8767）：
+/// - 客户端升级 MUX 后获发 64 位会话令牌并定时发送 16 字节 UDP 穿墙保活包 `"LGJU" + token(u64) + epoch(u32)`；
+/// - 服务端将 <= 1320 字节的 `LGB1`+LZ4 单包帧直接经 UDP 发出（`"LGUF" + tag(u32) + body`），彻底消除 4G/5G TCP 队头阻塞；
+/// - 超大关键帧或 UDP 不可达时无缝回落 TCP `MUX_PUSH`。
+final class UDPPushGateway: @unchecked Sendable {
+    private let lock = NSLock()
+    private var sock: Socket = invalidSocket
+    private var expectedToken: UInt64 = 0
+    private var peerAddr: sockaddr_in?
+    private var lastPeerSeen = Date.distantPast
+    private(set) var boundPort: UInt16 = 0
+
+    func issueToken() -> UInt64 {
+        let tok = UInt64.random(in: 1...UInt64.max)
+        lock.lock()
+        expectedToken = tok
+        peerAddr = nil
+        lastPeerSeen = .distantPast
+        lock.unlock()
+        return tok
+    }
+
+    func clearPeer() {
+        lock.lock()
+        peerAddr = nil
+        lastPeerSeen = .distantPast
+        lock.unlock()
+    }
+
+    func start(port listenPort: UInt16) {
+        guard listenPort > 0 else { return }
+        #if os(Windows)
+        let s = socket(AF_INET, Int32(SOCK_DGRAM), Int32(IPPROTO_UDP.rawValue))
+        #elseif canImport(Glibc)
+        let s = socket(AF_INET, Int32(SOCK_DGRAM.rawValue), 0)
+        #else
+        let s = socket(AF_INET, SOCK_DGRAM, 0)
+        #endif
+        guard s != invalidSocket else { return }
+        var one: Int32 = 1
+        #if os(Windows)
+        withUnsafePointer(to: &one) { $0.withMemoryRebound(to: CChar.self, capacity: 4) { _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_REUSEADDR), $0, 4) } }
+        #else
+        setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, socklen_t(MemoryLayout<Int32>.size))
+        #endif
+        var addr = sockaddr_in()
+        #if os(Windows)
+        addr.sin_family = ADDRESS_FAMILY(AF_INET)
+        addr.sin_addr.S_un.S_addr = 0
+        let addrLen = Int32(MemoryLayout<sockaddr_in>.size)
+        #else
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_addr.s_addr = 0
+        let addrLen = socklen_t(MemoryLayout<sockaddr_in>.size)
+        #endif
+        addr.sin_port = listenPort.bigEndian
+        let ok = withUnsafePointer(to: &addr) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(s, $0, addrLen) } }
+        guard ok == 0 else { closeSocket(s); return }
+        lock.lock()
+        sock = s
+        boundPort = listenPort
+        lock.unlock()
+
+        Thread.detachNewThread { [weak self] in
+            var buf = [UInt8](repeating: 0, count: 128)
+            while let self {
+                var from = sockaddr_in()
+                #if os(Windows)
+                var fromLen = Int32(MemoryLayout<sockaddr_in>.size)
+                let got: Int = buf.withUnsafeMutableBytes { raw in
+                    guard let p = raw.baseAddress?.assumingMemoryBound(to: CChar.self) else { return -1 }
+                    return withUnsafeMutablePointer(to: &from) { fp in
+                        fp.withMemoryRebound(to: sockaddr.self, capacity: 1) { Int(recvfrom(s, p, Int32(raw.count), 0, $0, &fromLen)) }
+                    }
+                }
+                #else
+                var fromLen = socklen_t(MemoryLayout<sockaddr_in>.size)
+                let got: Int = buf.withUnsafeMutableBytes { raw in
+                    guard let p = raw.baseAddress else { return -1 }
+                    return withUnsafeMutablePointer(to: &from) { fp in
+                        fp.withMemoryRebound(to: sockaddr.self, capacity: 1) { Int(recvfrom(s, p, raw.count, 0, $0, &fromLen)) }
+                    }
+                }
+                #endif
+                if got < 12 {
+                    if got < 0 { Thread.sleep(forTimeInterval: 0.05) }
+                    continue
+                }
+                // "LGJU" + u64(token BE)
+                if buf[0] == 0x4C && buf[1] == 0x47 && buf[2] == 0x4A && buf[3] == 0x55 {
+                    var tok: UInt64 = 0
+                    for k in 0..<8 { tok = (tok << 8) | UInt64(buf[4 + k]) }
+                    self.lock.lock()
+                    if tok != 0 && tok == self.expectedToken {
+                        self.peerAddr = from
+                        self.lastPeerSeen = Date()
+                    }
+                    self.lock.unlock()
+                }
+            }
+        }
+    }
+
+    /// 尝试单包 UDP 发出紧凑帧（仅 <= 1320 字节且 12s 内收到过客户端 UDP 保活时走 UDP，返回 true 则免走 TCP）。
+    func trySend(tag: UInt32, compressedBody: Data) -> Bool {
+        guard compressedBody.count <= 1320 else { return false }
+        lock.lock()
+        let s = sock
+        guard s != invalidSocket, var peer = peerAddr, Date().timeIntervalSince(lastPeerSeen) < 12.0 else {
+            lock.unlock()
+            return false
+        }
+        lock.unlock()
+
+        var pkt = Data(capacity: 8 + compressedBody.count)
+        pkt.append(contentsOf: [0x4C, 0x47, 0x55, 0x46]) // "LGUF"
+        pkt.append(EngineWire.u32(Int(tag)))
+        pkt.append(compressedBody)
+
+        let sent: Int = pkt.withUnsafeBytes { raw in
+            guard let p = raw.baseAddress else { return -1 }
+            return withUnsafePointer(to: &peer) { fp in
+                fp.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
+                    #if os(Windows)
+                    return Int(sendto(s, p.assumingMemoryBound(to: CChar.self), Int32(raw.count), 0, sa, Int32(MemoryLayout<sockaddr_in>.size)))
+                    #else
+                    return Int(sendto(s, p, raw.count, 0, sa, socklen_t(MemoryLayout<sockaddr_in>.size)))
+                    #endif
+                }
+            }
+        }
+        return sent == pkt.count
+    }
+}
+
+let udpGateway = UDPPushGateway()
 
 let relayBaseLock = NSLock()
 var activeRelayBase: String?
@@ -365,6 +515,7 @@ final class SimStreamer {
     private var playing = false
     private var pushEnabled = false
     private var windowEnabled = false
+    private var binaryEnabled = false
     private var daysPerStep = 1
     private var intervalSec: Double = 0.068
     private var streamEpoch: UInt32 = 1
@@ -386,7 +537,7 @@ final class SimStreamer {
     private var cachedWorldId = ""
     private var hasCatalogsLoaded = false
     private var worldLoaded = false
-    private let maxBytesPerSec: Double = 2_000_000.0
+    private let maxBytesPerSec: Double = configuredMaxBytesPerSec
 
     func telemetry() -> (playing: Bool, stepMs: Int, provinces: Int, day: Int, open: Bool, worldId: String, hasCatalogs: Bool) {
         cond.lock()
@@ -414,14 +565,15 @@ final class SimStreamer {
         cond.unlock()
     }
 
-    func configure(playing: Bool, days: Int, intervalMs: Int, epoch: Int?, push: Bool, window: Bool) {
+    func configure(playing: Bool, days: Int, intervalMs: Int, epoch: Int?, push: Bool, window: Bool, binary: Bool = false) {
         cond.lock()
         let wasPlaying = self.playing
         self.playing = playing
         self.pushEnabled = push
         self.windowEnabled = window
-        self.daysPerStep = max(1, min(32, days))
-        self.intervalSec = Double(max(28, min(900, intervalMs))) / 1000.0
+        self.binaryEnabled = binary
+        self.daysPerStep = max(1, min(64, days))
+        self.intervalSec = Double(max(24, min(900, intervalMs))) / 1000.0
         if let e = epoch, e >= 0 {
             let nextEpoch = UInt32(e & 0xFF)
             if nextEpoch != self.streamEpoch {
@@ -539,6 +691,7 @@ final class SimStreamer {
                 let active = self.playing
                 let doPush = self.pushEnabled
                 let useWindow = self.windowEnabled
+                let useBinary = self.binaryEnabled
                 let needsLegacyBuf = !doPush && (self.bufferedFrame == nil)
                 let reqDays = self.daysPerStep
                 let isFirst = self.firstFramePending
@@ -586,7 +739,9 @@ final class SimStreamer {
                 let stepT0 = Date()
                 engineLock.lock()
                 if isFirst { service.resetSlimStaticCache() }
-                let reply = service.handle("step", ["days": sliceDays, "slim": doPush], payload: nil)
+                let reply = (doPush && useBinary)
+                    ? service.handle("stepBinary", ["days": sliceDays], payload: nil)
+                    : service.handle("step", ["days": sliceDays, "slim": doPush], payload: nil)
                 let pCount = service.engine?.run.world.provinces.length ?? 0
                 let curDay = service.currentDay
                 let curWid = service.currentWorldId
@@ -623,22 +778,28 @@ final class SimStreamer {
                             self.pushedBytes += compressed.count
                             if tickStart.timeIntervalSince(self.statStarted) >= 30 {
                                 let avgKB = Double(self.pushedBytes) / Double(max(1, self.pushedCount)) / 1024.0
-                                print(String(format: "（v12 16Mbps 极速推流）近30秒 %d 帧 · %.1f KB/帧 · 步进 %.0f ms（%.1f ms/日）", self.pushedCount, avgKB, self.avgStepMs, self.avgDayMs))
+                                let kbps = Double(self.pushedBytes) * 8.0 / 30.0 / 1000.0
+                                print(String(format: "（v13 %@ 推流）近30秒 %d 帧 · %.2f KB/帧（%.0f kbps）· 步进 %.0f ms（%.1f ms/日）", useBinary ? "LGB1+UDP" : "LZ4", self.pushedCount, avgKB, kbps, self.avgStepMs, self.avgDayMs))
                                 self.pushedCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
                             }
                         }
                         self.cond.unlock()
 
                         if stillValid {
-                            clientLock.lock()
-                            let direct = activeDirect
-                            clientLock.unlock()
-                            if let direct, direct.mux {
-                                if !direct.sendMux(type: EngineWire.muxPush, id: tag, body: compressed) {
-                                    self.stopForIdle()
+                            // 优先经 UDP 单包推送（0 队头阻塞）；超大关键帧或 UDP 未注册时自动走 TCP MUX
+                            let sentUDP = useBinary && udpGateway.trySend(tag: tag, compressedBody: compressed)
+                            if !sentUDP {
+                                clientLock.lock()
+                                let direct = activeDirect
+                                clientLock.unlock()
+                                if let direct, direct.mux {
+                                    let frameType = useBinary ? EngineWire.muxBinaryPush : EngineWire.muxPush
+                                    if !direct.sendMux(type: frameType, id: tag, body: compressed) {
+                                        self.stopForIdle()
+                                    }
+                                } else if !disableRelay {
+                                    relayPusher.enqueue(seq: tag, body: compressed)
                                 }
-                            } else if !disableRelay {
-                                relayPusher.enqueue(seq: tag, body: compressed)
                             }
                         }
                     } else {
@@ -784,8 +945,9 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         let epoch = (args["epoch"] as? NSNumber)?.intValue ?? (args["epoch"] as? Int)
         let push = (args["push"] as? NSNumber)?.boolValue ?? (args["push"] as? Bool) ?? false
         let window = (args["window"] as? NSNumber)?.boolValue ?? (args["window"] as? Bool) ?? false
-        streamer.configure(playing: on, days: days, intervalMs: intervalMs, epoch: epoch, push: push, window: window)
-        return EngineService.Reply(ok: true, reason: "stream:\(on ? days : 0):\(push ? "push" : "pull")")
+        let binary = (args["binary"] as? NSNumber)?.boolValue ?? (args["binary"] as? Bool) ?? false
+        streamer.configure(playing: on, days: days, intervalMs: intervalMs, epoch: epoch, push: push, window: window, binary: binary)
+        return EngineService.Reply(ok: true, reason: "stream:\(on ? days : 0):\(binary ? "bin" : (push ? "push" : "pull"))")
     }
     if call == "pullLatest" {
         let days = (args["days"] as? NSNumber)?.intValue ?? (args["days"] as? Int) ?? 2
@@ -798,7 +960,11 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         return service.handle("park", args, payload: nil)
     }
     if call == "enableMux" {
-        return EngineService.Reply(ok: true, reason: "mux-v12")
+        let tok = udpGateway.issueToken()
+        let uPort = udpGateway.boundPort
+        var r = EngineService.Reply(ok: true, reason: "mux-v13")
+        if uPort > 0 { r.text = "udp:\(uPort)|tok:\(tok)" }
+        return r
     }
     if call == "resumeWorld" {
         let reqWorldId = (args["worldId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -1263,6 +1429,7 @@ if let rawExtra = env["LGJ_EXTRA_PORTS"]?.trimmingCharacters(in: .whitespacesAnd
 }
 
 startUDPDiscovery(tcpPort: port, roomCode: code)
+udpGateway.start(port: udpPushPort)
 
 #if !os(Windows) && canImport(Dispatch)
 let shutdownLock = NSLock()
@@ -1303,11 +1470,11 @@ installShutdownSignals()
 #endif
 
 let allListeningPorts = ([port] + extraListeners.map(\.port)).map(String.init).joined(separator: " / ")
-print("列国纪在线计算服务器 v12（\(serverVersionTag) · 16 Mbps 满速推流 + 动态滑窗 3 帧 + 32× 爽看海 + 真实历史 GIS 图集预热 + LZ4 差量压缩）已启动")
+print("列国纪在线计算服务器 v13（\(serverVersionTag) · LGB1 超紧凑二进制差量 <1KB/帧 + UDP 零队头阻塞 + 3Mbps 防拥塞整形 \(Int(configuredMaxBytesPerSec / 125))kbps + 逐包 TCP_QUICKACK + 64× 爽看海）已启动")
 print("配对码：\(code)\(disableRelay ? "（纯直连专属云服模式）" : "")")
-print("手机打开游戏即自动接入；支持多端口 443/8765/8443 运营商优先专线，切后台再返回秒级无感重连。")
+print("手机打开游戏即自动接入；支持多端口 443/8765/8443 + UDP \(udpGateway.boundPort) 零队头阻塞专线，切后台再返回秒级无感重连。")
 installStartup()
-print("直连监听端口：TCP \(allListeningPorts) · 局域网发现 UDP \(port < 65535 ? port + 1 : 8766)")
+print("直连监听端口：TCP \(allListeningPorts) · UDP 推流 \(udpGateway.boundPort) · 局域网发现 UDP \(port < 65535 ? port + 1 : 8766)")
 let addresses = localAddresses()
 if addresses.isEmpty {
     print("本机地址：可用 ipconfig / hostname -I 查看 IP，端口 \(port)")
@@ -1445,6 +1612,7 @@ func handleLANClient(_ conn: DirectClient) {
     }
     clientLock.unlock()
     if wasActive {
+        udpGateway.clearPeer()
         streamer.stopForIdle()
     }
     conn.markClosed()

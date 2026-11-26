@@ -35,8 +35,13 @@ public enum NativeCreation {
         public var errorDescription: String? { if case .message(let m) = self { return m }; return nil }
     }
 
-    /// engine.ts raisedCities。
-    static func raised(_ n: Int) -> Int { min(480, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
+    /// engine.ts raisedCities（20K 保持 480 与网页基准一致，60K/120K 高精网自动扩展至 1200/2400 州）。
+    static func raised(_ n: Int, cap: Int = 480) -> Int { min(cap, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
+    static func maxProvinces(for pointCount: Int) -> Int {
+        if pointCount > 80_000 { return 2400 }
+        if pointCount > 25_000 { return 1200 }
+        return 480
+    }
     static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic",
                              "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
 
@@ -44,17 +49,18 @@ public enum NativeCreation {
     /// `worldId` 为地形文档编号（世界种子），`runId` 为局号（"fms-…"）；`progress` 报告阶段（people、armies、map）。
     public static func generate(_ o: Options, inputs x: CreationMap.Inputs, worldId: String, runId: String, progress: ((String) -> Void)? = nil) throws -> World {
         let enabled = cultureIds.filter { o.cultures.isEmpty || o.cultures.contains($0) }
+        let doc = x.document
+        let provCap = maxProvinces(for: doc.points.count)
         let count: Int
         if let l = o.layout {
             count = l.seeds.count
         } else if let sc = o.historicalScenario {
-            count = max(2, min(24, sc.nations.count))
+            count = max(2, min(100, sc.nations.count))
         } else {
-            count = max(2, min(24, o.count))
+            count = max(2, min(100, o.count))
         }
-        var cityCount = max(count, min(480, o.historicalScenario?.provinceCount ?? o.cityCount))
+        var cityCount = max(count, min(provCap, o.historicalScenario?.provinceCount ?? o.cityCount))
         Climate.precipitationInput = o.precipitation; Climate.temperatureOffset = o.temperatureOffset; Climate.north = o.north; Climate.south = o.south
-        let doc = x.document
         let heights: [Int]
         if let drawn = o.heights {
             guard drawn.count == doc.points.count else { throw CreationError.message("自绘地图与原作网格不一致。") }
@@ -78,8 +84,8 @@ public enum NativeCreation {
         while found == nil {
             found = try openingWithNames(o, doc: doc, heights: effectiveHeights, count: count, cityCount: cityCount, enabled: enabled, worldId: worldId, runId: runId)
             if found == nil {
-                if o.layout != nil || hasCustomProvinces || cityCount >= 480 { throw CreationError.message("这片陆地放不下 \(cityCount) 个州郡，请编辑陆地或减少州郡。") }
-                cityCount = raised(cityCount)
+                if o.layout != nil || hasCustomProvinces || cityCount >= provCap { throw CreationError.message("这片陆地放不下 \(cityCount) 个州郡，请编辑陆地或减少州郡。") }
+                cityCount = raised(cityCount, cap: provCap)
             }
         }
         guard let (r, travel, sea, historicalProvinceNames, historicalPopDensities) = found else {
@@ -167,7 +173,7 @@ public enum NativeCreation {
             }
         } else if let sc = o.historicalScenario,
                   o.layout == nil,
-                  let gis = HistoricalBasemaps.bakedScenarioGIS(id: sc.id),
+                  let gis = HistoricalBasemaps.bakedScenarioGIS(id: sc.id, expectedCount: doc.points.count),
                   gis.ownerMask.count == doc.points.count,
                   gis.nationCount == sc.nations.count,
                   let borderPart = Regions.partitionWithinBordersWithFaces(doc, elevations: heights, ownerMask: gis.ownerMask, cities: cityCount) {
@@ -225,8 +231,9 @@ public enum NativeCreation {
             }
         }
         if let l = o.layout, l.owners.count != regions.count || l.seeds.contains(where: { $0 < 0 || $0 >= regions.count }) { throw CreationError.message("国家领土布局无效，原稿未改动。") }
+        let preferredCultures = o.historicalScenario?.nations.map(\.culture)
         guard let r = Creation.base(regions: regions, seeds: layout.seeds, owners: layout.owners, width: doc.width, height: doc.height, worldId: worldId, runId: runId,
-                                    relations: "peace", mode: o.naming == "culture-generated" ? "culture-generated" : "historical-names", enabled: enabled, cultures: Founding.cultures)
+                                    relations: "peace", mode: o.naming == "culture-generated" ? "culture-generated" : "historical-names", enabled: enabled, cultures: Founding.cultures, preferredCultures: preferredCultures)
         else { throw CreationError.message("新世界国家、城市或关系配置无效。") }
         Creation.attachFamilies(r); Creation.attachOrigins(r); Creation.attachNobility(r)
         r.reigns47 = .object(); r.stateTraits47 = .object()

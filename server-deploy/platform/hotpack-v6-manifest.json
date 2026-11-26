@@ -1,0 +1,2694 @@
+{
+  "ok": true,
+  "packVersion": 6,
+  "releaseTag": "v7.0 · 1.11GB 史诗超精舆图与五千年典藏热更包 v6",
+  "summary": "全量 100% 实时挂载生效：60K/120K 超精网格拓扑、7 大分区 20K 卫星地貌 GPU 瓦片金字塔、五千年 45 纪元真实国界自由开局、14,977 城双语地理志与 5,320 位历代人物志、6 时代 84 套 1024×1024 Retina 兵模及 18 首时代交响三乐章",
+  "totalBytes": 1195601710,
+  "updatedAt": 1795725765555,
+  "modules": [
+    {
+      "id": "hd-meshes",
+      "name": "60K / 120K 超精网格拓扑与真地形",
+      "detail": "突破 20K 限制：6 万/12 万 Voronoi 网格、1:10m 真地形与 10 大官方剧本高精国界",
+      "bytes": 72760762,
+      "fileCount": 12
+    },
+    {
+      "id": "relief-tiles",
+      "name": "20K 真实卫星山川地貌 GPU 瓦片",
+      "detail": "7 大历史分区 5 级金字塔（2,387 块 1280×720 HD 瓦片），Metal 零卡顿流式渲染",
+      "bytes": 545772553,
+      "fileCount": 7
+    },
+    {
+      "id": "eras-45",
+      "name": "五千年 45 纪元真实可玩剧本库",
+      "detail": "公元前 3000 年至公元 2010 年全 45 纪元真实世界疆域与 20K/60K/120K 掩码",
+      "bytes": 19090245,
+      "fileCount": 4
+    },
+    {
+      "id": "encyclopedia",
+      "name": "全球真实城市志与五千年人物志",
+      "detail": "14,977 座真实世界双语城市坐标与 5,320 位历代君主名将百科全典",
+      "bytes": 2765600,
+      "fileCount": 2
+    },
+    {
+      "id": "era-units",
+      "name": "6 时代高清雕漆兵模与战舰贴图",
+      "detail": "青铜/中古/火药/一战/二战/现代 84 套 1024×1024 Retina 立体兵模与舰船棋子",
+      "bytes": 8704790,
+      "fileCount": 84
+    },
+    {
+      "id": "audio-hd",
+      "name": "时代自适应交响三乐章与高清音效",
+      "detail": "6 时代 18 首 44.1kHz 立体声交响配乐与 49 条时代战场交互音效",
+      "bytes": 546507760,
+      "fileCount": 67
+    }
+  ],
+  "files": [
+    {
+      "path": "AudioHD/Music/era-antiquity-1.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "914b907b8d0a128997aebd3d9545666e32d6723502b983ece73481172a85da2d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-antiquity-1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-antiquity-1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-antiquity-2.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "85274336e78bd47dc8725ae177bbfbaa9ac272b585c0f2d7540211f98717cbd1",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-antiquity-2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-antiquity-2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-antiquity-3.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "101adc9dd8cce56ff8c658082657600d3b206ab96e947e5a056ef1d48bcc2f03",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-3.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-3.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-3.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-3.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-antiquity-3.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-antiquity-3.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-antiquity-3.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-gunpowder-1.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "8efd3219d2f21db956c88da38ed0fe364c92a98960383a5e660a5187e05474c6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-gunpowder-1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-gunpowder-1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-gunpowder-2.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "adce1ac99b982b797eb4f4a46040ba3fa35ac26ae65738944bf416a6cac9e903",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-gunpowder-2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-gunpowder-2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-gunpowder-3.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "087ef667fa1932d278cbc5d1eb81b878262b9460344ad0a453407858b2cd3e16",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-3.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-3.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-3.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-3.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-gunpowder-3.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-gunpowder-3.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-gunpowder-3.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-medieval-1.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "8c8866ed63fc68b742f540ce1da5a895a21cb8de026b7bb88e7c656a55388964",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-medieval-1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-medieval-1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-medieval-2.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "3f804e3e786f3d4565762bf3c1a30b42dd3b60ed3039ea306fc3098e514af8c7",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-medieval-2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-medieval-2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-medieval-3.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "6d855598f66b4529b5ff02b0171f169ca9a45dec9b3ed892cc73ebadeb226eda",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-3.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-3.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-3.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-3.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-medieval-3.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-medieval-3.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-medieval-3.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-modern-1.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "217ec473062dac059436c0a645d78dfa3d6c9b2032363b0fb03505bab02a8e9a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-modern-1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-modern-1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-modern-2.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "7ce358b4480d35aa180ce662ea5a8d297715d2a43a04af804a62c60cdf01657e",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-modern-2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-modern-2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-modern-3.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "abe3e6dfc72497e9972d55edbb4945dc78a65567dcd71a3ddce33c208030fec6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-3.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-3.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-3.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-3.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-modern-3.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-modern-3.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-modern-3.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-ww1-1.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "e1f1c1c5162003129ef6a2d5cb9786cd20ae6151a60addddeeb60ca8966192ea",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-ww1-1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-ww1-1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-ww1-2.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "9270c506eb9d9cf2e2d34f608291cd7ffab56533a855a9cf88e8763fcf68b40d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-ww1-2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-ww1-2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-ww1-3.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "76929245d9a6a475b0e2ca926f66c8e991437d3640ae5566350727d333d07226",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-3.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-3.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-3.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-3.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-ww1-3.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww1-3.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-ww1-3.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-ww2-1.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "212337a4203d76212d344ad6f7471dd1a86840730951d05293ea395fffad8e0e",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-ww2-1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-ww2-1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-ww2-2.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "5145168eaf085760719aa2b94e28fa6780fa951e31fce254d9c25515c68b3559",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-ww2-2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-ww2-2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/Music/era-ww2-3.wav",
+      "module": "audio-hd",
+      "size": 29106044,
+      "sha256": "b94aa061899c54e2f83464efdbe0a9c456a32015e4ae351f6020998692251964",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-3.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-3.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-3.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-3.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/Music/era-ww2-3.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__Music__era-ww2-3.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/Music/era-ww2-3.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-anchor-antiquity.wav",
+      "module": "audio-hd",
+      "size": 352844,
+      "sha256": "8abaf1d2f897de2097a05212df3a448d0728172e0fd435b8b5b9086d6ac5e96e",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-antiquity.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-antiquity.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-antiquity.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-antiquity.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-anchor-antiquity.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-antiquity.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-anchor-antiquity.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-anchor-gunpowder.wav",
+      "module": "audio-hd",
+      "size": 352844,
+      "sha256": "580ad7afbd53a5a40412a2a628aa8a225b8a69d9e79b45bed5df04b0e93f8952",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-gunpowder.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-gunpowder.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-gunpowder.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-gunpowder.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-anchor-gunpowder.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-gunpowder.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-anchor-gunpowder.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-anchor-medieval.wav",
+      "module": "audio-hd",
+      "size": 352844,
+      "sha256": "4a3d0d79d62ccbf471564e236b24d9e954837af6a262aac87e3e9ddb4dfa7335",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-medieval.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-medieval.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-medieval.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-medieval.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-anchor-medieval.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-medieval.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-anchor-medieval.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-anchor-modern.wav",
+      "module": "audio-hd",
+      "size": 352844,
+      "sha256": "b91b37fab2155d75aa9b3790948c52d68deb9a0e303ff44c786d078cd5d02d07",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-modern.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-modern.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-modern.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-modern.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-anchor-modern.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-modern.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-anchor-modern.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-anchor-ww1.wav",
+      "module": "audio-hd",
+      "size": 352844,
+      "sha256": "744b3f20ee7db9ca1f5d5c322b3224478ff6a60a2d7b92706300b274324f9189",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-anchor-ww1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-anchor-ww1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-anchor-ww2.wav",
+      "module": "audio-hd",
+      "size": 352844,
+      "sha256": "639e7bc1f8ef8586dfed2f199c913c7e97c4859c7ab307b1db49bcf014138731",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-anchor-ww2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor-ww2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-anchor-ww2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-anchor.wav",
+      "module": "audio-hd",
+      "size": 352844,
+      "sha256": "4a3d0d79d62ccbf471564e236b24d9e954837af6a262aac87e3e9ddb4dfa7335",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-anchor.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-anchor.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-anchor.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-cannon-antiquity.wav",
+      "module": "audio-hd",
+      "size": 670364,
+      "sha256": "176c4ecb2fb0375a8374f58ac2fdef2f7f92876078efa7bdf1fcf288d03871fc",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-antiquity.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-antiquity.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-antiquity.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-antiquity.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-cannon-antiquity.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-antiquity.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-cannon-antiquity.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-cannon-gunpowder.wav",
+      "module": "audio-hd",
+      "size": 670364,
+      "sha256": "f158217a5806627dff35ca6bb5ba256fa4ca5eb3e3f1ed78e7e361189ea84ad4",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-gunpowder.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-gunpowder.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-gunpowder.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-gunpowder.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-cannon-gunpowder.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-gunpowder.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-cannon-gunpowder.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-cannon-medieval.wav",
+      "module": "audio-hd",
+      "size": 670364,
+      "sha256": "791a8833f27e133f25bb178689542f3a7c42629f23d7619f61f369028564827e",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-medieval.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-medieval.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-medieval.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-medieval.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-cannon-medieval.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-medieval.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-cannon-medieval.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-cannon-modern.wav",
+      "module": "audio-hd",
+      "size": 670364,
+      "sha256": "5788032f8ec9f8dbb7117a5389eb3535c03fae50989ed93d644fa290a11f17ec",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-modern.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-modern.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-modern.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-modern.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-cannon-modern.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-modern.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-cannon-modern.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-cannon-ww1.wav",
+      "module": "audio-hd",
+      "size": 670364,
+      "sha256": "760cc80d6d001740cce3350f234d92d34dc7d69defe40ee835789784890528ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-cannon-ww1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-cannon-ww1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-cannon-ww2.wav",
+      "module": "audio-hd",
+      "size": 670364,
+      "sha256": "b8a277866ea666d590f9c2af380a7149c179c1aba08288988e8da9b0d41cad7f",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-cannon-ww2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon-ww2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-cannon-ww2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-cannon.wav",
+      "module": "audio-hd",
+      "size": 670364,
+      "sha256": "791a8833f27e133f25bb178689542f3a7c42629f23d7619f61f369028564827e",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-cannon.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-cannon.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-cannon.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-clash-antiquity.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "79d69ad6d545e1e00b8879b240616e12ed89f8a8bbec47561090399992004e40",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-antiquity.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-antiquity.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-antiquity.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-antiquity.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-clash-antiquity.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-antiquity.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-clash-antiquity.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-clash-gunpowder.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "643b1ede6b889c9f1f5b9ac93fd72e65c8a3207ad57806c53c28068978d5a27e",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-gunpowder.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-gunpowder.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-gunpowder.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-gunpowder.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-clash-gunpowder.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-gunpowder.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-clash-gunpowder.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-clash-medieval.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "fa2f09e834e98bc59aeff44fc5448ee5c2ab77c59ec2d1faf45f3c76a70c79f7",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-medieval.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-medieval.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-medieval.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-medieval.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-clash-medieval.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-medieval.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-clash-medieval.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-clash-modern.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "d06f5ea6f1ee3a0f63b33671f0382ff3662c6fee53d66dbe1eb74aaa8e626add",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-modern.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-modern.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-modern.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-modern.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-clash-modern.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-modern.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-clash-modern.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-clash-ww1.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "d8adaaae0ed6d20ad8f93bd92b9b54b30d27bdc90ebb5ce9fcadfdac33d31da3",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-clash-ww1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-clash-ww1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-clash-ww2.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "d6458ca137b8eb6cb3176d5572396e0c42ac9770a2076d14ee85fde6ed1dd9ae",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-clash-ww2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash-ww2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-clash-ww2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-clash.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "fa2f09e834e98bc59aeff44fc5448ee5c2ab77c59ec2d1faf45f3c76a70c79f7",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-clash.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-clash.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-clash.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-herald-antiquity.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "efb52bf7b811132f3fe8d4fc329b515ed343fbbf607b30fd1e3eeeff9e069c6b",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-antiquity.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-antiquity.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-antiquity.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-antiquity.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-herald-antiquity.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-antiquity.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-herald-antiquity.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-herald-gunpowder.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "4c7856423e0d3dcc9141e1b8c01e9f299364f5238983752d6152e9af82a81d65",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-gunpowder.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-gunpowder.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-gunpowder.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-gunpowder.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-herald-gunpowder.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-gunpowder.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-herald-gunpowder.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-herald-medieval.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "be8eb9a1c05121235252bccaf159dbbfb910440001635bd969b19bb6114bb5ec",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-medieval.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-medieval.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-medieval.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-medieval.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-herald-medieval.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-medieval.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-herald-medieval.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-herald-modern.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "dce45e331680d1087b3c7257a60482d3ac22caeb5ad944bf9ab05e37a425fe06",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-modern.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-modern.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-modern.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-modern.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-herald-modern.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-modern.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-herald-modern.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-herald-ww1.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "3df9e6c00d708931df24b67f539810bbd9c34443a196218fdc73959fa886c3d9",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-herald-ww1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-herald-ww1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-herald-ww2.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "aaaf6960c167120a77a5dd9f008dd3a291fab13b9eeb9792e6bba5f119338cd8",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-herald-ww2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald-ww2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-herald-ww2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-herald.wav",
+      "module": "audio-hd",
+      "size": 599804,
+      "sha256": "be8eb9a1c05121235252bccaf159dbbfb910440001635bd969b19bb6114bb5ec",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-herald.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-herald.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-herald.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-march-antiquity.wav",
+      "module": "audio-hd",
+      "size": 564524,
+      "sha256": "60b145ee9cd2b6e539b79a30ff2b39f7304ceec642cde76cecbff904bcbda1b3",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-antiquity.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-antiquity.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-antiquity.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-antiquity.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-march-antiquity.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-antiquity.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-march-antiquity.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-march-gunpowder.wav",
+      "module": "audio-hd",
+      "size": 564524,
+      "sha256": "11c4f78b6c734c6c5c86c1c8e35ad83260073614029ac626f49e56ccac5e83f8",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-gunpowder.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-gunpowder.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-gunpowder.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-gunpowder.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-march-gunpowder.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-gunpowder.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-march-gunpowder.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-march-medieval.wav",
+      "module": "audio-hd",
+      "size": 564524,
+      "sha256": "e134e007b613dd980e049243ff8c953cf2e626d65fa62bd81dd6dfe3b1832724",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-medieval.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-medieval.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-medieval.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-medieval.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-march-medieval.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-medieval.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-march-medieval.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-march-modern.wav",
+      "module": "audio-hd",
+      "size": 564524,
+      "sha256": "411998125dacbc5834a2417a6abdfa3723f98470a03056a90aba3531669d68f4",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-modern.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-modern.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-modern.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-modern.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-march-modern.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-modern.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-march-modern.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-march-ww1.wav",
+      "module": "audio-hd",
+      "size": 564524,
+      "sha256": "ab862c4a097b815a4f8c2b01029c87e4fba7e72e20f9aa8f9b111f96069685a6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-march-ww1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-march-ww1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-march-ww2.wav",
+      "module": "audio-hd",
+      "size": 564524,
+      "sha256": "ebc07157fbeb38f9f1adb449e296e19369461a833849c6690dab52ade7bcb5bf",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-march-ww2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march-ww2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-march-ww2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-march.wav",
+      "module": "audio-hd",
+      "size": 564524,
+      "sha256": "e134e007b613dd980e049243ff8c953cf2e626d65fa62bd81dd6dfe3b1832724",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-march.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-march.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-march.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-scroll-antiquity.wav",
+      "module": "audio-hd",
+      "size": 247000,
+      "sha256": "7eaf4a999268686173570883cd5aca080050b74afb5d513eb336db5f14318c9c",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-antiquity.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-antiquity.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-antiquity.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-antiquity.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-scroll-antiquity.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-antiquity.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-scroll-antiquity.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-scroll-gunpowder.wav",
+      "module": "audio-hd",
+      "size": 247000,
+      "sha256": "580d5022fb66ab7d9f50f0c166350db6e795b3492b57330e3abac0a033465af3",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-gunpowder.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-gunpowder.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-gunpowder.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-gunpowder.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-scroll-gunpowder.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-gunpowder.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-scroll-gunpowder.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-scroll-medieval.wav",
+      "module": "audio-hd",
+      "size": 247000,
+      "sha256": "303a684ac4daceb4cce954bbc1c97f9a7bcda5bb17b8a5e8e9d8000cc0868be6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-medieval.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-medieval.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-medieval.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-medieval.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-scroll-medieval.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-medieval.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-scroll-medieval.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-scroll-modern.wav",
+      "module": "audio-hd",
+      "size": 247000,
+      "sha256": "72b863050a40ba017063263eae8f55c82c6acbadaaf8e543688922364db80aca",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-modern.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-modern.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-modern.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-modern.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-scroll-modern.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-modern.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-scroll-modern.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-scroll-ww1.wav",
+      "module": "audio-hd",
+      "size": 247000,
+      "sha256": "db2a1792934ed98a29a15187c9606bcf861388af39213f9820321379cb52901c",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-scroll-ww1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-scroll-ww1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-scroll-ww2.wav",
+      "module": "audio-hd",
+      "size": 247000,
+      "sha256": "7a0ce4b1c486eca2e2d07ecd20a879e41270e83e7b4292cd7d4d1fa7b363e846",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-scroll-ww2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll-ww2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-scroll-ww2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-scroll.wav",
+      "module": "audio-hd",
+      "size": 247000,
+      "sha256": "303a684ac4daceb4cce954bbc1c97f9a7bcda5bb17b8a5e8e9d8000cc0868be6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-scroll.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-scroll.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-scroll.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-seal-antiquity.wav",
+      "module": "audio-hd",
+      "size": 194084,
+      "sha256": "d62978939e022f5252b87a122b69dcc231c0c1a2901443d9e0036c1cb765b84c",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-antiquity.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-antiquity.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-antiquity.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-antiquity.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-seal-antiquity.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-antiquity.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-seal-antiquity.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-seal-gunpowder.wav",
+      "module": "audio-hd",
+      "size": 194084,
+      "sha256": "ea5566b46ba2afd0dfa9b6dc08353a01b19a0c7a0edc64257b33f7940d881401",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-gunpowder.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-gunpowder.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-gunpowder.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-gunpowder.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-seal-gunpowder.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-gunpowder.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-seal-gunpowder.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-seal-medieval.wav",
+      "module": "audio-hd",
+      "size": 194084,
+      "sha256": "10c9dc6de2b04adcce0386155349ff2353a5908ceb78bc3b5a8d1bded958edfc",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-medieval.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-medieval.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-medieval.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-medieval.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-seal-medieval.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-medieval.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-seal-medieval.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-seal-modern.wav",
+      "module": "audio-hd",
+      "size": 194084,
+      "sha256": "97d6437fa9e3a5311b29564661ea05b612c211219ea310699877c90061b3b586",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-modern.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-modern.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-modern.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-modern.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-seal-modern.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-modern.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-seal-modern.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-seal-ww1.wav",
+      "module": "audio-hd",
+      "size": 194084,
+      "sha256": "e1c7918ee3aa566f1444569846071cb8e6573c7bee100cd44a54b8a920d8f27d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww1.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww1.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww1.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww1.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-seal-ww1.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww1.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-seal-ww1.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-seal-ww2.wav",
+      "module": "audio-hd",
+      "size": 194084,
+      "sha256": "1957ee3908ae26f7b3911dc0fd210a70b92444a40222b9ab6f2f501b8f4c32ce",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww2.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww2.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww2.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww2.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-seal-ww2.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal-ww2.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-seal-ww2.wav"
+      ]
+    },
+    {
+      "path": "AudioHD/SFX/sfx-seal.wav",
+      "module": "audio-hd",
+      "size": 194084,
+      "sha256": "10c9dc6de2b04adcce0386155349ff2353a5908ceb78bc3b5a8d1bded958edfc",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal.wav",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal.wav",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal.wav",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal.wav",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/AudioHD/SFX/sfx-seal.wav",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/AudioHD__SFX__sfx-seal.wav",
+        "http://111.230.153.235/api/v1/hotpack/download/AudioHD/SFX/sfx-seal.wav"
+      ]
+    },
+    {
+      "path": "Encyclopedia/cities_50k_zh.json",
+      "module": "encyclopedia",
+      "size": 1127633,
+      "sha256": "473c17b0fe52f868afc11faa91b1da7f6aedd61aa29476ae3543d426d22a2af9",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__cities_50k_zh.json",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__cities_50k_zh.json",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__cities_50k_zh.json",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__cities_50k_zh.json",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/Encyclopedia/cities_50k_zh.json",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__cities_50k_zh.json",
+        "http://111.230.153.235/api/v1/hotpack/download/Encyclopedia/cities_50k_zh.json"
+      ]
+    },
+    {
+      "path": "Encyclopedia/figures_5k_zh.json",
+      "module": "encyclopedia",
+      "size": 1637967,
+      "sha256": "0d1f9ef63001f92d79a56cf90107a49e0e130c86956d09bd03bfe1b3e66fbdb6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__figures_5k_zh.json",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__figures_5k_zh.json",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__figures_5k_zh.json",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__figures_5k_zh.json",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/Encyclopedia/figures_5k_zh.json",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Encyclopedia__figures_5k_zh.json",
+        "http://111.230.153.235/api/v1/hotpack/download/Encyclopedia/figures_5k_zh.json"
+      ]
+    },
+    {
+      "path": "Eras45/eras45_120k.bin",
+      "module": "eras-45",
+      "size": 10811385,
+      "sha256": "53e6bc94671e44089bdd5cab513afca6be8c3b09676e86779ccc8b4b10f361aa",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_120k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_120k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_120k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_120k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/Eras45/eras45_120k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_120k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/Eras45/eras45_120k.bin"
+      ]
+    },
+    {
+      "path": "Eras45/eras45_20k.bin",
+      "module": "eras-45",
+      "size": 1794105,
+      "sha256": "6e0164120b3e3b95036589ae61487013b1e121ed9fa646beef86f6d47c14465a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_20k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_20k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_20k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_20k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/Eras45/eras45_20k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_20k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/Eras45/eras45_20k.bin"
+      ]
+    },
+    {
+      "path": "Eras45/eras45_60k.bin",
+      "module": "eras-45",
+      "size": 5399145,
+      "sha256": "0e32c5f319502f2f9266d8b2955fce9587a5afde44cd3dc9a8a5fee1ff541c70",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_60k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_60k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_60k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_60k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/Eras45/eras45_60k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_60k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/Eras45/eras45_60k.bin"
+      ]
+    },
+    {
+      "path": "Eras45/eras45_index.json",
+      "module": "eras-45",
+      "size": 1085610,
+      "sha256": "1e8d724daf04e4c30b703d6a65065f054e97350e230d4d669ccd255e688e8112",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_index.json",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_index.json",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_index.json",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_index.json",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/Eras45/eras45_index.json",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/Eras45__eras45_index.json",
+        "http://111.230.153.235/api/v1/hotpack/download/Eras45/eras45_index.json"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/archer.png",
+      "module": "era-units",
+      "size": 90947,
+      "sha256": "595f7c692d799b20bd0c9d096efb6a07dac238b785ba4ec6f304b021d5d2a8ed",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__archer.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__archer.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__archer.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__archer.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/archer.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__archer.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/archer.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/cavalry.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__cavalry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__cavalry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__cavalry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__cavalry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/cavalry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__cavalry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/cavalry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/crossbow.png",
+      "module": "era-units",
+      "size": 90947,
+      "sha256": "595f7c692d799b20bd0c9d096efb6a07dac238b785ba4ec6f304b021d5d2a8ed",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__crossbow.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__crossbow.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__crossbow.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__crossbow.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/crossbow.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__crossbow.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/crossbow.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/elephant.png",
+      "module": "era-units",
+      "size": 147570,
+      "sha256": "7490441f0df26a115030dd10b8111ee58a7f3b3d62601223e3e80887995e8cfc",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elephant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elephant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elephant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elephant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/elephant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elephant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/elephant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/elite.png",
+      "module": "era-units",
+      "size": 99739,
+      "sha256": "a29f065a196350f5c9e6002486a34bb6539626e44052e961a33a6e485779f725",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elite.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elite.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elite.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elite.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/elite.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__elite.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/elite.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/Fleet.png",
+      "module": "era-units",
+      "size": 109231,
+      "sha256": "3c912ace77236ca579e7153b267b265dd4741e88428778d1f477d70035c534b1",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Fleet.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Fleet.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Fleet.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Fleet.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/Fleet.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Fleet.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/Fleet.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/heavy.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__heavy.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__heavy.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__heavy.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__heavy.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/heavy.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__heavy.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/heavy.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/horseArcher.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__horseArcher.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__horseArcher.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__horseArcher.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__horseArcher.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/horseArcher.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__horseArcher.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/horseArcher.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/infantry.png",
+      "module": "era-units",
+      "size": 105562,
+      "sha256": "e3744ceb8be1cfb5e17b77cd785a6010b496859a317c5413899115fbecc9c6e7",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__infantry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__infantry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__infantry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__infantry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/infantry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__infantry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/infantry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/Merchant.png",
+      "module": "era-units",
+      "size": 108049,
+      "sha256": "b27eae97966fbd5c4db911b9888d42fe17355dea069203b0546fea08c20337b6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Merchant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Merchant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Merchant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Merchant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/Merchant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Merchant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/Merchant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/Port.png",
+      "module": "era-units",
+      "size": 88351,
+      "sha256": "5fe57086d915c21db48fb62fc9fdd7878c5713057b55951f8294bc075d5c1b20",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Port.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Port.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Port.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Port.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/Port.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Port.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/Port.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/shield.png",
+      "module": "era-units",
+      "size": 107235,
+      "sha256": "640bbe78bcd4863279ff105ce572976c3365db6eefda670a71d22b37431f83e8",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__shield.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__shield.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__shield.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__shield.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/shield.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__shield.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/shield.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/spear.png",
+      "module": "era-units",
+      "size": 105562,
+      "sha256": "e3744ceb8be1cfb5e17b77cd785a6010b496859a317c5413899115fbecc9c6e7",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__spear.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__spear.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__spear.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__spear.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/spear.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__spear.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/spear.png"
+      ]
+    },
+    {
+      "path": "EraUnits/antiquity/Transport.png",
+      "module": "era-units",
+      "size": 108049,
+      "sha256": "b27eae97966fbd5c4db911b9888d42fe17355dea069203b0546fea08c20337b6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Transport.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Transport.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Transport.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Transport.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/antiquity/Transport.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__antiquity__Transport.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/antiquity/Transport.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/archer.png",
+      "module": "era-units",
+      "size": 90947,
+      "sha256": "595f7c692d799b20bd0c9d096efb6a07dac238b785ba4ec6f304b021d5d2a8ed",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__archer.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__archer.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__archer.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__archer.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/archer.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__archer.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/archer.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/cavalry.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__cavalry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__cavalry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__cavalry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__cavalry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/cavalry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__cavalry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/cavalry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/crossbow.png",
+      "module": "era-units",
+      "size": 92766,
+      "sha256": "22549ba5b2fb822712cb3d1db893e8c4b7fdad8d05e1946a302580ba3dc93cc5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__crossbow.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__crossbow.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__crossbow.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__crossbow.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/crossbow.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__crossbow.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/crossbow.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/elephant.png",
+      "module": "era-units",
+      "size": 147570,
+      "sha256": "7490441f0df26a115030dd10b8111ee58a7f3b3d62601223e3e80887995e8cfc",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elephant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elephant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elephant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elephant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/elephant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elephant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/elephant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/elite.png",
+      "module": "era-units",
+      "size": 99739,
+      "sha256": "a29f065a196350f5c9e6002486a34bb6539626e44052e961a33a6e485779f725",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elite.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elite.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elite.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elite.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/elite.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__elite.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/elite.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/Fleet.png",
+      "module": "era-units",
+      "size": 140993,
+      "sha256": "9e86dad21c8c4c2aa738e1061915586b6bfa028bde6be85d11d614db7db2575d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Fleet.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Fleet.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Fleet.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Fleet.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/Fleet.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Fleet.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/Fleet.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/heavy.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__heavy.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__heavy.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__heavy.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__heavy.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/heavy.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__heavy.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/heavy.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/horseArcher.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__horseArcher.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__horseArcher.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__horseArcher.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__horseArcher.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/horseArcher.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__horseArcher.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/horseArcher.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/infantry.png",
+      "module": "era-units",
+      "size": 105562,
+      "sha256": "e3744ceb8be1cfb5e17b77cd785a6010b496859a317c5413899115fbecc9c6e7",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__infantry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__infantry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__infantry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__infantry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/infantry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__infantry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/infantry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/Merchant.png",
+      "module": "era-units",
+      "size": 108049,
+      "sha256": "b27eae97966fbd5c4db911b9888d42fe17355dea069203b0546fea08c20337b6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Merchant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Merchant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Merchant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Merchant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/Merchant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Merchant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/Merchant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/Port.png",
+      "module": "era-units",
+      "size": 88351,
+      "sha256": "5fe57086d915c21db48fb62fc9fdd7878c5713057b55951f8294bc075d5c1b20",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Port.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Port.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Port.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Port.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/Port.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Port.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/Port.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/shield.png",
+      "module": "era-units",
+      "size": 107235,
+      "sha256": "640bbe78bcd4863279ff105ce572976c3365db6eefda670a71d22b37431f83e8",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__shield.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__shield.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__shield.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__shield.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/shield.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__shield.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/shield.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/spear.png",
+      "module": "era-units",
+      "size": 92766,
+      "sha256": "22549ba5b2fb822712cb3d1db893e8c4b7fdad8d05e1946a302580ba3dc93cc5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__spear.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__spear.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__spear.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__spear.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/spear.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__spear.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/spear.png"
+      ]
+    },
+    {
+      "path": "EraUnits/gunpowder/Transport.png",
+      "module": "era-units",
+      "size": 108049,
+      "sha256": "b27eae97966fbd5c4db911b9888d42fe17355dea069203b0546fea08c20337b6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Transport.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Transport.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Transport.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Transport.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/gunpowder/Transport.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__gunpowder__Transport.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/gunpowder/Transport.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/archer.png",
+      "module": "era-units",
+      "size": 90947,
+      "sha256": "595f7c692d799b20bd0c9d096efb6a07dac238b785ba4ec6f304b021d5d2a8ed",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__archer.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__archer.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__archer.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__archer.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/archer.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__archer.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/archer.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/cavalry.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__cavalry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__cavalry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__cavalry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__cavalry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/cavalry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__cavalry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/cavalry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/crossbow.png",
+      "module": "era-units",
+      "size": 90947,
+      "sha256": "595f7c692d799b20bd0c9d096efb6a07dac238b785ba4ec6f304b021d5d2a8ed",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__crossbow.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__crossbow.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__crossbow.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__crossbow.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/crossbow.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__crossbow.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/crossbow.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/elephant.png",
+      "module": "era-units",
+      "size": 147570,
+      "sha256": "7490441f0df26a115030dd10b8111ee58a7f3b3d62601223e3e80887995e8cfc",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elephant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elephant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elephant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elephant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/elephant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elephant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/elephant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/elite.png",
+      "module": "era-units",
+      "size": 99739,
+      "sha256": "a29f065a196350f5c9e6002486a34bb6539626e44052e961a33a6e485779f725",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elite.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elite.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elite.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elite.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/elite.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__elite.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/elite.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/Fleet.png",
+      "module": "era-units",
+      "size": 140993,
+      "sha256": "9e86dad21c8c4c2aa738e1061915586b6bfa028bde6be85d11d614db7db2575d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Fleet.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Fleet.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Fleet.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Fleet.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/Fleet.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Fleet.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/Fleet.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/heavy.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__heavy.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__heavy.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__heavy.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__heavy.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/heavy.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__heavy.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/heavy.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/horseArcher.png",
+      "module": "era-units",
+      "size": 116918,
+      "sha256": "355ffe379effed66d6a4c7cdbd96156cd81df24cdae8f6d982544374c03592ad",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__horseArcher.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__horseArcher.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__horseArcher.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__horseArcher.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/horseArcher.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__horseArcher.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/horseArcher.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/infantry.png",
+      "module": "era-units",
+      "size": 105562,
+      "sha256": "e3744ceb8be1cfb5e17b77cd785a6010b496859a317c5413899115fbecc9c6e7",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__infantry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__infantry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__infantry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__infantry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/infantry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__infantry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/infantry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/Merchant.png",
+      "module": "era-units",
+      "size": 108049,
+      "sha256": "b27eae97966fbd5c4db911b9888d42fe17355dea069203b0546fea08c20337b6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Merchant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Merchant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Merchant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Merchant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/Merchant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Merchant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/Merchant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/Port.png",
+      "module": "era-units",
+      "size": 88351,
+      "sha256": "5fe57086d915c21db48fb62fc9fdd7878c5713057b55951f8294bc075d5c1b20",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Port.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Port.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Port.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Port.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/Port.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Port.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/Port.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/shield.png",
+      "module": "era-units",
+      "size": 107235,
+      "sha256": "640bbe78bcd4863279ff105ce572976c3365db6eefda670a71d22b37431f83e8",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__shield.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__shield.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__shield.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__shield.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/shield.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__shield.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/shield.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/spear.png",
+      "module": "era-units",
+      "size": 105562,
+      "sha256": "e3744ceb8be1cfb5e17b77cd785a6010b496859a317c5413899115fbecc9c6e7",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__spear.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__spear.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__spear.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__spear.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/spear.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__spear.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/spear.png"
+      ]
+    },
+    {
+      "path": "EraUnits/medieval/Transport.png",
+      "module": "era-units",
+      "size": 108049,
+      "sha256": "b27eae97966fbd5c4db911b9888d42fe17355dea069203b0546fea08c20337b6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Transport.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Transport.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Transport.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Transport.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/medieval/Transport.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__medieval__Transport.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/medieval/Transport.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/archer.png",
+      "module": "era-units",
+      "size": 93913,
+      "sha256": "d28ef7024667b8eb07b387c7e256e338fdb13baaab8dc32bdd568c9588f21828",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__archer.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__archer.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__archer.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__archer.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/archer.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__archer.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/archer.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/cavalry.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__cavalry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__cavalry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__cavalry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__cavalry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/cavalry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__cavalry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/cavalry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/crossbow.png",
+      "module": "era-units",
+      "size": 92766,
+      "sha256": "22549ba5b2fb822712cb3d1db893e8c4b7fdad8d05e1946a302580ba3dc93cc5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__crossbow.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__crossbow.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__crossbow.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__crossbow.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/crossbow.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__crossbow.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/crossbow.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/elephant.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elephant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elephant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elephant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elephant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/elephant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elephant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/elephant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/elite.png",
+      "module": "era-units",
+      "size": 99739,
+      "sha256": "a29f065a196350f5c9e6002486a34bb6539626e44052e961a33a6e485779f725",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elite.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elite.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elite.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elite.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/elite.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__elite.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/elite.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/Fleet.png",
+      "module": "era-units",
+      "size": 97494,
+      "sha256": "0c5da5201252dfb94365b25cf3bed8baf1ab3e0a5d186535e20e52495606884d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Fleet.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Fleet.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Fleet.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Fleet.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/Fleet.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Fleet.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/Fleet.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/heavy.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__heavy.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__heavy.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__heavy.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__heavy.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/heavy.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__heavy.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/heavy.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/horseArcher.png",
+      "module": "era-units",
+      "size": 93913,
+      "sha256": "d28ef7024667b8eb07b387c7e256e338fdb13baaab8dc32bdd568c9588f21828",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__horseArcher.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__horseArcher.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__horseArcher.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__horseArcher.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/horseArcher.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__horseArcher.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/horseArcher.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/infantry.png",
+      "module": "era-units",
+      "size": 105994,
+      "sha256": "d1ebee424100dbc9db10a102612d003000d23bd4f999d4e641b0a54944c358bf",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__infantry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__infantry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__infantry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__infantry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/infantry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__infantry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/infantry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/Merchant.png",
+      "module": "era-units",
+      "size": 101600,
+      "sha256": "69cd15cea38d9f14cf5753722c555580e7ae2fc14cfb8836d04fb233122d9cdd",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Merchant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Merchant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Merchant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Merchant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/Merchant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Merchant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/Merchant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/Port.png",
+      "module": "era-units",
+      "size": 88351,
+      "sha256": "5fe57086d915c21db48fb62fc9fdd7878c5713057b55951f8294bc075d5c1b20",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Port.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Port.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Port.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Port.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/Port.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Port.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/Port.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/shield.png",
+      "module": "era-units",
+      "size": 107235,
+      "sha256": "640bbe78bcd4863279ff105ce572976c3365db6eefda670a71d22b37431f83e8",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__shield.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__shield.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__shield.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__shield.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/shield.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__shield.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/shield.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/spear.png",
+      "module": "era-units",
+      "size": 92766,
+      "sha256": "22549ba5b2fb822712cb3d1db893e8c4b7fdad8d05e1946a302580ba3dc93cc5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__spear.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__spear.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__spear.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__spear.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/spear.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__spear.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/spear.png"
+      ]
+    },
+    {
+      "path": "EraUnits/modern/Transport.png",
+      "module": "era-units",
+      "size": 101600,
+      "sha256": "69cd15cea38d9f14cf5753722c555580e7ae2fc14cfb8836d04fb233122d9cdd",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Transport.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Transport.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Transport.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Transport.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/modern/Transport.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__modern__Transport.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/modern/Transport.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/archer.png",
+      "module": "era-units",
+      "size": 93913,
+      "sha256": "d28ef7024667b8eb07b387c7e256e338fdb13baaab8dc32bdd568c9588f21828",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__archer.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__archer.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__archer.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__archer.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/archer.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__archer.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/archer.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/cavalry.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__cavalry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__cavalry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__cavalry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__cavalry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/cavalry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__cavalry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/cavalry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/crossbow.png",
+      "module": "era-units",
+      "size": 92766,
+      "sha256": "22549ba5b2fb822712cb3d1db893e8c4b7fdad8d05e1946a302580ba3dc93cc5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__crossbow.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__crossbow.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__crossbow.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__crossbow.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/crossbow.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__crossbow.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/crossbow.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/elephant.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elephant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elephant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elephant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elephant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/elephant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elephant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/elephant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/elite.png",
+      "module": "era-units",
+      "size": 99739,
+      "sha256": "a29f065a196350f5c9e6002486a34bb6539626e44052e961a33a6e485779f725",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elite.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elite.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elite.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elite.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/elite.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__elite.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/elite.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/Fleet.png",
+      "module": "era-units",
+      "size": 94427,
+      "sha256": "0c483633d3de131b199da201c754173d14ed29d6f997c75565001ef3d0d81643",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Fleet.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Fleet.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Fleet.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Fleet.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/Fleet.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Fleet.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/Fleet.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/heavy.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__heavy.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__heavy.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__heavy.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__heavy.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/heavy.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__heavy.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/heavy.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/horseArcher.png",
+      "module": "era-units",
+      "size": 93913,
+      "sha256": "d28ef7024667b8eb07b387c7e256e338fdb13baaab8dc32bdd568c9588f21828",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__horseArcher.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__horseArcher.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__horseArcher.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__horseArcher.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/horseArcher.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__horseArcher.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/horseArcher.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/infantry.png",
+      "module": "era-units",
+      "size": 105994,
+      "sha256": "d1ebee424100dbc9db10a102612d003000d23bd4f999d4e641b0a54944c358bf",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__infantry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__infantry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__infantry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__infantry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/infantry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__infantry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/infantry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/Merchant.png",
+      "module": "era-units",
+      "size": 101600,
+      "sha256": "69cd15cea38d9f14cf5753722c555580e7ae2fc14cfb8836d04fb233122d9cdd",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Merchant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Merchant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Merchant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Merchant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/Merchant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Merchant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/Merchant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/Port.png",
+      "module": "era-units",
+      "size": 88351,
+      "sha256": "5fe57086d915c21db48fb62fc9fdd7878c5713057b55951f8294bc075d5c1b20",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Port.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Port.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Port.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Port.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/Port.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Port.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/Port.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/shield.png",
+      "module": "era-units",
+      "size": 107235,
+      "sha256": "640bbe78bcd4863279ff105ce572976c3365db6eefda670a71d22b37431f83e8",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__shield.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__shield.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__shield.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__shield.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/shield.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__shield.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/shield.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/spear.png",
+      "module": "era-units",
+      "size": 92766,
+      "sha256": "22549ba5b2fb822712cb3d1db893e8c4b7fdad8d05e1946a302580ba3dc93cc5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__spear.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__spear.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__spear.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__spear.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/spear.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__spear.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/spear.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww1/Transport.png",
+      "module": "era-units",
+      "size": 101600,
+      "sha256": "69cd15cea38d9f14cf5753722c555580e7ae2fc14cfb8836d04fb233122d9cdd",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Transport.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Transport.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Transport.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Transport.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww1/Transport.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww1__Transport.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww1/Transport.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/archer.png",
+      "module": "era-units",
+      "size": 93913,
+      "sha256": "d28ef7024667b8eb07b387c7e256e338fdb13baaab8dc32bdd568c9588f21828",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__archer.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__archer.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__archer.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__archer.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/archer.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__archer.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/archer.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/cavalry.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__cavalry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__cavalry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__cavalry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__cavalry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/cavalry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__cavalry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/cavalry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/crossbow.png",
+      "module": "era-units",
+      "size": 92766,
+      "sha256": "22549ba5b2fb822712cb3d1db893e8c4b7fdad8d05e1946a302580ba3dc93cc5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__crossbow.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__crossbow.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__crossbow.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__crossbow.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/crossbow.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__crossbow.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/crossbow.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/elephant.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elephant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elephant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elephant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elephant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/elephant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elephant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/elephant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/elite.png",
+      "module": "era-units",
+      "size": 99739,
+      "sha256": "a29f065a196350f5c9e6002486a34bb6539626e44052e961a33a6e485779f725",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elite.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elite.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elite.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elite.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/elite.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__elite.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/elite.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/Fleet.png",
+      "module": "era-units",
+      "size": 100225,
+      "sha256": "1216529c92464e129b60daf1ef1efac2e1e1bd2c6946c5f2153dc6b17549306d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Fleet.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Fleet.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Fleet.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Fleet.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/Fleet.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Fleet.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/Fleet.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/heavy.png",
+      "module": "era-units",
+      "size": 98942,
+      "sha256": "dd2665933e31a887170678304211efc029eeae9c9852eb6cd167f5d1ad1e0f5a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__heavy.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__heavy.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__heavy.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__heavy.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/heavy.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__heavy.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/heavy.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/horseArcher.png",
+      "module": "era-units",
+      "size": 93913,
+      "sha256": "d28ef7024667b8eb07b387c7e256e338fdb13baaab8dc32bdd568c9588f21828",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__horseArcher.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__horseArcher.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__horseArcher.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__horseArcher.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/horseArcher.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__horseArcher.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/horseArcher.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/infantry.png",
+      "module": "era-units",
+      "size": 105994,
+      "sha256": "d1ebee424100dbc9db10a102612d003000d23bd4f999d4e641b0a54944c358bf",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__infantry.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__infantry.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__infantry.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__infantry.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/infantry.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__infantry.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/infantry.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/Merchant.png",
+      "module": "era-units",
+      "size": 101600,
+      "sha256": "69cd15cea38d9f14cf5753722c555580e7ae2fc14cfb8836d04fb233122d9cdd",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Merchant.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Merchant.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Merchant.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Merchant.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/Merchant.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Merchant.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/Merchant.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/Port.png",
+      "module": "era-units",
+      "size": 88351,
+      "sha256": "5fe57086d915c21db48fb62fc9fdd7878c5713057b55951f8294bc075d5c1b20",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Port.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Port.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Port.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Port.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/Port.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Port.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/Port.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/shield.png",
+      "module": "era-units",
+      "size": 107235,
+      "sha256": "640bbe78bcd4863279ff105ce572976c3365db6eefda670a71d22b37431f83e8",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__shield.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__shield.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__shield.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__shield.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/shield.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__shield.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/shield.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/spear.png",
+      "module": "era-units",
+      "size": 92766,
+      "sha256": "22549ba5b2fb822712cb3d1db893e8c4b7fdad8d05e1946a302580ba3dc93cc5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__spear.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__spear.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__spear.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__spear.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/spear.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__spear.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/spear.png"
+      ]
+    },
+    {
+      "path": "EraUnits/ww2/Transport.png",
+      "module": "era-units",
+      "size": 101600,
+      "sha256": "69cd15cea38d9f14cf5753722c555580e7ae2fc14cfb8836d04fb233122d9cdd",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Transport.png",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Transport.png",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Transport.png",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Transport.png",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/EraUnits/ww2/Transport.png",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/EraUnits__ww2__Transport.png",
+        "http://111.230.153.235/api/v1/hotpack/download/EraUnits/ww2/Transport.png"
+      ]
+    },
+    {
+      "path": "HDMeshes/120k/doc120k.bin",
+      "module": "hd-meshes",
+      "size": 8167628,
+      "sha256": "554c2fd31630b952d5d7feb190bc9496fd8f98b68643df3a52c0189a02f9b224",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__doc120k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__doc120k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__doc120k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__doc120k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/120k/doc120k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__doc120k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/120k/doc120k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/120k/edges120k.bin",
+      "module": "hd-meshes",
+      "size": 14354772,
+      "sha256": "3e0095c56cf1643cbdac4381ff67d36292c53ecabe5bdebe35200b6b28c98642",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__edges120k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__edges120k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__edges120k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__edges120k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/120k/edges120k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__edges120k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/120k/edges120k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/120k/grid120k.bin",
+      "module": "hd-meshes",
+      "size": 5285088,
+      "sha256": "d1bb999d34ca7e1461a8c2e1d96a47eb205c589ca885c1126124cbefe278853e",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__grid120k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__grid120k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__grid120k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__grid120k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/120k/grid120k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__grid120k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/120k/grid120k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/120k/world120k.bin",
+      "module": "hd-meshes",
+      "size": 17369928,
+      "sha256": "70fdc3bfef6bf92b1405bb617e3d4f6ec333fa9b80c09e93aa2fdeeacf5a2a5d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__world120k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__world120k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__world120k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__world120k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/120k/world120k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__120k__world120k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/120k/world120k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/60k/doc60k.bin",
+      "module": "hd-meshes",
+      "size": 4078200,
+      "sha256": "aaab96ff65a1d48ff9f584f83d8a2d02c515294e40b6595d140423855e7d82d4",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__doc60k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__doc60k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__doc60k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__doc60k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/60k/doc60k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__doc60k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/60k/doc60k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/60k/edges60k.bin",
+      "module": "hd-meshes",
+      "size": 7156972,
+      "sha256": "35444565ce2d4aec567d6dd3f58447490e9d1094fd416120e7d6dcf34a936c82",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__edges60k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__edges60k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__edges60k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__edges60k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/60k/edges60k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__edges60k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/60k/edges60k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/60k/grid60k.bin",
+      "module": "hd-meshes",
+      "size": 2639032,
+      "sha256": "5e7f1eb48f3af4a5b1e8fe5d3fae9dd8108e448f437c633b4e7cb49f15dc1d4d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__grid60k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__grid60k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__grid60k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__grid60k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/60k/grid60k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__grid60k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/60k/grid60k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/60k/world60k.bin",
+      "module": "hd-meshes",
+      "size": 8845112,
+      "sha256": "3391b3fa16c1cb1f2c4d7f3a29e826ceabe12524580117a20f8bdb12619e0b07",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__world60k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__world60k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__world60k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__world60k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/60k/world60k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__60k__world60k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/60k/world60k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/basemaps_120k.bin",
+      "module": "hd-meshes",
+      "size": 841205,
+      "sha256": "4c5b0c37e2a2772a5ca346203114df8878cd012c7769817fee9db8cf6992f27d",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_120k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_120k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_120k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_120k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/basemaps_120k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_120k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/basemaps_120k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/basemaps_60k.bin",
+      "module": "hd-meshes",
+      "size": 420253,
+      "sha256": "49e90dc30593da4b3555311d6ad9e4a6ea878be2d5403210fe2e44393964b2c5",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_60k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_60k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_60k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_60k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/basemaps_60k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__basemaps_60k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/basemaps_60k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/scenarios_gis_120k.bin",
+      "module": "hd-meshes",
+      "size": 2402646,
+      "sha256": "f9b7ab443ffcc4b23908433f40e48af022777962e9ceae744790a9ff0b656e6a",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_120k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_120k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_120k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_120k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/scenarios_gis_120k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_120k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/scenarios_gis_120k.bin"
+      ]
+    },
+    {
+      "path": "HDMeshes/scenarios_gis_60k.bin",
+      "module": "hd-meshes",
+      "size": 1199926,
+      "sha256": "1ed597ea06a0156932d2f459c3220e241f734a048308e15132c74a60890e2e01",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_60k.bin",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_60k.bin",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_60k.bin",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_60k.bin",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/HDMeshes/scenarios_gis_60k.bin",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/HDMeshes__scenarios_gis_60k.bin",
+        "http://111.230.153.235/api/v1/hotpack/download/HDMeshes/scenarios_gis_60k.bin"
+      ]
+    },
+    {
+      "path": "ReliefTiles/china.lgtr",
+      "module": "relief-tiles",
+      "size": 68534749,
+      "sha256": "1a41e0f340a0be60575d1b8d1baecf3eadb890dee4919c22207b45513d263353",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__china.lgtr",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__china.lgtr",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__china.lgtr",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__china.lgtr",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/ReliefTiles/china.lgtr",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__china.lgtr",
+        "http://111.230.153.235/api/v1/hotpack/download/ReliefTiles/china.lgtr"
+      ]
+    },
+    {
+      "path": "ReliefTiles/east_asia_japan.lgtr",
+      "module": "relief-tiles",
+      "size": 94752285,
+      "sha256": "2950c76efbfc16812ce8f9b95bb4ce5e6e34335044f01e5f7226ab7b8e13e2fa",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__east_asia_japan.lgtr",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__east_asia_japan.lgtr",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__east_asia_japan.lgtr",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__east_asia_japan.lgtr",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/ReliefTiles/east_asia_japan.lgtr",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__east_asia_japan.lgtr",
+        "http://111.230.153.235/api/v1/hotpack/download/ReliefTiles/east_asia_japan.lgtr"
+      ]
+    },
+    {
+      "path": "ReliefTiles/europe.lgtr",
+      "module": "relief-tiles",
+      "size": 66620978,
+      "sha256": "4cc72b9754e9024fb77f61c5748aa49b7dd68548e4c36d8f06f9606ade42e2ca",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__europe.lgtr",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__europe.lgtr",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__europe.lgtr",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__europe.lgtr",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/ReliefTiles/europe.lgtr",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__europe.lgtr",
+        "http://111.230.153.235/api/v1/hotpack/download/ReliefTiles/europe.lgtr"
+      ]
+    },
+    {
+      "path": "ReliefTiles/huaxia.lgtr",
+      "module": "relief-tiles",
+      "size": 64930090,
+      "sha256": "74eef8219822af27beebf7f5f721c8bd4e35f4b636304b37fff66f779bbd39b3",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__huaxia.lgtr",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__huaxia.lgtr",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__huaxia.lgtr",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__huaxia.lgtr",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/ReliefTiles/huaxia.lgtr",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__huaxia.lgtr",
+        "http://111.230.153.235/api/v1/hotpack/download/ReliefTiles/huaxia.lgtr"
+      ]
+    },
+    {
+      "path": "ReliefTiles/japan_detail.lgtr",
+      "module": "relief-tiles",
+      "size": 85241466,
+      "sha256": "6a614f1f0f3f1ff20cff319d4d09e9cc6fc9a84692cb7838d0340125f033a6f6",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__japan_detail.lgtr",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__japan_detail.lgtr",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__japan_detail.lgtr",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__japan_detail.lgtr",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/ReliefTiles/japan_detail.lgtr",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__japan_detail.lgtr",
+        "http://111.230.153.235/api/v1/hotpack/download/ReliefTiles/japan_detail.lgtr"
+      ]
+    },
+    {
+      "path": "ReliefTiles/mediterranean.lgtr",
+      "module": "relief-tiles",
+      "size": 68652769,
+      "sha256": "f4e47f02b9474cafac81f67242f4267365d387765129e8e0dfad7e5b0c946242",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__mediterranean.lgtr",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__mediterranean.lgtr",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__mediterranean.lgtr",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__mediterranean.lgtr",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/ReliefTiles/mediterranean.lgtr",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__mediterranean.lgtr",
+        "http://111.230.153.235/api/v1/hotpack/download/ReliefTiles/mediterranean.lgtr"
+      ]
+    },
+    {
+      "path": "ReliefTiles/world.lgtr",
+      "module": "relief-tiles",
+      "size": 97040216,
+      "sha256": "afeeebe8f84706be382712c92323d977d3d59085eb92e04d0a127e6e7f3aa968",
+      "cdnUrls": [
+        "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__world.lgtr",
+        "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__world.lgtr",
+        "https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__world.lgtr",
+        "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__world.lgtr",
+        "https://lieguoji-edge.pages.dev/api/cdn/hotpack/ReliefTiles/world.lgtr",
+        "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v6/ReliefTiles__world.lgtr",
+        "http://111.230.153.235/api/v1/hotpack/download/ReliefTiles/world.lgtr"
+      ]
+    }
+  ]
+}

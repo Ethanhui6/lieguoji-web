@@ -9,9 +9,13 @@ services:
       - "8765:8765/tcp"
       - "443:443/tcp"
       - "8443:8443/tcp"
+      - "8767:8767/udp"
     environment:
       LGJ_PORT: "8765"
       LGJ_EXTRA_PORTS: "443,8443"
+      LGJ_UDP_PORT: "8767"
+      # 4C4G 3Mbps 腾讯云广州轻量云服黄金整形上限（2480 kbps = 310 KB/s，低于 3Mbps 令牌桶杜绝 policer 丢包排队）
+      LGJ_MAX_KBPS: "${LGJ_MAX_KBPS:-2480}"
       LGJ_ATLAS_DIR: "/app/HistoricalAtlas"
       LGJ_CATALOG_DIR: "/app"
       LGJ_DATA_DIR: "/data/saves"

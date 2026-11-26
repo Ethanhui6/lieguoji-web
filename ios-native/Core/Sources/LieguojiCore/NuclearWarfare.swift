@@ -89,9 +89,9 @@ public enum NuclearWarfare {
         max(lo, min(hi, v.isFinite ? v : lo))
     }
 
-    /// 建造下一座核反应堆的金币造价（`800 + reactors * 450`）。
+    /// 建造下一座核反应堆的金币造价（`3200 + reactors * 2200`，仅工业大国可承担的曼哈顿级工程）。
     public static func reactorCost(currentReactors: Int) -> Double {
-        Double(800 + max(0, currentReactors) * 450)
+        Double(3200 + max(0, currentReactors) * 2200)
     }
 
     /// 读取某国的历史工业指数（来自 `r.regimes.historicalPower[nid].industryIndex`，普通世界默认 `1.0`）。
@@ -99,7 +99,7 @@ public enum NuclearWarfare {
         guard !r.regimes.isNull, !r.regimes.historicalPower.isNull else { return 1.0 }
         let row = r.regimes.historicalPower[nationId]
         guard !row.isNull, let v = row.industryIndex.optionalNumber, v.isFinite else { return 1.0 }
-        return clamp(v, 0.30, 3.00)
+        return clamp(v, 0.22, 4.20)
     }
 
     /// 读取某国的历史兵源规模系数（来自 `r.regimes.historicalPower[nid].manpowerScale`，普通世界默认 `1.0`）。
@@ -107,16 +107,42 @@ public enum NuclearWarfare {
         guard !r.regimes.isNull, !r.regimes.historicalPower.isNull else { return 1.0 }
         let row = r.regimes.historicalPower[nationId]
         guard !row.isNull, let v = row.manpowerScale.optionalNumber, v.isFinite else { return 1.0 }
-        return clamp(v, 0.30, 2.50)
+        return clamp(v, 0.30, 3.00)
     }
 
-    /// 判断某国是否已解锁核工程与核武器（二战/现代时代，或军备与农商科技均达到 5 阶）。
+    /// 严格核时代门控（v7.0 史实校准）：
+    /// - 历史剧本中，公元 1943 年之前绝无核武器（彻底杜绝 1812 / 1914 / 1939 / 1941 开局人人有核）；
+    /// - 1943 年及以后（含 1950 冷战），需达到超级大国级工业底盘与军工/农商高阶科技（或开局史实拥核）方可研发；
+    /// - 普通架空世界需进入现代时代，或军备与农商科技双满 6 阶且具备雄厚工业产能（IC ≥ 160）。
     public static func isNuclearEra(_ r: JS, nationId: String) -> Bool {
         let era = HistoricalEra.current(r)
-        if era == .ww2 || era == .modern { return true }
+        let year = HistoricalEra.displayYear(r)
+        let isHistorical = !r.regimes.isNull && !r.regimes.historicalScenarioId.isNull
+        if isHistorical {
+            guard year >= 1943 else { return false }
+            if era == .antiquity || era == .medieval || era == .gunpowder || era == .ww1 { return false }
+            if nukes(r, nationId: nationId) > 0 || reactors(r, nationId: nationId) > 0 { return true }
+            let techMil = WorldDepth.techLevel(r, nation: nationId, branch: .military)
+            let techEco = WorldDepth.techLevel(r, nation: nationId, branch: .economy)
+            return techMil >= 5 && techEco >= 5 && ic(r, nationId: nationId) >= 150.0
+        }
+        if era == .antiquity || era == .medieval || era == .gunpowder || era == .ww1 { return false }
+        if era == .modern { return true }
         let techMil = WorldDepth.techLevel(r, nation: nationId, branch: .military)
         let techEco = WorldDepth.techLevel(r, nation: nationId, branch: .economy)
-        return techMil >= 5 && techEco >= 5
+        if era == .ww2 {
+            return year >= 1943 && techMil >= 5 && techEco >= 5 && ic(r, nationId: nationId) >= 150.0
+        }
+        return techMil >= 6 && techEco >= 6 && ic(r, nationId: nationId) >= 160.0
+    }
+
+    /// 判断某国是否真正具备自主兴建核反应堆的超级大国门槛（防止中小农业国随意造核弹）。
+    public static func isNuclearCapable(_ r: JS, nationId: String) -> Bool {
+        guard isNuclearEra(r, nationId: nationId) else { return false }
+        if reactors(r, nationId: nationId) > 0 || nukes(r, nationId: nationId) > 0 { return true }
+        let techMil = WorldDepth.techLevel(r, nation: nationId, branch: .military)
+        let techEco = WorldDepth.techLevel(r, nation: nationId, branch: .economy)
+        return techMil >= 5 && techEco >= 5 && ic(r, nationId: nationId) >= 175.0
     }
 
     private static func computeBaseNationMetrics(_ r: JS, nationId nid: String, era: HistoricalEra) -> (ic: Double, ws: Double, air: Double, mob: String, reactors: Int, nukeProgress: Double, nukes: Int) {
@@ -165,21 +191,26 @@ public enum NuclearWarfare {
         }()
         let air = clamp(rawAir, 0.0, 100.0)
 
+        let nuclearYearAllowed: Bool = {
+            let isHistorical = !r.regimes.isNull && !r.regimes.historicalScenarioId.isNull
+            if isHistorical { return HistoricalEra.displayYear(r) >= 1943 }
+            return era == .modern || (era == .ww2 && HistoricalEra.displayYear(r) >= 1943)
+        }()
         let rawReactors = hp.startingReactors.optionalNumber
             ?? hp.reactors.optionalNumber
             ?? hp.nuclearReactors.optionalNumber
             ?? legacyHoi.reactors.optionalNumber
             ?? 0.0
-        let reactors = max(0, min(5, Int(rawReactors.rounded())))
+        let reactors = nuclearYearAllowed ? max(0, min(5, Int(rawReactors.rounded()))) : 0
         let rawProg = hp.nuclearProgress.optionalNumber
             ?? legacyHoi.nuclearProgress.optionalNumber
             ?? 0.0
-        let nukeProg = clamp(rawProg, 0.0, 99.9)
+        let nukeProg = nuclearYearAllowed ? clamp(rawProg, 0.0, 99.9) : 0.0
         let rawNukes = hp.startingNukes.optionalNumber
             ?? hp.nukes.optionalNumber
             ?? legacyHoi.nukes.optionalNumber
             ?? 0.0
-        let nukes = max(0, min(99, Int(rawNukes.rounded())))
+        let nukes = nuclearYearAllowed ? max(0, min(99, Int(rawNukes.rounded()))) : 0
         let mobRaw = hp.mobilization.optionalString ?? (atWar ? "war_economy" : "early")
         let mob = MobilizationLaw(rawValue: mobRaw)?.rawValue ?? "early"
 
@@ -297,32 +328,45 @@ public enum NuclearWarfare {
         return max(0, r.regimes.hoi4.fallout[provinceId].asInt)
     }
 
-    /// 制空权战场倍率（仅在二战/现代时代生效，最高 +18% 空中密接支援优势）。
-    public static func airSuperiorityBonus(_ r: JS, attacker: String, victim: String) -> Double {
+    /// 制空权战场倍率（v7.0 真实二战/现代制空权压制：开阔地绝对制空最高 +42% 密接支援、失制空 −22%，山地/密林地形按史实折减 50%/28%）。
+    public static func airSuperiorityBonus(_ r: JS, attacker: String, victim: String, terrain: String? = nil) -> Double {
         let era = HistoricalEra.current(r)
         guard era.isModernAirEra else { return 1.0 }
         let airA = airPower(r, nationId: attacker)
         let airB = airPower(r, nationId: victim)
         let diff = airA - airB
+        let terrainFactor: Double = {
+            switch terrain {
+            case "mountain": return 0.50
+            case "forest":   return 0.72
+            default:         return 1.00
+            }
+        }()
         if diff > 4.0 {
-            return 1.0 + min(0.18, (diff / 100.0) * 0.28)
+            return 1.0 + min(0.42, (diff / 100.0) * 0.52) * terrainFactor
         } else if diff < -4.0 {
-            return max(0.88, 1.0 + (diff / 100.0) * 0.16)
+            return max(0.78, 1.0 + (diff / 100.0) * 0.28 * terrainFactor)
         }
         return 1.0
     }
 
-    /// 工业与装备质量对抗倍率（比较双方工业产能 IC、历史工业指数与动员法军工产出，遏制纯面积无工业碾压）。
+    /// 工业与装备质量对抗倍率（v7.0 真实近现代降维打击：一战/二战/现代重炮机械化火力代差高达 0.55…1.92 倍，古代保持温和 0.82…1.25）。
     public static func industrialCombatRatio(_ r: JS, attacker: String, victim: String) -> Double {
         let icA = ic(r, nationId: attacker)
         let icB = ic(r, nationId: victim)
         let idxA = industryIndex(r, nationId: attacker)
         let idxB = industryIndex(r, nationId: victim)
+        let era = HistoricalEra.current(r)
+        if era == .ww1 || era == .ww2 || era == .modern {
+            let effA = icA * (0.40 + 0.60 * idxA)
+            let effB = icB * (0.40 + 0.60 * idxB)
+            let ratio = (effA + 18.0) / max(10.0, effB + 18.0)
+            return clamp(pow(ratio, 0.46), 0.55, 1.92)
+        }
         let effA = icA * (0.65 + 0.35 * idxA)
         let effB = icB * (0.65 + 0.35 * idxB)
         let ratio = (effA + 25.0) / max(15.0, effB + 25.0)
-        // 使用温和幂次，给予高工业强国最高 +26% 装备质量优势（最低 0.80）
-        return clamp(pow(ratio, 0.28), 0.80, 1.26)
+        return clamp(pow(ratio, 0.24), 0.82, 1.25)
     }
 
     // MARK: - 3. 月度演进
@@ -431,10 +475,10 @@ public enum NuclearWarfare {
             let airDelta = max(-4.0, min(4.0, (targetAir - curAir) * 0.22))
             row.airPower = JS((clamp(curAir + airDelta, 0.0, 100.0) * 10).rounded() / 10)
 
-            // 3e. 核反应堆推进战略核武器装填
+            // 3e. 核反应堆推进战略核武器装填（史实节律：单座反应堆约 18-24 月完成一枚核弹头装填）
             let rCount = max(0, min(5, row.reactors.asInt))
             if rCount > 0 && isNuclearEra(r, nationId: nid) {
-                var prog = (row.nukeProgress.optionalNumber ?? 0.0) + Double(rCount) * (4.5 + Double(techEco) * 0.8)
+                var prog = (row.nukeProgress.optionalNumber ?? 0.0) + Double(rCount) * (2.6 + Double(techEco) * 0.45)
                 var minted = 0
                 while prog >= 100.0 {
                     prog -= 100.0
@@ -468,8 +512,8 @@ public enum NuclearWarfare {
               Vassals.alive(r, nationId) else {
             return (false, "目标国家不存在或已灭亡。")
         }
-        guard isNuclearEra(r, nationId: nationId) else {
-            return (false, "尚未解锁核工程（需进入二战/现代时代，或军备与农商科技均达到 5 阶）。")
+        guard isNuclearCapable(r, nationId: nationId) else {
+            return (false, "尚未满足核工程建造条件（历史剧本须至 1943 年后，且具备 5 阶以上军备/农商科技与超级大国级工业产能 IC ≥ 175）。")
         }
         let row = ensureNation(r, nationId: nationId)
         let cur = max(0, row.reactors.asInt)

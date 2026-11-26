@@ -168,6 +168,20 @@ import LieguojiCore
     let inputs: PreviewWorld.Inputs
     let seed: String
     let template: String
+    /// 根据当前加载的 Voronoi 网格分辨率动态决定州郡上限（20K→480、60K→1200、120K→2400）与国家上限（64 国）。
+    var maxProvinces: Int {
+        let cells = inputs.grid.points.count
+        if cells >= 90_000 { return 2400 }
+        if cells >= 45_000 { return 1200 }
+        return 480
+    }
+    let maxNations: Int = 64
+    var meshTierLabel: String {
+        let cells = inputs.grid.points.count
+        if cells >= 90_000 { return "120K 史诗网格" }
+        if cells >= 45_000 { return "60K 高精网格" }
+        return "20K 标准网格"
+    }
     private(set) var heights: [UInt8]
     private(set) var map: WorldMap
     /// 玩家在 Step 2 手绘模式下定制的逐格州郡编号（-1 表示海洋/未涂）；自动划州模式时为 nil。
@@ -488,7 +502,8 @@ import LieguojiCore
         activeHistoricalScenario = nil
         heights = HistoricalBasemaps.generateHeights(region: region, graph: inputs.grid)
         customProvinceCells = nil
-        message = "已铺展真实历史底图：\(region.title)"
+        controller.activeHistoricalRegion = region.rawValue
+        message = "已铺展真实历史底图：\(region.title)（\(meshTierLabel)）"
         GameFeel.shared.notify(.success)
         measureLand(); recompute()
     }
@@ -504,14 +519,15 @@ import LieguojiCore
         } else {
             heights = HistoricalBasemaps.generateHeights(region: scenario.region, graph: inputs.grid)
         }
-        nations = max(2, min(24, scenario.nations.count))
-        provinces = max(nations, min(480, scenario.provinceCount))
+        nations = max(2, min(maxNations, scenario.nations.count))
+        provinces = max(nations, min(maxProvinces, scenario.provinceCount))
         if let cells = scenario.customProvinceCells, cells.count == heights.count {
             customProvinceCells = cells
         } else {
             customProvinceCells = nil
         }
-        message = "已载入剧本「\(scenario.title)」（\(scenario.region.title) · \(scenario.yearDisplayText)）"
+        controller.activeHistoricalRegion = scenario.region.rawValue
+        message = "已载入剧本「\(scenario.title)」（\(scenario.region.title) · \(scenario.yearDisplayText) · \(meshTierLabel)）"
         GameFeel.shared.notify(.success)
         measureLand(); recompute()
     }
@@ -640,7 +656,7 @@ import LieguojiCore
             return
         case .brush:
             if provinceStrokeStart == nil { provinceStrokeStart = cells }
-            let r = Float(max(12, min(65, radius * 0.72)))
+            let r = Float(max(4, min(65, radius * 0.72)))
             let x0 = Int64(floor((px - r) / bucket)), x1 = Int64(floor((px + r) / bucket))
             let y0 = Int64(floor((py - r) / bucket)), y1 = Int64(floor((py + r) / bucket))
             var changed = false
@@ -912,7 +928,7 @@ import LieguojiCore
             nationTool = .paint
         case .found:
             guard capitalOf == nil else { message = "此处已是都城，请改点其他州郡"; return }
-            guard seeds.count < 24 else { message = "最多设立 24 个国家"; return }
+            guard seeds.count < maxNations else { message = "最多设立 \(maxNations) 个国家"; return }
             pushNationUndo()
             seeds.append(p)
             let newIdx = seeds.count - 1
@@ -928,7 +944,7 @@ import LieguojiCore
 
     func quickAddNation() {
         guard step == .nations, !owners.isEmpty else { return }
-        guard seeds.count < 24 else { message = "最多设立 24 个国家"; GameFeel.shared.notify(.warning); return }
+        guard seeds.count < maxNations else { message = "最多设立 \(maxNations) 个国家"; GameFeel.shared.notify(.warning); return }
         let used = Set(seeds), provs = map.meta.provinces
         var best = -1, bestDist: Float = -1
         for i in provs.indices where !used.contains(i) {
@@ -1331,6 +1347,14 @@ private struct EditorTopBar: View {
                         .padding(.horizontal, 9)
                         .frame(height: 28)
                         .glass(Capsule())
+                } else {
+                    Text(editor.meshTierLabel)
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.jade)
+                        .lineLimit(1)
+                        .padding(.horizontal, 9)
+                        .frame(height: 28)
+                        .glass(Capsule())
                 }
 
                 Spacer(minLength: 4)
@@ -1478,10 +1502,10 @@ private struct EditorTerrainDeck: View {
 
     private struct BrushPreset: Identifiable { let id: String; let radius: Double; let label: String }
     private static let brushPresets: [BrushPreset] = [
-        BrushPreset(id: "s", radius: 16, label: "细"),
-        BrushPreset(id: "m", radius: 34, label: "中"),
+        BrushPreset(id: "xs", radius: 5, label: "微"),
+        BrushPreset(id: "s", radius: 14, label: "细"),
+        BrushPreset(id: "m", radius: 32, label: "中"),
         BrushPreset(id: "l", radius: 62, label: "阔"),
-        BrushPreset(id: "xl", radius: 95, label: "巨"),
     ]
 
     var body: some View {
@@ -1564,7 +1588,7 @@ private struct EditorTerrainDeck: View {
                     }
                 } else {
                     HStack(spacing: 8) {
-                        PaperSlider(title: "笔刷", value: $editor.radius, range: 8...110) { "\(Int($0))" }
+                        PaperSlider(title: "笔刷", value: $editor.radius, range: 4...110) { "\(Int($0))" }
                         HStack(spacing: 4) {
                             ForEach(Self.brushPresets) { preset in sizePresetButton(preset) }
                         }
@@ -1698,12 +1722,29 @@ private struct EditorProvinceDeck: View {
     let onFound: () -> Void
 
     private struct ScalePreset: Identifiable { let id: String; let title: String; let provinces: Int; let nations: Int }
-    private static let scalePresets: [ScalePreset] = [
-        ScalePreset(id: "tiny", title: "袖珍", provinces: 60, nations: 6),
-        ScalePreset(id: "std", title: "标准", provinces: 100, nations: 10),
-        ScalePreset(id: "grand", title: "宏大", provinces: 180, nations: 14),
-        ScalePreset(id: "epic", title: "史诗", provinces: 280, nations: 18),
-    ]
+    private var scalePresets: [ScalePreset] {
+        if editor.maxProvinces >= 2400 {
+            return [
+                ScalePreset(id: "std", title: "标准", provinces: 240, nations: 14),
+                ScalePreset(id: "grand", title: "宏大", provinces: 600, nations: 28),
+                ScalePreset(id: "hoi", title: "精图", provinces: 1200, nations: 42),
+                ScalePreset(id: "epic", title: "史诗", provinces: 2000, nations: 60),
+            ]
+        } else if editor.maxProvinces >= 1200 {
+            return [
+                ScalePreset(id: "tiny", title: "轻巧", provinces: 160, nations: 10),
+                ScalePreset(id: "std", title: "标准", provinces: 360, nations: 18),
+                ScalePreset(id: "grand", title: "宏大", provinces: 720, nations: 32),
+                ScalePreset(id: "epic", title: "史诗", provinces: 1100, nations: 48),
+            ]
+        }
+        return [
+            ScalePreset(id: "tiny", title: "袖珍", provinces: 60, nations: 6),
+            ScalePreset(id: "std", title: "标准", provinces: 100, nations: 10),
+            ScalePreset(id: "grand", title: "宏大", provinces: 220, nations: 18),
+            ScalePreset(id: "epic", title: "史诗", provinces: 420, nations: 32),
+        ]
+    }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -1745,7 +1786,7 @@ private struct EditorProvinceDeck: View {
 
             if editor.provinceMode == .auto {
                 HStack(spacing: 6) {
-                    ForEach(Self.scalePresets) { p in
+                    ForEach(scalePresets) { p in
                         let active = editor.provinces == p.provinces && editor.nations == p.nations
                         Button {
                             GameFeel.shared.tap()
@@ -1764,8 +1805,8 @@ private struct EditorProvinceDeck: View {
                     }
                 }
                 VStack(spacing: 8) {
-                    PaperSlider(title: "州郡", value: Binding(get: { Double(editor.provinces) }, set: { editor.provinces = max(editor.nations, Int($0)) }), range: 10...480, step: 5, onEditingChanged: { if !$0 { editor.recompute() } }) { "\(Int($0))" }
-                    PaperSlider(title: "国家", value: Binding(get: { Double(editor.nations) }, set: { editor.nations = Int($0); if editor.provinces < editor.nations { editor.provinces = editor.nations } }), range: 2...24, step: 1, onEditingChanged: { if !$0 { editor.recompute() } }) { "\(Int($0))" }
+                    PaperSlider(title: "州郡", value: Binding(get: { Double(editor.provinces) }, set: { editor.provinces = max(editor.nations, Int($0)) }), range: 10...Double(editor.maxProvinces), step: editor.maxProvinces >= 1200 ? 10 : 5, onEditingChanged: { if !$0 { editor.recompute() } }) { "\(Int($0))" }
+                    PaperSlider(title: "国家", value: Binding(get: { Double(editor.nations) }, set: { editor.nations = Int($0); if editor.provinces < editor.nations { editor.provinces = editor.nations } }), range: 2...Double(editor.maxNations), step: 1, onEditingChanged: { if !$0 { editor.recompute() } }) { "\(Int($0))" }
                 }
             } else {
                 // 手绘州郡工具条：新建州 + 州色板 + 涂画/填充/吸管 + 笔径
@@ -1822,7 +1863,7 @@ private struct EditorProvinceDeck: View {
                 }
 
                 if editor.provinceTool == .brush {
-                    PaperSlider(title: "州界笔", value: $editor.radius, range: 12...80) { "\(Int($0))" }
+                    PaperSlider(title: "州界笔", value: $editor.radius, range: 4...80) { "\(Int($0))" }
                 }
             }
 
@@ -1854,7 +1895,7 @@ private struct EditorNationDeck: View {
                         .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
                     }
                     .buttonStyle(PressStyle())
-                    .disabled(editor.seeds.count >= 24).opacity(editor.seeds.count >= 24 ? 0.45 : 1)
+                    .disabled(editor.seeds.count >= editor.maxNations).opacity(editor.seeds.count >= editor.maxNations ? 0.45 : 1)
 
                     ForEach(editor.seeds.indices, id: \.self) { i in
                         let count = editor.owners.filter { $0 == i }.count

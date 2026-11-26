@@ -138,6 +138,10 @@ import LieguojiCore
     var viewKey = ""
     /// 四时节气光影相位（0..1，由模拟日期驱动）。
     var seasonPhase: Float = -1 { didSet { scheduleSync() } }
+    /// 当前真实历史地理分区（用于流式加载 HotPack v6 8K–16K 卫星地貌瓦片 `ReliefTiles/{region}.lgtr`）。
+    var activeHistoricalRegion: String = "" { didSet { if oldValue != activeHistoricalRegion { scheduleSync() } } }
+    /// 当前历史时代标识（用于同步 HotPack v6 `EraUnits/{era}/` 时代高清兵模贴图）。
+    var activeHistoricalEra: String = "" { didSet { if oldValue != activeHistoricalEra { scheduleSync() } } }
     /// 实时活跃天时与灾异州郡（暴雪/大旱/洪涝/瘟疫/丰年），同步驱动 GPU 地表着色与全屏/局部天气粒子层。
     var weatherZones: [WeatherOverlayView.Zone] = []
     var weatherGPUZones: [(x: Float, y: Float, radius: Float, kind: Float)] = []
@@ -853,6 +857,11 @@ struct MapView: UIViewRepresentable {
             controller.placed = { [weak self] key in
                 guard let p = self?.renderer?.placedSprites().first(where: { $0.sprite.key == key }) else { return nil }
                 return (Double(p.x), Double(p.y))
+            }
+            MapTileStreamer.shared.onTileReady = { [weak self] in
+                Task { @MainActor [weak self] in
+                    self?.requestAsyncMetalRedraw()
+                }
             }
         }
 
@@ -1745,6 +1754,18 @@ struct MapView: UIViewRepresentable {
                     if !mapFrozenForSheet { syncWeather() }
                 }
                 dirty = true
+            }
+            if let renderer, renderer.activeHistoricalRegion != controller.activeHistoricalRegion {
+                renderer.activeHistoricalRegion = controller.activeHistoricalRegion
+                dirty = true
+            }
+            if let renderer {
+                if !controller.activeHistoricalEra.isEmpty && UnitArt.activeEra != controller.activeHistoricalEra {
+                    UnitArt.activeEra = controller.activeHistoricalEra
+                }
+                if renderer.reloadUnitTexturesIfNeeded() {
+                    dirty = true
+                }
             }
             if let renderer, shownWeatherRevision != controller.weatherRevision {
                 shownWeatherRevision = controller.weatherRevision

@@ -2340,26 +2340,27 @@ public enum SovereignAI {
             }
         }
 
-        // 2. 二战/现代时代（或顶级双 5 科技）富裕强国自动建设核反应堆
-        guard NuclearWarfare.isNuclearEra(r, nationId: id) else { return }
+        // 2. 核时代（1943 年后/现代）超级工业大国才具备自主核反应堆建设计划，杜绝 1941 或中小农业国泛滥拥核
+        guard NuclearWarfare.isNuclearCapable(r, nationId: id) else { return }
         let curReactors = NuclearWarfare.reactors(r, nationId: id)
         let reactorCd = b.aiReactorCooldownUntil.optionalNumber.map(Int.init) ?? 0
         let icVal = NuclearWarfare.ic(r, nationId: id)
-        let desiredReactors = (icVal >= 120 || ctx.provinceCount >= 10) ? 4 : (icVal >= 65 || ctx.provinceCount >= 5 ? 2 : 1)
+        guard icVal >= 175.0 else { return }
+        let desiredReactors = icVal >= 280.0 ? 3 : (icVal >= 210.0 ? 2 : 1)
         if curReactors < desiredReactors && curReactors < 5 && ctx.day >= reactorCd {
             let cost = NuclearWarfare.reactorCost(currentReactors: curReactors)
-            let reserve = max(260.0, ctx.monthlyIncome * 2.5)
+            let reserve = max(1400.0, ctx.monthlyIncome * 4.0)
             if ctx.gold >= cost + reserve {
                 let res = NuclearWarfare.buildReactor(r, nationId: id)
                 if res.ok {
-                    b.aiReactorCooldownUntil = JS(ctx.day + 150)
+                    b.aiReactorCooldownUntil = JS(ctx.day + 360)
                     recordCourtDecision(
                         r,
                         nationId: id,
                         category: "工程",
                         decisionMaker: maker,
                         title: "投建第 \(curReactors + 1) 座核反应堆",
-                        detail: "\(maker)（\(p.briefSignature)）着眼战略核威慑与大国均势，斥资 \(Int(cost)) 金建设核设施：\(res.text)"
+                        detail: "\(maker)（\(p.briefSignature)）启动国家最高机密核工程，斥资 \(Int(cost)) 金建设核设施：\(res.text)"
                     )
                 }
             }

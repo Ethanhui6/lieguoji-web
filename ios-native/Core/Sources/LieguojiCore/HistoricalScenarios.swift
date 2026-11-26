@@ -109,6 +109,19 @@ public struct HistoricalAllianceSpec: Codable, Equatable, Sendable {
     }
 }
 
+/// 历史剧本开局既定宗属/傀儡附庸关系（如 1941 大日本帝国 -> 伪满洲国）。
+public struct HistoricalVassalSpec: Codable, Equatable, Sendable {
+    public var overlordId: String
+    public var vassalId: String
+    public var tributeRate: Double
+
+    public init(overlordId: String, vassalId: String, tributeRate: Double = 0.15) {
+        self.overlordId = overlordId
+        self.vassalId = vassalId
+        self.tributeRate = tributeRate
+    }
+}
+
 /// 完整历史剧本定义（官方内置与玩家自制上传共用同一份可序列化结构）。
 public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
     public var id: String
@@ -126,6 +139,7 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
     public var nations: [HistoricalNationSpec]
     public var openingWars: [HistoricalWarSpec]
     public var openingAlliances: [HistoricalAllianceSpec]
+    public var openingVassals: [HistoricalVassalSpec]?
     public var tags: [String]
     /// 叛乱模式：`"off"`（禁止叛乱）/ `"historical"`（史实克制，官方默认）/ `"classic"`（经典沙盒）。
     public var rebelMode: String?
@@ -148,6 +162,7 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
         nations: [HistoricalNationSpec],
         openingWars: [HistoricalWarSpec] = [],
         openingAlliances: [HistoricalAllianceSpec] = [],
+        openingVassals: [HistoricalVassalSpec]? = nil,
         tags: [String] = [],
         rebelMode: String? = nil,
         eraOverride: String? = nil
@@ -167,6 +182,7 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
         self.nations = nations
         self.openingWars = openingWars
         self.openingAlliances = openingAlliances
+        self.openingVassals = openingVassals
         self.tags = tags
         self.rebelMode = rebelMode
         self.eraOverride = eraOverride
@@ -961,7 +977,42 @@ public enum HistoricalScenarios {
             specIdToNationId[scenario.nations[i].id] = n.id.asString
         }
         applyOpeningAlliances(run: r, scenario: scenario, specIdToNationId: specIdToNationId)
+        applyOpeningVassals(run: r, scenario: scenario, specIdToNationId: specIdToNationId)
         applyOpeningWars(run: r, scenario: scenario, specIdToNationId: specIdToNationId, engine: engine ?? Session.engine)
+    }
+
+    private static func applyOpeningVassals(
+        run r: JS,
+        scenario: HistoricalScenario,
+        specIdToNationId: [String: String]
+    ) {
+        guard let list = scenario.openingVassals, !list.isEmpty else { return }
+        if r.vassals.isNull {
+            let v = JS.object()
+            v.version = JS(1); v.revision = JS(0); v.enabled = JS(true)
+            v.originTime = r.life.gameTime.clone(); v.originTick = r.clock.tick.clone()
+            v.records = .array()
+            r.vassals = v
+        }
+        let now = JS(Native.fr(r.life.gameTime.asNumber))
+        for spec in list {
+            guard let lordId = specIdToNationId[spec.overlordId],
+                  let vassalId = specIdToNationId[spec.vassalId],
+                  lordId != vassalId,
+                  Vassals.overlord(r, vassalId) == nil else { continue }
+            let rec = JS.object()
+            rec.overlordId = JS(lordId)
+            rec.vassalId = JS(vassalId)
+            rec.tributeRate = JS(max(0.05, min(0.35, spec.tributeRate)))
+            rec.time = now.clone()
+            rec.tick = r.clock.tick.clone()
+            rec.updateDay = JS(1)
+            rec.endedTick = .null
+            rec.endReason = .null
+            r.vassals.records.push(rec)
+            Vassals.bump(r.vassals)
+            DiplomacyDeep.adjustOpinionMod(r, lordId, vassalId, delta: 25)
+        }
     }
 
     /// 在全部历史覆写与 `HistoricalRoster.apply` 完成后，统一重写开篇登基史册与开局事件，彻底消除随机旧名。
@@ -1914,7 +1965,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 102.7, lat: 25.0, provinceName: "拓东", weight: 1.2),
                     HistoricalAnchor(lon: 99.2, lat: 25.1, provinceName: "永昌", weight: 1.15),
                 ],
-                rulerName: "段和誉", rulerTitle: "大理宪宗",
+                rulerName: "段正严", rulerTitle: "大理宪宗",
                 rulerMilitary: 68, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 78,
                 rulerTraits: ["Benevolent", "Merciful", "Patient"]
             ),
@@ -2545,7 +2596,7 @@ public enum HistoricalScenarios {
                 capitalLon: -3.7, capitalLat: 40.4, capitalName: "马德里",
                 anchors: [
                     HistoricalAnchor(lon: -9.1, lat: 38.7, provinceName: "里斯本", weight: 1.05),
-                    HistoricalAnchor(lon: 18.1, lat: 59.3, provinceName: "斯德哥尔摩", weight: 1.35),
+                    HistoricalAnchor(lon: 2.2, lat: 41.4, provinceName: "巴塞罗那", weight: 1.15),
                 ],
                 rulerName: "阿方索十三世", rulerTitle: "国王",
                 rulerMilitary: 66, rulerAdmin: 72, rulerDiplo: 78, rulerCharisma: 76,
@@ -2666,9 +2717,9 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: -6.3, lat: 53.3, provinceName: "都柏林", weight: 1.25),
                     HistoricalAnchor(lon: 33.4, lat: 35.2, provinceName: "尼科西亚", weight: 1.1),
                 ],
-                rulerName: "温斯顿·丘吉尔", rulerTitle: "首相",
-                rulerMilitary: 86, rulerAdmin: 84, rulerDiplo: 92, rulerCharisma: 94,
-                rulerTraits: ["Charismatic", "NavalMastery", "SeaVision", "NaturalLeader"]
+                rulerName: "乔治六世", rulerTitle: "国王",
+                rulerMilitary: 74, rulerAdmin: 82, rulerDiplo: 86, rulerCharisma: 90,
+                rulerTraits: ["Brave", "Just", "Beloved"]
             ),
             HistoricalNationSpec(
                 id: "france", name: "法兰西第三共和国", shortName: "法", color: "#265DA6",
@@ -2704,7 +2755,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "italy", name: "意大利王国", shortName: "意", color: "#3B8749",
-                culture: "italian", religion: "catholic", polity: "Republic", style: "fascist",
+                culture: "italian", religion: "catholic", polity: "Kingdom", style: "regency",
                 capitalLon: 12.5, capitalLat: 41.9, capitalName: "罗马",
                 anchors: [
                     HistoricalAnchor(lon: 9.2, lat: 45.5, provinceName: "米兰", weight: 1.05),
@@ -2715,9 +2766,9 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 19.8, lat: 41.3, provinceName: "地拉那", weight: 0.9),
                     HistoricalAnchor(lon: 13.2, lat: 32.9, provinceName: "的黎波里", weight: 1.45),
                 ],
-                rulerName: "贝尼托·墨索里尼", rulerTitle: "领袖",
-                rulerMilitary: 68, rulerAdmin: 70, rulerDiplo: 66, rulerCharisma: 80,
-                rulerTraits: ["Hawkish", "Ambitious", "Stubborn"]
+                rulerName: "维托里奥·埃马努埃莱三世", rulerTitle: "国王",
+                rulerMilitary: 62, rulerAdmin: 72, rulerDiplo: 74, rulerCharisma: 72,
+                rulerTraits: ["Patient", "Stubborn"]
             ),
             HistoricalNationSpec(
                 id: "spain", name: "西班牙", shortName: "西", color: "#D99B26",
@@ -2927,13 +2978,13 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 127.7, lat: 26.2, provinceName: "那霸", weight: 1.1),
                     HistoricalAnchor(lon: 110.3, lat: 20.0, provinceName: "海口", weight: 1.1),
                 ],
-                rulerName: "东条英机", rulerTitle: "首相",
-                rulerMilitary: 84, rulerAdmin: 78, rulerDiplo: 56, rulerCharisma: 74,
-                rulerTraits: ["Hawkish", "NavalMastery", "IronFist", "Stubborn"]
+                rulerName: "裕仁", rulerTitle: "天皇",
+                rulerMilitary: 74, rulerAdmin: 78, rulerDiplo: 74, rulerCharisma: 82,
+                rulerTraits: ["Stubborn", "Patient", "NaturalLeader"]
             ),
             HistoricalNationSpec(
                 id: "manchukuo", name: "伪满洲国·关东军", shortName: "满", color: "#B7950B",
-                culture: "chinese", religion: "confucian", polity: "Empire", style: "junta",
+                culture: "chinese", religion: "confucian", polity: "Kingdom", style: "regency",
                 capitalLon: 125.3, capitalLat: 43.9, capitalName: "长春",
                 anchors: [
                     HistoricalAnchor(lon: 123.4, lat: 41.8, provinceName: "奉天", weight: 1.15),
@@ -2942,9 +2993,9 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 123.9, lat: 47.3, provinceName: "齐齐哈尔", weight: 1.25),
                     HistoricalAnchor(lon: 117.9, lat: 41.0, provinceName: "承德", weight: 1.1),
                 ],
-                rulerName: "梅津美治郎", rulerTitle: "关东军司令",
-                rulerMilitary: 82, rulerAdmin: 72, rulerDiplo: 60, rulerCharisma: 66,
-                rulerTraits: ["Hawkish", "Veteran"]
+                rulerName: "爱新觉罗·溥仪", rulerTitle: "傀儡皇帝",
+                rulerMilitary: 42, rulerAdmin: 54, rulerDiplo: 60, rulerCharisma: 56,
+                rulerTraits: ["Dovish", "Paranoid"]
             ),
             HistoricalNationSpec(
                 id: "ussr_fe", name: "苏联远东", shortName: "苏", color: "#9B1C1C",
@@ -2956,9 +3007,9 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 127.5, lat: 50.3, provinceName: "布拉戈维申斯克", weight: 1.4),
                     HistoricalAnchor(lon: 106.9, lat: 47.9, provinceName: "乌兰巴托", weight: 1.75),
                 ],
-                rulerName: "格奥尔基·朱可夫", rulerTitle: "大将",
-                rulerMilitary: 94, rulerAdmin: 80, rulerDiplo: 74, rulerCharisma: 88,
-                rulerTraits: ["Tactician", "BattleHardened", "Veteran"]
+                rulerName: "约瑟夫·阿帕纳先科", rulerTitle: "远东方面军司令",
+                rulerMilitary: 88, rulerAdmin: 78, rulerDiplo: 70, rulerCharisma: 84,
+                rulerTraits: ["BattleHardened", "IronFist", "Veteran"]
             ),
             HistoricalNationSpec(
                 id: "uk_burma", name: "英属缅甸与马来", shortName: "英", color: "#D65A5A",
@@ -3022,6 +3073,9 @@ public enum HistoricalScenarios {
         openingAlliances: [
             HistoricalAllianceSpec(name: "世界反法西斯同盟", memberIds: ["roc", "yanan", "uk_burma", "philippines"]),
             HistoricalAllianceSpec(name: "东亚轴心", memberIds: ["japan", "manchukuo", "thailand"]),
+        ],
+        openingVassals: [
+            HistoricalVassalSpec(overlordId: "japan", vassalId: "manchukuo", tributeRate: 0.20),
         ],
         tags: ["二战", "亚太战场", "抗战", "太平洋"],
         rebelMode: "historical",
@@ -3099,9 +3153,9 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 36.8, lat: -1.3, provinceName: "内罗毕", weight: 1.45),
                     HistoricalAnchor(lon: 103.8, lat: 1.3, provinceName: "新加坡", weight: 1.45),
                 ],
-                rulerName: "克莱门特·艾德礼", rulerTitle: "首相",
-                rulerMilitary: 80, rulerAdmin: 86, rulerDiplo: 88, rulerCharisma: 80,
-                rulerTraits: ["NavalMastery", "Reformer", "Financier"]
+                rulerName: "乔治六世", rulerTitle: "国王",
+                rulerMilitary: 70, rulerAdmin: 82, rulerDiplo: 86, rulerCharisma: 90,
+                rulerTraits: ["Brave", "Just", "Beloved"]
             ),
             HistoricalNationSpec(
                 id: "france", name: "法兰西第四共和国", shortName: "法", color: "#2E5FA8",
@@ -3167,9 +3221,9 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 135.5, lat: 34.7, provinceName: "大阪", weight: 1.05),
                     HistoricalAnchor(lon: 141.3, lat: 43.1, provinceName: "札幌", weight: 1.05),
                 ],
-                rulerName: "吉田茂", rulerTitle: "首相",
-                rulerMilitary: 68, rulerAdmin: 90, rulerDiplo: 86, rulerCharisma: 80,
-                rulerTraits: ["Financier", "Reformer", "Administrator"]
+                rulerName: "裕仁", rulerTitle: "天皇",
+                rulerMilitary: 64, rulerAdmin: 78, rulerDiplo: 82, rulerCharisma: 84,
+                rulerTraits: ["Patient", "Dovish", "Just"]
             ),
             HistoricalNationSpec(
                 id: "yugo_mideast", name: "南斯拉夫与中东", shortName: "不结盟", color: "#3D9970",

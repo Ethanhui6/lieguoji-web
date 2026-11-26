@@ -217,9 +217,9 @@ public enum CreationMap {
             return best.squareRoot()
         }
     }
-    /// 参照纸样式（ORIGINAL_PRESETS[7]，浅海 0x8eafb1、深海 0x527c86）的海面纹理，800 × 450 RGBA。
-    static func sea(_ segments: [Segment], width: Double, height: Double) -> [UInt8] {
-        let seaW = 800, seaH = 450, cap = max(width, height) * 0.02, band = Native.fr(1.2) / 2 / (240.0 / 1600)
+    /// 参照纸样式（ORIGINAL_PRESETS[7]，浅海 0x8eafb1、深海 0x527c86）的海面纹理（20K 保持 800×450 逐字节一致，60K/120K 升级 1600×900 高清海面）。
+    static func sea(_ segments: [Segment], width: Double, height: Double, seaW: Int = 800, seaH: Int = 450) -> [UInt8] {
+        let cap = max(width, height) * 0.02, band = Native.fr(1.2) / 2 / (240.0 / 1600)
         let distance = CoastDistance(segments, cap: cap + band)
         func channels(_ c: Int) -> [Double] { [Double(c >> 16 & 255) / 255, Double(c >> 8 & 255) / 255, Double(c & 255) / 255] }
         let s = channels(0x8eafb1).map(srgbToLinear), dd = channels(0x527c86).map(srgbToLinear)
@@ -361,11 +361,13 @@ public enum CreationMap {
         let (ids, paths) = biomes(x, elevations: h)
         let rgb = biomeRGB(g, ids)
         let coastSegments = coast(x, elevations: h)
-        let seaRGBA = sea(coastSegments, width: g.width, height: g.height)
+        let hiRes = h.count > 25_000
+        let seaW = hiRes ? 1600 : 800, seaH = hiRes ? 900 : 450
+        let seaRGBA = sea(coastSegments, width: g.width, height: g.height, seaW: seaW, seaH: seaH)
         let riverFloats = rivers(x, elevations: h, paths: paths)
         // world.bin 版本 2。
         let base = x.base, cells = h.count
-        var out = Data(); out.reserveCapacity(6_000_000)
+        var out = Data(); out.reserveCapacity(hiRes ? 18_000_000 : 6_000_000)
         func u32(_ v: UInt32) { var y = v.littleEndian; withUnsafeBytes(of: &y) { out.append(contentsOf: $0) } }
         func i32(_ v: Int) { u32(UInt32(bitPattern: Int32(v))) }
         func f32(_ v: Float) { u32(v.bitPattern) }
@@ -381,7 +383,7 @@ public enum CreationMap {
         pad()
         for k in x.edges.a.indices { let s = x.edges.segments[k]; i32(x.edges.a[k]); i32(x.edges.b[k]); f32(Float(s.0)); f32(Float(s.1)); f32(Float(s.2)); f32(Float(s.3)) }
         for p in g.points { f32(Float(p.0)); f32(Float(p.1)) }
-        u32(800); u32(450); out.append(contentsOf: seaRGBA)
+        u32(UInt32(seaW)); u32(UInt32(seaH)); out.append(contentsOf: seaRGBA)
         u32(UInt32(coastSegments.count)); for s in coastSegments { f32(Float(s.0)); f32(Float(s.1)); f32(Float(s.2)); f32(Float(s.3)) }
         u32(UInt32(riverFloats.count / 2)); for v in riverFloats { f32(v) }
 

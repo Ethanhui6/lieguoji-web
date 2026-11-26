@@ -216,6 +216,22 @@ private final class IPADownloadDelegate: NSObject, URLSessionDownloadDelegate {
     }
 }
 
+private final class TokenBox: @unchecked Sendable {
+    static let shared = TokenBox()
+    private let lock = NSLock()
+    private var value: String?
+    func get() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+    func set(_ t: String?) {
+        lock.lock()
+        value = t
+        lock.unlock()
+    }
+}
+
 // MARK: - 列国纪云端行宫平台总控（登录 / 云更新 / 热更 / 签到 / 公告 / 邮件 / 排行榜）
 
 @MainActor final class OnlinePlatform: ObservableObject {
@@ -231,17 +247,11 @@ private final class IPADownloadDelegate: NSObject, URLSessionDownloadDelegate {
     }
 
     /// 供后台云存档服务直接读取的当前登录令牌（非隔离线程安全访问）
-    private static let tokenLock = NSLock()
-    private static var _cachedToken: String?
     nonisolated static var currentToken: String? {
-        tokenLock.lock()
-        defer { tokenLock.unlock() }
-        return _cachedToken
+        TokenBox.shared.get()
     }
     private static func syncCachedToken(_ t: String?) {
-        tokenLock.lock()
-        _cachedToken = t
-        tokenLock.unlock()
+        TokenBox.shared.set(t)
     }
 
     @Published private(set) var user: OnlineUser?

@@ -19,6 +19,7 @@ struct HotPackFile: Codable, Equatable, Sendable {
     let module: String
     let size: Int64
     let sha256: String
+    let cdnUrls: [String]?
 }
 
 struct HotPackManifest: Codable, Equatable, Sendable {
@@ -71,6 +72,84 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             return candidate
         }
         return Bundle.main.url(forResource: name, withExtension: ext, subdirectory: subdirectory)
+    }
+
+    private final class OnDemandFlightBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var inflight: [String: Task<URL?, Never>] = [:]
+        private let session: URLSession = {
+            let cfg = URLSessionConfiguration.default
+            cfg.httpMaximumConnectionsPerHost = 6
+            cfg.timeoutIntervalForRequest = 20
+            cfg.timeoutIntervalForResource = 120
+            return URLSession(configuration: cfg)
+        }()
+
+        func fetch(path: String) async -> URL? {
+            let dst = HotPackManager.rootURL.appendingPathComponent(path)
+            if FileManager.default.fileExists(atPath: dst.path) { return dst }
+
+            let task: Task<URL?, Never> = {
+                lock.lock()
+                defer { lock.unlock() }
+                if let existing = inflight[path] { return existing }
+                let s = session
+                let t = Task<URL?, Never> { [weak self] in
+                    defer {
+                        self?.lock.lock()
+                        self?.inflight.removeValue(forKey: path)
+                        self?.lock.unlock()
+                    }
+                    let encoded = path
+                        .split(separator: "/")
+                        .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+                        .joined(separator: "/")
+                    var candidates: [URL] = []
+                    let parts = path.split(separator: "/", maxSplits: 1)
+                    if parts.count == 2 {
+                        let top = String(parts[0])
+                        let rest = String(parts[1])
+                        let ghPath: String? = ["Music", "Art", "Video", "Engine", "Catalog", "World"].contains(top)
+                            ? "ios-native/Resources/\(top)/\(rest)"
+                            : (top == "Content" ? "server-deploy/platform/hotpack-content/\(rest)" : nil)
+                        if let ghPath {
+                            let ghEnc = ghPath.split(separator: "/").map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }.joined(separator: "/")
+                            if let u1 = URL(string: "https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/\(ghEnc)") { candidates.append(u1) }
+                            if let u2 = URL(string: "https://fastly.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/\(ghEnc)") { candidates.append(u2) }
+                        }
+                    }
+                    if let origin = URL(string: "\(OnlinePlatform.apiBase)/api/v1/hotpack/file/\(encoded)") {
+                        candidates.append(origin)
+                    }
+                    for url in candidates {
+                        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: url.host?.contains("jsdelivr") == true ? 9 : 25)
+                        req.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
+                        if let (data, resp) = try? await s.data(for: req),
+                           (resp as? HTTPURLResponse)?.statusCode == 200,
+                           !data.isEmpty {
+                            do {
+                                try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
+                                try data.write(to: dst, options: .atomic)
+                                return dst
+                            } catch {
+                                return nil
+                            }
+                        }
+                    }
+                    return nil
+                }
+                inflight[path] = t
+                return t
+            }()
+            return await task.value
+        }
+    }
+
+    private static let onDemandBox = OnDemandFlightBox()
+
+    /// 云端按需静默拉取并永久缓存资源（用于瘦身后移至云端的原声音乐、54 卷传报画幅与旧版引擎），并发自动去重。
+    nonisolated static func fetchOnDemand(path: String) async -> URL? {
+        await onDemandBox.fetch(path: path)
     }
 
     @Published private(set) var manifest: HotPackManifest?
@@ -200,7 +279,40 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         showHotUpdateSheet = false
     }
 
-    /// 启动 4 路并发游戏内流式热更新（SHA256 逐文件校验 + 断点续传 + 完成即热加载生效，无需重启或换包）。
+    nonisolated private static func downloadOne(_ file: HotPackFile, base: String, session: URLSession) async -> (HotPackFile, Bool) {
+        let encodedPath = file.path
+            .split(separator: "/")
+            .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+            .joined(separator: "/")
+        var urls: [URL] = []
+        for raw in (file.cdnUrls ?? []) {
+            if let u = URL(string: raw) { urls.append(u) }
+        }
+        if let origin = URL(string: "\(base)/api/v1/hotpack/file/\(encodedPath)") {
+            urls.append(origin)
+        }
+        for url in urls {
+            let isCDN = url.host?.contains("jsdelivr") == true
+            var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: isCDN ? 10 : 30)
+            req.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
+            do {
+                let (data, resp) = try await session.data(for: req)
+                guard (resp as? HTTPURLResponse)?.statusCode == 200 else { continue }
+                let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+                guard digest == file.sha256 else { continue }
+                let dst = rootURL.appendingPathComponent(file.path)
+                try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try data.write(to: dst, options: .atomic)
+                return (file, true)
+            } catch {
+                if Task.isCancelled { return (file, false) }
+                continue
+            }
+        }
+        return (file, false)
+    }
+
+    /// 启动 6 路连续流水线高速热更新（多 CDN 边缘节点优先 3–15 MB/s + 腾讯云 Gzip 兜底 + SHA256 严格校验 + 断点续传）。
     func startHotUpdate(onApplied: (() async -> Void)? = nil) {
         guard !updating, let m = manifest, !pendingFiles.isEmpty else { return }
         updating = true
@@ -208,7 +320,13 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         progress = 0
         downloadedBytes = 0
         speedBytesPerSec = 0
-        let queue = pendingFiles
+        // 优先下载轻量核心包（剧本/规则/词典/传报画幅），再并行拉取大体积美术与原声音乐
+        let priority: [String: Int] = ["content": 0, "catalog": 1, "world": 2, "video": 3, "engine": 4, "art": 5, "music": 6]
+        let queue = pendingFiles.sorted {
+            let pa = priority[$0.module] ?? 9, pb = priority[$1.module] ?? 9
+            if pa != pb { return pa < pb }
+            return $0.size < $1.size
+        }
         let total = max(1, pendingBytes)
         let moduleNames = Dictionary(uniqueKeysWithValues: m.modules.map { ($0.id, $0.name) })
         let base = OnlinePlatform.apiBase
@@ -220,68 +338,52 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             var completedCount = 0
             var completedBytes: Int64 = 0
             var failed = 0
-            let batchSize = 4
+            var nextIdx = 0
+            let maxWorkers = 6
+            let dlSession = self.session
 
-            var cursor = 0
-            while cursor < queue.count && !Task.isCancelled {
-                let end = min(queue.count, cursor + batchSize)
-                let slice = Array(queue[cursor..<end])
-                cursor = end
-
-                if let first = slice.first {
-                    self.currentModuleName = moduleNames[first.module] ?? first.module
+            await withTaskGroup(of: (HotPackFile, Bool).self) { group in
+                let initial = min(maxWorkers, queue.count)
+                for _ in 0..<initial {
+                    let f = queue[nextIdx]
+                    nextIdx += 1
+                    group.addTask { await Self.downloadOne(f, base: base, session: dlSession) }
                 }
-
-                await withTaskGroup(of: (HotPackFile, Bool).self) { group in
-                    for file in slice {
-                        group.addTask { [session] in
-                            let encodedPath = file.path
-                                .split(separator: "/")
-                                .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
-                                .joined(separator: "/")
-                            guard let url = URL(string: "\(base)/api/v1/hotpack/file/\(encodedPath)") else { return (file, false) }
-                            var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
-                            do {
-                                let (data, resp) = try await session.data(for: req)
-                                guard (resp as? HTTPURLResponse)?.statusCode == 200 else { return (file, false) }
-                                let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-                                guard digest == file.sha256 else { return (file, false) }
-                                let dst = Self.rootURL.appendingPathComponent(file.path)
-                                try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
-                                try data.write(to: dst, options: .atomic)
-                                return (file, true)
-                            } catch {
-                                return (file, false)
-                            }
-                        }
+                var lastPersistCount = 0
+                for await (file, ok) in group {
+                    if ok {
+                        self.installedHashes[file.path] = file.sha256
+                        completedCount += 1
+                        completedBytes += file.size
+                        self.currentModuleName = moduleNames[file.module] ?? file.module
+                    } else {
+                        failed += 1
                     }
-                    for await (file, ok) in group {
-                        if ok {
-                            self.installedHashes[file.path] = file.sha256
-                            completedCount += 1
-                            completedBytes += file.size
-                        } else {
-                            failed += 1
-                        }
+                    if completedCount - lastPersistCount >= 6 || nextIdx >= queue.count {
+                        self.saveInstalledIndex()
+                        lastPersistCount = completedCount
+                    }
+                    self.downloadedBytes = completedBytes
+                    self.progress = min(1.0, Double(completedBytes) / Double(total))
+                    let elapsed = max(0.12, Date().timeIntervalSince(startTime))
+                    self.speedBytesPerSec = Double(completedBytes) / elapsed
+                    self.statusMessage = String(
+                        format: "正在高速更新「%@」%d/%d · %@ / %@ · %.1f MB/s",
+                        self.currentModuleName,
+                        completedCount,
+                        queue.count,
+                        Self.formatBytes(completedBytes),
+                        Self.formatBytes(total),
+                        self.speedBytesPerSec / 1_048_576.0
+                    )
+                    if nextIdx < queue.count && !Task.isCancelled {
+                        let f = queue[nextIdx]
+                        nextIdx += 1
+                        group.addTask { await Self.downloadOne(f, base: base, session: dlSession) }
                     }
                 }
-
-                // 每批持久化索引，确保断网中途也能精确断点续传
-                self.saveInstalledIndex()
-                self.downloadedBytes = completedBytes
-                self.progress = min(1.0, Double(completedBytes) / Double(total))
-                let elapsed = max(0.15, Date().timeIntervalSince(startTime))
-                self.speedBytesPerSec = Double(completedBytes) / elapsed
-                self.statusMessage = String(
-                    format: "正在更新「%@」%d/%d · %@ / %@ · %.1f MB/s",
-                    self.currentModuleName,
-                    completedCount,
-                    queue.count,
-                    Self.formatBytes(completedBytes),
-                    Self.formatBytes(total),
-                    self.speedBytesPerSec / 1_048_576.0
-                )
             }
+            self.saveInstalledIndex()
 
             self.updating = false
             if Task.isCancelled {

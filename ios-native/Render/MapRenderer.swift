@@ -967,7 +967,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let previous = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
             var from = [String: SIMD2<Float>](), to = [String: SIMD2<Float>](), fading = Set<String>(), lead = [String: SIMD2<Float>]()
             var nextVel = [String: (vel: SIMD2<Float>, time: CFTimeInterval)]()
-            let newLength = snap ? 0 : max(0.16, tweenDuration * 1.15)
+            let newLength = snap ? 0 : max(0.055, tweenDuration * 1.08)
             for s in sprites where !s.key.isEmpty {
                 let target = SIMD2(s.x, s.y)
                 if !snap, let sx = s.startX, let sy = s.startY, sx.isFinite, sy.isFinite {

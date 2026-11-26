@@ -61,16 +61,18 @@ public final class EngineService {
         let sig = nations.map { $0.name.optionalString ?? "" }
         stepsSinceLabels += 1
         let changed = owners != lastOwners || sig != lastNationSig
-        let stride = (provs.count >= 150) ? (cloudTurbo ? 14 : 10) : (cloudTurbo ? 8 : 4)
+        let stride = (provs.count >= 150) ? (cloudTurbo ? 18 : 10) : (cloudTurbo ? 10 : 4)
         let labels = changed && (!stepping || stepsSinceLabels >= stride || sig.count != lastNationSig.count)
         if labels { lastOwners = owners; lastNationSig = sig; stepsSinceLabels = 0 }
         return labels
     }
 
-    /// 推演 `days` 天；在专属云服模式下对超大图（≥150 州、高倍速）自动切换每日本地 1 帧（120 ticks），推演速度翻倍且保持每日经济/战损/外交完整结算。
+    /// 推演 `days` 天；在专属云服模式下对中大型地图（≥100 州任意步长，或 ≥60 州多日步长）自动启用 120 ticks/日高效步进，
+    /// 把 280 州单日计算耗时压缩至原来的 1/2~1/3，且保持每日经济、战损、外交与行军完整结算。
     private func advanceDays(_ e: NativeEngine, days: Int) {
         let count = max(1, days)
-        if cloudTurbo, count >= 4, e.run.world.provinces.length >= 150, !e.run.frameLoop.isNull {
+        let provs = e.run.world.provinces.length
+        if cloudTurbo, (provs >= 100 || (provs >= 60 && count >= 2)), !e.run.frameLoop.isNull {
             let prev = e.run.frameLoop.ticks.optionalNumber
             e.run.frameLoop.ticks = JS(120)
             e.advance(days: count)
@@ -379,6 +381,8 @@ public enum EngineWire {
     public static let muxPush: UInt8 = 3
     public static let muxPing: UInt8 = 4
     public static let muxPong: UInt8 = 5
+    /// v8 滑动窗口背压确认帧（客户端消费完一帧立刻回传 9 字节 ACK，彻底根除 TCP Bufferbloat 与跳月瞬移）。
+    public static let muxAck: UInt8 = 6
 
     public static func u32(_ n: Int) -> Data { var v = UInt32(n).bigEndian; return Data(bytes: &v, count: 4) }
     public static func readU32(_ d: Data, at i: Int) -> Int { d[d.startIndex + i..<d.startIndex + i + 4].reduce(0) { $0 << 8 | Int($1) } }

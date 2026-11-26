@@ -134,7 +134,11 @@ struct HotUpdateSheet: View {
                             }
                         }
 
-                        if hotPack.hasPendingUpdate && !hotPack.updating {
+                        if hotPack.updating {
+                            EditorialTactileButton(title: "转入后台高速下载 · 先进入游戏", icon: .play, compact: false, fullWidth: true) {
+                                dismiss()
+                            }
+                        } else if hotPack.hasPendingUpdate {
                             Button {
                                 hotPack.dismissPrompt()
                                 dismiss()

@@ -52,7 +52,7 @@ struct InkVideoStage: View {
         }
         return posterURLCache[name]
     }
-    static func hasVideo(_ name: String) -> Bool { posterURL(for: name) != nil }
+    static func hasVideo(_ name: String) -> Bool { posterURL(for: name) != nil || allClips.contains(name) }
 
     var body: some View {
         ZStack {
@@ -114,7 +114,7 @@ final class InkPlayerHostView: UIView {
         posterView.frame = bounds
     }
 
-    private static let posterCache: NSCache<NSString, UIImage> = {
+    nonisolated private static let posterCache: NSCache<NSString, UIImage> = {
         let c = NSCache<NSString, UIImage>()
         c.countLimit = 24
         c.totalCostLimit = 8 << 20
@@ -124,11 +124,11 @@ final class InkPlayerHostView: UIView {
         return c
     }()
 
-    private static let decodeQueue = DispatchQueue(label: "lieguoji.poster.decode", qos: .userInitiated, attributes: .concurrent)
+    nonisolated private static let decodeQueue = DispatchQueue(label: "lieguoji.poster.decode", qos: .userInitiated, attributes: .concurrent)
 
     static func clearCache() { posterCache.removeAllObjects() }
 
-    private static func decodeDownsampled(url: URL, maxPx: CGFloat = 240) -> UIImage? {
+    nonisolated private static func decodeDownsampled(url: URL, maxPx: CGFloat = 240) -> UIImage? {
         guard let src = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
         let opts: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
@@ -167,13 +167,25 @@ final class InkPlayerHostView: UIView {
         } else {
             posterView.image = nil
             posterView.backgroundColor = UIColor(Theme.wash)
-            if let url = InkVideoStage.posterURL(for: clip)
-                ?? Bundle.main.url(forResource: "poster-herald-war", withExtension: "jpg", subdirectory: "Video") {
+            if let url = InkVideoStage.posterURL(for: clip) {
                 Self.decodeQueue.async { [weak self] in
                     guard let img = Self.decodeDownsampled(url: url, maxPx: 240) else { return }
                     let cost = Int(img.size.width * img.size.height * img.scale * img.scale * 4)
                     Self.posterCache.setObject(img, forKey: expectedClip as NSString, cost: max(1, cost))
                     DispatchQueue.main.async {
+                        guard let self, self.currentClip == expectedClip else { return }
+                        self.posterView.image = img
+                        self.posterView.backgroundColor = .clear
+                    }
+                }
+            } else {
+                // 54 卷传报长卷画幅已瘦身移至腾讯云：按需秒拉 (~14 KB) 并永久缓存本地，绝不卡主线程
+                Task.detached(priority: .userInitiated) { [weak self] in
+                    guard let remoteURL = await HotPackManager.fetchOnDemand(path: "Video/poster-\(expectedClip).jpg"),
+                          let img = Self.decodeDownsampled(url: remoteURL, maxPx: 240) else { return }
+                    let cost = Int(img.size.width * img.size.height * img.scale * img.scale * 4)
+                    Self.posterCache.setObject(img, forKey: expectedClip as NSString, cost: max(1, cost))
+                    await MainActor.run {
                         guard let self, self.currentClip == expectedClip else { return }
                         self.posterView.image = img
                         self.posterView.backgroundColor = .clear

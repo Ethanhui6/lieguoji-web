@@ -114,15 +114,21 @@ import LieguojiCore
         return ms
     }
     private func streamParams() -> (days: Int, intervalMs: Int) {
-        let wanted = CloudConfig.shared.pace[speed] ?? [1: 3, 2: 6, 4: 12, 8: 20, 16: 32][speed] ?? 3
         let farRelay = remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
         if farRelay {
-            let intervalMs = [1: 180, 2: 200, 4: 230, 8: 270, 16: 310][speed] ?? 180
-            return (min(48, wanted * 2), intervalMs)
+            let wanted = [1: 2, 2: 4, 4: 8, 8: 14, 16: 22][speed] ?? 2
+            let intervalMs = [1: 150, 2: 160, 4: 180, 8: 210, 16: 240][speed] ?? 150
+            return (wanted, intervalMs)
         }
-        // 专属云服务器 / 局域网全双工主动推流：高频 105–125ms 丝滑步进，高倍速单步直推至 32 日（>8 月/秒）
-        let intervalMs = [1: 105, 2: 105, 4: 110, 8: 115, 16: 125][speed] ?? 105
-        return (wanted, intervalMs)
+        // v8 专属云服务器 / 局域网 15–18 Hz 微步极速推流（配合滑动窗口背压 maxInFlight=2）：
+        // 1×=1日/100ms · 2×=1日/55ms · 4×=2日/65ms · 8×=3日/65ms · 16×=5日/75ms，逐日丝滑推进、绝不一下子跳数月！
+        switch speed {
+        case 1: return (1, 100)
+        case 2: return (1, 55)
+        case 4: return (2, 65)
+        case 8: return (3, 65)
+        default: return (5, 75)
+        }
     }
     private func syncRemoteStream(resetEpoch: Bool = true) async {
         guard remoteAddress != nil else { return }
@@ -984,10 +990,10 @@ import LieguojiCore
                         guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
                         let spent = Date().timeIntervalSince(started)
                         let basePeriod = Double(p.intervalMs) / 1000.0
-                        // 自适应抖动缓冲节奏：队列偏满时平滑略微提速防落后；队列有 1–2 帧时匀速播放吸收网络抖动；空队列时零人工等待
-                        let targetPeriod: Double = stats.buffered >= 3 ? basePeriod * 0.70 : (stats.buffered >= 1 ? basePeriod * 0.92 : 0.0)
+                        // v8 严格匀速消费：就算队列有 2 帧也坚持按 0.88× 恒速逐帧滑出，彻底禁止连续爆发跳月！
+                        let targetPeriod: Double = stats.buffered >= 2 ? basePeriod * 0.88 : (stats.buffered == 1 ? basePeriod * 0.96 : basePeriod * 0.55)
                         let rest = max(0.0, targetPeriod - spent)
-                        if rest > 0.005 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) }
+                        if rest > 0.004 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) }
                         else { await Task.yield() }
                         continue
                     } else {
@@ -999,29 +1005,16 @@ import LieguojiCore
                     self.remotePushActive = false
                 }
 
-                // Speed is days per step: the engine runs that many days in one call and the map,
-                // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
-                // Through the relay each round trip costs time: twice the days per step.
+                // 本机 / 降级轮询统一采用微步匀速节拍（1/1/2/3/5 日），保证本机与云端同样逐日丝滑、绝不一次性狂跳数月。
                 let far = self.remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
-                // Days per step: as many as the device computes in its share of a step (measured),
-                // up to the speed's pace — a quick phone runs near the original's pace, a slow one
-                // runs fewer days rather than stuttering. The map glides between steps.
-                // 1× is fifteen days a second (half again the original's ten, which felt slow on a phone), five steps a second.
-                let wanted = CloudConfig.shared.pace[self.speed] ?? [1: 3, 2: 6, 4: 12, 8: 24, 16: 40][self.speed] ?? 3
-                // A step may take longer at the higher speeds (the map glides over a whole step on the GPU,
-                // so a longer step is still smooth): large worlds then really run faster at 4× and 8×.
-                let stepTime = [1: 0.13, 2: 0.2, 4: 0.32, 8: 0.5, 16: 0.6][self.speed] ?? 0.13
-                // Only a share of each step goes to the engine on phone CPU; when PC server computes,
-                // let the computer run at full speed without phone thermal throttling!
+                let wanted = [1: 1, 2: 1, 4: 2, 8: 3, 16: 5][self.speed] ?? 1
+                let stepTime = [1: 0.10, 2: 0.055, 4: 0.065, 8: 0.065, 16: 0.075][self.speed] ?? 0.10
                 let isRemoteNow = self.remoteAddress != nil
-                let affordable = isRemoteNow ? wanted : max(1, Int((stepTime * Energy.duty / max(0.004, self.dayCost)).rounded(.down)))
+                let affordable = isRemoteNow ? wanted : max(1, Int((max(0.08, stepTime) * Energy.duty / max(0.004, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
-                let days = far ? min(48, pace * 2) : pace
+                let days = far ? min(12, pace * 2) : pace
                 self.lastDays = days
                 do {
-                    // The next step is asked for before this one is applied: the engine works on it while
-                    // the main thread applies the last (on the phone too, not only through the relay —
-                    // the two used to take turns, and a day cost the sum of both).
                     if ahead == nil { ahead = self.requestStep(days: days, ticket: ticket, revision: revision) }
                     guard let data = await ahead!.value else {
                         ahead = nil
@@ -1043,14 +1036,9 @@ import LieguojiCore
                 catch { if self.owns(ticket) { self.failure = error.localizedDescription; self.pause() }; return }
                 guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
                 let spent = Date().timeIntervalSince(started)
-                // A single slow step (a save, a month's politics) is clipped, so it cannot drag the pace
-                // down to one day a step for many steps after it.
                 if !far { self.dayCost = self.dayCost * 0.7 + min(spent / Double(max(1, days)), self.dayCost * 2.5) * 0.3 }
-                let budget = max(0.2, stepTime)
-                // The processor rests for part of every step, more when the phone is warm: a large world
-                // used to keep a core busy without pause, which is what heated the phone.
-                let rest = max(budget - spent, (far || isRemoteNow) ? 0 : spent * (1 / Energy.duty - 1))
-                if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
+                let rest = max(stepTime - spent, (far || isRemoteNow) ? 0 : spent * (1 / Energy.duty - 1))
+                if rest > 0.004 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
             }
         }
     }
@@ -1135,11 +1123,11 @@ import LieguojiCore
         let next = try step.get()
         guard owns(ticket) else { return }
         if remoteAddress != nil, !isRemote { remoteAddress = nil; remoteTransport = ""; remoteRTTMs = nil }
-        if isRemote { remoteRTTMs = await native.lastRTTMs }
+        if isRemote { remoteRTTMs = native.liveRTTMs ?? (await native.lastRTTMs) }
         let now = CACurrentMediaTime()
-        if playing, let last = lastApplied, now - last < 2 { stepInterval = stepInterval * 0.7 + (now - last) * 0.3 }
+        if playing, let last = lastApplied, now - last < 0.85 { stepInterval = stepInterval * 0.65 + (now - last) * 0.35 }
         lastApplied = playing ? now : nil
-        controller.tween = playing ? min(1.2, max(0.12, stepInterval * 1.05)) : 0.3
+        controller.tween = playing ? min(0.55, max(0.055, stepInterval * 1.08)) : 0.25
         let applying = CACurrentMediaTime()
         apply(next)
         onAdvanceApplied?(next.day)

@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import hmac
 import html
@@ -95,10 +96,10 @@ RANKS = [
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 8,
-    "notice": "九州专属云服 v7 极速推流已上线 · 280 州大图丝滑畅推",
+    "version": 9,
+    "notice": "v5.5.0 已上线：云端 v8 极速微步推流（零跳月丝滑行军）+ 极轻客户端",
     "computeHost": COMPUTE_HOST,
-    "pace": {"1": 3, "2": 6, "4": 12, "8": 20, "16": 32},
+    "pace": {"1": 1, "2": 1, "4": 2, "8": 3, "16": 5},
     "tuning": {
         "lethality": 2.0,
         "siege": 6.0,
@@ -128,27 +129,26 @@ def compute_hotpatch_sha(cfg: dict[str, Any]) -> str:
 
 
 DEFAULT_RELEASE: dict[str, Any] = {
-    "latestVersion": "5.4.0",
-    "latestBuild": 184,
-    "minSupportedBuild": 175,
+    "latestVersion": "5.5.0",
+    "latestBuild": 185,
+    "minSupportedBuild": 180,
     "forceUpdate": False,
     "maintenance": False,
     "maintenanceMessage": "九州云服正在例行修缮，稍候片刻即可重登。",
     "releaseDate": "2026-11-26",
-    "ipaSizeMB": 86.0,
+    "ipaSizeMB": 40.0,
     "downloadUrl": "https://github.com/Ethanhui6/lieguoji-web/releases/latest",
     "directIpaUrl": "",
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": [
-        "【根治云端推流掉线与 280 州大图提速】彻底修复后台探活误踢在线会话的顽疾与进图自动直连延迟；上线云端 v7 极速推流引擎，280 州超大图自动启用云端高效帧步进与无阻塞落盘，推进速度与丝滑度大幅跃升。",
-        "【游戏内免换包资源热更新（28MB+ 典藏扩展包）】新增 SHA256 精确差分热更引擎，以后更新剧本、历史词典、典藏配乐、工笔美术、传报长卷与平衡规则全部在游戏内自动下载并即时生效，无需重新安装 IPA。",
-        "【回归 4.3 极简宣纸美学 × 120fps 顺滑体验】全面重绘登录门扉、史官行宫、热更新与云存档界面，清除冗杂金框渐变与离屏阴影，与游戏内原生风格 100% 浑然一体。",
-        "【御前司礼监 · 管理员中枢与全服防护】开放管理员账号游戏内实时管控（公告/跑马灯/热更平衡参数/版本发布/全服诏书/玩家管理/服务器监控），全面收紧官网公开信息并上线防爆破与扫描拦截。",
+        "【终极延迟革命 · 云端 v8 微步滑动窗口】根治 1000ms 队列阻塞与一月瞬移七月：全链路实行 2 帧滑动窗口背压（MUX_ACK）+ 零锁纯网络延迟探针 + 50ms 自适应微步切片，实测纯网延迟压至 25–40 ms。",
+        "【军队 15–20 Hz 丝滑滑行 · 点击开始 0ms 响应】修复 O(N²) 补给/合围计算黑洞（提速 50×）与进图同步上传锁死问题；上传期间本机先零延迟开推，传完无感热切云端，军队行军不再跳格卡顿。",
+        "【本地安装包直降一半（86 MB → ~40 MB）× 云端按需资源】将 28.3 MB 原声音乐、11.5 MB 废弃旧视频、3.3 MB 未用字库与 2.8 MB 旧网页引擎全面瘦身或迁至腾讯云按需流式下载缓存，并支持一键在「云端极速推流 / 纯本机算力」间自由切换。",
     ],
     "hotpatch": {
-        "patchVersion": 8,
+        "patchVersion": 9,
         "updatedAt": int(time.time() * 1000),
-        "summary": "云端 v7 极速推流与 280 州大图优化参数",
+        "summary": "云端 v8 极速微步推流与滑动窗口流控参数",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -531,6 +531,23 @@ def _save_hotpack_version_meta(ver: int, tag: str, summary: str) -> None:
         DB.commit()
 
 
+def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
+    top, _, rest = rel.partition("/")
+    if not rest:
+        return []
+    if top in ("Music", "Art", "Video", "Engine", "Catalog", "World"):
+        gh_path = f"ios-native/Resources/{rel}"
+    elif top == "Content":
+        gh_path = f"server-deploy/platform/hotpack-content/{rest}"
+    else:
+        return []
+    quoted = urllib.parse.quote(gh_path, safe="/")
+    return [
+        f"https://cdn.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
+        f"https://fastly.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
+    ]
+
+
 def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = None, summary: Optional[str] = None) -> dict[str, Any]:
     ver, cur_tag, cur_summary = _get_hotpack_version_meta()
     if bump_version:
@@ -548,7 +565,7 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
 
     if HOTPACK_DIR.exists():
         for fp in sorted(HOTPACK_DIR.rglob("*")):
-            if not fp.is_file() or fp.name.startswith("."):
+            if not fp.is_file() or fp.name.startswith(".") or fp.suffix.lower() == ".mp4":
                 continue
             rel = fp.relative_to(HOTPACK_DIR).as_posix()
             top = rel.split("/", 1)[0].lower() if "/" in rel else "content"
@@ -562,7 +579,11 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
                         break
                     h.update(chunk)
                     sz += len(chunk)
-            files.append({"path": rel, "module": mod_id, "size": sz, "sha256": h.hexdigest()})
+            entry: dict[str, Any] = {"path": rel, "module": mod_id, "size": sz, "sha256": h.hexdigest()}
+            cdns = _cdn_urls_for_hotpack_rel(rel)
+            if cdns:
+                entry["cdnUrls"] = cdns
+            files.append(entry)
             total_bytes += sz
             if mod_id not in mod_acc:
                 name, detail = MODULE_META.get(mod_id, (mod_id, "游戏扩展资源"))
@@ -1021,7 +1042,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
             record_scanner_hit(ip)
             self.send_json({"ok": False, "error": "Not Found"}, 404)
             return False
-        if not check_rate_limit(f"req:{ip}", 240, 60):
+        if not check_rate_limit(f"req:{ip}", 900, 60):
             self.send_json({"ok": False, "error": "请求频率受限，请稍候"}, 429)
             return False
         return True
@@ -1381,13 +1402,21 @@ class PlatformHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": "非法路径"}, 400)
             return
         data = target.read_bytes()
+        accept_enc = (self.headers.get("Accept-Encoding") or "").lower()
+        compressible = target.suffix.lower() in (".json", ".js", ".html", ".css", ".txt", ".svg")
+        use_gzip = compressible and "gzip" in accept_enc and len(data) >= 512
+        payload = gzip.compress(data, compresslevel=6) if use_gzip else data
         self.send_response(200)
         self._security_headers()
         self.send_header("Content-Type", "application/octet-stream")
-        self.send_header("Content-Length", str(len(data)))
+        if use_gzip:
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Vary", "Accept-Encoding")
+        self.send_header("Content-Length", str(len(payload)))
         self.send_header("Cache-Control", "public, max-age=86400")
+        self.send_header("Connection", "keep-alive")
         self.end_headers()
-        self.wfile.write(data)
+        self.wfile.write(payload)
 
     # ----------------------------- Public Game APIs -----------------------------
 

@@ -386,6 +386,7 @@ extension NativeEngine {
         var armyPoint = [(Double, Double)]()
         armyPoint.reserveCapacity(space.count)
         let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
+        var supplyCtx = ArmyTactics.SupplyContext(r)
         let armyRows = space.map { v -> GameState.Army in
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
             let travel = bridge.map { $0.travel(v.travel) }
@@ -399,8 +400,10 @@ extension NativeEngine {
                 let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
                 at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at
             }
-            let rx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
-            let ry = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
+            let rawRx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
+            let rawRy = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
+            let rx = slim ? (rawRx * 10.0).rounded() / 10.0 : rawRx
+            let ry = slim ? (rawRy * 10.0).rounded() / 10.0 : rawRy
             armyPoint.append((rx, ry))
             // Destination province of a march (last travel node), for the army panel, plus O(1) fast terrain route & ETA.
             var dest = -1
@@ -492,10 +495,10 @@ extension NativeEngine {
                 if form != .standard { x.formation = form.rawValue }
                 let fld = ArmyTactics.fieldOrder(r, armyId: id)
                 if fld != .normal { x.fieldOrder = fld.rawValue }
-                let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil)
+                let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil, ctx: &supplyCtx)
                 x.supplyState = sup.state.rawValue
                 x.supplyOriginProvince = sup.originProvince
-                if ArmyTactics.isEncircled(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil) {
+                if ArmyTactics.isEncircled(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil, ctx: &supplyCtx) {
                     x.encircled = true
                 }
                 if !slim {

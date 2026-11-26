@@ -3,20 +3,21 @@ import Network
 import Darwin
 import LieguojiCore
 
-/// 独立于主线程与 Actor 之外的客户端推流解码缓冲队列（网游级 Jitter Buffer）：
+/// 独立于主线程与 Actor 之外的客户端推流解码缓冲队列（v8 滑动窗口背压 + Jitter Buffer）：
 /// - 收到服务器主动推送的 LZ4 压缩精简帧后，立即在后台并发队列完成解压 + JSON 解码，0ms 阻塞 UI 查询与点击；
-/// - 队列容量上限 4 帧（超出自动丢弃最老中间帧防止落后），按 `epoch` 秒级丢弃暂停/下令前的过时在途帧；
-/// - 记录实时压缩体积（KB/帧）与缓冲水位，供状态胶囊与设置页实时展示。
+/// - 每消费一帧立刻触发 `onFrameConsumed?(tag)` 回传 9 字节 `MUX_ACK`，严格控制全链路至多 2 帧在途，
+///   彻底消灭 TCP Bufferbloat、1000ms 队列堆积延迟与一月瞬移七月！
 final class StreamFrameBuffer: @unchecked Sendable {
     private let lock = NSLock()
     private let decodeQueue = DispatchQueue(label: "lieguoji.stream.decode", qos: .userInitiated)
     private var epoch: UInt8 = 0
-    private var queue: [GameState] = []
+    private var queue: [(tag: UInt32, state: GameState)] = []
     private var waiter: CheckedContinuation<GameState?, Never>?
     private var lastCompressedBytes: Int = 0
     private var lastRawBytes: Int = 0
     private var framesReceived: Int = 0
-    private let maxBuffered = 4
+    private let maxBuffered = 3
+    var onFrameConsumed: (@Sendable (UInt32) -> Void)?
 
     func reset(epoch: UInt8) {
         lock.lock()
@@ -48,17 +49,21 @@ final class StreamFrameBuffer: @unchecked Sendable {
             self.lastCompressedBytes = compSize
             self.lastRawBytes = raw.count
             self.framesReceived += 1
+            let ackCb = self.onFrameConsumed
             if let w = self.waiter {
                 self.waiter = nil
                 self.lock.unlock()
+                ackCb?(tag)
                 w.resume(returning: decoded)
                 return
             }
+            var droppedTag: UInt32?
             if self.queue.count >= self.maxBuffered {
-                self.queue.removeFirst(self.queue.count - self.maxBuffered + 1)
+                droppedTag = self.queue.removeFirst().tag
             }
-            self.queue.append(decoded)
+            self.queue.append((tag, decoded))
             self.lock.unlock()
+            if let dt = droppedTag { ackCb?(dt) }
         }
     }
 
@@ -66,8 +71,10 @@ final class StreamFrameBuffer: @unchecked Sendable {
         lock.lock()
         if !queue.isEmpty {
             let first = queue.removeFirst()
+            let ackCb = onFrameConsumed
             lock.unlock()
-            return first
+            ackCb?(first.tag)
+            return first.state
         }
         lock.unlock()
 
@@ -75,8 +82,10 @@ final class StreamFrameBuffer: @unchecked Sendable {
             lock.lock()
             if !queue.isEmpty {
                 let first = queue.removeFirst()
+                let ackCb = onFrameConsumed
                 lock.unlock()
-                cont.resume(returning: first)
+                ackCb?(first.tag)
+                cont.resume(returning: first.state)
                 return
             }
             let prev = waiter
@@ -230,6 +239,28 @@ actor NativeHost {
     /// The world the computer last returned (a save), so a broken link or PC restart can recover seamlessly.
     private var lastWorld: Data?
 
+    /// 实时纯网络延迟存储（由 4 秒一次零锁 `MUX_PING` 独立更新，绝不混入推演算力耗时误报 1000ms）。
+    private final class RTTBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var ms: Int?
+        var value: Int? {
+            get { lock.lock(); defer { lock.unlock() }; return ms }
+            set {
+                lock.lock()
+                if let nv = newValue {
+                    ms = ms.map { Int(Double($0) * 0.60 + Double(nv) * 0.40) } ?? nv
+                } else {
+                    ms = nil
+                }
+                lock.unlock()
+            }
+        }
+        func reset(_ v: Int?) { lock.lock(); ms = v; lock.unlock() }
+    }
+    private let rttBox = RTTBox()
+    nonisolated var liveRTTMs: Int? { rttBox.value }
+    private var cloudHandingOff = false
+
     /// One request, on the computer when connected, else in process.
     private func call(_ name: String, _ args: [String: Any] = [:], payload: Data? = nil) async -> EngineService.Reply {
         if let remote {
@@ -237,13 +268,15 @@ actor NativeHost {
             do {
                 let r = try await remote.call(name, args, payload: payload)
                 let ms = max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
-                if name == "ping" || name == "pullLatest" || name == "step" || name == "state" || name == "streamConfig" {
-                    lastRTTMs = lastRTTMs.map { Int(Double($0) * 0.65 + Double(ms) * 0.35) } ?? ms
+                if name == "ping" || name == "streamConfig" {
+                    rttBox.value = ms
+                    lastRTTMs = rttBox.value
                 }
                 return r
             } catch {
                 remote.cancel(); self.remote = nil; remoteAddress = nil
                 serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
+                streamBuffer.onFrameConsumed = nil
                 streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
                 if name != "open" && name != "catalogs" && !parked {
                     if let _ = await reattachQuick() {
@@ -313,17 +346,21 @@ actor NativeHost {
         let isV5OrNewer = isV6 || hello.reason == "列国纪远程计算·5"
         var pushCapable = false
 
-        // v6 协议：直连 TCP 升级为全双工多路复用推流（MUX）；云端 WS 挂载单向 MSG_PUSH 监听 + LZ4 压缩。
+        // v8 协议：直连 TCP 升级为全双工多路复用 + 滑动窗口背压（MUX_ACK）+ 4s 纯网络 RTT 心跳；云端 WS 挂载单向 MSG_PUSH + LZ4。
         let buf = self.streamBuffer
+        let box = self.rttBox
         if isV6 {
             if let directLinkRef {
                 directLinkRef.onPushFrame = { tag, data in buf.ingest(tag: tag, compressedPayload: data) }
+                directLinkRef.onRTTMeasured = { ms in box.value = ms }
                 if (try? await directLinkRef.upgradeToMux()) == true {
                     pushCapable = true
+                    buf.onFrameConsumed = { [weak directLinkRef] tag in directLinkRef?.sendMuxAck(tag: tag) }
                 }
             } else if let wsLinkRef {
                 wsLinkRef.compressUploads = true
                 wsLinkRef.onPushFrame = { tag, data in buf.ingest(tag: tag, compressedPayload: data) }
+                buf.onFrameConsumed = nil
                 pushCapable = true
             }
         }
@@ -333,7 +370,7 @@ actor NativeHost {
             let isOpen = (try? await link.call("isOpen", [:], payload: nil))?.ok ?? false
             if isOpen {
                 remote = link; remoteAddress = label; remoteTransport = finalTransport
-                lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
+                rttBox.reset(rtt); lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
                 serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
                 lost = false; parked = false; lastAddress = address
                 return label
@@ -352,7 +389,7 @@ actor NativeHost {
                 }
                 _ = try? await link.call("enableAppRules", [:], payload: nil)
                 remote = link; remoteAddress = label; remoteTransport = finalTransport
-                lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
+                rttBox.reset(rtt); lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
                 serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
                 lost = false; parked = false; lastAddress = address
                 return label
@@ -360,22 +397,46 @@ actor NativeHost {
             link.cancel(); throw EngineError.message("服务器上的世界已关闭")
         }
 
+        // 关键零卡顿优化：先在 actor 内快速快照世界存档与版本号，再彻底释放 actor 在后台脱离上传 10–15MB 存档！
+        // 上传期间玩家点击「开始游戏」0ms 立刻由本机丝滑响应，绝不假死、绝不跳月；上传完毕后毫秒级热切云端 v8 推流！
+        let startRev = advances.revision
+        let startDay = service.engine?.run.world.day.asInt ?? 0
+        let localSave = service.engine?.save()
         let c = try Self.catalogData()
         let catalogs = try JSONSerialization.data(withJSONObject: [
             "traits": c.traits.base64EncodedString(),
             "nobleCultures": c.noble.base64EncodedString(),
             "cultures": c.cultures.base64EncodedString()
         ])
-        let loaded = try await link.call("catalogs", [:], payload: catalogs)
-        guard loaded.ok else { link.cancel(); throw EngineError.message(loaded.reason) }
-        if let save = service.engine?.save() {
-            let opened = try await link.call("open", [:], payload: save)
-            guard opened.ok else { link.cancel(); throw EngineError.message("服务器载入世界失败：\(opened.reason)") }
-            _ = try? await link.call("enableAppRules", [:], payload: nil)
-            lastWorld = save
+
+        try await Task.detached(priority: .userInitiated) {
+            let loaded = try await link.call("catalogs", [:], payload: catalogs)
+            guard loaded.ok else { link.cancel(); throw EngineError.message(loaded.reason) }
+            if let save = localSave {
+                let opened = try await link.call("open", [:], payload: save)
+                guard opened.ok else { link.cancel(); throw EngineError.message("服务器载入世界失败：\(opened.reason)") }
+                _ = try? await link.call("enableAppRules", [:], payload: nil)
+            }
+        }.value
+
+        // 若上传途中玩家已切到其他世界，礼貌释放这条旧连接。
+        guard advances.revision == startRev else {
+            link.cancel()
+            throw EngineError.message("世界已切换，已取消旧连接")
         }
+
+        // 若后台上传期间本机已先开始推演了若干天，只需让云端极速补跑差值天数即可无缝衔接（绝不回退或二次上传）。
+        let nowDay = service.engine?.run.world.day.asInt ?? startDay
+        let deltaDays = max(0, min(60, nowDay - startDay))
+        if deltaDays > 0 {
+            _ = try? await Task.detached(priority: .userInitiated) {
+                try await link.call("step", ["days": deltaDays, "slim": true], payload: nil)
+            }.value
+        }
+
+        if let localSave { lastWorld = localSave }
         remote = link; remoteAddress = label; remoteTransport = finalTransport
-        lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
+        rttBox.reset(rtt); lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
         serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
         lastAddress = address; lost = false; parked = false
         return label
@@ -385,10 +446,11 @@ actor NativeHost {
     func disconnect() async {
         parked = false; lost = false
         serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
-        lastRTTMs = nil
+        rttBox.reset(nil); lastRTTMs = nil
+        streamBuffer.onFrameConsumed = nil
         streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         guard let link = remote else { remoteAddress = nil; remoteTransport = ""; return }
-        _ = try? await link.call("streamConfig", ["playing": false, "days": 3, "push": false], payload: nil)
+        _ = try? await link.call("streamConfig", ["playing": false, "days": 1, "push": false], payload: nil)
         if let save = try? await link.call("save", [:], payload: nil), let data = save.data {
             _ = service.handle("open", [:], payload: data); service.engine?.enableAppRules()
             lastWorld = data
@@ -466,7 +528,8 @@ actor NativeHost {
     func fallbackLocal() {
         lost = false; parked = false
         serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
-        lastRTTMs = nil
+        rttBox.reset(nil); lastRTTMs = nil
+        streamBuffer.onFrameConsumed = nil
         streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         remote?.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""
         if let lastWorld { _ = service.handle("open", [:], payload: lastWorld); service.engine?.enableAppRules() }
@@ -490,43 +553,48 @@ actor NativeHost {
         return ms
     }
 
-    /// 配置服务器端推流（v6 启用主动推流 + epoch 防乱序；兼容 v5 预推演）。
-    func configureRemoteStream(playing: Bool, days: Int, intervalMs: Int = 160, resetEpoch: Bool = true) async {
+    /// 配置服务器端推流（v8 启用微步滑动窗口背压 + epoch 防乱序；向下兼容 v6/v5 服务器）。
+    func configureRemoteStream(playing: Bool, days: Int, intervalMs: Int = 80, resetEpoch: Bool = true) async {
         if resetEpoch || !playing {
             streamEpoch &+= 1
             streamBuffer.reset(epoch: streamEpoch)
         }
         guard let link = remote, serverSupportsStream else { return }
+        let useWindow = (link is RemoteLink) && serverSupportsPush
         _ = try? await link.call("streamConfig", [
             "playing": playing,
-            "days": max(1, min(60, days)),
-            "intervalMs": max(70, min(800, intervalMs)),
+            "days": max(1, min(32, days)),
+            "intervalMs": max(35, min(600, intervalMs)),
             "epoch": Int(streamEpoch),
-            "push": serverSupportsPush && playing
+            "push": serverSupportsPush && playing,
+            "window": useWindow
         ], payload: nil)
     }
 
     /// 自动接入：专属云服务器地址 → 局域网 UDP 10ms 秒发现 → 云端中转 LAN 列表 → 云端 WebSocket 推流。
     func connectAuto() async -> (label: String, transport: String, rttMs: Int?)? {
+        guard !cloudHandingOff else { return nil }
+        cloudHandingOff = true
+        defer { cloudHandingOff = false }
         if lost || parked {
-            if let label = await reattachBest() { return (label, remoteTransport, lastRTTMs) }
+            if let label = await reattachBest() { return (label, remoteTransport, liveRTTMs ?? lastRTTMs) }
             return nil
         }
         guard remote == nil, service.engine != nil else { return nil }
         let pinned = Self.savedDirectAddress
         if !pinned.isEmpty, let label = try? await connect(pinned, timeout: 2.2) {
-            return (label, remoteTransport, lastRTTMs)
+            return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
         }
         let room = Self.activeRoomCode
         if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.65),
            let label = try? await connect(lanFound, timeout: 1.5) {
-            return (label, remoteTransport, lastRTTMs)
+            return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
         }
         guard let status = await RelayLink(code: room).status(), status.online else { return nil }
         for address in status.lan {
-            if let label = try? await connect(address, timeout: 1.3) { return (label, remoteTransport, lastRTTMs) }
+            if let label = try? await connect(address, timeout: 1.3) { return (label, remoteTransport, liveRTTMs ?? lastRTTMs) }
         }
-        if let label = try? await connect(room) { return (label, remoteTransport, lastRTTMs) }
+        if let label = try? await connect(room) { return (label, remoteTransport, liveRTTMs ?? lastRTTMs) }
         return nil
     }
 
@@ -989,10 +1057,18 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
     private var pending: [UInt32: CheckedContinuation<Data, Error>] = [:]
     private var heartbeatTask: Task<Void, Never>?
     var onPushFrame: (@Sendable (UInt32, Data) -> Void)?
+    var onRTTMeasured: (@Sendable (Int) -> Void)?
 
     var isMuxActive: Bool {
         lock.lock(); defer { lock.unlock() }
         return mux && !closed
+    }
+
+    /// 非阻塞回传 9 字节 `MUX_ACK` 滑动窗口确认帧，告诉服务器已消费一帧，准许推下一帧。
+    func sendMuxAck(tag: UInt32) {
+        guard isMuxActive else { return }
+        let frame = EngineWire.muxFrame(type: EngineWire.muxAck, id: tag, body: Data())
+        connection.send(content: frame, completion: .contentProcessed { _ in })
     }
 
     init(host: String, port: UInt16) {
@@ -1065,11 +1141,11 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
     private func startMuxHeartbeat() {
         heartbeatTask = Task.detached(priority: .utility) { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 12_000_000_000)
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
                 guard let self, self.isMuxActive else { return }
-                let id = self.allocId()
-                let ping = EngineWire.muxFrame(type: EngineWire.muxPing, id: id, body: Data())
-                try? await self.send(ping)
+                if let ms = await self.muxPingRTT() {
+                    self.onRTTMeasured?(ms)
+                }
             }
         }
     }

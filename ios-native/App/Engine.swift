@@ -70,7 +70,17 @@ import LieguojiCore
     }
     private func load() async throws {
         if loaded { return }
-        guard let html = Bundle.main.url(forResource: "engine", withExtension: "html", subdirectory: "Engine") else { throw EngineError.message("安装包缺少游戏引擎") }
+        let html: URL
+        if let local = HotPackManager.resourceURL(name: "engine", ext: "html", subdirectory: "Engine") {
+            html = local
+        } else {
+            // 网页兼容引擎（仅导入旧版网页存档时使用）已移至云端，按需自动下载并永久缓存
+            guard let h = await HotPackManager.fetchOnDemand(path: "Engine/engine.html"),
+                  await HotPackManager.fetchOnDemand(path: "Engine/engine.js") != nil else {
+                throw EngineError.message("请先联网或在「史官行宫 › 热更」下载兼容引擎模块后再导入旧版存档")
+            }
+            html = h
+        }
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
             ready = c
             web.loadFileURL(html, allowingReadAccessTo: html.deletingLastPathComponent())

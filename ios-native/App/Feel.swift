@@ -64,14 +64,32 @@ import LieguojiCore
         try? AVAudioSession.sharedInstance().setActive(true)
         if music && player == nil { play() }
     }
-    func next() { player?.stop(); player = nil; play() }
+    private var musicFetchTask: Task<Void, Never>?
+    func next() { musicFetchTask?.cancel(); player?.stop(); player = nil; play() }
     private func play() {
         guard music else { return }
         if let player, !player.isPlaying { player.play(); fade(to: Float(volume)); return }
         if player != nil { return }
         if queue.isEmpty { queue = Self.tracks.shuffled() }
         let name = queue.removeFirst()
-        guard let url = HotPackManager.resourceURL(name: name, ext: "m4a", subdirectory: "Music"), let p = try? AVAudioPlayer(contentsOf: url) else { return }
+        if let url = HotPackManager.resourceURL(name: name, ext: "m4a", subdirectory: "Music") {
+            startTrack(name: name, url: url)
+            return
+        }
+        // 配乐已瘦身移至腾讯云：按需后台拉取当前曲目并永久缓存在本地，下载完成自动渐入播放
+        musicFetchTask?.cancel()
+        track = (Self.trackNames[name] ?? name) + "（云端缓冲中…）"
+        musicFetchTask = Task { @MainActor [weak self] in
+            guard let url = await HotPackManager.fetchOnDemand(path: "Music/\(name).m4a") else {
+                self?.track = ""
+                return
+            }
+            guard let self, self.music, self.player == nil, !Task.isCancelled else { return }
+            self.startTrack(name: name, url: url)
+        }
+    }
+    private func startTrack(name: String, url: URL) {
+        guard let p = try? AVAudioPlayer(contentsOf: url) else { return }
         p.delegate = self; p.volume = 0; p.prepareToPlay(); p.play()
         player = p; track = Self.trackNames[name] ?? name
         fade(to: Float(volume))
@@ -227,7 +245,31 @@ struct RemoteSettings: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             Divider2()
-            PaperSwitch(title: "自动连接在线服务器 / 我的电脑", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("算力与运行模式").font(Theme.body).foregroundStyle(Theme.ink)
+                    Spacer()
+                    Text(model.autoRemote ? "云端优先 · 省电不发热" : "纯本机 · 离线零延迟")
+                        .font(Theme.caption).foregroundStyle(Theme.ink2)
+                }
+                ChipPicker(
+                    items: [(true, "云端极速推流"), (false, "纯本机算力")],
+                    selection: Binding(
+                        get: { model.autoRemote },
+                        set: { on in
+                            model.autoRemote = on
+                            if !on && model.remoteAddress != nil {
+                                Task { await model.disconnectRemote() }
+                            } else if on && model.remoteAddress == nil && model.state != nil {
+                                Task { _ = await model.findComputerNow() }
+                            }
+                        }
+                    )
+                )
+                Text("云端推流（v8 微步滑动窗口）把 280 州大图演算卸给腾讯云，手机仅负责 120Hz 丝滑渲染；地铁/无网环境可随时一键切回本机算力。")
+                    .font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 11)
             Divider2()
             VStack(alignment: .leading, spacing: 8) {
                 HStack {

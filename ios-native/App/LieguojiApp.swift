@@ -31,7 +31,8 @@ enum Theme {
     static private(set) var numeralFontName = "CormorantGaramond-Light"
 
     private static func registerFont(resource: String) -> String? {
-        guard let url = Bundle.main.url(forResource: resource, withExtension: "ttf", subdirectory: "Fonts") else { return nil }
+        guard let url = Bundle.main.url(forResource: resource, withExtension: "ttf", subdirectory: "Fonts")
+            ?? Bundle.main.url(forResource: resource, withExtension: "ttf") else { return nil }
         CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         guard let provider = CGDataProvider(url: url as CFURL),
               let cgFont = CGFont(provider),
@@ -41,8 +42,6 @@ enum Theme {
 
     static func registerBundledFonts() {
         _ = registerFont(resource: "TW-Kai")
-        if let serif = registerFont(resource: "NotoSerifSC-SemiBold") { serifFontName = serif }
-        if let num = registerFont(resource: "CormorantGaramond-SemiBold") { numeralFontName = num }
     }
 
     static let paper = Color(red: 0.961, green: 0.941, blue: 0.902)       // #F5F0E6 宣纸暖白

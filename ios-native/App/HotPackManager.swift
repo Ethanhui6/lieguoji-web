@@ -1,6 +1,7 @@
 import Foundation
 import CryptoKit
 import SwiftUI
+import LieguojiCore
 
 // MARK: - 游戏内免换包热更新资源引擎（SHA256 精确差分 · 4 路并发断点续传 · 实时热加载生效）
 

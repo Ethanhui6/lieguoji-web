@@ -1305,7 +1305,7 @@ struct MapView: UIViewRepresentable {
                 appliedFrameRange = target
                 l.preferredFrameRateRange = target
                 if !sheetThrottled {
-                    mtk?.preferredFramesPerSecond = Int(target.preferred.rounded())
+                    mtk?.preferredFramesPerSecond = Int((target.preferred ?? target.maximum).rounded())
                 }
             }
         }

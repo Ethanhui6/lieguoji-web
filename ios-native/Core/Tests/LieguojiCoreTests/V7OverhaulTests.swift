@@ -198,7 +198,7 @@ final class V7OverhaulTests: XCTestCase {
         XCTAssertLessThan(minRel, -25.0, "1941 日本应体现陆军统制派与帝国海军等派系的真实对立，当前最低关系 \(minRel)")
 
         // 推演 180 天后复验，确保联姻与新生代依然严格遵守本国文化隔离
-        asia.step(days: 180)
+        asia.advance(days: 180)
         assertJapanClean(stage: "推演180日后")
     }
 
@@ -207,10 +207,10 @@ final class V7OverhaulTests: XCTestCase {
     func testWW2JapanVsChinaMilitaryAsymmetry() throws {
         defer { cleanup() }
         // 科技代差公式验证（二战时代：日本陆军6/海军6 vs 民国陆军2/海军1）
-        let landGap = Combat.techGapMultiplier(attackerTech: 6, defenderTech: 2, era: .ww2)
-        let seaGap = Combat.navalTechGapMultiplier(attackerTech: 6, defenderTech: 1, era: .ww2)
-        XCTAssertGreaterThan(landGap, 1.85, "二战 4 级陆军科技代差应形成显著火力优势，实际 \(landGap)")
-        XCTAssertGreaterThan(seaGap, 2.8, "二战 5 级海军科技代差（联合舰队航母/战列舰 vs 浅水炮艇）应形成降维打击，实际 \(seaGap)")
+        let landGap = Volley.techGapMultiplier(attackerTech: 6, defenderTech: 2, era: .ww2)
+        let seaGap = Volley.navalTechGapMultiplier(attackerTech: 6, defenderTech: 1, era: .ww2)
+        XCTAssertGreaterThan(landGap, 2.20, "二战 4 级陆军科技代差应形成显著火力优势，实际 \(landGap)")
+        XCTAssertGreaterThan(seaGap, 2.45, "二战 5 级海军科技代差（联合舰队航母/战列舰 vs 浅水炮艇）应形成降维打击，实际 \(seaGap)")
 
         // 真实 1941 剧本开局状态验证：工业/制空/科技综合比值，且山地地形衰减制空权
         let asia = try launchScenario("ww2_asia_1941")

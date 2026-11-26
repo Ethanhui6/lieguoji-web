@@ -2,6 +2,7 @@ import Foundation
 import MetalKit
 import ImageIO
 import UIKit
+import LieguojiCore
 
 /// 8K–16K 真实地球卫星地貌与水深 GPU 瓦片金字塔流式渲染器（v7.0）：
 /// - 读取 HotPack `ReliefTiles/{region}.lgtr` 索引二进制瓦片包（魔数 `"LGTR"`），

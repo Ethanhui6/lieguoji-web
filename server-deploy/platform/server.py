@@ -826,6 +826,29 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return False
         return True
 
+    def do_HEAD(self) -> None:
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
+        if path.startswith("/downloads/"):
+            rel_name = path[len("/downloads/"):]
+            safe = Path(rel_name).name
+            target = DOWNLOADS_DIR / safe
+            if safe and safe == rel_name and target.exists() and target.is_file():
+                self.send_response(200)
+                self.send_header("Content-Type", "application/octet-stream")
+                self.send_header("Content-Disposition", f'attachment; filename="{safe}"')
+                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Content-Length", str(target.stat().st_size))
+                self.end_headers()
+                return
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_OPTIONS(self) -> None:
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")

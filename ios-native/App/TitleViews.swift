@@ -163,10 +163,14 @@ struct TitleView: View {
     @State private var settings = false
     @State private var warRulesOpen = false
     @State private var notes = false
+    @State private var authOpen = false
+    @State private var hubOpen = false
+    @State private var hubTab = "profile"
     /// A line of the classics under the title, changing each launch.
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
     @State private var motto = TitleView.mottos.randomElement()!
     @ObservedObject private var cloud = CloudConfig.shared
+    @ObservedObject private var platform = OnlinePlatform.shared
     var body: some View {
         ZStack {
             // Ink at the top, paper at the bottom: the title and the actions read over any world.
@@ -200,17 +204,36 @@ struct TitleView: View {
                     .padding(.top, 8)
                     .opacity(shown ? 1 : 0).animation(Motion.reveal.delay(0.3), value: shown)
                     Spacer()
+                    TitleOnlineHeader(
+                        platform: platform,
+                        onOpenHub: { tab in hubTab = tab; hubOpen = true },
+                        onOpenAuth: { authOpen = true },
+                        onOpenUpdate: { platform.showUpdateSheet = true }
+                    )
+                    .padding(.trailing, 18)
+                    .padding(.top, 8)
+                    .opacity(shown ? 1 : 0)
+                    .animation(Motion.reveal.delay(0.24), value: shown)
                 }
                 .padding(.leading, 26).padding(.top, 12)
                 Spacer()
                 VStack(spacing: 12) {
+                    HotpatchSyncBanner(platform: platform)
                     if let notice = cloud.notice {
-                        HStack(spacing: 6) {
-                            InkIcon(glyph: .edict, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
-                            Text(notice).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(2)
+                        Button {
+                            GameFeel.shared.tap()
+                            hubTab = "notices"
+                            hubOpen = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                InkIcon(glyph: .edict, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
+                                Text(notice).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(2)
+                                PhosphorIcon(glyph: .chevronRight, size: 10, weight: .light).foregroundStyle(Theme.ink2)
+                            }
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(Theme.paper2.opacity(0.95), in: Capsule()).overlay(Capsule().stroke(Theme.seal.opacity(0.3)))
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 7)
-                        .background(Theme.paper2.opacity(0.95), in: Capsule()).overlay(Capsule().stroke(Theme.seal.opacity(0.3)))
+                        .buttonStyle(PressStyle())
                         .rise(shown, 0)
                     }
                     Text("架空世界 · 列国兴衰").font(Theme.body).tracking(6).foregroundStyle(Theme.ink2)
@@ -228,10 +251,22 @@ struct TitleView: View {
                         Button { importing = true } label: { TileAction(title: "导入存档", symbol: "tray.and.arrow.down") }
                         Button { archive = true } label: { TileAction(title: "世界卷宗", symbol: "books.vertical") }
                         Button { settings = true } label: { TileAction(title: "设置", symbol: "slider.horizontal.3") }
-                        Button { notes = true } label: { TileAction(title: "更新", symbol: "book.pages") }
+                        Button {
+                            hubTab = "update"
+                            hubOpen = true
+                        } label: { TileAction(title: platform.updateInfo?.hasAppUpdate == true ? "有新版" : "云更新", symbol: "book.pages") }
                     }
                     .rise(shown, 0.16)
-                    Text(AppVersion.text + (cloud.version > 0 ? " · 云配置 \(cloud.version)" : "")).font(Theme.caption).foregroundStyle(Theme.ink2.opacity(0.75)).padding(.top, 2)
+                    Button {
+                        GameFeel.shared.tap()
+                        hubTab = "update"
+                        hubOpen = true
+                    } label: {
+                        Text(AppVersion.text + (cloud.version > 0 ? " · 云热更 v\(cloud.version)" : "") + (platform.apiRTTMs.map { " · \($0)ms" } ?? ""))
+                            .font(Theme.caption).foregroundStyle(Theme.ink2.opacity(0.78)).monospacedDigit()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
                 }
                 .buttonStyle(PressStyle())
                 .frame(maxWidth: 440)
@@ -240,12 +275,12 @@ struct TitleView: View {
         }
         .statusBarHidden()
         .onAppear {
-            model.controller.sheetOpen = (creating || archive || settings || notes || importing)
+            model.controller.sheetOpen = (creating || archive || settings || notes || importing || authOpen || hubOpen)
             shown = false
             withAnimation(Motion.drift.delay(model.controller.reveal < 1 ? 0.9 : 0.1)) { shown = true }
         }
         .onDisappear { model.controller.sheetOpen = false }
-        .onChange(of: creating || archive || settings || notes || importing) { _, open in
+        .onChange(of: creating || archive || settings || notes || importing || authOpen || hubOpen) { _, open in
             model.controller.sheetOpen = open
         }
         .onChange(of: model.tourTitle) { _, name in
@@ -320,6 +355,28 @@ struct TitleView: View {
             .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $notes) { ReleaseNotesSheet().background(MemorialPaper().ignoresSafeArea()).presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $authOpen) {
+            AuthPortalSheet(platform: platform, onAuthenticated: {
+                hubTab = "profile"
+                hubOpen = true
+            })
+            .presentationDetents([.fraction(0.92)])
+            .presentationCornerRadius(Theme.Control.cornerSheet)
+            .presentationBackground { MemorialPaper() }
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $hubOpen) {
+            OnlineHubSheet(platform: platform, model: model, initialTab: hubTab, onOpenArchive: {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 240_000_000)
+                    archive = true
+                }
+            })
+            .presentationDetents([.fraction(0.92)])
+            .presentationCornerRadius(Theme.Control.cornerSheet)
+            .presentationBackground { MemorialPaper() }
+            .presentationDragIndicator(.hidden)
+        }
     }
 }
 

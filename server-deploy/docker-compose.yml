@@ -15,3 +15,21 @@ services:
       LGJ_PAIRING_CODE: "ECZV5UL3UV"
     volumes:
       - ./saves:/data/saves
+
+  lieguoji-platform:
+    build:
+      context: ./platform
+      dockerfile: Dockerfile
+    container_name: lieguoji-platform
+    restart: unless-stopped
+    ports:
+      - "80:8080/tcp"
+    environment:
+      LGJ_PLATFORM_PORT: "8080"
+      LGJ_PLATFORM_DATA: "/data"
+      LGJ_PUBLIC_HOST: "${LGJ_PUBLIC_HOST:-111.230.153.235}"
+      LGJ_COMPUTE_HOST: "${LGJ_COMPUTE_HOST:-111.230.153.235:8765}"
+      LGJ_COMPUTE_PROBE_HOST: "172.17.0.1"
+      LGJ_COMPUTE_PROBE_PORT: "8765"
+    volumes:
+      - ./platform-data:/data

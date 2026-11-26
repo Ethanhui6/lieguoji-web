@@ -191,10 +191,15 @@ actor NativeHost {
         return RemoteRoom.personal
     }
 
-    /// 玩家保存的专属云服务器或固定局域网直连地址（例如 `1.2.3.4:8765`），优先直连实现 2–35 ms 真网游体验。
+    /// 玩家保存的专属云服务器或固定局域网直连地址；默认内置腾讯云专属计算节点，开箱即享 20–40 ms 真网游推流。
     nonisolated static var savedDirectAddress: String {
-        (UserDefaults.standard.string(forKey: "remote.directAddress") ?? "")
+        if UserDefaults.standard.bool(forKey: "remote.directAddressCleared") {
+            return ""
+        }
+        let saved = (UserDefaults.standard.string(forKey: "remote.directAddress") ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !saved.isEmpty { return saved }
+        return OnlinePlatform.defaultComputeHost
     }
 
     static func catalogData() throws -> (traits: Data, noble: Data, cultures: Data) {

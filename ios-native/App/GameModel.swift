@@ -88,11 +88,13 @@ import LieguojiCore
     func connectDirectServer(_ address: String) async -> String? {
         let clean = address.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return "请输入服务器地址（例如 192.168.1.5:8765 或 云服务器IP:8765）" }
+        UserDefaults.standard.set(false, forKey: "remote.directAddressCleared")
         UserDefaults.standard.set(clean, forKey: "remote.directAddress")
         UserDefaults.standard.set(true, forKey: "remote.autoAll")
         return await connectRemote(clean)
     }
     func clearDirectServer() {
+        UserDefaults.standard.set(true, forKey: "remote.directAddressCleared")
         UserDefaults.standard.removeObject(forKey: "remote.directAddress")
     }
     func disconnectRemote() async {
@@ -185,7 +187,7 @@ import LieguojiCore
     /// 自动接入: while a world is open, the player's computer is looked for (now and every 60 s) and
     /// used as soon as it is on, once the player turns this on in 设置 › 远程计算与云端存档.
     var autoRemote: Bool {
-        get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? false }
+        get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "remote.autoAll"); if newValue { autoConnect() } }
     }
     private var autoTask: Task<Void, Never>?

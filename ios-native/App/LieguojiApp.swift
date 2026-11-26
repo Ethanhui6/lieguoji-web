@@ -147,6 +147,7 @@ enum Names {
 
 struct RootView: View {
     @StateObject private var model = GameModel()
+    @ObservedObject private var platform = OnlinePlatform.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.verticalSizeClass) private var sysVerticalClass
     var body: some View {
@@ -185,10 +186,25 @@ struct RootView: View {
             if phase == .active, model.phase == .playing { Task { await model.handleAppForeground() } }
         }
         .task { GameFeel.shared.start() }
-        // 云更新: the latest balance numbers and notice; a running world takes them at once.
-        .task { if await CloudConfig.shared.refresh() { await model.applyCloud() } }
+        // 启动自动检测云端版本、拉取热更配置包、续签账号会话并探活腾讯云专属服；若平台服离线则平滑回落静态配置。
+        .task {
+            let applied = await platform.bootstrap(manual: false)
+            if applied {
+                await model.applyCloud()
+            } else if platform.server == nil, await CloudConfig.shared.refresh() {
+                await model.applyCloud()
+            }
+        }
         // 新世界由 Swift 在本机建成，网页引擎只在 Swift 建世界失败、读旧版存档时才按需启动（不再开机预热）。
         .task { await model.loadBackdrop() }
+        .sheet(isPresented: $platform.showUpdateSheet) {
+            CloudUpdateSheet(platform: platform)
+                .interactiveDismissDisabled(platform.updateInfo?.forceUpdate == true)
+                .presentationDetents([.fraction(0.86)])
+                .presentationCornerRadius(Theme.Control.cornerSheet)
+                .presentationBackground { MemorialPaper() }
+                .presentationDragIndicator(.hidden)
+        }
         .sheet(isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
             VStack(alignment: .leading, spacing: 16) {
                 SheetHeader(title: "出了点问题", subtitle: model.failure, seal: "误")
@@ -580,6 +596,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("5.3.0", ["【云端行宫 · 古风账号登录与篆刻御印系统】全新打造新中式古籍风格「列国登临阁」登录/注册与游客一键入世门扉，支持自选十枚经典篆字与三色御印印泥（皇家朱砂 / 翡翠官青 / 宫廷鎏金）、游客无损转正绑定、个人名帖编辑与 iOS Keychain 安全令牌持久保持。",
+                   "【进入游戏自动检测云更新 × 双层热更系统】启动时自动校验客户端版本与云端热更配置包：平衡参数、推演节拍与公告免重装自动热加载并呈递进度丝带；发现新版自动弹出「天诏 · 新版启卷」更新弹窗，支持从腾讯云专属节点国内专线应用内流式下载 IPA 或一键跳转下载页。",
+                   "【全套网游级云服能力 × 默认直连腾讯云专属服】上线账号专属高速云端存档（国内直传 < 1 秒、支持 20 卷跨设备同步）、每日临朝签到与八阶史官品秩晋升（白衣史官 → 一代史圣）、太史院驿报公告、兰台个人信匣与全服「天下史榜」；内置默认专属腾讯云计算服（v6 全双工推流 + LZ4），开箱即连免填 IP。"]),
         ("5.2.2", ["【真·网络游戏级全双工主动推流架构（EngineWire v6 × LZ4 极速压缩 × 抖动缓冲）】彻底根除远程计算每 30 秒拉取全量存档导致的周期性卡顿；新增零依赖高速 LZ4 压缩与精简推流帧，大地图单帧流量由 ~300 KB 骤降至 5–10 KB（缩小约 30–50 倍）；直连 TCP 升级全双工多路复用主动推流（`enableMux`），云端中转上线单向 `/push` → WebSocket 推流管道，客户端新增独立后台解压 + 自适应抖动缓冲（Jitter Buffer），千军万马 60fps 匀速丝滑滑行、暂停与军令毫秒响应。",
                    "【局域网 10ms 秒发现 × 24h 国内专属云服务器直连】同一 Wi-Fi 新增 UDP 8766 自动发现，不经外网即可毫秒直连电脑；「设置 › 远程计算与云端存档」前置「专属云服务器 / 局域网直连」固定地址（永久记住、支持实时查看 RTT ms 与单帧 KB/帧），配合仓库 `server-deploy/` 一键 Docker 部署套件即可在国内轻量云服务器搭建 15–35 ms 24 小时专属服。"]),
         ("5.2.1", ["【网络游戏级远程计算服务器 v5 × 后台无缝重连 × 云端存档卷宗】全新部署专用国内直连网关（lieguoji-edge.pages.dev），修复旧生产站点返回网页导致连不上服务器的根本隐患；升级持久 WebSocket 双通道、电脑端多线程防僵尸连接接管与单帧预推演流水线，退入后台自动发送 park 热留存电脑内存，切回前台毫秒级自动续连并恢复推演；「世界卷宗」与设置页全新上线「云端存档」（zlib 压缩上传、列表查看、跨设备下载展卷与删除）及实时毫秒测速。",

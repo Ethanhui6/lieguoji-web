@@ -31,7 +31,8 @@ struct CloudSaveCard: Codable, Identifiable, Equatable {
     }
 }
 
-/// 云端存档服务：zlib 压缩（约 7–10 倍瘦身）上传/下载至列国纪专属 Cloudflare SQLite 云库。
+/// 云端存档服务：已登录账号时直连列国纪专属腾讯云服务器（按账号安全隔离，国内 0.3s 极速同步）；
+/// 未登录时平滑兼容房间码 Cloudflare 云库。
 enum CloudSaveClient {
     private static let session: URLSession = {
         let cfg = URLSessionConfiguration.default
@@ -40,12 +41,25 @@ enum CloudSaveClient {
         return URLSession(configuration: cfg)
     }()
 
+    private static func platformURL(_ path: String) -> URL? {
+        URL(string: OnlinePlatform.apiBase + "/api/v1/" + path)
+    }
+
     private static func roomURL(_ base: String, path: String) -> URL? {
         URL(string: base + "/room/\(NativeHost.activeRoomCode)/\(path)")
     }
 
     static func list() async throws -> [CloudSaveCard] {
         struct ListResp: Decodable { let ok: Bool; let saves: [CloudSaveCard]? }
+        if let token = OnlinePlatform.currentToken, let url = platformURL("saves") {
+            var req = URLRequest(url: url); req.timeoutInterval = 10
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            if let (data, resp) = try? await session.data(for: req),
+               (resp as? HTTPURLResponse)?.statusCode == 200,
+               let decoded = try? JSONDecoder().decode(ListResp.self, from: data), decoded.ok {
+                return decoded.saves ?? []
+            }
+        }
         var lastError: Error = EngineError.message("连不上云端存档服务器")
         for base in RelayLink.bases {
             guard let url = roomURL(base, path: "saves") else { continue }
@@ -68,10 +82,7 @@ enum CloudSaveClient {
         let deviceName = await MainActor.run { UIDevice.current.name }
         let enc: (String) -> String = { $0.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? $0 }
 
-        var lastError: Error = EngineError.message("上传云端存档失败，请检查网络")
-        for base in RelayLink.bases {
-            guard let url = roomURL(base, path: "saves/\(id)") else { continue }
-            var req = URLRequest(url: url)
+        func applySaveHeaders(_ req: inout URLRequest) {
             req.httpMethod = "PUT"
             req.timeoutInterval = 90
             req.setValue("application/octet-stream", forHTTPHeaderField: "content-type")
@@ -82,6 +93,34 @@ enum CloudSaveClient {
             req.setValue(String(provinces), forHTTPHeaderField: "x-save-provinces")
             req.setValue(String(day), forHTTPHeaderField: "x-save-day")
             req.setValue(enc(deviceName), forHTTPHeaderField: "x-save-device")
+        }
+
+        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(id)") {
+            var req = URLRequest(url: url)
+            applySaveHeaders(&req)
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            do {
+                let (data, resp) = try await session.upload(for: req, from: payload)
+                let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                if code == 200, let parsed = try? JSONDecoder().decode(PutResp.self, from: data), parsed.ok, let card = parsed.save {
+                    Task { @MainActor in await OnlinePlatform.shared.refreshUserProfile() }
+                    return card
+                }
+                if let parsed = try? JSONDecoder().decode(PutResp.self, from: data), let reason = parsed.reason, !reason.isEmpty {
+                    throw EngineError.message(reason)
+                }
+            } catch let e as EngineError {
+                throw e
+            } catch {
+                // 专属服异常时自动回落备用云库
+            }
+        }
+
+        var lastError: Error = EngineError.message("上传云端存档失败，请检查网络")
+        for base in RelayLink.bases {
+            guard let url = roomURL(base, path: "saves/\(id)") else { continue }
+            var req = URLRequest(url: url)
+            applySaveHeaders(&req)
             do {
                 let (data, resp) = try await session.upload(for: req, from: payload)
                 let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
@@ -99,6 +138,17 @@ enum CloudSaveClient {
     }
 
     static func download(id: String) async throws -> Data {
+        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(id)") {
+            var req = URLRequest(url: url); req.timeoutInterval = 90
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            if let (data, resp) = try? await session.data(for: req),
+               let http = resp as? HTTPURLResponse, http.statusCode == 200,
+               http.value(forHTTPHeaderField: "content-type")?.lowercased().contains("text/html") != true {
+                let enc = (http.value(forHTTPHeaderField: "x-save-encoding") ?? "raw").lowercased()
+                if enc == "zlib" { return try (data as NSData).decompressed(using: .zlib) as Data }
+                return data
+            }
+        }
         var lastError: Error = EngineError.message("下载云端存档失败")
         for base in RelayLink.bases {
             guard let url = roomURL(base, path: "saves/\(id)") else { continue }
@@ -118,6 +168,14 @@ enum CloudSaveClient {
     }
 
     static func delete(id: String) async throws {
+        if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(id)") {
+            var req = URLRequest(url: url); req.httpMethod = "DELETE"; req.timeoutInterval = 15
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            if let (_, resp) = try? await session.data(for: req), (resp as? HTTPURLResponse)?.statusCode == 200 {
+                Task { @MainActor in await OnlinePlatform.shared.refreshUserProfile() }
+                return
+            }
+        }
         var lastError: Error = EngineError.message("删除云端存档失败")
         for base in RelayLink.bases {
             guard let url = roomURL(base, path: "saves/\(id)") else { continue }
@@ -250,9 +308,11 @@ extension GameModel {
 /// 世界卷宗：本地卷宗 + 云端存档双栏管理（4.3 极简宣纸风格，支持跨设备上传、下载、删除与同步）。
 struct WorldArchiveSheet: View {
     @ObservedObject var model: GameModel
+    @ObservedObject private var platform = OnlinePlatform.shared
     let open: (ArchivedWorld) -> Void
     var onCloudOpened: (() -> Void)? = nil
     @State private var tab = "local"
+    @State private var authOpen = false
     @State private var worlds: [ArchivedWorld] = []
     @State private var loaded = false
     @State private var burning: ArchivedWorld?
@@ -269,7 +329,13 @@ struct WorldArchiveSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "世界卷宗", subtitle: "本地卷宗与云端存档同步管理（房间 \(NativeHost.activeRoomCode)）", seal: "卷")
+                SheetHeader(
+                    title: "世界卷宗",
+                    subtitle: platform.isLoggedIn
+                        ? "账号专属云库 · \(platform.user?.nickname ?? "")（国内高速直传）"
+                        : "本地卷宗与云端存档同步管理（房间 \(NativeHost.activeRoomCode)）",
+                    seal: "卷"
+                )
                 ChipPicker(items: [("local", "本地卷宗"), ("cloud", "云端存档")], selection: $tab)
                     .padding(.horizontal, Theme.Layout.pageInset)
 
@@ -318,6 +384,15 @@ struct WorldArchiveSheet: View {
             }
             Button("留着", role: .cancel) { deletingCloud = nil }
         }
+        .sheet(isPresented: $authOpen) {
+            AuthPortalSheet(platform: platform, onAuthenticated: {
+                Task { await refreshCloud() }
+            })
+            .presentationDetents([.fraction(0.92)])
+            .presentationCornerRadius(Theme.Control.cornerSheet)
+            .presentationBackground { MemorialPaper() }
+            .presentationDragIndicator(.hidden)
+        }
     }
 
     @ViewBuilder private var localContent: some View {
@@ -339,6 +414,20 @@ struct WorldArchiveSheet: View {
 
     @ViewBuilder private var cloudContent: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if !platform.isLoggedIn {
+                HStack(spacing: 10) {
+                    PhosphorIcon(glyph: .person, size: 16, weight: .light).foregroundStyle(Theme.seal)
+                    Text("登录云端账号即可开启腾讯云专属极速存档库（支持 20 卷，国内直传 < 1 秒）")
+                        .font(Theme.caption).foregroundStyle(Theme.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 4)
+                    EditorialTactileButton(title: "登录", solid: true, compact: true) { authOpen = true }
+                }
+                .padding(12)
+                .background(Theme.seal.opacity(0.055), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.seal.opacity(0.24), lineWidth: 0.7))
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
             HStack(spacing: 10) {
                 EditorialTactileButton(title: cloudBusy ? "同步中…" : "上传当前世界", icon: .chronicle, solid: true, compact: true, fullWidth: true) {
                     guard !cloudBusy else { return }

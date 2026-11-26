@@ -8,6 +8,7 @@ struct MenuSheet: View {
 
     @ObservedObject var model: GameModel
     @ObservedObject var controller: MapController
+    @ObservedObject private var platform = OnlinePlatform.shared
     var openEdicts: () -> Void = {}
     var openEditor: () -> Void = {}
     var wallpaper: () -> Void = {}
@@ -16,6 +17,8 @@ struct MenuSheet: View {
     @State private var creating = false
     @State private var archive = false
     @State private var notes = false
+    @State private var hubOpen = false
+    @State private var authOpen = false
     @State private var exported: ExportFile?
     @State private var importing = false
     /// 菜单的游戏、画面、推演与战争四个分组。
@@ -93,6 +96,41 @@ struct MenuSheet: View {
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             default:
+                Button {
+                    GameFeel.shared.tap()
+                    if platform.isLoggedIn { hubOpen = true } else { authOpen = true }
+                } label: {
+                    HStack(spacing: 12) {
+                        if let u = platform.user, platform.isLoggedIn {
+                            PlayerSealBadge(char: u.sealChar, style: u.sealStyle, size: 42, filled: true)
+                            VStack(alignment: .leading, spacing: 2.5) {
+                                HStack(spacing: 6) {
+                                    Text(u.nickname).font(Theme.serif(16.5)).foregroundStyle(Theme.ink).lineLimit(1)
+                                    Text("\(u.rank.grade)·\(u.rank.title)").font(Theme.caption).foregroundStyle(Theme.seal)
+                                }
+                                Text(u.checkedInToday ? "云端行宫 · 史榜 / 云更新 / 驿报" : "今日尚未临朝签到 · 点此落印领功勋")
+                                    .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                            }
+                        } else {
+                            PlayerSealBadge(char: "龙", style: "cinnabar", size: 40, filled: false)
+                            VStack(alignment: .leading, spacing: 2.5) {
+                                Text("登临云端行宫").font(Theme.serif(16.5)).foregroundStyle(Theme.ink)
+                                Text("登录账号 · 跨设备同步云存档与天下史榜").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                            }
+                        }
+                        Spacer(minLength: 4)
+                        if platform.hasPendingBadge {
+                            Circle().fill(Theme.seal).frame(width: 7, height: 7)
+                        }
+                        PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light).foregroundStyle(Theme.ink2)
+                    }
+                    .padding(13)
+                    .background(Theme.vellumGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.goldRim.opacity(0.68), lineWidth: 0.9))
+                }
+                .buttonStyle(PressStyle())
+                .padding(.horizontal, Theme.Layout.pageInset)
+
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     menuTile(title: "保存进度", note: "立存此世卷宗", symbol: "bookmark.fill", tint: Theme.jade) {
                         Task { let ok = await model.saveNow(); GameFeel.shared.notify(ok ? .success : .error); say(ok ? "已保存" : "保存失败"); close() }
@@ -170,6 +208,19 @@ struct MenuSheet: View {
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
         }
         .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $authOpen) {
+            AuthPortalSheet(platform: platform, onAuthenticated: { hubOpen = true })
+                .presentationDetents([.fraction(0.92)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $hubOpen) {
+            OnlineHubSheet(platform: platform, model: model, initialTab: "profile", onOpenArchive: {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 240_000_000)
+                    archive = true
+                }
+            })
+            .presentationDetents([.fraction(0.92)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        }
     }
 
     private func menuTile(title: String, note: String, symbol: String, tint: Color, action: @escaping () -> Void) -> some View {

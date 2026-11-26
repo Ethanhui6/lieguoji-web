@@ -152,7 +152,7 @@ import LieguojiCore
 /// ② 家用电脑自动配对（同 Wi-Fi UDP 10ms 秒发现、外出走云端单向推流）、③ 退后台无感重连与一键云端存档。
 struct RemoteSettings: View {
     @ObservedObject var model: GameModel
-    @State private var directAddress = UserDefaults.standard.string(forKey: "remote.directAddress") ?? ""
+    @State private var directAddress = NativeHost.savedDirectAddress
     @State private var roomCode = UserDefaults.standard.string(forKey: "remote.roomCode") ?? ""
     @State private var busy = false
     @State private var cloudUploading = false

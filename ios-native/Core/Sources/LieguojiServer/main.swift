@@ -26,6 +26,7 @@ let port = UInt16(CommandLine.arguments.dropFirst().first ?? env["LGJ_PORT"] ?? 
 let disableRelay = (env["LGJ_DISABLE_RELAY"] == "1" || env["LGJ_DISABLE_RELAY"]?.lowercased() == "true")
 let disableStartup = (env["LGJ_NO_STARTUP"] == "1" || env["LGJ_DATA_DIR"] != nil)
 let service = EngineService()
+service.cloudTurbo = true
 let engineLock = NSLock()
 
 let serverDir = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
@@ -242,6 +243,21 @@ final class SimStreamer {
     private var pushedCount = 0
     private var pushedBytes = 0
     private var statStarted = Date()
+    private var avgStepMs: Double = 0
+    private var dirtySinceSave = false
+    private var cachedProvinces = 0
+
+    func telemetry() -> (playing: Bool, stepMs: Int, provinces: Int) {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return (playing, Int(avgStepMs.rounded()), cachedProvinces)
+    }
+
+    func setProvinces(_ count: Int) {
+        stateLock.lock()
+        cachedProvinces = count
+        stateLock.unlock()
+    }
 
     func configure(playing: Bool, days: Int, intervalMs: Int, epoch: Int?, push: Bool) {
         stateLock.lock()
@@ -339,9 +355,17 @@ final class SimStreamer {
                 self.stateLock.unlock()
 
                 if active && idleSecs <= 45 && (doPush || needsLegacyBuf) {
+                    let stepT0 = Date()
                     engineLock.lock()
                     let reply = service.handle("step", ["days": days, "slim": doPush], payload: nil)
+                    let pCount = service.engine?.run.world.provinces.length ?? 0
                     engineLock.unlock()
+                    let stepMs = Date().timeIntervalSince(stepT0) * 1000.0
+                    self.stateLock.lock()
+                    self.avgStepMs = self.avgStepMs == 0 ? stepMs : (self.avgStepMs * 0.7 + stepMs * 0.3)
+                    self.dirtySinceSave = true
+                    self.cachedProvinces = pCount
+                    self.stateLock.unlock()
 
                     if reply.ok, let rawData = reply.data, !rawData.isEmpty {
                         if doPush {
@@ -355,7 +379,7 @@ final class SimStreamer {
                                 self.pushedBytes += compressed.count
                                 if tickStart.timeIntervalSince(self.statStarted) >= 30 {
                                     let avgKB = Double(self.pushedBytes) / Double(max(1, self.pushedCount)) / 1024.0
-                                    print(String(format: "（主动推流）近 30 秒已推送 %d 帧 · 平均 %.1f KB/帧（LZ4）", self.pushedCount, avgKB))
+                                    print(String(format: "（主动推流）近 30 秒已推送 %d 帧 · 平均 %.1f KB/帧（LZ4）· 步进 %.0f ms", self.pushedCount, avgKB, self.avgStepMs))
                                     self.pushedCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
                                 }
                             }
@@ -379,11 +403,16 @@ final class SimStreamer {
                             self.stateLock.unlock()
                         }
                     }
-                    self.saveCheckpoint(force: false)
+                    // 严禁在活跃推流期间阻塞保存 15MB 存档；仅在暂停/切后台/空闲时热备落盘，彻底根除 280 州周期卡顿。
                     let elapsed = Date().timeIntervalSince(tickStart)
-                    let sleepFor = doPush ? max(0.012, period - elapsed) : 0.015
+                    let sleepFor = doPush ? max(0.008, period - elapsed) : 0.012
                     Thread.sleep(forTimeInterval: sleepFor)
                 } else {
+                    self.stateLock.lock()
+                    let shouldIdleSave = self.dirtySinceSave && !active && idleSecs >= 8
+                    if shouldIdleSave { self.dirtySinceSave = false }
+                    self.stateLock.unlock()
+                    if shouldIdleSave { self.saveCheckpoint(force: true) }
                     Thread.sleep(forTimeInterval: 0.025)
                 }
             }
@@ -398,6 +427,16 @@ if !disableRelay {
 }
 
 func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineService.Reply {
+    if call == "health" {
+        // 无侵入健康探针：不抢占 engineLock、不驱逐活跃手机连接、不打断推流。
+        let t = streamer.telemetry()
+        clientLock.lock()
+        let hasClient = (activeDirect != nil && !(activeDirect?.closed ?? true))
+        clientLock.unlock()
+        var r = EngineService.Reply(ok: true, reason: EngineWire.greeting)
+        r.text = "online|playing=\(t.playing ? 1 : 0)|stepMs=\(t.stepMs)|provinces=\(t.provinces)|clients=\(hasClient ? 1 : 0)"
+        return r
+    }
     streamer.touch()
     if call == "streamConfig" {
         let on = (args["playing"] as? NSNumber)?.boolValue ?? (args["playing"] as? Bool) ?? false
@@ -800,13 +839,27 @@ func parseRequestBody(_ body: Data) -> (call: String, args: [String: Any], paylo
     return (call, args, payload.isEmpty ? nil : payload)
 }
 
+func promoteToActiveDirect(_ conn: DirectClient) {
+    clientLock.lock()
+    if activeDirect === conn {
+        clientLock.unlock()
+        return
+    }
+    let prev = activeDirect
+    activeDirect = conn
+    clientLock.unlock()
+    if let prev, prev !== conn {
+        prev.markClosed()
+    }
+}
+
 func handleLANClient(_ conn: DirectClient) {
     let client = conn.socket
     tuneClientSocket(client)
-    print("（直连 TCP）手机已接入 [#\(conn.gen)]")
     var calls = 0, started = Date()
+    var promoted = false
 
-    // 阶段一：经典 EngineWire 握手（完全兼容 v4/v5；收到 `enableMux` 立即切换至 v6 全双工多路复用推流模式）
+    // 阶段一：经典 EngineWire 握手（完全兼容 v4/v5/v6；health/ping 探针绝不驱逐活跃手机连接，收到真实业务指令或 enableMux 才接管会话）
     while !conn.mux,
           let headerLength = readU32(client), headerLength >= 0, headerLength < 16 << 20,
           let header = receiveExactly(client, headerLength),
@@ -818,8 +871,16 @@ func handleLANClient(_ conn: DirectClient) {
             let v = (args["v"] as? NSNumber)?.intValue ?? (args["v"] as? Int) ?? 0
             if v >= 6 { conn.compress = true }
         }
+        if call != "health" && call != "ping" && !promoted {
+            promoted = true
+            promoteToActiveDirect(conn)
+            print("（直连 TCP）手机已接入 [#\(conn.gen)]")
+        }
         let reply = serve(call, args, payload.isEmpty ? nil : payload)
-        if call == "open" { print(reply.ok ? "（直连）世界已载入，准备推演" : "（直连）世界载入失败：\(reply.reason)") }
+        if call == "open" {
+            streamer.setProvinces(service.engine?.run.world.provinces.length ?? 0)
+            print(reply.ok ? "（直连）世界已载入，准备推演" : "（直连）世界载入失败：\(reply.reason)")
+        }
         if call == "park" { print("（直连）手机已切入后台，世界热保留在服务器内存") }
         let isMuxUpgrade = (call == "enableMux" && reply.ok)
         if !conn.sendLegacy(EngineWire.reply(reply, compress: conn.compress && !isMuxUpgrade)) { break }
@@ -829,6 +890,7 @@ func handleLANClient(_ conn: DirectClient) {
             print("（直连 TCP [#\(conn.gen)]）已升级至 v6 全双工主动推流 + LZ4 压缩模式")
             break
         }
+        if call == "health" { break }
     }
 
     // 阶段二：v6 全双工多路复用（服务器主动发 MUX_PUSH，同时零等待响应手机 MUX_REQ 与 MUX_PING）
@@ -847,7 +909,10 @@ func handleLANClient(_ conn: DirectClient) {
             if type == EngineWire.muxRequest {
                 guard let req = parseRequestBody(body) else { break }
                 let reply = serve(req.call, req.args, req.payload)
-                if req.call == "open" { print(reply.ok ? "（直连推流）世界已载入，随时高速开推" : "（直连推流）世界载入失败：\(reply.reason)") }
+                if req.call == "open" {
+                    streamer.setProvinces(service.engine?.run.world.provinces.length ?? 0)
+                    print(reply.ok ? "（直连推流）世界已载入，随时高速开推" : "（直连推流）世界载入失败：\(reply.reason)")
+                }
                 if req.call == "park" { print("（直连推流）手机已切入后台，世界热保留并已落盘") }
                 calls += 1
                 if Date().timeIntervalSince(started) > 30 {
@@ -860,25 +925,25 @@ func handleLANClient(_ conn: DirectClient) {
     }
 
     clientLock.lock()
-    if clientGeneration == conn.gen && activeDirect === conn {
+    let wasActive = (activeDirect === conn)
+    if wasActive {
         activeDirect = nil
         streamer.stopForIdle()
     }
     clientLock.unlock()
     conn.markClosed()
-    print("（直连 TCP）连接 [#\(conn.gen)] 已关闭（世界安全保留在内存中，手机返回前台秒级无感重连）")
+    if wasActive {
+        print("（直连 TCP）连接 [#\(conn.gen)] 已关闭（世界安全保留在内存中，手机返回前台秒级无感重连）")
+    }
 }
 
 while true {
     let client = accept(listener, nil, nil)
     if client == invalidSocket { continue }
     clientLock.lock()
-    let prev = activeDirect
     clientGeneration &+= 1
     let gen = clientGeneration
-    let conn = DirectClient(socket: client, gen: gen)
-    activeDirect = conn
     clientLock.unlock()
-    if let prev { prev.markClosed() }
+    let conn = DirectClient(socket: client, gen: gen)
     Thread.detachNewThread { handleLANClient(conn) }
 }

@@ -96,39 +96,41 @@ struct MenuSheet: View {
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             default:
-                Button {
-                    GameFeel.shared.tap()
-                    if platform.isLoggedIn { hubOpen = true } else { authOpen = true }
-                } label: {
-                    HStack(spacing: 12) {
-                        if let u = platform.user, platform.isLoggedIn {
-                            PlayerSealBadge(char: u.sealChar, style: u.sealStyle, size: 42, filled: true)
-                            VStack(alignment: .leading, spacing: 2.5) {
-                                HStack(spacing: 6) {
-                                    Text(u.nickname).font(Theme.serif(16.5)).foregroundStyle(Theme.ink).lineLimit(1)
-                                    Text("\(u.rank.grade)·\(u.rank.title)").font(Theme.caption).foregroundStyle(Theme.seal)
+                Group2 {
+                    Button {
+                        GameFeel.shared.tap()
+                        if platform.isLoggedIn { hubOpen = true } else { authOpen = true }
+                    } label: {
+                        HStack(spacing: 12) {
+                            if let u = platform.user, platform.isLoggedIn {
+                                PlayerSealBadge(char: u.sealChar, style: u.sealStyle, size: 38, filled: true)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 6) {
+                                        Text(u.nickname).font(Theme.serif(16)).foregroundStyle(Theme.ink).lineLimit(1)
+                                        Text(u.isAdminAccount ? "司礼监" : "\(u.rank.grade)·\(u.rank.title)")
+                                            .font(Theme.caption).foregroundStyle(Theme.seal)
+                                    }
+                                    Text(u.checkedInToday ? "史官行宫 · 热更新 / 史榜 / 驿报" : "今日尚未签到 · 点此落印领功勋")
+                                        .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                                 }
-                                Text(u.checkedInToday ? "云端行宫 · 史榜 / 云更新 / 驿报" : "今日尚未临朝签到 · 点此落印领功勋")
-                                    .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                            } else {
+                                PlayerSealBadge(char: "龙", style: "cinnabar", size: 36, filled: false)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("登临云端行宫").font(Theme.serif(16)).foregroundStyle(Theme.ink)
+                                    Text("登录账号 · 云存档同步与游戏内热更新").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                }
                             }
-                        } else {
-                            PlayerSealBadge(char: "龙", style: "cinnabar", size: 40, filled: false)
-                            VStack(alignment: .leading, spacing: 2.5) {
-                                Text("登临云端行宫").font(Theme.serif(16.5)).foregroundStyle(Theme.ink)
-                                Text("登录账号 · 跨设备同步云存档与天下史榜").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                            Spacer(minLength: 4)
+                            if platform.hasPendingBadge {
+                                Circle().fill(Theme.seal).frame(width: 6, height: 6)
                             }
+                            PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light).foregroundStyle(Theme.ink2)
                         }
-                        Spacer(minLength: 4)
-                        if platform.hasPendingBadge {
-                            Circle().fill(Theme.seal).frame(width: 7, height: 7)
-                        }
-                        PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light).foregroundStyle(Theme.ink2)
+                        .padding(.horizontal, 4).padding(.vertical, 10)
+                        .contentShape(Rectangle())
                     }
-                    .padding(13)
-                    .background(Theme.vellumGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.goldRim.opacity(0.68), lineWidth: 0.9))
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(PressStyle())
                 .padding(.horizontal, Theme.Layout.pageInset)
 
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {

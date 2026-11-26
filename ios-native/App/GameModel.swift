@@ -114,10 +114,15 @@ import LieguojiCore
         return ms
     }
     private func streamParams() -> (days: Int, intervalMs: Int) {
-        let wanted = CloudConfig.shared.pace[speed] ?? [1: 3, 2: 6, 4: 12, 8: 24, 16: 40][speed] ?? 3
-        let intervalMs = [1: 160, 2: 180, 4: 220, 8: 260, 16: 300][speed] ?? 160
+        let wanted = CloudConfig.shared.pace[speed] ?? [1: 3, 2: 6, 4: 12, 8: 20, 16: 32][speed] ?? 3
         let farRelay = remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
-        return (farRelay ? min(48, wanted * 2) : wanted, farRelay ? min(360, intervalMs + 40) : intervalMs)
+        if farRelay {
+            let intervalMs = [1: 180, 2: 200, 4: 230, 8: 270, 16: 310][speed] ?? 180
+            return (min(48, wanted * 2), intervalMs)
+        }
+        // 专属云服务器 / 局域网全双工主动推流：高频 105–125ms 丝滑步进，高倍速单步直推至 32 日（>8 月/秒）
+        let intervalMs = [1: 105, 2: 105, 4: 110, 8: 115, 16: 125][speed] ?? 105
+        return (wanted, intervalMs)
     }
     private func syncRemoteStream(resetEpoch: Bool = true) async {
         guard remoteAddress != nil else { return }
@@ -257,6 +262,16 @@ import LieguojiCore
         if playing { await syncRemoteStream(resetEpoch: true) }
         return true
     }
+    /// 进入新世界或读档后立即接入专属云服务器（零 60 秒等待，并正确开启 v6 主动推流标志）。
+    func ensureCloudConnectedNow() {
+        autoConnect()
+        guard autoRemote, !appInBackground, !reconnecting, remoteAddress == nil else { return }
+        Task { @MainActor [weak self] in
+            guard let self, self.phase == .playing, self.remoteAddress == nil else { return }
+            _ = await self.findComputerNow()
+        }
+    }
+
     func autoConnect() {
         guard autoTask == nil else { return }
         autoTask = Task { [weak self] in
@@ -266,19 +281,21 @@ import LieguojiCore
                         self.remoteAddress = found.label
                         self.remoteTransport = found.transport
                         self.remoteRTTMs = found.rttMs
+                        self.remotePushActive = await self.native.serverSupportsPush
                         let msText = found.rttMs.map { " · \($0)ms" } ?? ""
-                        self.notice = "已自动接入电脑计算（\(found.transport)\(msText)）"
-                        if self.playing { await self.syncRemoteStream() }
+                        self.notice = "已接入专属云服（\(found.transport)\(msText)）"
+                        if self.playing { await self.syncRemoteStream(resetEpoch: true) }
                     } else if let saved = UserDefaults.standard.string(forKey: "remote.address"), !saved.isEmpty, UserDefaults.standard.bool(forKey: "remote.auto"),
                               let a = try? await self.native.connect(saved) {
                         self.remoteAddress = a
                         self.remoteTransport = await self.native.remoteTransport
                         self.remoteRTTMs = await self.native.lastRTTMs
-                        self.notice = "已自动接入电脑计算（\(a)）"
-                        if self.playing { await self.syncRemoteStream() }
+                        self.remotePushActive = await self.native.serverSupportsPush
+                        self.notice = "已接入在线计算（\(a)）"
+                        if self.playing { await self.syncRemoteStream(resetEpoch: true) }
                     }
                 }
-                try? await Task.sleep(nanoseconds: 60_000_000_000)
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
             }
         }
     }
@@ -465,13 +482,13 @@ import LieguojiCore
             guard epoch == worldEpoch else { return }
             controller.editorMap = nil
             phase = .playing; controller.interactive = true
+            ensureCloudConnectedNow()
             Task { @MainActor [weak self] in
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 guard let self, self.worldEpoch == epoch, self.phase == .playing else { return }
                 await self.archiveCurrent()
                 guard self.worldEpoch == epoch, self.phase == .playing else { return }
                 self.save()
-                self.autoConnect()
             }
         } catch {
             guard epoch == worldEpoch else { return }
@@ -649,6 +666,7 @@ import LieguojiCore
             CrashBreadcrumb.mark("play.enter")
             generationNote = ""
             phase = .playing; controller.interactive = true
+            ensureCloudConnectedNow()
             // A coast too broken for the provinces asked for: the engine took more.
             if world.meta.provinces.count > options.provinceCount { notice = "这片陆地支离破碎，州郡已增至 \(world.meta.provinces.count) 个" }
             // 错峰延后 1.5 秒再执行归档与首次落盘，避免进局瞬间把地图重建、Metal 渲染与大体积存档序列化叠在一起触发真机内存峰值闪退。
@@ -659,7 +677,6 @@ import LieguojiCore
                 guard self.worldEpoch == epoch, self.phase == .playing else { return }
                 self.save()
                 CrashBreadcrumb.mark("play.autosave")
-                self.autoConnect()
             }
         } catch {
             guard epoch == worldEpoch else { return }
@@ -751,7 +768,7 @@ import LieguojiCore
             await reveal(world, mountBefore: mountBefore)
             try checkWorld(epoch)
             CrashBreadcrumb.mark("cont.playing")
-            autoConnect()
+            ensureCloudConnectedNow()
         } catch { if epoch == worldEpoch { CrashBreadcrumb.mark("cont.error"); failure = "存档无法读取：\(error.localizedDescription)"; phase = .title } }
     }
 
@@ -1191,8 +1208,10 @@ import LieguojiCore
         if let labels = next.labels { pendingLabels = labels }
         let now = CACurrentMediaTime()
         let ownerChanged = next.owners.enumerated().contains { $0.offset < world.meta.provinces.count && world.meta.provinces[$0.offset].nation != $0.element }
-        // 推演期间对疆域易主重绘适度合批（1×/2× 0.22s，≥4× 0.36s），显著降低频繁易主时的全图国界重走与离屏缓存烘焙开销；暂停态即时落图。
-        let ownerGate = (!playing || (speed < 4 ? now - lastMapUpdate >= 0.22 : now - lastMapUpdate >= 0.36))
+        // 推演期间对疆域易主重绘适度合批（常规地图 0.22/0.36s；≥180 州大图 0.28/0.48s），保证 280 州高速推演时手机 GPU 恒定满帧不卡顿；暂停态即时落图。
+        let hugeMap = world.meta.provinces.count >= 180
+        let gateSec: Double = hugeMap ? (speed < 4 ? 0.28 : 0.48) : (speed < 4 ? 0.22 : 0.36)
+        let ownerGate = (!playing || now - lastMapUpdate >= gateSec)
         if (ownerChanged && ownerGate) || !playing || now - lastMapUpdate >= 0.55 {
             for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
                 world.meta.provinces[i].nation = owner; changed = true

@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-列国纪 · 云端行宫平台服务器 (Lieguoji Platform Server v1.0)
-零第三方依赖（纯 Python 3.12 标准库 + SQLite WAL），提供：
-1. 启动版本检测与双层云更新（热更配置包自动同步 + 客户端新版检测/国内直链 IPA 分发）
-2. 完整账号系统（注册/登录/游客入世/游客转正绑定/御印与个人名帖/scrypt 加盐密码/90天令牌）
-3. 账号绑定云端存档库（支持跨设备高速上传/下载/列表/删除）
-4. 每日临朝签到与史官品秩晋升体系
-5. 公告驿报、系统信匣、天下史榜全服排行榜、实时在线人数与计算服健康探活
-6. 移动端宣纸古风下载落地页（/ 与 /download）
+列国纪 · 云端行宫平台服务器 v2.0（安全加固 · ethanhui 管理员中枢 · 20MB+ 游戏内免换包热更引擎）
+零第三方依赖（纯 Python 3.12 标准库 + SQLite WAL）：
+1. 启动版本检测 + 免换包游戏内差分热更资源包服务器（/api/v1/hotpack/manifest & /file/<path>）
+2. 完整账号系统（注册/登录/游客/转正/御印/scrypt/90天令牌）+ ethanhui 专属管理员 RBAC
+3. 游戏内管理员控制台 API（公告/跑马灯/热更参数/版本发布/全服邮件/用户管理/维护模式/主机监控）
+4. 账号绑定高速云存档库 + 每日签到品秩 + 天下史榜 + 无侵入式计算服 v7 健康探针
+5. 极简安全公开官网（隐藏全部内部端口/用户数/运维指标）+ 防暴力破解 IP 封锁 + 扫描器陷阱
 """
 
 from __future__ import annotations
@@ -19,6 +18,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import socket
 import sqlite3
 import struct
@@ -26,7 +26,6 @@ import threading
 import time
 import urllib.parse
 from datetime import datetime, timedelta, timezone
-from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Optional
@@ -40,23 +39,25 @@ DATA_DIR = Path(os.environ.get("LGJ_PLATFORM_DATA", "/data"))
 DB_PATH = DATA_DIR / "lieguoji.db"
 SAVES_DIR = DATA_DIR / "saves"
 DOWNLOADS_DIR = DATA_DIR / "downloads"
+HOTPACK_DIR = DATA_DIR / "hotpack"
 SECRET_PATH = DATA_DIR / "admin_secret.txt"
+
 PUBLIC_HOST = os.environ.get("LGJ_PUBLIC_HOST", "111.230.153.235")
 COMPUTE_HOST = os.environ.get("LGJ_COMPUTE_HOST", f"{PUBLIC_HOST}:8765")
-COMPUTE_PROBE_HOST = os.environ.get("LGJ_COMPUTE_PROBE_HOST", "127.0.0.1")
+COMPUTE_PROBE_HOST = os.environ.get("LGJ_COMPUTE_PROBE_HOST", "172.17.0.1")
 COMPUTE_PROBE_PORT = int(os.environ.get("LGJ_COMPUTE_PROBE_PORT", "8765"))
-SERVER_NAME = os.environ.get("LGJ_SERVER_NAME", "九州一区 · 腾讯云专属服")
+SERVER_NAME = os.environ.get("LGJ_SERVER_NAME", "九州一区")
 SERVER_REGION = os.environ.get("LGJ_SERVER_REGION", "中国大陆直连")
+ADMIN_USERNAMES = {u.strip().lower() for u in os.environ.get("LGJ_ADMIN_USERS", "ethanhui").split(",") if u.strip()}
 
-MAX_SAVE_BYTES = 24 * 1024 * 1024  # 24 MB compressed
+MAX_SAVE_BYTES = 24 * 1024 * 1024
 MAX_SAVES_PER_USER = 20
 TOKEN_TTL_SECONDS = 90 * 24 * 3600
 SHANGHAI_TZ = timezone(timedelta(hours=8))
 START_TIME = time.time()
 
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-SAVES_DIR.mkdir(parents=True, exist_ok=True)
-DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
+for _d in (DATA_DIR, SAVES_DIR, DOWNLOADS_DIR, HOTPACK_DIR):
+    _d.mkdir(parents=True, exist_ok=True)
 
 
 def load_or_create_admin_secret() -> str:
@@ -94,13 +95,13 @@ RANKS = [
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 7,
-    "notice": "腾讯云专属服已正式开服 · 全双工直连推流 30ms 丝滑体验",
+    "version": 8,
+    "notice": "九州专属云服 v7 极速推流已上线 · 280 州大图丝滑畅推",
     "computeHost": COMPUTE_HOST,
-    "pace": {"1": 3, "2": 6, "4": 12, "8": 24, "16": 40},
+    "pace": {"1": 3, "2": 6, "4": 12, "8": 20, "16": 32},
     "tuning": {
-        "lethality": 2,
-        "siege": 6,
+        "lethality": 2.0,
+        "siege": 6.0,
         "peaceGoalMonths": 4,
         "peaceDecisiveMonths": 6,
         "wearyStart": 12,
@@ -127,25 +128,27 @@ def compute_hotpatch_sha(cfg: dict[str, Any]) -> str:
 
 
 DEFAULT_RELEASE: dict[str, Any] = {
-    "latestVersion": "5.3.0",
-    "latestBuild": 183,
+    "latestVersion": "5.4.0",
+    "latestBuild": 184,
     "minSupportedBuild": 175,
     "forceUpdate": False,
+    "maintenance": False,
+    "maintenanceMessage": "九州云服正在例行修缮，稍候片刻即可重登。",
     "releaseDate": "2026-11-26",
-    "ipaSizeMB": 86.2,
+    "ipaSizeMB": 86.0,
     "downloadUrl": "https://github.com/Ethanhui6/lieguoji-web/releases/latest",
     "directIpaUrl": "",
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": [
-        "【云端行宫 · 完整账号系统】上线全新古籍风格「列国登临阁」登录/注册与游客一键入世，支持自定义篆刻御印（十枚古篆 + 三色印泥）与无损转正绑定。",
-        "【自动云更新检测 × 毫秒级热更】每次进入游戏自动检测客户端新版本与云端热更配置包，支持国内专属服务器极速直连下载与参数免重启热加载。",
-        "【账号专属云端存档 × 每日临朝签到 × 天下史榜】云存档与账号绑定跨设备极速同步（国内直传 < 1 秒），新增每日签到晋升史官品秩、驿报公告信匣与全服天下史榜。",
-        "【默认直连腾讯云专属服】开机自动接入 24 小时专属全双工推流计算服（v6 + LZ4 压缩），免手工填 IP 畅享真网游级丝滑推演。",
+        "【根治云端推流掉线与 280 州大图提速】彻底修复后台探活误踢在线会话的顽疾与进图自动直连延迟；上线云端 v7 极速推流引擎，280 州超大图自动启用云端高效帧步进与无阻塞落盘，推进速度与丝滑度大幅跃升。",
+        "【游戏内免换包资源热更新（28MB+ 典藏扩展包）】新增 SHA256 精确差分热更引擎，以后更新剧本、历史词典、典藏配乐、工笔美术、传报长卷与平衡规则全部在游戏内自动下载并即时生效，无需重新安装 IPA。",
+        "【回归 4.3 极简宣纸美学 × 120fps 顺滑体验】全面重绘登录门扉、史官行宫、热更新与云存档界面，清除冗杂金框渐变与离屏阴影，与游戏内原生风格 100% 浑然一体。",
+        "【御前司礼监 · 管理员中枢与全服防护】开放管理员账号游戏内实时管控（公告/跑马灯/热更平衡参数/版本发布/全服诏书/玩家管理/服务器监控），全面收紧官网公开信息并上线防爆破与扫描拦截。",
     ],
     "hotpatch": {
-        "patchVersion": 7,
+        "patchVersion": 8,
         "updatedAt": int(time.time() * 1000),
-        "summary": "专属云服默认节点就绪 · 平衡参数与推演节拍云端热加载",
+        "summary": "云端 v7 极速推流与 280 州大图优化参数",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -186,7 +189,7 @@ def rank_info(exp: int) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Password & Token Crypto (stdlib scrypt + sha256)
+# Crypto & Security (scrypt + rate limiter + brute-force ban + scanner trap)
 # ---------------------------------------------------------------------------
 
 def hash_password(password: str) -> str:
@@ -212,21 +215,62 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-# ---------------------------------------------------------------------------
-# Rate Limiter (in-memory sliding window)
-# ---------------------------------------------------------------------------
-
-_rate_lock = threading.Lock()
+_sec_lock = threading.Lock()
 _rate_buckets: dict[str, list[float]] = {}
+_login_failures: dict[str, list[float]] = {}
+_blocked_ips: dict[str, float] = {}
+_security_stats = {"blockedRequests": 0, "scannerHits": 0, "loginFailures": 0}
+
+SCANNER_PATTERNS = (
+    "/.env", "/.git", "/wp-admin", "/wp-login", "/xmlrpc.php", "/phpmyadmin",
+    "/pma", "/admin.php", "/actuator", "/cgi-bin", "/config.php", "/vendor/",
+    "/shell", "/.htaccess", "/backup.sql", "/eval-stdin"
+)
+
+
+def is_ip_blocked(ip: str) -> bool:
+    now = time.monotonic()
+    with _sec_lock:
+        until = _blocked_ips.get(ip)
+        if until is None:
+            return False
+        if now >= until:
+            _blocked_ips.pop(ip, None)
+            return False
+        _security_stats["blockedRequests"] += 1
+        return True
+
+
+def record_login_failure(ip: str) -> None:
+    now = time.monotonic()
+    with _sec_lock:
+        _security_stats["loginFailures"] += 1
+        arr = [t for t in _login_failures.get(ip, []) if now - t < 300]
+        arr.append(now)
+        _login_failures[ip] = arr
+        if len(arr) >= 8:
+            _blocked_ips[ip] = now + 600
+            _login_failures[ip] = []
+
+
+def record_scanner_hit(ip: str) -> None:
+    now = time.monotonic()
+    with _sec_lock:
+        _security_stats["scannerHits"] += 1
+        arr = [t for t in _rate_buckets.get(f"scan:{ip}", []) if now - t < 600]
+        arr.append(now)
+        _rate_buckets[f"scan:{ip}"] = arr
+        if len(arr) >= 4:
+            _blocked_ips[ip] = now + 1800
 
 
 def check_rate_limit(key: str, limit: int, window_sec: float) -> bool:
     now = time.monotonic()
-    with _rate_lock:
-        arr = _rate_buckets.get(key, [])
-        arr = [t for t in arr if now - t < window_sec]
+    with _sec_lock:
+        arr = [t for t in _rate_buckets.get(key, []) if now - t < window_sec]
         if len(arr) >= limit:
             _rate_buckets[key] = arr
+            _security_stats["blockedRequests"] += 1
             return False
         arr.append(now)
         _rate_buckets[key] = arr
@@ -234,7 +278,7 @@ def check_rate_limit(key: str, limit: int, window_sec: float) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Database Layer
+# Database Layer (with safe migrations)
 # ---------------------------------------------------------------------------
 
 _db_lock = threading.RLock()
@@ -269,6 +313,8 @@ def init_db() -> None:
                 bio TEXT NOT NULL DEFAULT '观天下大势，记列国兴衰',
                 seal_char TEXT NOT NULL DEFAULT '龙',
                 seal_style TEXT NOT NULL DEFAULT 'cinnabar',
+                role TEXT NOT NULL DEFAULT 'player',
+                banned INTEGER NOT NULL DEFAULT 0,
                 is_guest INTEGER NOT NULL DEFAULT 0,
                 device_id TEXT,
                 exp INTEGER NOT NULL DEFAULT 20,
@@ -359,10 +405,19 @@ def init_db() -> None:
             """
         )
 
-        # Seed UID counter starting at 10000
+        # Safe column migration for existing v1 databases
+        cols = {r["name"] for r in DB.execute("PRAGMA table_info(users)").fetchall()}
+        if "role" not in cols:
+            DB.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'")
+        if "banned" not in cols:
+            DB.execute("ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0")
+
+        # Auto-grant admin role to configured admin usernames (ethanhui)
+        for admin_u in ADMIN_USERNAMES:
+            DB.execute("UPDATE users SET role = 'admin', banned = 0 WHERE LOWER(username) = ?", (admin_u,))
+
         DB.execute("INSERT OR IGNORE INTO meta_seq(name, val) VALUES ('uid', 10000)")
 
-        # Seed default release metadata if absent
         row = DB.execute("SELECT v FROM kv_store WHERE k = 'release'").fetchone()
         if not row:
             DB.execute(
@@ -370,7 +425,6 @@ def init_db() -> None:
                 (json.dumps(DEFAULT_RELEASE, ensure_ascii=False), now_ms()),
             )
 
-        # Seed opening announcements if table is empty
         cnt = DB.execute("SELECT COUNT(*) AS c FROM announcements").fetchone()["c"]
         if cnt == 0:
             ts = now_ms()
@@ -379,27 +433,16 @@ def init_db() -> None:
                 [
                     (
                         "置顶",
-                        "九州一区 · 腾讯云专属服务器正式开服",
-                        "欢迎各位史官登临《列国纪》专属云服务器！\n\n"
-                        "• 全双工主动推流（EngineWire v6 + LZ4 压缩）：国内实测延迟 20–40 ms，千军万马 60fps 丝滑推演，手机几乎零发热。\n"
-                        "• 账号云端存档：登录账号后上传世界卷宗，更换设备随时秒级下载接续霸业。\n"
-                        "• 每日临朝签到与天下史榜现已开启，铭刻你的盛世皇朝留名青史！",
+                        "九州一区极速云服与免换包热更上线",
+                        "欢迎各位史官登临《列国纪》云端行宫。\n\n"
+                        "• 云端计算引擎已升级至 v7 极速推流架构，280 州史诗大地图推演速度大幅跃升；\n"
+                        "• 现已支持 28MB+ 游戏内免换包热更新：12 套新历史剧本、典藏水墨画卷、文明词典与平衡规则均可在游戏内一键热更并立即生效。",
                         1,
                         ts,
-                    ),
-                    (
-                        "更新",
-                        "云端自动检测更新与热更系统上线",
-                        "即日起每次进入游戏均会自动检测最新客户端版本与云端热更配置包：\n"
-                        "1. 平衡参数、推演节拍与公告支持自动热加载，无需重装立即生效；\n"
-                        "2. 新版本发布后将在启动时呈递「天诏更新卷」，支持一键从国内专属服务器极速下载更新。",
-                        0,
-                        ts - 60_000,
                     ),
                 ],
             )
 
-        # Seed global broadcast welcome mail if absent
         mcnt = DB.execute("SELECT COUNT(*) AS c FROM mail WHERE user_id = '*'").fetchone()["c"]
         if mcnt == 0:
             DB.execute(
@@ -408,10 +451,7 @@ def init_db() -> None:
                     "兰台太史院",
                     "恭迎登临《列国纪》云端行宫",
                     "史官钧鉴：\n\n"
-                    "《列国纪》专属云服务器已全面贯通。你现在可以：\n"
-                    "一、在「名帖」中定制专属篆刻御印，每日临朝签到晋升品秩；\n"
-                    "二、在「世界卷宗」中将心仪江山一键备份至账号云库，永不丢失；\n"
-                    "三、随时将辉煌霸业铭刻入「天下史榜」，与四海同好共赏山河兴衰。\n\n"
+                    "《列国纪》云端行宫现已贯通，可定制御印、每日临朝签到、跨端同步云端卷宗，并在游戏内直接获取最新扩展剧本与资源热更。\n\n"
                     "愿君执笔定鼎，山河永固。",
                     now_ms(),
                 ),
@@ -430,7 +470,8 @@ def get_release_config() -> dict[str, Any]:
     with _db_lock:
         row = DB.execute("SELECT v FROM kv_store WHERE k = 'release'").fetchone()
     cfg = json.loads(row["v"]) if row else json.loads(json.dumps(DEFAULT_RELEASE))
-    # Auto-detect locally hosted latest IPA if present in /data/downloads/
+    cfg.setdefault("maintenance", False)
+    cfg.setdefault("maintenanceMessage", "九州云服正在例行修缮，稍候片刻即可重登。")
     latest_ipa = DOWNLOADS_DIR / "lieguoji-latest.ipa"
     if latest_ipa.exists() and latest_ipa.stat().st_size > 1_000_000:
         cfg["directIpaUrl"] = f"http://{PUBLIC_HOST}/downloads/lieguoji-latest.ipa"
@@ -451,17 +492,129 @@ def save_release_config(cfg: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Live Compute Server Health Probe (real EngineWire v6 TCP ping)
+# HotPack Resource Manifest Engine (20MB+ real incremental SHA256 delta sync)
+# ---------------------------------------------------------------------------
+
+MODULE_META = {
+    "content": ("剧本与史典扩展", "12 套全新历史剧本、典籍题词、列国百科与云端平衡规则"),
+    "catalog": ("文明词典与名将谱", "全文明姓氏、贵族世家、将才特质与物产配置"),
+    "art": ("工笔水墨美术包", "舆图地标、御印篆章、罗盘与典藏纹样资源"),
+    "video": ("传报长卷画幅包", "54 卷全文明历史大事画卷与高清动态海报"),
+    "engine": ("推演内核扩展包", "热更兼容内核与脚本桥接包"),
+    "music": ("古风史诗配乐包", "高音质典藏原声配乐与古风交互音效"),
+    "world": ("世界底图与文化集", "文明文化目录与宣纸纹理资源"),
+}
+
+_hotpack_lock = threading.Lock()
+_hotpack_cache: Optional[dict[str, Any]] = None
+
+
+def _get_hotpack_version_meta() -> tuple[int, str, str]:
+    with _db_lock:
+        row = DB.execute("SELECT v FROM kv_store WHERE k = 'hotpack_meta'").fetchone()
+    if row:
+        try:
+            d = json.loads(row["v"])
+            return int(d.get("packVersion", 2)), str(d.get("releaseTag", "v2026.11 · 典藏资源扩展包")), str(d.get("summary", ""))
+        except Exception:
+            pass
+    return 2, "v2026.11 · 典藏资源扩展包", "含 12 套全新历史剧本、文明名将词典、工笔水墨美术与 54 卷史事长卷（免换包游戏内更新）"
+
+
+def _save_hotpack_version_meta(ver: int, tag: str, summary: str) -> None:
+    with _db_lock:
+        DB.execute(
+            "INSERT INTO kv_store(k, v, updated_at) VALUES ('hotpack_meta', ?, ?) "
+            "ON CONFLICT(k) DO UPDATE SET v=excluded.v, updated_at=excluded.updated_at",
+            (json.dumps({"packVersion": ver, "releaseTag": tag, "summary": summary}, ensure_ascii=False), now_ms()),
+        )
+        DB.commit()
+
+
+def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = None, summary: Optional[str] = None) -> dict[str, Any]:
+    ver, cur_tag, cur_summary = _get_hotpack_version_meta()
+    if bump_version:
+        ver += 1
+    if tag:
+        cur_tag = tag
+    if summary:
+        cur_summary = summary
+    if bump_version or tag or summary:
+        _save_hotpack_version_meta(ver, cur_tag, cur_summary)
+
+    files: list[dict[str, Any]] = []
+    mod_acc: dict[str, dict[str, Any]] = {}
+    total_bytes = 0
+
+    if HOTPACK_DIR.exists():
+        for fp in sorted(HOTPACK_DIR.rglob("*")):
+            if not fp.is_file() or fp.name.startswith("."):
+                continue
+            rel = fp.relative_to(HOTPACK_DIR).as_posix()
+            top = rel.split("/", 1)[0].lower() if "/" in rel else "content"
+            mod_id = top if top in MODULE_META else "content"
+            h = hashlib.sha256()
+            sz = 0
+            with fp.open("rb") as f:
+                while True:
+                    chunk = f.read(262144)
+                    if not chunk:
+                        break
+                    h.update(chunk)
+                    sz += len(chunk)
+            files.append({"path": rel, "module": mod_id, "size": sz, "sha256": h.hexdigest()})
+            total_bytes += sz
+            if mod_id not in mod_acc:
+                name, detail = MODULE_META.get(mod_id, (mod_id, "游戏扩展资源"))
+                mod_acc[mod_id] = {"id": mod_id, "name": name, "detail": detail, "bytes": 0, "fileCount": 0}
+            mod_acc[mod_id]["bytes"] += sz
+            mod_acc[mod_id]["fileCount"] += 1
+
+    order = ["content", "catalog", "world", "art", "video", "engine", "music"]
+    modules = [mod_acc[k] for k in order if k in mod_acc] + [v for k, v in mod_acc.items() if k not in order]
+    manifest = {
+        "ok": True,
+        "packVersion": ver,
+        "releaseTag": cur_tag,
+        "summary": cur_summary,
+        "totalBytes": total_bytes,
+        "updatedAt": now_ms(),
+        "modules": modules,
+        "files": files,
+    }
+    with _hotpack_lock:
+        global _hotpack_cache
+        _hotpack_cache = manifest
+    return manifest
+
+
+def get_hotpack_manifest() -> dict[str, Any]:
+    with _hotpack_lock:
+        if _hotpack_cache is not None:
+            return _hotpack_cache
+    return rebuild_hotpack_manifest(bump_version=False)
+
+
+# ---------------------------------------------------------------------------
+# Non-Evicting Compute Server v7 Health Probe (NEVER disconnects live phones!)
 # ---------------------------------------------------------------------------
 
 _probe_lock = threading.Lock()
-_compute_state = {"online": False, "rttMs": None, "greeting": "", "checkedAt": 0}
+_compute_state: dict[str, Any] = {
+    "online": False,
+    "rttMs": None,
+    "playing": False,
+    "stepMs": 0,
+    "provinces": 0,
+    "clients": 0,
+    "checkedAt": 0,
+}
 
 
 def probe_compute_once() -> None:
     targets = [
         (COMPUTE_PROBE_HOST, COMPUTE_PROBE_PORT),
-        ("172.17.0.1", COMPUTE_PROBE_PORT),
+        ("127.0.0.1", COMPUTE_PROBE_PORT),
         (PUBLIC_HOST, COMPUTE_PROBE_PORT),
     ]
     for host, port in targets:
@@ -469,7 +622,8 @@ def probe_compute_once() -> None:
             t0 = time.perf_counter()
             with socket.create_connection((host, port), timeout=2.0) as s:
                 s.settimeout(2.0)
-                hdr = json.dumps({"call": "ping", "args": {"v": 6}}).encode("utf-8")
+                # CRITICAL: use non-evicting `health` call so active iPhone Mux stream is NEVER interrupted!
+                hdr = json.dumps({"call": "health", "args": {"v": 6}}).encode("utf-8")
                 s.sendall(struct.pack("!I", len(hdr)) + hdr + struct.pack("!I", 0))
                 raw_len = b""
                 while len(raw_len) < 4:
@@ -486,10 +640,19 @@ def probe_compute_once() -> None:
                     hbuf += c
                 obj = json.loads(hbuf.decode("utf-8"))
                 rtt = max(1, int(round((time.perf_counter() - t0) * 1000)))
+                txt = str(obj.get("text", ""))
+                kv = {}
+                for part in txt.split("|"):
+                    if "=" in part:
+                        k, v = part.split("=", 1)
+                        kv[k] = v
                 with _probe_lock:
                     _compute_state["online"] = bool(obj.get("ok"))
                     _compute_state["rttMs"] = rtt
-                    _compute_state["greeting"] = str(obj.get("reason", ""))
+                    _compute_state["playing"] = kv.get("playing") == "1"
+                    _compute_state["stepMs"] = int(kv.get("stepMs", "0") or "0")
+                    _compute_state["provinces"] = int(kv.get("provinces", "0") or "0")
+                    _compute_state["clients"] = int(kv.get("clients", "0") or "0")
                     _compute_state["checkedAt"] = now_ms()
                 return
         except Exception:
@@ -504,38 +667,97 @@ def start_probe_thread() -> None:
     def loop() -> None:
         while True:
             probe_compute_once()
-            time.sleep(15)
+            time.sleep(20)
 
     t = threading.Thread(target=loop, daemon=True)
     t.start()
 
 
-def get_server_snapshot() -> dict[str, Any]:
+def get_host_metrics() -> dict[str, Any]:
+    load1 = 0.0
+    try:
+        load1 = float(Path("/proc/loadavg").read_text().split()[0])
+    except Exception:
+        pass
+    mem_total_mb, mem_avail_mb = 0, 0
+    try:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            if line.startswith("MemTotal:"):
+                mem_total_mb = int(line.split()[1]) // 1024
+            elif line.startswith("MemAvailable:"):
+                mem_avail_mb = int(line.split()[1]) // 1024
+    except Exception:
+        pass
+    du = shutil.disk_usage(str(DATA_DIR))
+    return {
+        "cpuLoad1m": round(load1, 2),
+        "memUsedMB": max(0, mem_total_mb - mem_avail_mb),
+        "memTotalMB": mem_total_mb,
+        "diskFreeGB": round(du.free / (1024 ** 3), 1),
+        "diskTotalGB": round(du.total / (1024 ** 3), 1),
+    }
+
+
+def get_public_server_snapshot() -> dict[str, Any]:
+    cutoff = now_ms() - 5 * 60 * 1000
+    with _db_lock:
+        online_users = DB.execute("SELECT COUNT(*) AS c FROM users WHERE last_seen_at >= ?", (cutoff,)).fetchone()["c"]
+    with _probe_lock:
+        c_online = _compute_state["online"]
+    rel = get_release_config()
+    return {
+        "name": SERVER_NAME,
+        "region": SERVER_REGION,
+        "computeHost": COMPUTE_HOST,
+        "computeOnline": c_online,
+        "onlineCount": max(1, int(online_users)),
+        "maintenance": bool(rel.get("maintenance", False)),
+        "maintenanceMessage": str(rel.get("maintenanceMessage", "")),
+        "serverTimeMs": now_ms(),
+    }
+
+
+def get_admin_server_overview() -> dict[str, Any]:
     cutoff = now_ms() - 5 * 60 * 1000
     with _db_lock:
         online_users = DB.execute("SELECT COUNT(*) AS c FROM users WHERE last_seen_at >= ?", (cutoff,)).fetchone()["c"]
         total_users = DB.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
         total_saves = DB.execute("SELECT COUNT(*) AS c FROM cloud_saves").fetchone()["c"]
+        banned_users = DB.execute("SELECT COUNT(*) AS c FROM users WHERE banned = 1").fetchone()["c"]
     with _probe_lock:
-        c_online = _compute_state["online"]
-        c_greeting = _compute_state["greeting"]
+        cs = dict(_compute_state)
+    with _sec_lock:
+        sec = dict(_security_stats)
+        sec["activeBlockedIPs"] = len(_blocked_ips)
+    rel = get_release_config()
+    hp = get_hotpack_manifest()
     return {
         "name": SERVER_NAME,
         "region": SERVER_REGION,
-        "publicHost": PUBLIC_HOST,
-        "computeHost": COMPUTE_HOST,
-        "computeOnline": c_online,
-        "computeGreeting": c_greeting,
         "onlineCount": max(1, int(online_users)),
         "totalUsers": int(total_users),
         "totalSaves": int(total_saves),
+        "bannedUsers": int(banned_users),
         "uptimeSeconds": int(time.time() - START_TIME),
-        "serverTimeMs": now_ms(),
+        "compute": cs,
+        "host": get_host_metrics(),
+        "security": sec,
+        "maintenance": bool(rel.get("maintenance", False)),
+        "maintenanceMessage": str(rel.get("maintenanceMessage", "")),
+        "hotpackVersion": hp["packVersion"],
+        "hotpackBytes": hp["totalBytes"],
+        "hotpackFiles": len(hp["files"]),
+        "notice": str(rel.get("hotpatch", {}).get("config", {}).get("notice", "")),
+        "latestVersion": rel.get("latestVersion", "5.4.0"),
+        "latestBuild": int(rel.get("latestBuild", 184)),
+        "forceUpdate": bool(rel.get("forceUpdate", False)),
+        "tuning": rel.get("hotpatch", {}).get("config", {}).get("tuning", {}),
+        "pace": rel.get("hotpatch", {}).get("config", {}).get("pace", {}),
     }
 
 
 # ---------------------------------------------------------------------------
-# User Serialization & Auth Helpers
+# User Serialization & Auth
 # ---------------------------------------------------------------------------
 
 def serialize_user(row: sqlite3.Row) -> dict[str, Any]:
@@ -553,6 +775,7 @@ def serialize_user(row: sqlite3.Row) -> dict[str, Any]:
     today = today_shanghai()
     checked_in = row["last_checkin_date"] == today
     rk = rank_info(int(row["exp"]))
+    role = str(row["role"] or "player")
     return {
         "id": uid,
         "username": row["username"] or "",
@@ -560,6 +783,8 @@ def serialize_user(row: sqlite3.Row) -> dict[str, Any]:
         "bio": row["bio"],
         "sealChar": row["seal_char"],
         "sealStyle": row["seal_style"],
+        "role": role,
+        "isAdmin": role == "admin",
         "isGuest": bool(row["is_guest"]),
         "exp": int(row["exp"]),
         "rank": rk,
@@ -603,7 +828,7 @@ def authenticate_token(auth_header: Optional[str]) -> Optional[tuple[sqlite3.Row
             """
             SELECT u.* FROM sessions s
             JOIN users u ON u.id = s.user_id
-            WHERE s.token_hash = ? AND s.expires_at > ?
+            WHERE s.token_hash = ? AND s.expires_at > ? AND u.banned = 0
             """,
             (th, ts),
         ).fetchone()
@@ -617,7 +842,7 @@ def authenticate_token(auth_header: Optional[str]) -> Optional[tuple[sqlite3.Row
 
 def validate_username(u: str) -> Optional[str]:
     if len(u) < 3 or len(u) > 20:
-        return "账号名须为 3–20 位字母、数字或下划线"
+        return "账号名须为 3–20 位字母、数字或中文"
     if not re.match(r"^[A-Za-z0-9_\u4e00-\u9fff]+$", u):
         return "账号名仅支持中文、字母、数字或下划线"
     return None
@@ -625,9 +850,7 @@ def validate_username(u: str) -> Optional[str]:
 
 def sanitize_seal_char(ch: str) -> str:
     ch = ch.strip()
-    if not ch:
-        return "龙"
-    return ch[0]
+    return ch[0] if ch else "龙"
 
 
 def sanitize_seal_style(style: str) -> str:
@@ -635,9 +858,8 @@ def sanitize_seal_style(style: str) -> str:
 
 
 def compare_version(cur_ver: str, cur_build: int, latest_ver: str, latest_build: int) -> bool:
-    if latest_build > 0 and cur_build > 0:
-        if latest_build != cur_build:
-            return latest_build > cur_build
+    if latest_build > 0 and cur_build > 0 and latest_build != cur_build:
+        return latest_build > cur_build
     def parse(v: str) -> tuple[int, ...]:
         nums = re.findall(r"\d+", v)
         return tuple(int(x) for x in nums) if nums else (0,)
@@ -645,108 +867,96 @@ def compare_version(cur_ver: str, cur_build: int, latest_ver: str, latest_build:
 
 
 # ---------------------------------------------------------------------------
-# Mobile Antique Parchment Landing / Download Page
+# Hardened Minimalist Public Landing Page (ZERO internal/ops info exposed)
 # ---------------------------------------------------------------------------
 
-def render_download_page() -> str:
+def render_public_landing_page() -> str:
     rel = get_release_config()
-    srv = get_server_snapshot()
-    ver = html.escape(str(rel.get("latestVersion", "5.3.0")))
-    build = int(rel.get("latestBuild", 183))
-    size_mb = rel.get("ipaSizeMB", 86.2)
+    ver = html.escape(str(rel.get("latestVersion", "5.4.0")))
     rel_date = html.escape(str(rel.get("releaseDate", "")))
-    direct_url = str(rel.get("directIpaUrl") or "")
+    size_mb = rel.get("ipaSizeMB", 86.0)
+    direct_url = "/downloads/lieguoji-latest.ipa" if (DOWNLOADS_DIR / "lieguoji-latest.ipa").is_file() else ""
     gh_url = str(rel.get("downloadUrl") or "https://github.com/Ethanhui6/lieguoji-web/releases/latest")
     primary_url = html.escape(direct_url if direct_url else gh_url)
-    primary_label = "国内服务器极速下载 IPA" if direct_url else "前往发布页下载最新 IPA"
-    notes_html = "".join(f"<li>{html.escape(str(n))}</li>" for n in rel.get("releaseNotes", []))
-    online_badge = "在线运行中" if srv["computeOnline"] else "启动中"
-    uptime_h = round(srv["uptimeSeconds"] / 3600.0, 1)
+    notes_html = "".join(f"<li>{html.escape(str(n))}</li>" for n in rel.get("releaseNotes", [])[:5])
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>列国纪 · 云端行宫与客户端更新</title>
+<meta name="robots" content="noindex, nofollow" />
+<title>列国纪 · 架空世界列国兴衰</title>
 <style>
   :root {{
     --paper: #F5F0E6; --paper2: #FAF7F0; --ink: #241D17; --ink2: #5E564E;
-    --seal: #A83226; --jade: #3F5549; --gold: #B08D57; --line: rgba(36,29,23,0.13);
+    --seal: #A83226; --line: rgba(36,29,23,0.11);
   }}
   * {{ box-sizing: border-box; }}
   body {{
-    margin: 0; padding: 24px 16px 48px; background: var(--paper); color: var(--ink);
+    margin: 0; padding: 36px 20px 56px; background: var(--paper); color: var(--ink);
     font-family: "Kaiti SC", "STKaiti", "Songti SC", "PingFang SC", serif;
-    line-height: 1.7;
+    line-height: 1.75; -webkit-font-smoothing: antialiased;
   }}
-  .wrap {{ max-width: 560px; margin: 0 auto; }}
-  .card {{
-    background: var(--paper2); border: 1px solid var(--line); border-radius: 14px;
-    padding: 24px 20px; margin-bottom: 16px;
-  }}
-  .head {{ display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 16px; }}
-  .title {{ font-size: 28px; letter-spacing: 6px; margin: 0; }}
-  .sub {{ font-size: 13px; color: var(--ink2); margin-top: 4px; }}
+  .wrap {{ max-width: 520px; margin: 0 auto; }}
+  .head {{ display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--line); }}
+  .title {{ font-size: 32px; letter-spacing: 8px; margin: 0; font-weight: 400; }}
+  .sub {{ font-size: 13.5px; color: var(--ink2); letter-spacing: 2px; margin-top: 4px; }}
   .seal {{
-    width: 44px; height: 44px; border: 2px solid var(--seal); border-radius: 7px;
+    width: 42px; height: 42px; border: 1.8px solid var(--seal); border-radius: 6px;
     color: var(--seal); display: flex; align-items: center; justify-content: center;
-    font-size: 22px; transform: rotate(-4deg); flex-shrink: 0;
+    font-size: 21px; transform: rotate(-4deg); flex-shrink: 0;
   }}
-  .meta {{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; font-size: 13px; }}
-  .chip {{ padding: 4px 10px; border-radius: 999px; background: rgba(36,29,23,0.05); color: var(--ink2); }}
-  .chip.ok {{ background: rgba(63,85,73,0.12); color: var(--jade); }}
-  .chip.ver {{ background: rgba(168,50,38,0.10); color: var(--seal); }}
+  .hero {{ padding: 24px 0; border-bottom: 1px solid var(--line); }}
+  .meta {{ font-size: 13px; color: var(--ink2); margin-bottom: 16px; }}
+  .meta strong {{ color: var(--seal); font-weight: 400; }}
   .btn {{
     display: block; width: 100%; text-align: center; text-decoration: none;
-    background: var(--seal); color: #FAF7F0; padding: 14px 18px; border-radius: 10px;
-    font-size: 17px; letter-spacing: 2px; margin-top: 12px;
+    background: var(--seal); color: var(--paper2); padding: 13px 18px; border-radius: 8px;
+    font-size: 16px; letter-spacing: 2px;
   }}
-  .btn.sec {{ background: transparent; color: var(--ink); border: 1px solid var(--line); font-size: 14px; padding: 11px; }}
-  ul {{ padding-left: 18px; margin: 8px 0 0; color: var(--ink2); font-size: 14px; }}
-  li {{ margin-bottom: 8px; }}
-  .foot {{ text-align: center; font-size: 12px; color: var(--ink2); margin-top: 20px; }}
+  .btn.sec {{
+    background: var(--paper2); color: var(--ink); border: 1px solid var(--line);
+    font-size: 13.5px; padding: 10px; margin-top: 10px; letter-spacing: 1px;
+  }}
+  .sec-block {{ padding: 22px 0; border-bottom: 1px solid var(--line); }}
+  .sec-title {{ font-size: 16px; letter-spacing: 2px; margin: 0 0 12px; color: var(--ink); }}
+  ul {{ padding-left: 18px; margin: 0; color: var(--ink2); font-size: 14px; }}
+  li {{ margin-bottom: 9px; }}
+  .foot {{ text-align: center; font-size: 12px; color: var(--ink2); margin-top: 26px; opacity: 0.78; letter-spacing: 1px; }}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="head">
-        <div>
-          <h1 class="title">列國紀</h1>
-          <div class="sub">云端行宫 · iOS 原生客户端与热更中心</div>
-        </div>
-        <div class="seal">龙</div>
+  <main class="wrap">
+    <header class="head">
+      <div>
+        <h1 class="title">列國紀</h1>
+        <div class="sub">架空世界 · 列国兴衰</div>
       </div>
-      <div class="meta">
-        <span class="chip ver">最新版 v{ver}（构建 {build}）</span>
-        <span class="chip">{size_mb} MB · {rel_date}</span>
-        <span class="chip ok">专属云服 {online_badge} · {srv['onlineCount']} 人在线</span>
-      </div>
-      <a class="btn" href="{primary_url}">{primary_label}</a>
-      {"<a class='btn sec' href='" + html.escape(gh_url) + "'>备用线路：GitHub Release 仓库</a>" if direct_url else ""}
-    </div>
-    <div class="card">
-      <div style="font-size:16px;letter-spacing:2px;margin-bottom:6px;">本版天诏更新志</div>
+      <div class="seal" aria-hidden="true">龙</div>
+    </header>
+    <section class="hero">
+      <div class="meta">当前版本 <strong>v{ver}</strong> · {size_mb} MB · {rel_date} · 支持游戏内免换包热更新</div>
+      <a class="btn" href="{primary_url}">下载 iOS 安装包</a>
+      {"<a class='btn sec' href='" + html.escape(gh_url) + "'>备用发布页（GitHub）</a>" if direct_url else ""}
+    </section>
+    <section class="sec-block">
+      <h2 class="sec-title">本版更新志</h2>
       <ul>{notes_html}</ul>
-    </div>
-    <div class="card" style="font-size:13px;color:var(--ink2);">
-      <div style="font-size:15px;color:var(--ink);margin-bottom:6px;">专属计算服直连信息</div>
-      服务器：{html.escape(srv['name'])}<br/>
-      推流地址：<code>{html.escape(srv['computeHost'])}</code>（v6 全双工主动推流 + LZ4）<br/>
-      已注册史官：{srv['totalUsers']} 位 · 云端卷宗：{srv['totalSaves']} 卷 · 连续运行 {uptime_h} 小时
-    </div>
-    <div class="foot">列国纪 · 九州一区专属云端行宫</div>
-  </div>
+    </section>
+    <footer class="foot">列国纪 · 安装后进入游戏自动同步最新剧本与资源</footer>
+  </main>
 </body>
 </html>"""
 
 
 # ---------------------------------------------------------------------------
-# HTTP Request Handler
+# HTTP Request Handler (Hardened + Admin + HotPack)
 # ---------------------------------------------------------------------------
 
 class PlatformHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+    server_version = "Lieguoji"
+    sys_version = ""
     _body_consumed = False
 
     def handle_one_request(self) -> None:
@@ -769,18 +979,23 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     break
                 remaining -= len(chunk)
 
+    def _security_headers(self) -> None:
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+
     def log_message(self, fmt: str, *args: Any) -> None:
-        # Compact structured log to stdout
         print(f"[{datetime.now(SHANGHAI_TZ).strftime('%H:%M:%S')}] {self.client_address[0]} {fmt % args}", flush=True)
 
     def send_json(self, payload: dict[str, Any], status: int = 200) -> None:
         self._drain_unread_body()
         raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         self.send_response(status)
+        self._security_headers()
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
         self.send_header("Cache-Control", "no-store")
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(raw)
 
@@ -788,11 +1003,28 @@ class PlatformHandler(BaseHTTPRequestHandler):
         self._drain_unread_body()
         raw = body.encode("utf-8")
         self.send_response(status)
+        self._security_headers()
+        self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'")
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
         self.send_header("Cache-Control", "no-cache")
         self.end_headers()
         self.wfile.write(raw)
+
+    def _precheck(self, path: str) -> bool:
+        ip = self.client_address[0]
+        if is_ip_blocked(ip):
+            self.send_json({"ok": False, "error": "请求过于频繁，请稍后再试"}, 429)
+            return False
+        low = path.lower()
+        if any(pat in low for pat in SCANNER_PATTERNS):
+            record_scanner_hit(ip)
+            self.send_json({"ok": False, "error": "Not Found"}, 404)
+            return False
+        if not check_rate_limit(f"req:{ip}", 240, 60):
+            self.send_json({"ok": False, "error": "请求频率受限，请稍候"}, 429)
+            return False
+        return True
 
     def read_json_body(self, max_bytes: int = 512 * 1024) -> Optional[dict[str, Any]]:
         self._body_consumed = True
@@ -821,20 +1053,25 @@ class PlatformHandler(BaseHTTPRequestHandler):
 
     def require_admin(self) -> bool:
         key = (self.headers.get("X-Admin-Key") or "").strip()
-        if not key or not hmac.compare_digest(key, ADMIN_SECRET):
-            self.send_json({"ok": False, "error": "无权操作"}, 403)
-            return False
-        return True
+        if key and hmac.compare_digest(key, ADMIN_SECRET):
+            return True
+        auth = authenticate_token(self.headers.get("Authorization"))
+        if auth and str(auth[0]["role"]) == "admin" and int(auth[0]["banned"]) == 0:
+            return True
+        self.send_json({"ok": False, "error": "需管理员权限"}, 403)
+        return False
 
     def do_HEAD(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        if not self._precheck(path):
+            return
         if path.startswith("/downloads/"):
-            rel_name = path[len("/downloads/"):]
-            safe = Path(rel_name).name
+            safe = Path(path[len("/downloads/"):]).name
             target = DOWNLOADS_DIR / safe
-            if safe and safe == rel_name and target.exists() and target.is_file():
+            if safe and safe == path[len("/downloads/"):] and target.exists() and target.is_file():
                 self.send_response(200)
+                self._security_headers()
                 self.send_header("Content-Type", "application/octet-stream")
                 self.send_header("Content-Disposition", f'attachment; filename="{safe}"')
                 self.send_header("Accept-Ranges", "bytes")
@@ -846,14 +1083,13 @@ class PlatformHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         self.send_response(200)
+        self._security_headers()
         self.send_header("Content-Length", "0")
         self.end_headers()
 
     def do_OPTIONS(self) -> None:
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Authorization,Content-Type,X-Admin-Key,X-Save-Encoding,X-Save-Title,X-Save-Date,X-Save-Nations,X-Save-Provinces,X-Save-Day,X-Save-Device")
+        self._security_headers()
         self.send_header("Content-Length", "0")
         self.end_headers()
 
@@ -862,10 +1098,12 @@ class PlatformHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        if not self._precheck(path):
+            return
         qs = urllib.parse.parse_qs(parsed.query)
 
         if path in ("/", "/download"):
-            self.send_html(render_download_page())
+            self.send_html(render_public_landing_page())
             return
 
         if path.startswith("/downloads/"):
@@ -873,11 +1111,11 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/v1/ping":
-            self.send_json({"ok": True, "server": "lieguoji-platform", "ts": now_ms()})
+            self.send_json({"ok": True, "ts": now_ms()})
             return
 
         if path == "/api/v1/server/status":
-            self.send_json({"ok": True, "server": get_server_snapshot()})
+            self.send_json({"ok": True, "server": get_public_server_snapshot()})
             return
 
         if path in ("/api/v1/bootstrap", "/api/v1/version"):
@@ -887,6 +1125,15 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/hotpatch":
             rel = get_release_config()
             self.send_json({"ok": True, "hotpatch": rel.get("hotpatch", {})})
+            return
+
+        if path == "/api/v1/hotpack/manifest":
+            self.send_json(get_hotpack_manifest())
+            return
+
+        if path.startswith("/api/v1/hotpack/file/"):
+            rel_path = urllib.parse.unquote(path[len("/api/v1/hotpack/file/"):])
+            self.handle_hotpack_file(rel_path)
             return
 
         if path == "/api/v1/announcements":
@@ -927,13 +1174,35 @@ class PlatformHandler(BaseHTTPRequestHandler):
             self.handle_save_download(auth[0]["id"], save_id)
             return
 
-        self.send_json({"ok": False, "error": "未知接口路径"}, 404)
+        # --- Admin GET routes (strictly require admin role or secret) ---
+        if path == "/api/v1/admin/overview":
+            if not self.require_admin():
+                return
+            self.send_json({"ok": True, "overview": get_admin_server_overview()})
+            return
+
+        if path == "/api/v1/admin/users":
+            if not self.require_admin():
+                return
+            q = (qs.get("q", [""])[0] or "").strip()
+            self.handle_admin_users(q)
+            return
+
+        if path == "/api/v1/admin/announcements":
+            if not self.require_admin():
+                return
+            self.handle_admin_announcements_list()
+            return
+
+        self.send_json({"ok": False, "error": "Not Found"}, 404)
 
     # ----------------------------- POST -----------------------------
 
     def do_POST(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        if not self._precheck(path):
+            return
 
         if path == "/api/v1/auth/register":
             self.handle_register()
@@ -976,28 +1245,50 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     DB.commit()
             self.send_json({"ok": True})
             return
+
+        # --- Admin POST routes ---
         if path == "/api/v1/admin/release":
             self.handle_admin_release()
+            return
+        if path == "/api/v1/admin/notice":
+            self.handle_admin_notice()
+            return
+        if path == "/api/v1/admin/tuning":
+            self.handle_admin_tuning()
             return
         if path == "/api/v1/admin/announcement":
             self.handle_admin_announcement()
             return
+        if path == "/api/v1/admin/mail":
+            self.handle_admin_mail()
+            return
+        if path == "/api/v1/admin/hotpack/bump":
+            self.handle_admin_hotpack_bump()
+            return
+        if path.startswith("/api/v1/admin/users/"):
+            uid = urllib.parse.unquote(path[len("/api/v1/admin/users/"):])
+            self.handle_admin_edit_user(uid)
+            return
 
-        self.send_json({"ok": False, "error": "未知接口路径"}, 404)
+        self.send_json({"ok": False, "error": "Not Found"}, 404)
 
     # ----------------------------- PATCH / PUT / DELETE -----------------------------
 
     def do_PATCH(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        if not self._precheck(path):
+            return
         if path == "/api/v1/auth/profile":
             self.handle_update_profile()
             return
-        self.send_json({"ok": False, "error": "未知接口路径"}, 404)
+        self.send_json({"ok": False, "error": "Not Found"}, 404)
 
     def do_PUT(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        if not self._precheck(path):
+            return
         if path.startswith("/api/v1/saves/"):
             auth = self.require_auth()
             if not auth:
@@ -1005,11 +1296,13 @@ class PlatformHandler(BaseHTTPRequestHandler):
             save_id = urllib.parse.unquote(path[len("/api/v1/saves/"):])
             self.handle_save_upload(auth[0]["id"], save_id)
             return
-        self.send_json({"ok": False, "error": "未知接口路径"}, 404)
+        self.send_json({"ok": False, "error": "Not Found"}, 404)
 
     def do_DELETE(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        if not self._precheck(path):
+            return
         if path.startswith("/api/v1/saves/"):
             auth = self.require_auth()
             if not auth:
@@ -1017,9 +1310,19 @@ class PlatformHandler(BaseHTTPRequestHandler):
             save_id = urllib.parse.unquote(path[len("/api/v1/saves/"):])
             self.handle_save_delete(auth[0]["id"], save_id)
             return
-        self.send_json({"ok": False, "error": "未知接口路径"}, 404)
+        if path.startswith("/api/v1/admin/announcement/"):
+            if not self.require_admin():
+                return
+            aid = path[len("/api/v1/admin/announcement/"):]
+            if aid.isdigit():
+                with _db_lock:
+                    DB.execute("DELETE FROM announcements WHERE id = ?", (int(aid),))
+                    DB.commit()
+            self.send_json({"ok": True})
+            return
+        self.send_json({"ok": False, "error": "Not Found"}, 404)
 
-    # ----------------------------- Handlers -----------------------------
+    # ----------------------------- File & HotPack Handlers -----------------------------
 
     def handle_download_file(self, rel_name: str) -> None:
         safe = Path(rel_name).name
@@ -1028,17 +1331,14 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return
         target = DOWNLOADS_DIR / safe
         if not target.exists() or not target.is_file():
-            self.send_json({"ok": False, "error": "安装包尚未上传至此节点"}, 404)
+            self.send_json({"ok": False, "error": "文件不存在"}, 404)
             return
         size = target.stat().st_size
-        start = 0
-        end = size - 1
-        status = 200
+        start, end, status = 0, size - 1, 200
         rng = self.headers.get("Range")
         if rng and rng.startswith("bytes="):
             try:
-                spec = rng[6:].split(",")[0].strip()
-                s_str, e_str = spec.split("-", 1)
+                s_str, e_str = rng[6:].split(",")[0].strip().split("-", 1)
                 if s_str:
                     start = int(s_str)
                 if e_str:
@@ -1049,6 +1349,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 start, end, status = 0, size - 1, 200
         length = end - start + 1
         self.send_response(status)
+        self._security_headers()
         self.send_header("Content-Type", "application/octet-stream")
         self.send_header("Content-Disposition", f'attachment; filename="{safe}"')
         self.send_header("Accept-Ranges", "bytes")
@@ -1066,6 +1367,30 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 self.wfile.write(chunk)
                 rem -= len(chunk)
 
+    def handle_hotpack_file(self, rel_path: str) -> None:
+        if not rel_path or ".." in rel_path or rel_path.startswith("/"):
+            self.send_json({"ok": False, "error": "非法路径"}, 400)
+            return
+        try:
+            root = HOTPACK_DIR.resolve()
+            target = (HOTPACK_DIR / rel_path).resolve()
+            if not target.is_relative_to(root) or not target.is_file():
+                self.send_json({"ok": False, "error": "资源不存在"}, 404)
+                return
+        except Exception:
+            self.send_json({"ok": False, "error": "非法路径"}, 400)
+            return
+        data = target.read_bytes()
+        self.send_response(200)
+        self._security_headers()
+        self.send_header("Content-Type", "application/octet-stream")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "public, max-age=86400")
+        self.end_headers()
+        self.wfile.write(data)
+
+    # ----------------------------- Public Game APIs -----------------------------
+
     def handle_bootstrap(self, qs: dict[str, list[str]]) -> None:
         cur_ver = (qs.get("version", ["0.0.0"])[0] or "0.0.0").strip()
         try:
@@ -1078,8 +1403,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
             cur_patch = 0
 
         rel = get_release_config()
-        latest_ver = str(rel.get("latestVersion", "5.3.0"))
-        latest_build = int(rel.get("latestBuild", 183))
+        latest_ver = str(rel.get("latestVersion", "5.4.0"))
+        latest_build = int(rel.get("latestBuild", 184))
         min_build = int(rel.get("minSupportedBuild", 0))
         has_app_update = compare_version(cur_ver, cur_build, latest_ver, latest_build)
         force_update = bool(rel.get("forceUpdate", False)) or (cur_build > 0 and cur_build < min_build)
@@ -1109,6 +1434,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if auth:
             user_payload = serialize_user(auth[0])
 
+        pack = get_hotpack_manifest()
         self.send_json(
             {
                 "ok": True,
@@ -1134,7 +1460,13 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     "sha256": hp.get("sha256", ""),
                     "config": hp.get("config", {}) if (has_patch or cur_patch == 0) else None,
                 },
-                "server": get_server_snapshot(),
+                "hotpack": {
+                    "packVersion": pack["packVersion"],
+                    "releaseTag": pack["releaseTag"],
+                    "totalBytes": pack["totalBytes"],
+                    "fileCount": len(pack["files"]),
+                },
+                "server": get_public_server_snapshot(),
                 "announcements": announcements,
                 "user": user_payload,
             }
@@ -1163,7 +1495,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
         )
 
     def handle_register(self) -> None:
-        if not check_rate_limit(f"reg:{self.client_address[0]}", 12, 300):
+        if not check_rate_limit(f"reg:{self.client_address[0]}", 10, 300):
             self.send_json({"ok": False, "error": "操作过于频繁，请片刻后再试"}, 429)
             return
         body = self.read_json_body()
@@ -1184,20 +1516,18 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if len(password) < 6 or len(password) > 64:
             self.send_json({"ok": False, "error": "密令长度须为 6–64 位"}, 400)
             return
-        if len(nickname) > 16:
-            nickname = nickname[:16]
 
+        role = "admin" if username.lower() in ADMIN_USERNAMES else "player"
         uid = next_uid()
         ts = now_ms()
-        pw_hash = hash_password(password)
         try:
             with _db_lock:
                 DB.execute(
                     """
-                    INSERT INTO users(id, username, password_hash, nickname, seal_char, seal_style, is_guest, exp, created_at, last_login_at, last_seen_at)
-                    VALUES (?, ?, ?, ?, ?, ?, 0, 20, ?, ?, ?)
+                    INSERT INTO users(id, username, password_hash, nickname, seal_char, seal_style, role, banned, is_guest, exp, created_at, last_login_at, last_seen_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 20, ?, ?, ?)
                     """,
-                    (uid, username, pw_hash, nickname, seal_char, seal_style, ts, ts, ts),
+                    (uid, username, hash_password(password), nickname[:16], seal_char, seal_style, role, ts, ts, ts),
                 )
                 DB.commit()
                 user_row = DB.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
@@ -1209,7 +1539,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
         self.send_json({"ok": True, "token": token, "user": serialize_user(user_row)}, 201)
 
     def handle_login(self) -> None:
-        if not check_rate_limit(f"login:{self.client_address[0]}", 20, 300):
+        ip = self.client_address[0]
+        if not check_rate_limit(f"login:{ip}", 20, 300):
             self.send_json({"ok": False, "error": "尝试次数过多，请稍后再试"}, 429)
             return
         body = self.read_json_body()
@@ -1226,8 +1557,17 @@ class PlatformHandler(BaseHTTPRequestHandler):
         with _db_lock:
             row = DB.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
         if not row or not verify_password(password, row["password_hash"]):
+            record_login_failure(ip)
             self.send_json({"ok": False, "error": "账号或密令有误，请核对后重试"}, 401)
             return
+        if int(row["banned"]) != 0:
+            self.send_json({"ok": False, "error": "该账号已被限制登临"}, 403)
+            return
+        # Ensure configured admin usernames always hold admin role
+        if username.lower() in ADMIN_USERNAMES and row["role"] != "admin":
+            with _db_lock:
+                DB.execute("UPDATE users SET role = 'admin' WHERE id = ?", (row["id"],))
+                DB.commit()
         token = create_session(row["id"], device_name, app_version)
         with _db_lock:
             fresh = DB.execute("SELECT * FROM users WHERE id = ?", (row["id"],)).fetchone()
@@ -1247,17 +1587,16 @@ class PlatformHandler(BaseHTTPRequestHandler):
         user_row = None
         if device_id:
             with _db_lock:
-                user_row = DB.execute("SELECT * FROM users WHERE device_id = ? AND is_guest = 1", (device_id,)).fetchone()
+                user_row = DB.execute("SELECT * FROM users WHERE device_id = ? AND is_guest = 1 AND banned = 0", (device_id,)).fetchone()
         if user_row is None:
             uid = next_uid()
             ts = now_ms()
-            suffix = uid[-4:]
-            nickname = f"游历史官·{suffix}"
+            nickname = f"游历史官·{uid[-4:]}"
             with _db_lock:
                 DB.execute(
                     """
-                    INSERT INTO users(id, username, password_hash, nickname, seal_char, seal_style, is_guest, device_id, exp, created_at, last_login_at, last_seen_at)
-                    VALUES (?, NULL, ?, ?, '史', 'jade', 1, ?, 10, ?, ?, ?)
+                    INSERT INTO users(id, username, password_hash, nickname, seal_char, seal_style, role, banned, is_guest, device_id, exp, created_at, last_login_at, last_seen_at)
+                    VALUES (?, NULL, ?, ?, '史', 'jade', 'player', 0, 1, ?, 10, ?, ?, ?)
                     """,
                     (uid, hash_password(secrets.token_urlsafe(24)), nickname, device_id or None, ts, ts, ts),
                 )
@@ -1288,11 +1627,12 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if len(password) < 6 or len(password) > 64:
             self.send_json({"ok": False, "error": "密令长度须为 6–64 位"}, 400)
             return
+        role = "admin" if username.lower() in ADMIN_USERNAMES else "player"
         try:
             with _db_lock:
                 DB.execute(
-                    "UPDATE users SET username = ?, password_hash = ?, nickname = ?, is_guest = 0, exp = exp + 20 WHERE id = ?",
-                    (username, hash_password(password), nickname[:16], user_row["id"]),
+                    "UPDATE users SET username = ?, password_hash = ?, nickname = ?, role = ?, is_guest = 0, exp = exp + 20 WHERE id = ?",
+                    (username, hash_password(password), nickname[:16], role, user_row["id"]),
                 )
                 DB.commit()
                 fresh = DB.execute("SELECT * FROM users WHERE id = ?", (user_row["id"],)).fetchone()
@@ -1304,9 +1644,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
     def handle_logout(self) -> None:
         auth = authenticate_token(self.headers.get("Authorization"))
         if auth:
-            _, token_h = auth
             with _db_lock:
-                DB.execute("DELETE FROM sessions WHERE token_hash = ?", (token_h,))
+                DB.execute("DELETE FROM sessions WHERE token_hash = ?", (auth[1],))
                 DB.commit()
         self.send_json({"ok": True})
 
@@ -1355,8 +1694,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return
         yest = yesterday_shanghai()
         streak = int(user_row["checkin_streak"]) + 1 if user_row["last_checkin_date"] == yest else 1
-        bonus = min(10, (streak - 1) * 2)
-        gained = 15 + bonus
+        gained = 15 + min(10, (streak - 1) * 2)
         with _db_lock:
             DB.execute(
                 "UPDATE users SET checkin_streak = ?, total_checkins = total_checkins + 1, last_checkin_date = ?, exp = exp + ? WHERE id = ?",
@@ -1364,13 +1702,11 @@ class PlatformHandler(BaseHTTPRequestHandler):
             )
             DB.commit()
             fresh = DB.execute("SELECT * FROM users WHERE id = ?", (user_row["id"],)).fetchone()
-        msg = f"临朝落印成礼！连签 {streak} 日，获史馆功勋 +{gained}"
-        self.send_json({"ok": True, "already": False, "gainedExp": gained, "message": msg, "user": serialize_user(fresh)})
+        self.send_json({"ok": True, "already": False, "gainedExp": gained, "message": f"临朝落印成礼，连签 {streak} 日，功勋 +{gained}", "user": serialize_user(fresh)})
 
     def handle_heartbeat(self) -> None:
         auth = authenticate_token(self.headers.get("Authorization"))
-        snap = get_server_snapshot()
-        self.send_json({"ok": True, "authenticated": auth is not None, "server": snap})
+        self.send_json({"ok": True, "authenticated": auth is not None, "server": get_public_server_snapshot()})
 
     def handle_inbox(self, user_id: str) -> None:
         with _db_lock:
@@ -1407,7 +1743,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
             if category == "exp":
                 rows = DB.execute(
                     """
-                    SELECT u.id AS user_id, u.nickname, u.seal_char, u.seal_style, u.exp, u.checkin_streak,
+                    SELECT u.id AS user_id, u.nickname, u.seal_char, u.seal_style, u.exp,
                            COALESCE(l.world_title, '') AS world_title,
                            COALESCE(l.top_nation, '') AS top_nation,
                            COALESCE(l.provinces_held, 0) AS provinces_held,
@@ -1415,20 +1751,20 @@ class PlatformHandler(BaseHTTPRequestHandler):
                            COALESCE(l.wonders_count, 0) AS wonders_count
                     FROM users u
                     LEFT JOIN leaderboard l ON l.user_id = u.id
-                    ORDER BY u.exp DESC, u.total_checkins DESC
-                    LIMIT 30
+                    WHERE u.banned = 0
+                    ORDER BY u.exp DESC, u.total_checkins DESC LIMIT 30
                     """
                 ).fetchall()
             else:
                 order_col = "l.years_elapsed DESC, l.provinces_held DESC" if category == "years" else "l.provinces_held DESC, l.years_elapsed DESC"
                 rows = DB.execute(
                     f"""
-                    SELECT u.id AS user_id, u.nickname, u.seal_char, u.seal_style, u.exp, u.checkin_streak,
+                    SELECT u.id AS user_id, u.nickname, u.seal_char, u.seal_style, u.exp,
                            l.world_title, l.top_nation, l.provinces_held, l.years_elapsed, l.wonders_count
                     FROM leaderboard l
                     JOIN users u ON u.id = l.user_id
-                    ORDER BY {order_col}
-                    LIMIT 30
+                    WHERE u.banned = 0
+                    ORDER BY {order_col} LIMIT 30
                     """
                 ).fetchall()
         entries = []
@@ -1477,14 +1813,10 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 INSERT INTO leaderboard(user_id, world_title, top_nation, provinces_held, total_days, years_elapsed, nations_count, wars_count, wonders_count, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(user_id) DO UPDATE SET
-                    world_title=excluded.world_title,
-                    top_nation=excluded.top_nation,
-                    provinces_held=excluded.provinces_held,
-                    total_days=excluded.total_days,
-                    years_elapsed=excluded.years_elapsed,
-                    nations_count=excluded.nations_count,
-                    wars_count=excluded.wars_count,
-                    wonders_count=excluded.wonders_count,
+                    world_title=excluded.world_title, top_nation=excluded.top_nation,
+                    provinces_held=excluded.provinces_held, total_days=excluded.total_days,
+                    years_elapsed=excluded.years_elapsed, nations_count=excluded.nations_count,
+                    wars_count=excluded.wars_count, wonders_count=excluded.wonders_count,
                     updated_at=excluded.updated_at
                 """,
                 (user_row["id"], world_title, top_nation, provinces_held, total_days, years_elapsed, nations_count, wars_count, wonders_count, ts),
@@ -1495,7 +1827,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
             fresh = DB.execute("SELECT * FROM users WHERE id = ?", (user_row["id"],)).fetchone()
         self.send_json({"ok": True, "user": serialize_user(fresh)})
 
-    # ----------------------------- Account Cloud Saves -----------------------------
+    # ----------------------------- Cloud Saves -----------------------------
 
     def handle_saves_list(self, user_id: str) -> None:
         with _db_lock:
@@ -1504,22 +1836,20 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 "FROM cloud_saves WHERE user_id = ? ORDER BY updated_at DESC",
                 (user_id,),
             ).fetchall()
-        saves = [
+        self.send_json(
             {
-                "id": r["id"],
-                "title": r["title"],
-                "date": r["date_text"],
-                "nations": int(r["nations"]),
-                "provinces": int(r["provinces"]),
-                "day": int(r["day"]),
-                "sizeBytes": int(r["size_bytes"]),
-                "updatedAt": float(r["updated_at"]),
-                "device": r["device"],
-                "encoding": r["encoding"],
+                "ok": True,
+                "saves": [
+                    {
+                        "id": r["id"], "title": r["title"], "date": r["date_text"],
+                        "nations": int(r["nations"]), "provinces": int(r["provinces"]),
+                        "day": int(r["day"]), "sizeBytes": int(r["size_bytes"]),
+                        "updatedAt": float(r["updated_at"]), "device": r["device"], "encoding": r["encoding"],
+                    }
+                    for r in rows
+                ],
             }
-            for r in rows
-        ]
-        self.send_json({"ok": True, "saves": saves})
+        )
 
     def handle_save_upload(self, user_id: str, save_id: str) -> None:
         safe_id = re.sub(r"[^A-Za-z0-9_\-]", "", save_id)[:64]
@@ -1535,7 +1865,6 @@ class PlatformHandler(BaseHTTPRequestHandler):
         if cnt >= MAX_SAVES_PER_USER:
             self.send_json({"ok": False, "reason": f"账号云端卷宗已达上限（{MAX_SAVES_PER_USER} 卷），请先清理旧卷"}, 400)
             return
-
         self._body_consumed = True
         payload = self.rfile.read(cl)
         user_dir = SAVES_DIR / user_id
@@ -1557,7 +1886,6 @@ class PlatformHandler(BaseHTTPRequestHandler):
         device = hdr("X-Save-Device", "")[:48]
         encoding = (hdr("X-Save-Encoding", "zlib") or "zlib").lower()
         ts = now_ms()
-
         with _db_lock:
             DB.execute(
                 """
@@ -1573,34 +1901,25 @@ class PlatformHandler(BaseHTTPRequestHandler):
             )
             DB.execute("UPDATE users SET exp = exp + 5 WHERE id = ?", (user_id,))
             DB.commit()
-
-        card = {
-            "id": safe_id,
-            "title": title,
-            "date": date_text,
-            "nations": nations,
-            "provinces": provinces,
-            "day": day,
-            "sizeBytes": len(payload),
-            "updatedAt": float(ts),
-            "device": device,
-            "encoding": encoding,
-        }
-        self.send_json({"ok": True, "save": card})
+        self.send_json({
+            "ok": True,
+            "save": {
+                "id": safe_id, "title": title, "date": date_text, "nations": nations,
+                "provinces": provinces, "day": day, "sizeBytes": len(payload),
+                "updatedAt": float(ts), "device": device, "encoding": encoding,
+            },
+        })
 
     def handle_save_download(self, user_id: str, save_id: str) -> None:
         safe_id = re.sub(r"[^A-Za-z0-9_\-]", "", save_id)[:64]
         with _db_lock:
             row = DB.execute("SELECT file_path, encoding FROM cloud_saves WHERE user_id = ? AND id = ?", (user_id, safe_id)).fetchone()
-        if not row:
+        if not row or not Path(row["file_path"]).exists():
             self.send_json({"ok": False, "error": "云端存档不存在"}, 404)
             return
-        fpath = Path(row["file_path"])
-        if not fpath.exists():
-            self.send_json({"ok": False, "error": "存档文件已缺失"}, 404)
-            return
-        data = fpath.read_bytes()
+        data = Path(row["file_path"]).read_bytes()
         self.send_response(200)
+        self._security_headers()
         self.send_header("Content-Type", "application/octet-stream")
         self.send_header("X-Save-Encoding", row["encoding"])
         self.send_header("Content-Length", str(len(data)))
@@ -1621,27 +1940,83 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 pass
         self.send_json({"ok": True})
 
-    # ----------------------------- Admin Endpoints -----------------------------
+    # ----------------------------- Admin Console Endpoints -----------------------------
 
-    def handle_admin_release(self) -> None:
+    def handle_admin_users(self, q: str) -> None:
+        with _db_lock:
+            if q:
+                like = f"%{q}%"
+                rows = DB.execute(
+                    "SELECT id, username, nickname, seal_char, seal_style, role, banned, is_guest, exp, checkin_streak, last_seen_at "
+                    "FROM users WHERE id LIKE ? OR username LIKE ? OR nickname LIKE ? ORDER BY last_seen_at DESC LIMIT 50",
+                    (like, like, like),
+                ).fetchall()
+            else:
+                rows = DB.execute(
+                    "SELECT id, username, nickname, seal_char, seal_style, role, banned, is_guest, exp, checkin_streak, last_seen_at "
+                    "FROM users ORDER BY last_seen_at DESC LIMIT 50"
+                ).fetchall()
+        out = []
+        for r in rows:
+            with _db_lock:
+                sc = DB.execute("SELECT COUNT(*) AS c FROM cloud_saves WHERE user_id = ?", (r["id"],)).fetchone()["c"]
+            rk = rank_info(int(r["exp"]))
+            out.append({
+                "id": r["id"],
+                "username": r["username"] or "",
+                "nickname": r["nickname"],
+                "sealChar": r["seal_char"],
+                "sealStyle": r["seal_style"],
+                "role": r["role"],
+                "banned": bool(r["banned"]),
+                "isGuest": bool(r["is_guest"]),
+                "exp": int(r["exp"]),
+                "rankTitle": rk["title"],
+                "cloudSaveCount": int(sc),
+                "lastSeenAt": float(r["last_seen_at"]),
+            })
+        self.send_json({"ok": True, "users": out})
+
+    def handle_admin_edit_user(self, uid: str) -> None:
         if not self.require_admin():
             return
         body = self.read_json_body()
         if body is None:
             return
-        cur = get_release_config()
-        for k in ("latestVersion", "latestBuild", "minSupportedBuild", "forceUpdate", "releaseDate", "ipaSizeMB", "downloadUrl", "directIpaUrl", "webDownloadUrl", "releaseNotes"):
-            if k in body:
-                cur[k] = body[k]
-        if "hotpatch" in body and isinstance(body["hotpatch"], dict):
-            hp = cur.get("hotpatch", {})
-            hp.update(body["hotpatch"])
-            if "config" in hp and isinstance(hp["config"], dict):
-                hp["sha256"] = compute_hotpatch_sha(hp["config"])
-            hp["updatedAt"] = now_ms()
-            cur["hotpatch"] = hp
-        save_release_config(cur)
-        self.send_json({"ok": True, "release": get_release_config()})
+        with _db_lock:
+            row = DB.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
+            if not row:
+                self.send_json({"ok": False, "error": "找不到该史官"}, 404)
+                return
+            if "expDelta" in body:
+                delta = max(-5000, min(5000, int(body["expDelta"] or 0)))
+                DB.execute("UPDATE users SET exp = MAX(0, exp + ?) WHERE id = ?", (delta, uid))
+            if "banned" in body and row["role"] != "admin":
+                b = 1 if body["banned"] else 0
+                DB.execute("UPDATE users SET banned = ? WHERE id = ?", (b, uid))
+                if b:
+                    DB.execute("DELETE FROM sessions WHERE user_id = ?", (uid,))
+            if "nickname" in body and str(body["nickname"]).strip():
+                DB.execute("UPDATE users SET nickname = ? WHERE id = ?", (str(body["nickname"]).strip()[:16], uid))
+            if body.get("clearLeaderboard"):
+                DB.execute("DELETE FROM leaderboard WHERE user_id = ?", (uid,))
+            DB.commit()
+        self.send_json({"ok": True})
+
+    def handle_admin_announcements_list(self) -> None:
+        with _db_lock:
+            rows = DB.execute("SELECT id, badge, title, content, pinned, active, created_at FROM announcements ORDER BY pinned DESC, created_at DESC LIMIT 30").fetchall()
+        self.send_json({
+            "ok": True,
+            "announcements": [
+                {
+                    "id": int(r["id"]), "badge": r["badge"], "title": r["title"],
+                    "content": r["content"], "pinned": bool(r["pinned"]),
+                    "active": bool(r["active"]), "createdAt": int(r["created_at"]),
+                }
+                for r in rows
+            ],
+        })
 
     def handle_admin_announcement(self) -> None:
         if not self.require_admin():
@@ -1665,15 +2040,130 @@ class PlatformHandler(BaseHTTPRequestHandler):
             aid = cur.lastrowid
         self.send_json({"ok": True, "id": aid})
 
+    def handle_admin_notice(self) -> None:
+        if not self.require_admin():
+            return
+        body = self.read_json_body()
+        if body is None:
+            return
+        notice = str(body.get("notice", "")).strip()[:120]
+        cur = get_release_config()
+        hp = cur.get("hotpatch", {})
+        cfg = hp.get("config", json.loads(json.dumps(DEFAULT_HOTPATCH_CONFIG)))
+        cfg["notice"] = notice
+        hp["patchVersion"] = int(hp.get("patchVersion", 8)) + 1
+        cfg["version"] = hp["patchVersion"]
+        hp["summary"] = "管理员已更新全服跑马灯与开服通告"
+        hp["updatedAt"] = now_ms()
+        hp["config"] = cfg
+        hp["sha256"] = compute_hotpatch_sha(cfg)
+        cur["hotpatch"] = hp
+        save_release_config(cur)
+        self.send_json({"ok": True, "patchVersion": hp["patchVersion"], "notice": notice})
+
+    def handle_admin_tuning(self) -> None:
+        if not self.require_admin():
+            return
+        body = self.read_json_body()
+        if body is None:
+            return
+        cur = get_release_config()
+        hp = cur.get("hotpatch", {})
+        cfg = hp.get("config", json.loads(json.dumps(DEFAULT_HOTPATCH_CONFIG)))
+        if isinstance(body.get("tuning"), dict):
+            t = cfg.get("tuning", {})
+            for k, v in body["tuning"].items():
+                t[k] = v
+            cfg["tuning"] = t
+        if isinstance(body.get("pace"), dict):
+            p = cfg.get("pace", {})
+            for k, v in body["pace"].items():
+                p[str(k)] = max(1, min(60, int(v)))
+            cfg["pace"] = p
+        if "notice" in body:
+            cfg["notice"] = str(body["notice"]).strip()[:120]
+        hp["patchVersion"] = int(hp.get("patchVersion", 8)) + 1
+        cfg["version"] = hp["patchVersion"]
+        hp["summary"] = str(body.get("summary", "管理员热更全服平衡数值与倍速节拍"))[:80]
+        hp["updatedAt"] = now_ms()
+        hp["config"] = cfg
+        hp["sha256"] = compute_hotpatch_sha(cfg)
+        cur["hotpatch"] = hp
+        save_release_config(cur)
+        # Also mirror updated hot-rules.json into hotpack so new downloads stay in sync
+        rules_path = HOTPACK_DIR / "Content" / "hot-rules.json"
+        if rules_path.parent.exists():
+            rules_path.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+            rebuild_hotpack_manifest(bump_version=True, summary=hp["summary"])
+        self.send_json({"ok": True, "patchVersion": hp["patchVersion"]})
+
+    def handle_admin_release(self) -> None:
+        if not self.require_admin():
+            return
+        body = self.read_json_body()
+        if body is None:
+            return
+        cur = get_release_config()
+        for k in ("latestVersion", "latestBuild", "minSupportedBuild", "forceUpdate", "maintenance", "maintenanceMessage", "releaseDate", "ipaSizeMB", "downloadUrl", "directIpaUrl", "webDownloadUrl", "releaseNotes"):
+            if k in body:
+                cur[k] = body[k]
+        if "hotpatch" in body and isinstance(body["hotpatch"], dict):
+            hp = cur.get("hotpatch", {})
+            hp.update(body["hotpatch"])
+            if "config" in hp and isinstance(hp["config"], dict):
+                hp["sha256"] = compute_hotpatch_sha(hp["config"])
+            hp["updatedAt"] = now_ms()
+            cur["hotpatch"] = hp
+        save_release_config(cur)
+        self.send_json({"ok": True, "release": get_release_config()})
+
+    def handle_admin_mail(self) -> None:
+        if not self.require_admin():
+            return
+        body = self.read_json_body()
+        if body is None:
+            return
+        target = str(body.get("target", "*")).strip() or "*"
+        sender = str(body.get("sender", "御前司礼监")).strip()[:20] or "御前司礼监"
+        title = str(body.get("title", "")).strip()[:64]
+        content = str(body.get("content", "")).strip()[:2000]
+        if not title or not content:
+            self.send_json({"ok": False, "error": "信件标题与正文不能为空"}, 400)
+            return
+        resolved_target = "*"
+        if target != "*":
+            with _db_lock:
+                u = DB.execute("SELECT id FROM users WHERE id = ? OR LOWER(username) = LOWER(?)", (target, target)).fetchone()
+            if not u:
+                self.send_json({"ok": False, "error": f"找不到收件史官：{target}"}, 404)
+                return
+            resolved_target = u["id"]
+        with _db_lock:
+            DB.execute(
+                "INSERT INTO mail(user_id, sender, title, content, created_at) VALUES (?, ?, ?, ?, ?)",
+                (resolved_target, sender, title, content, now_ms()),
+            )
+            DB.commit()
+        self.send_json({"ok": True, "target": resolved_target})
+
+    def handle_admin_hotpack_bump(self) -> None:
+        if not self.require_admin():
+            return
+        body = self.read_json_body() or {}
+        tag = str(body.get("releaseTag", "")).strip() or None
+        summary = str(body.get("summary", "")).strip() or None
+        m = rebuild_hotpack_manifest(bump_version=True, tag=tag, summary=summary)
+        self.send_json({"ok": True, "packVersion": m["packVersion"], "totalBytes": m["totalBytes"], "files": len(m["files"])})
+
 
 def main() -> None:
     init_db()
+    rebuild_hotpack_manifest(bump_version=False)
     probe_compute_once()
     start_probe_thread()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), PlatformHandler)
     server.daemon_threads = True
-    print(f"列国纪云端行宫平台服务器 v1.0 已启动：http://0.0.0.0:{PORT}（公网 http://{PUBLIC_HOST}）", flush=True)
-    print(f"绑定计算节点：{COMPUTE_HOST} · 数据目录：{DATA_DIR}", flush=True)
+    print(f"列国纪云端行宫平台服务器 v2.0 已启动：:{PORT}（管理员：{','.join(sorted(ADMIN_USERNAMES))}）", flush=True)
     server.serve_forever()
 
 

@@ -202,9 +202,18 @@ actor NativeHost {
         return OnlinePlatform.defaultComputeHost
     }
 
+    nonisolated static func invalidateCatalogCache() {
+        Task { await resetCatalogFlag() }
+    }
+    private static func resetCatalogFlag() {
+        catalogs = false
+    }
+
     static func catalogData() throws -> (traits: Data, noble: Data, cultures: Data) {
         func data(_ name: String, _ ext: String, _ dir: String) throws -> Data {
-            guard let url = Bundle.main.url(forResource: name, withExtension: ext, subdirectory: dir) else { throw EngineError.message("安装包缺少\(name)数据") }
+            guard let url = HotPackManager.resourceURL(name: name, ext: ext, subdirectory: dir) else {
+                throw EngineError.message("安装包缺少\(name)数据")
+            }
             return try Data(contentsOf: url)
         }
         return (try data("traits", "json", "Catalog"), try data("noble-cultures", "json", "Catalog"), try data("cultures", "json", "World"))

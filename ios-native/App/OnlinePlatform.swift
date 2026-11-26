@@ -27,6 +27,8 @@ struct OnlineUser: Codable, Identifiable, Equatable {
     let bio: String
     let sealChar: String
     let sealStyle: String
+    let role: String?
+    let isAdmin: Bool?
     let isGuest: Bool
     let exp: Int
     let rank: OnlineRankInfo
@@ -37,6 +39,8 @@ struct OnlineUser: Codable, Identifiable, Equatable {
     let cloudSaveQuota: Int
     let unreadMailCount: Int
     let createdAt: Double
+
+    var isAdminAccount: Bool { isAdmin == true || role == "admin" }
 }
 
 struct AppUpdateInfo: Codable, Equatable {
@@ -64,23 +68,86 @@ struct AppUpdateInfo: Codable, Equatable {
 struct ServerSnapshot: Codable, Equatable {
     let name: String
     let region: String
-    let publicHost: String
+    let publicHost: String?
     let computeHost: String
     let computeOnline: Bool
-    let computeGreeting: String
+    let computeGreeting: String?
     let onlineCount: Int
-    let totalUsers: Int
-    let totalSaves: Int
-    let uptimeSeconds: Int
+    let totalUsers: Int?
+    let totalSaves: Int?
+    let uptimeSeconds: Int?
+    let maintenance: Bool?
+    let maintenanceMessage: String?
     let serverTimeMs: Double
 
     var uptimeText: String {
-        let h = uptimeSeconds / 3600
+        let secs = uptimeSeconds ?? 0
+        let h = secs / 3600
         let d = h / 24
         if d > 0 { return "\(d) 天 \(h % 24) 时" }
-        if h > 0 { return "\(h) 小时 \((uptimeSeconds % 3600) / 60) 分" }
-        return "\(max(1, uptimeSeconds / 60)) 分钟"
+        if h > 0 { return "\(h) 小时 \((secs % 3600) / 60) 分" }
+        return "\(max(1, secs / 60)) 分钟"
     }
+}
+
+struct AdminOverview: Decodable {
+    struct Compute: Decodable {
+        let online: Bool
+        let rttMs: Int?
+        let playing: Bool
+        let stepMs: Int
+        let provinces: Int
+        let clients: Int
+    }
+    struct Host: Decodable {
+        let cpuLoad1m: Double
+        let memUsedMB: Int
+        let memTotalMB: Int
+        let diskFreeGB: Double
+        let diskTotalGB: Double
+    }
+    struct Security: Decodable {
+        let blockedRequests: Int
+        let scannerHits: Int
+        let loginFailures: Int
+        let activeBlockedIPs: Int
+    }
+    let name: String
+    let region: String
+    let onlineCount: Int
+    let totalUsers: Int
+    let totalSaves: Int
+    let bannedUsers: Int
+    let uptimeSeconds: Int
+    let compute: Compute
+    let host: Host
+    let security: Security
+    let maintenance: Bool
+    let maintenanceMessage: String
+    let hotpackVersion: Int
+    let hotpackBytes: Int64
+    let hotpackFiles: Int
+    let notice: String
+    let latestVersion: String
+    let latestBuild: Int
+    let forceUpdate: Bool
+    let tuning: [String: Double]?
+    let pace: [String: Int]?
+}
+
+struct AdminUserRow: Decodable, Identifiable, Equatable {
+    let id: String
+    let username: String
+    let nickname: String
+    let sealChar: String
+    let sealStyle: String
+    let role: String
+    let banned: Bool
+    let isGuest: Bool
+    let exp: Int
+    let rankTitle: String
+    let cloudSaveCount: Int
+    let lastSeenAt: Double
 }
 
 struct AnnouncementItem: Codable, Identifiable, Equatable {
@@ -783,5 +850,54 @@ private final class TokenBox: @unchecked Sendable {
         downloadSession = nil
         downloadingIPA = false
         downloadDetail = "已取消下载"
+    }
+
+    // MARK: - 御前司礼监 · 管理员中枢接口（服务端严格校验 ethanhui 管理员令牌）
+
+    private struct SimpleResp: Decodable {
+        let ok: Bool
+        let error: String?
+    }
+
+    func fetchAdminOverview() async -> AdminOverview? {
+        struct Wrap: Decodable { let ok: Bool; let overview: AdminOverview? }
+        guard let req = makeRequest("/api/v1/admin/overview", method: "GET", timeout: 10) else { return nil }
+        guard let (data, resp) = try? await session.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let wrap = try? JSONDecoder().decode(Wrap.self, from: data), wrap.ok else { return nil }
+        return wrap.overview
+    }
+
+    func fetchAdminUsers(query: String = "") async -> [AdminUserRow] {
+        struct Wrap: Decodable { let ok: Bool; let users: [AdminUserRow]? }
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        guard let req = makeRequest("/api/v1/admin/users?q=\(q)", method: "GET", timeout: 10) else { return [] }
+        guard let (data, resp) = try? await session.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let wrap = try? JSONDecoder().decode(Wrap.self, from: data), wrap.ok else { return [] }
+        return wrap.users ?? []
+    }
+
+    func adminPost(_ path: String, body: [String: Any]) async -> String? {
+        guard let req = makeRequest(path, method: "POST", jsonBody: body, timeout: 12) else { return "网络请求失败" }
+        do {
+            let (data, _) = try await session.data(for: req)
+            let res = try JSONDecoder().decode(SimpleResp.self, from: data)
+            return res.ok ? nil : (res.error ?? "操作失败")
+        } catch {
+            return "连接服务器失败"
+        }
+    }
+
+    func adminDeleteAnnouncement(id: Int) async -> String? {
+        guard let req = makeRequest("/api/v1/admin/announcement/\(id)", method: "DELETE", timeout: 10) else { return "请求失败" }
+        do {
+            let (data, _) = try await session.data(for: req)
+            let res = try JSONDecoder().decode(SimpleResp.self, from: data)
+            if res.ok { _ = await bootstrap(manual: true) }
+            return res.ok ? nil : (res.error ?? "删除失败")
+        } catch {
+            return "连接服务器失败"
+        }
     }
 }

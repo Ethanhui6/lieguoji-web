@@ -71,7 +71,7 @@ import LieguojiCore
         if player != nil { return }
         if queue.isEmpty { queue = Self.tracks.shuffled() }
         let name = queue.removeFirst()
-        guard let url = Bundle.main.url(forResource: name, withExtension: "m4a", subdirectory: "Music"), let p = try? AVAudioPlayer(contentsOf: url) else { return }
+        guard let url = HotPackManager.resourceURL(name: name, ext: "m4a", subdirectory: "Music"), let p = try? AVAudioPlayer(contentsOf: url) else { return }
         p.delegate = self; p.volume = 0; p.prepareToPlay(); p.play()
         player = p; track = Self.trackNames[name] ?? name
         fade(to: Float(volume))
@@ -99,7 +99,7 @@ import LieguojiCore
             cached.play()
             return
         }
-        guard let url = Bundle.main.url(forResource: sound.rawValue, withExtension: "wav", subdirectory: "Audio")
+        guard let url = HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "Audio")
                 ?? Bundle.main.url(forResource: sound.rawValue, withExtension: "wav"),
               let p = try? AVAudioPlayer(contentsOf: url) else { return }
         p.volume = Float(sfxVolume) * gain

@@ -45,9 +45,14 @@ struct InkVideoStage: View {
         return map
     }()
 
-    static func url(for name: String) -> URL? { posterURLCache[name] }
-    static func posterURL(for name: String) -> URL? { posterURLCache[name] }
-    static func hasVideo(_ name: String) -> Bool { posterURLCache[name] != nil }
+    static func url(for name: String) -> URL? { posterURL(for: name) }
+    static func posterURL(for name: String) -> URL? {
+        if let hot = HotPackManager.resourceURL(name: "poster-" + name, ext: "jpg", subdirectory: "Video") {
+            return hot
+        }
+        return posterURLCache[name]
+    }
+    static func hasVideo(_ name: String) -> Bool { posterURL(for: name) != nil }
 
     var body: some View {
         ZStack {

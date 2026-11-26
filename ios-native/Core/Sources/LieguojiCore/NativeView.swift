@@ -682,7 +682,7 @@ extension NativeEngine {
         let sieges = r.occupation.sieges.asArray.map { s in
             GameState.Siege(province: pi[s.provinceId.asString] ?? -1, nation: ni[s.controller.asString] ?? -1, progress: s.maximum.asNumber > 0 ? s.resistance.asNumber / s.maximum.asNumber : 0)
         }
-        let events = r.chronicle.entries.asArray.suffix(30).map { e in
+        let events = r.chronicle.entries.asArray.suffix(slim ? 12 : 30).map { e in
             GameState.Event(day: e.day.asInt, text: e.text.optionalString ?? "", kind: e.kind.optionalString ?? "", province: e.place.id.optionalString.flatMap { pi[$0] })
         }
         var out = GameState(day: w.day.asInt, date: date, owners: owners, labels: labelBoxes, nations: nationRows, armies: armyRows, wars: wars, sieges: sieges, events: events)

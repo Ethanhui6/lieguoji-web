@@ -1,0 +1,32 @@
+{
+  "version": 8,
+  "notice": "九州专属云服 v7 极速推流引擎已上线 · 280 州大图丝滑畅推",
+  "computeHost": "111.230.153.235:8765",
+  "pace": {
+    "1": 3,
+    "2": 6,
+    "4": 12,
+    "8": 20,
+    "16": 32
+  },
+  "tuning": {
+    "lethality": 2.0,
+    "siege": 6.0,
+    "peaceGoalMonths": 4,
+    "peaceDecisiveMonths": 6,
+    "wearyStart": 12,
+    "wearySpan": 24,
+    "warRestMonths": 2,
+    "warEagerness": 3.4,
+    "armiesPerProvince": 2.2,
+    "armiesAtHome": 3,
+    "armyCap": 900,
+    "navyAttackShare": 0.6,
+    "openingShips": 3,
+    "rebelMinProvinces": 24,
+    "calmMonths": 18,
+    "unrest": 0.35,
+    "smallStateGrit": 0.25,
+    "frameTicks": 60
+  }
+}

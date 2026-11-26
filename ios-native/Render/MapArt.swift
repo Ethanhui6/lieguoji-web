@@ -297,7 +297,7 @@ enum BundleArt {
     }
 
     static func url(_ name: String) -> URL? {
-        if let u = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "Art") { return u }
+        if let u = HotPackManager.resourceURL(name: name, ext: "png", subdirectory: "Art") { return u }
         return Bundle.main.url(forResource: name, withExtension: "png")
     }
 

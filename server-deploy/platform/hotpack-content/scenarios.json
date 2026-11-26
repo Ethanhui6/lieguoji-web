@@ -1,0 +1,14 @@
+[
+  {"id":"hot-sanguo","title":"三国鼎立","note":"汉室倾颓 · 群雄逐鹿中原","seal":"鼎","symbol":"flag.2.crossed","template":"pangea","nations":9,"provinces":130,"relations":"war","cultures":["chinese"]},
+  {"id":"hot-shengtang","title":"盛唐万邦","note":"东亚朝贡 · 丝路与海道齐辉","seal":"唐","symbol":"crown","template":"continents","nations":14,"provinces":170,"relations":"peace","cultures":["chinese","tibetan","turkic","japanese","korean","vietnamese","arab","persian","indian"]},
+  {"id":"hot-chunqiu","title":"春秋五霸","note":"周礼渐微 · 尊王攘夷争盟主","seal":"霸","symbol":"crown","template":"pangea","nations":12,"provinces":145,"relations":"peace","cultures":["chinese"]},
+  {"id":"hot-daming-sea","title":"大明海疆","note":"宝船七下 · 万里海贸与倭寇交锋","seal":"帆","symbol":"anchor","template":"archipelago","nations":11,"provinces":140,"relations":"peace","cultures":["chinese","japanese","korean","vietnamese","portuguese","spanish","dutch","arab"]},
+  {"id":"hot-songyuan","title":"宋元风云","note":"大漠铁骑南下 · 襄阳与江淮血战","seal":"漠","symbol":"flag.2.crossed","template":"pangea","nations":8,"provinces":150,"relations":"war","cultures":["chinese","mongol","tibetan","turkic","korean","vietnamese"]},
+  {"id":"hot-rome-med","title":"罗马地中海","note":"元老院鹰旗 · 环海城邦与迦太基争锋","seal":"鹰","symbol":"crown","template":"archipelago","nations":12,"provinces":155,"relations":"war","cultures":["roman","greek","egyptian","persian","french","spanish","german","italian"]},
+  {"id":"hot-crusade","title":"圣城风云","note":"东西方骑士与苏丹的百年拉锯","seal":"圣","symbol":"flag.2.crossed","template":"highIsland","nations":12,"provinces":145,"relations":"war","cultures":["french","english","german","italian","arab","turkic","greek","egyptian","spanish"]},
+  {"id":"hot-ottoman","title":"新月雄鹰","note":"跨洲帝国崛起 · 欧亚锁钥争夺","seal":"月","symbol":"crown","template":"continents","nations":14,"provinces":165,"relations":"war","cultures":["turkic","arab","persian","greek","slavic","hungarian","polish","italian","german"]},
+  {"id":"hot-sengoku","title":"战国幕府","note":"下克上群雄割据 · 铁炮与骑马齐驱","seal":"幕","symbol":"flag.2.crossed","template":"archipelago","nations":12,"provinces":120,"relations":"war","cultures":["japanese"]},
+  {"id":"hot-alexander","title":"亚历山大东征","note":"马其顿方阵 · 剑指波斯与印度河","seal":"阵","symbol":"flag.2.crossed","template":"pangea","nations":10,"provinces":155,"relations":"war","cultures":["greek","persian","egyptian","indian","arab","turkic"]},
+  {"id":"hot-nanbei","title":"南北朝乱世","note":"五胡十六国 · 江南衣冠南渡","seal":"乱","symbol":"flag.2.crossed","template":"pangea","nations":14,"provinces":160,"relations":"war","cultures":["chinese","mongol","turkic","tibetan"]},
+  {"id":"hot-grand-280","title":"九州万邦 · 280州","note":"专属云服推荐 · 史诗级 280 州大图","seal":"州","symbol":"globe.asia.australia","template":"continents","nations":22,"provinces":280,"relations":"peace","cultures":["chinese","japanese","english","arab","roman","french","german","greek","persian","slavic","norse","indian","korean","mongol","turkic","egyptian","spanish","italian"]}
+]

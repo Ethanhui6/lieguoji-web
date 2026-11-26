@@ -166,11 +166,12 @@ struct TitleView: View {
     @State private var authOpen = false
     @State private var hubOpen = false
     @State private var hubTab = "profile"
-    /// A line of the classics under the title, changing each launch.
+    /// A line of the classics under the title, changing each launch (merges hot-updated mottos).
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
-    @State private var motto = TitleView.mottos.randomElement()!
+    @State private var motto = (TitleView.mottos + HotPackManager.shared.extraMottos).randomElement() ?? "天下大势，分久必合，合久必分"
     @ObservedObject private var cloud = CloudConfig.shared
     @ObservedObject private var platform = OnlinePlatform.shared
+    @ObservedObject private var hotPack = HotPackManager.shared
     var body: some View {
         ZStack {
             // Ink at the top, paper at the bottom: the title and the actions read over any world.
@@ -206,9 +207,10 @@ struct TitleView: View {
                     Spacer()
                     TitleOnlineHeader(
                         platform: platform,
+                        hotPack: hotPack,
                         onOpenHub: { tab in hubTab = tab; hubOpen = true },
                         onOpenAuth: { authOpen = true },
-                        onOpenUpdate: { platform.showUpdateSheet = true }
+                        onOpenHotUpdate: { hotPack.showHotUpdateSheet = true }
                     )
                     .padding(.trailing, 18)
                     .padding(.top, 8)
@@ -218,7 +220,7 @@ struct TitleView: View {
                 .padding(.leading, 26).padding(.top, 12)
                 Spacer()
                 VStack(spacing: 12) {
-                    HotpatchSyncBanner(platform: platform)
+                    HotpatchSyncBanner(platform: platform, hotPack: hotPack)
                     if let notice = cloud.notice {
                         Button {
                             GameFeel.shared.tap()
@@ -461,6 +463,21 @@ struct NewWorldSheet: View {
         let id: String; let title: String; let note: String; let seal: String; let symbol: String
         let template: String; let nations: Int; let provinces: Int; let relations: String; let cultures: Set<String>
     }
+    @ObservedObject private var hotPack = HotPackManager.shared
+    private var allPresets: [ScenarioPreset] {
+        var seen = Set(Self.presets.map(\.id))
+        var out = Self.presets
+        for p in hotPack.extraScenarios where seen.insert(p.id).inserted {
+            let validCultures = Set(p.cultures.filter { Names.culture[$0] != nil })
+            out.append(ScenarioPreset(
+                id: p.id, title: p.title, note: p.note, seal: p.seal, symbol: p.symbol,
+                template: p.template, nations: max(2, min(28, p.nations)), provinces: max(20, min(320, p.provinces)),
+                relations: p.relations == "war" ? "war" : "peace",
+                cultures: validCultures.isEmpty ? Set(Names.cultureIds) : validCultures
+            ))
+        }
+        return out
+    }
     static let presets: [ScenarioPreset] = [
         ScenarioPreset(id: "huaxia", title: "华夏群雄", note: "中原大陆 · 诸侯并起", seal: "夏", symbol: "crown", template: "pangea", nations: 12, provinces: 140, relations: "peace", cultures: ["chinese", "korean", "mongol", "vietnamese", "japanese"]),
         ScenarioPreset(id: "zhanguo", title: "战国七雄", note: "七强接壤 · 合纵连横", seal: "战", symbol: "flag.2.crossed", template: "pangea", nations: 7, provinces: 110, relations: "war", cultures: ["chinese"]),
@@ -500,11 +517,11 @@ struct NewWorldSheet: View {
             // 1. 顶部实时高清山河预览卡（支持「地形地貌 / 势力分布」即时切换 + 陆海山地实测数据 + 换图按钮）
             if inputs != nil { terrainCard.padding(.horizontal, Theme.Layout.pageInset) }
 
-            // 2. 精选剧本（6 套差异化历史/沙盒格局）
-            SectionLabel("精选剧本")
+            // 2. 精选剧本（内置 8 套 + 云端热更动态扩展剧本，免换包随时扩充）
+            SectionLabel(hotPack.extraScenarios.isEmpty ? "精选剧本" : "精选剧本（含 \(hotPack.extraScenarios.count) 套热更剧本）")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(Self.presets) { p in
+                    ForEach(allPresets) { p in
                         let on = selectedPreset == p.id
                         Button {
                             GameFeel.shared.tap()

@@ -912,7 +912,21 @@ private struct GameTopDateCapsule: View {
             }
 
             if model.remoteAddress != nil {
-                InkIcon(glyph: .computer, size: 13, weight: 1.75).foregroundStyle(Theme.jade)
+                Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.75, height: 14)
+                HStack(spacing: 4) {
+                    Circle().fill(Theme.jade).frame(width: 5.5, height: 5.5)
+                    Text(model.remoteRTTMs.map { "云 \($0)ms" } ?? "云推")
+                        .font(Theme.sans(11))
+                        .foregroundStyle(Theme.jade)
+                        .monospacedDigit()
+                        .fixedSize()
+                }
+            } else if model.remoteReconnecting {
+                Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.75, height: 14)
+                Text("续连")
+                    .font(Theme.sans(11))
+                    .foregroundStyle(Theme.ink2)
+                    .fixedSize()
             }
         }
         .padding(.horizontal, tightLandscape ? 8 : 10)

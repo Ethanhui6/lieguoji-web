@@ -148,6 +148,7 @@ enum Names {
 struct RootView: View {
     @StateObject private var model = GameModel()
     @ObservedObject private var platform = OnlinePlatform.shared
+    @ObservedObject private var hotPack = HotPackManager.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.verticalSizeClass) private var sysVerticalClass
     var body: some View {
@@ -186,7 +187,7 @@ struct RootView: View {
             if phase == .active, model.phase == .playing { Task { await model.handleAppForeground() } }
         }
         .task { GameFeel.shared.start() }
-        // 启动自动检测云端版本、拉取热更配置包、续签账号会话并探活腾讯云专属服；若平台服离线则平滑回落静态配置。
+        // 启动自动检测云端版本、免换包 28MB+ 游戏内热更资源清单、续签账号会话与腾讯云专属服。
         .task {
             let applied = await platform.bootstrap(manual: false)
             if applied {
@@ -194,9 +195,19 @@ struct RootView: View {
             } else if platform.server == nil, await CloudConfig.shared.refresh() {
                 await model.applyCloud()
             }
+            _ = await hotPack.checkManifest(autoPrompt: true)
         }
         // 新世界由 Swift 在本机建成，网页引擎只在 Swift 建世界失败、读旧版存档时才按需启动（不再开机预热）。
         .task { await model.loadBackdrop() }
+        .sheet(isPresented: $hotPack.showHotUpdateSheet) {
+            HotUpdateSheet(hotPack: hotPack) {
+                await model.applyCloud()
+            }
+            .presentationDetents([.fraction(0.86)])
+            .presentationCornerRadius(Theme.Control.cornerSheet)
+            .presentationBackground { MemorialPaper() }
+            .presentationDragIndicator(.hidden)
+        }
         .sheet(isPresented: $platform.showUpdateSheet) {
             CloudUpdateSheet(platform: platform)
                 .interactiveDismissDisabled(platform.updateInfo?.forceUpdate == true)
@@ -596,6 +607,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("5.4.0", ["【根治云端推流掉线 × 280 州史诗大图大幅提速】彻底根除后台健康探针每 15 秒误驱逐活跃连接导致显示「待机中」并退回手机本地计算的根本问题；修复换局自动连接 60 秒延迟与漏开主动推流标志；升级腾讯云计算服至 v7 极速推流架构（150+ 州超大图启用智能单帧高效步进与国名重算节流、彻底移除活跃推流期阻塞落盘卡顿），并在顶栏实时展示「云 XXms」推流状态。",
+                   "【游戏内免换包资源热更新系统（28MB+ 典藏扩展包）】新增 SHA256 精确差分热更新引擎与 4 路并发断点续传下载，以后更新全新历史剧本（首期即含 12 套新剧本：三国鼎立/盛唐万邦/大明海疆/罗马地中海/九州280州等）、典藏词典、工笔美术、54 卷传报长卷与平衡规则全部在游戏内一键更新即时生效，彻底告别反复换包。",
+                   "【回归 4.3 极简宣纸美学 × 御前司礼监管理员中枢 × 全服安全加固】全面重绘登录门扉、史官行宫与热更新界面，清除厚重金框渐变与阴影，实现与原生面板 100% 风格统一与 120fps 顺滑体验；上线管理员专属游戏内控制台（公告/跑马灯/热更平衡参数/版本发布/全服诏书/史官管理/服务器监控），并全面收紧官网公开信息与防爆破防火墙防护。"]),
         ("5.3.0", ["【云端行宫 · 古风账号登录与篆刻御印系统】全新打造新中式古籍风格「列国登临阁」登录/注册与游客一键入世门扉，支持自选十枚经典篆字与三色御印印泥（皇家朱砂 / 翡翠官青 / 宫廷鎏金）、游客无损转正绑定、个人名帖编辑与 iOS Keychain 安全令牌持久保持。",
                    "【进入游戏自动检测云更新 × 双层热更系统】启动时自动校验客户端版本与云端热更配置包：平衡参数、推演节拍与公告免重装自动热加载并呈递进度丝带；发现新版自动弹出「天诏 · 新版启卷」更新弹窗，支持从腾讯云专属节点国内专线应用内流式下载 IPA 或一键跳转下载页。",
                    "【全套网游级云服能力 × 默认直连腾讯云专属服】上线账号专属高速云端存档（国内直传 < 1 秒、支持 20 卷跨设备同步）、每日临朝签到与八阶史官品秩晋升（白衣史官 → 一代史圣）、太史院驿报公告、兰台个人信匣与全服「天下史榜」；内置默认专属腾讯云计算服（v6 全双工推流 + LZ4），开箱即连免填 IP。"]),

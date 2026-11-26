@@ -9,6 +9,8 @@ import Foundation
 /// [u32][map]` with header `{"ok", "reason", "strings"?, "text"?, "points"?}`. Lengths are big-endian.
 public final class EngineService {
     public private(set) var engine: NativeEngine?
+    /// 云端专属计算服极速模式：在大型地图（≥140 州）上自动启用智能国名节流与单帧高效步进，显著提速 280 州等超大图。
+    public var cloudTurbo = false
     private var lastOwners: [Int] = []
     private var lastNationSig: [String] = []
     public init() {}
@@ -54,13 +56,28 @@ public final class EngineService {
     private func labelsDue(_ e: NativeEngine, stepping: Bool) -> Bool {
         let nations = e.run.world.nations.asArray
         var at = [String: Int](); for (i, n) in nations.enumerated() where at[n.id.asString] == nil { at[n.id.asString] = i }
-        let owners = e.run.world.provinces.asArray.map { at[$0.controller.asString] ?? -1 }
+        let provs = e.run.world.provinces.asArray
+        let owners = provs.map { at[$0.controller.asString] ?? -1 }
         let sig = nations.map { $0.name.optionalString ?? "" }
         stepsSinceLabels += 1
         let changed = owners != lastOwners || sig != lastNationSig
-        let labels = changed && (!stepping || stepsSinceLabels >= 4 || sig.count != lastNationSig.count)
+        let stride = (provs.count >= 150) ? (cloudTurbo ? 14 : 10) : (cloudTurbo ? 8 : 4)
+        let labels = changed && (!stepping || stepsSinceLabels >= stride || sig.count != lastNationSig.count)
         if labels { lastOwners = owners; lastNationSig = sig; stepsSinceLabels = 0 }
         return labels
+    }
+
+    /// 推演 `days` 天；在专属云服模式下对超大图（≥150 州、高倍速）自动切换每日本地 1 帧（120 ticks），推演速度翻倍且保持每日经济/战损/外交完整结算。
+    private func advanceDays(_ e: NativeEngine, days: Int) {
+        let count = max(1, days)
+        if cloudTurbo, count >= 4, e.run.world.provinces.length >= 150, !e.run.frameLoop.isNull {
+            let prev = e.run.frameLoop.ticks.optionalNumber
+            e.run.frameLoop.ticks = JS(120)
+            e.advance(days: count)
+            if let prev { e.run.frameLoop.ticks = JS(prev) }
+            return
+        }
+        e.advance(days: count)
     }
     /// 本机推演一步并直接返回界面状态结构体（与 "step" 请求相同，只是不经 JSON）。
     public func stepState(days: Int) -> GameState? {
@@ -93,6 +110,12 @@ public final class EngineService {
         func data(_ d: Data?) -> Reply { Reply(ok: d != nil, reason: d == nil ? "世界尚未载入。" : "", data: d) }
 
         switch call {
+        case "health":
+            var r = Reply(reason: EngineWire.greeting)
+            let pCount = engine?.run.world.provinces.length ?? 0
+            let day = engine?.run.world.day.asInt ?? 0
+            r.text = "provinces:\(pCount)|day:\(day)"
+            return r
         case "ping":
             var r = Reply(reason: EngineWire.greeting)
             r.text = engine.map { "day:\($0.run.world.day.asInt)" } ?? "idle"
@@ -108,18 +131,18 @@ public final class EngineService {
             lastOwners = []; lastNationSig = []
             return data(state(stepping: false))
         case "stepBatch":
-            guard engine != nil else { return Reply(ok: false, reason: "世界尚未载入。") }
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
             let days = max(1, min(60, int("days")))
-            engine?.advance(days: days)
+            advanceDays(e, days: days)
             return data(state(stepping: true, slim: bool("slim")))
         case "streamConfig":
             return Reply(ok: true, reason: "ok")
         case "enableMux":
             return Reply(ok: true, reason: "mux-v6")
         case "pullLatest":
-            guard engine != nil else { return Reply(ok: false, reason: "世界尚未载入。") }
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
             let days = max(1, min(60, optInt("days") ?? 3))
-            engine?.advance(days: days)
+            advanceDays(e, days: days)
             return data(state(stepping: true, slim: bool("slim")))
         case "catalogs":
             guard let rawPayload = payload else { return Reply(ok: false, reason: "目录数据缺失。") }
@@ -140,7 +163,7 @@ public final class EngineService {
         case "isOpen": return Reply(ok: engine != nil)
         case "close": engine = nil; return Reply()
         case "step":
-            engine?.advance(days: max(1, int("days")))
+            if let e = engine { advanceDays(e, days: max(1, int("days"))) }
             return data(engine == nil ? nil : state(stepping: true, slim: bool("slim")))
         case "state": return data(engine == nil ? nil : state())
         case "order": return command(engine?.order(armyId: str("armyId"), provinceIndex: int("province")))

@@ -280,7 +280,10 @@ struct TitleView: View {
                         hubTab = "update"
                         hubOpen = true
                     } label: {
-                        Text(AppVersion.text + (cloud.version > 0 ? " · 云热更 v\(cloud.version)" : "") + (platform.apiRTTMs.map { " · \($0)ms" } ?? ""))
+                        let hpVer = max(CloudConfig.shared.version, platform.hotpatchVersion)
+                        let hpPart = hpVer > 0 ? " · 云热更 v\(hpVer)" : ""
+                        let rttPart = platform.apiRTTMs.map { " · \($0)ms" } ?? ""
+                        Text("\(AppVersion.text)\(hpPart)\(rttPart)")
                             .font(Theme.caption).foregroundStyle(Theme.ink2.opacity(0.78)).monospacedDigit()
                     }
                     .buttonStyle(.plain)

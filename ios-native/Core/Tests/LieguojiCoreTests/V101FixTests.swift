@@ -89,7 +89,7 @@ final class V101FixTests: XCTestCase {
         opt.historicalRoute = "historical"
         let built = try NativeCreation.generate(opt, inputs: inputs, worldId: "v101-sg", runId: "run-sg")
 
-        let meta = built.map.meta
+        let meta = built.statics.map.meta
         let provs = meta.provinces.asArray
         let nations = meta.nations.asArray
         let labels = meta.labels.asArray
@@ -131,7 +131,7 @@ final class V101FixTests: XCTestCase {
         opt.historicalRoute = "historical"
         let built = try NativeCreation.generate(opt, inputs: inputs, worldId: "v101-eu", runId: "run-eu")
 
-        let meta = built.map.meta
+        let meta = built.statics.map.meta
         let nations = meta.nations.asArray
         let labels = meta.labels.asArray
         let provs = meta.provinces.asArray

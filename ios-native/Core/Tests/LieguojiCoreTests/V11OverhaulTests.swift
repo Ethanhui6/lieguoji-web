@@ -30,7 +30,7 @@ final class V11OverhaulTests: XCTestCase {
         ArmyAutonomy.temper = nil
     }
 
-    private func generateScenario(_ id: String, seed: String, route: String = "historical") throws -> NativeCreation.Output {
+    private func launchScenario(_ id: String, seed: String, route: String = "historical") throws -> NativeEngine {
         guard let sc = HistoricalScenarios.scenario(id: id) else {
             throw NSError(domain: "V11OverhaulTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing scenario \(id)"])
         }
@@ -46,7 +46,10 @@ final class V11OverhaulTests: XCTestCase {
         )
         opt.historicalScenario = sc
         opt.historicalRoute = route
-        return try NativeCreation.generate(opt, inputs: inputs, worldId: "v11-\(id)", runId: "run-\(id)")
+        let built = try NativeCreation.generate(opt, inputs: inputs, worldId: "v11-\(id)", runId: "run-\(id)")
+        let engine = try NativeEngine(world: Data(built.json.utf8))
+        engine.enableAppRules()
+        return engine
     }
 
     // MARK: - 1. 城市大典 100% 简体纯中文校验
@@ -82,8 +85,8 @@ final class V11OverhaulTests: XCTestCase {
     func testRegionalScenariosHaveHarborsAndFleets() throws {
         for scId in ["ww2_europe_1939", "ww2_asia_1941", "sengoku_1560"] {
             defer { cleanup() }
-            let built = try generateScenario(scId, seed: "v11-harbor-\(scId)")
-            let r = built.engine.run
+            let engine = try launchScenario(scId, seed: "v11-harbor-\(scId)")
+            let r = engine.run
             let harborsCount = r.harbors.isNull ? 0 : r.harbors.sites.asArray.count
             let fleetsCount = r.navy.isNull ? 0 : r.navy.fleets.asArray.count
             XCTAssertGreaterThan(harborsCount, 0, "\(scId) 局部历史战区必须生成真实沿海港口，当前为 0")
@@ -96,16 +99,16 @@ final class V11OverhaulTests: XCTestCase {
     func testHistoricalEventsStrictDateGateAndSandboxFlag() throws {
         do {
             defer { cleanup() }
-            let built = try generateScenario("ww2_eve_1936", seed: "v11-ev36-hist", route: "historical")
-            built.engine.advance(days: 120)
-            let fired = built.engine.run.regimes.firedEvents
+            let engine = try launchScenario("ww2_eve_1936", seed: "v11-ev36-hist", route: "historical")
+            engine.advance(days: 120)
+            let fired = engine.run.regimes.firedEvents
             XCTAssertTrue(fired["fall_weiss"].isNull, "1936 剧本推进 120 天后绝不应提前 3.5 年触发 1939 闪击波兰！")
-            XCTAssertFalse(built.engine.run.regimes.playerInteractiveEvents.isTruthy, "史实路线默认不开启架空交互弹窗开关")
+            XCTAssertFalse(engine.run.regimes.playerInteractiveEvents.isTruthy, "史实路线默认不开启架空交互弹窗开关")
         }
         do {
             defer { cleanup() }
-            let built = try generateScenario("ww2_eve_1936", seed: "v11-ev36-sand", route: "sandbox")
-            XCTAssertTrue(built.engine.run.regimes.playerInteractiveEvents.isTruthy, "架空路线必须开启 playerInteractiveEvents 供玩家抉择")
+            let engine = try launchScenario("ww2_eve_1936", seed: "v11-ev36-sand", route: "sandbox")
+            XCTAssertTrue(engine.run.regimes.playerInteractiveEvents.isTruthy, "架空路线必须开启 playerInteractiveEvents 供玩家抉择")
         }
     }
 
@@ -113,8 +116,8 @@ final class V11OverhaulTests: XCTestCase {
 
     func testCompositePowerCountsAlliancesAndNukes() throws {
         defer { cleanup() }
-        let built = try generateScenario("ww2_europe_1939", seed: "v11-power-eu39", route: "historical")
-        let r = built.engine.run
+        let engine = try launchScenario("ww2_europe_1939", seed: "v11-power-eu39", route: "historical")
+        let r = engine.run
         guard let gerId = HistoricalEvents.nationId(r, specId: "germany"),
               let ukId = HistoricalEvents.nationId(r, specId: "uk") else {
             XCTFail("缺少德/英国家 ID"); return
@@ -137,9 +140,9 @@ final class V11OverhaulTests: XCTestCase {
 
     func testEngineServiceFastOpenAndLZ4Tuning() throws {
         defer { cleanup() }
-        let built = try generateScenario("sengoku_1560", seed: "v11-svc-sg")
+        let engine = try launchScenario("sengoku_1560", seed: "v11-svc-sg")
         let svc = EngineService()
-        _ = svc.adopt(built.engine)
+        _ = svc.adopt(engine)
         let saved = svc.handle("save", [:])
         XCTAssertTrue(saved.ok)
         guard let payload = saved.data, !payload.isEmpty else {
@@ -171,7 +174,7 @@ final class V11OverhaulTests: XCTestCase {
 
         if let c31 = HistoricalScenarios.scenario(id: "china_1931"),
            let xj = c31.nations.first(where: { $0.id == "xinjiang" }) {
-            XCTAssertEqual(xj.leader, "金树仁", "1931 九一八时新疆省主席应为金树仁")
+            XCTAssertEqual(xj.rulerName, "金树仁", "1931 九一八时新疆省主席应为金树仁")
         } else {
             XCTFail("缺少 china_1931 新疆条目")
         }

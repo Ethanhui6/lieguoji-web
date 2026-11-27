@@ -36,7 +36,7 @@ final class HistoricalThumbnailCache {
                 let pt = HistoricalBasemaps.project(lon: n.capitalLon, lat: n.capitalLat, region: scenario.region, width: w, height: h)
                 return (Float(pt.x), Float(pt.y))
             }
-            let thumb = PreviewWorld.thumbnail(inputs, heights: heights, width: 400, nations: scenario.nations.count, seed: scenario.id, ownerMask: gis.ownerMask, nationColors: colors, capitals: caps)
+            let thumb = PreviewWorld.thumbnail(inputs, heights: heights, width: 400, nations: scenario.nations.count, seed: scenario.id, ownerMask: gis.ownerMask.map(Int.init), nationColors: colors, capitals: caps)
             return makeUIImage(rgba: thumb.rgba, width: thumb.width, height: thumb.height)
         }
         let nationCount = max(2, min(100, scenario.nations.count))

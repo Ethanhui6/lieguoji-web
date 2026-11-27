@@ -179,51 +179,62 @@ public enum Regions {
     }
 
     /// 与 `partitionWithinBorders` 同源，并额外返回 `faces` 供计算每州真实人口/工业密度均值。
+    /// v9.0.0：传入 `historicalRegion` 时自动叠加真实 WGS-84 大江大河分界阻力，令州郡自然沿莱茵/多瑙/长江/黄河/第聂伯/维斯瓦等天堑划界。
     public static func partitionWithinBordersWithFaces(
         _ d: TerrainDocument,
         elevations: [Int],
         ownerMask: [Int8],
         cities: Int,
-        surface known: Climate.Surface? = nil
+        surface known: Climate.Surface? = nil,
+        historicalRegion: HistoricalRegion? = nil
     ) -> (regions: [Region], owners: [Int], faces: [Face])? {
         let faces = landFaces(d, elevations)
         guard !faces.isEmpty, !ownerMask.isEmpty else { return nil }
         let surface = known ?? Climate.surface(d, elevations: elevations)
         let pointCount = min(elevations.count, ownerMask.count)
 
-        // 1. 为每个陆地三角面按其 3 个源顶点的 ownerMask 多数表决确定所属历史国家
+        // 1. 为每个陆地三角面按其 3 个源顶点的 ownerMask 多数表决确定所属历史国家（-2 = 剧本外无人之地，不可通行与占领）
         var faceOwner = [Int](repeating: -1, count: faces.count)
         for (fi, f) in faces.enumerated() {
             var votes = [Int: Int]()
+            var wastelandVotes = 0
             for v in f.source where v >= 0 && v < pointCount && elevations[v] >= 20 {
                 let o = Int(ownerMask[v])
                 if o >= 0 { votes[o, default: 0] += 1 }
+                else if o == -2 { wastelandVotes += 1 }
             }
-            if votes.isEmpty {
+            if votes.isEmpty && wastelandVotes == 0 {
                 for v in f.source where v >= 0 && v < pointCount {
                     let o = Int(ownerMask[v])
                     if o >= 0 { votes[o, default: 0] += 1 }
+                    else if o == -2 { wastelandVotes += 1 }
                 }
             }
-            if let best = votes.max(by: { $0.value == $1.value ? $0.key > $1.key : $0.value < $1.value })?.key {
-                faceOwner[fi] = best
+            if let best = votes.max(by: { $0.value == $1.value ? $0.key > $1.key : $0.value < $1.value }) {
+                if wastelandVotes > best.value {
+                    faceOwner[fi] = -2
+                } else {
+                    faceOwner[fi] = best.key
+                }
+            } else if wastelandVotes > 0 {
+                faceOwner[fi] = -2
             }
         }
 
-        // 沿陆地邻接面 BFS 填补极少数未命中面（如恰好落在海陆交界线上的三角）
-        var queue = faceOwner.indices.filter { faceOwner[$0] >= 0 }
-        guard !queue.isEmpty else { return nil }
+        // 沿陆地邻接面 BFS 填补极少数未命中面（仅填 -1 海岸微缝，严禁侵入 -2 无人之地！）
+        var queue = faceOwner.indices.filter { faceOwner[$0] >= 0 || faceOwner[$0] == -2 }
+        guard faceOwner.contains(where: { $0 >= 0 }) else { return nil }
         var head = 0
         while head < queue.count {
             let cur = queue[head]; head += 1
-            for nb in faces[cur].neighbors where faceOwner[nb] < 0 {
+            for nb in faces[cur].neighbors where faceOwner[nb] == -1 {
                 faceOwner[nb] = faceOwner[cur]
                 queue.append(nb)
             }
         }
-        if faceOwner.contains(where: { $0 < 0 }) {
-            let ownedCells = (0..<pointCount).filter { elevations[$0] >= 20 && ownerMask[$0] >= 0 }
-            for fi in faces.indices where faceOwner[fi] < 0 {
+        if faceOwner.contains(where: { $0 == -1 }) {
+            let ownedCells = (0..<pointCount).filter { elevations[$0] >= 20 && (ownerMask[$0] >= 0 || ownerMask[$0] == -2) }
+            for fi in faces.indices where faceOwner[fi] == -1 {
                 let c = middle(faces[fi].ring)
                 var bestO = 0, bestD = Double.infinity
                 for cell in ownedCells {
@@ -235,14 +246,14 @@ public enum Regions {
             }
         }
 
-        // 2. 清理国界折角处 1–2 个三角面的极细孤立碎角（仅当该国主体在别处且该碎角被邻国包夹时并入邻国，避免无意义单三角飞地）
+        // 2. 清理国界折角处 1–2 个三角面的极细孤立碎角（跳过 -2 无人之地；仅当该国主体在别处且该碎角被邻国包夹时并入邻国）
         do {
             var totalByOwner = [Int: Int]()
             for o in faceOwner where o >= 0 { totalByOwner[o, default: 0] += 1 }
             var visited = [Bool](repeating: false, count: faces.count)
             var compCountsByOwner = [Int: Int]()
             var comps = [(owner: Int, members: [Int])]()
-            for fi in faces.indices where !visited[fi] {
+            for fi in faces.indices where !visited[fi] && faceOwner[fi] >= 0 {
                 let own = faceOwner[fi]
                 var q = [fi]; visited[fi] = true; var h = 0
                 while h < q.count {
@@ -272,7 +283,7 @@ public enum Regions {
             }
         }
 
-        // 3. 统计各国面积、面数与连通分块数，按 sqrt(nationArea) 分配公平的州郡配额 targetPerNation[owner]
+        // 3. 统计各国面积、面数与连通分块数（跳过 -2 无人之地），按 sqrt(nationArea) 分配公平的州郡配额 targetPerNation[owner]
         var nationArea = [Int: Double]()
         var nationFaceCount = [Int: Int]()
         var nationCompCount = [Int: Int]()
@@ -281,12 +292,13 @@ public enum Regions {
             let a = polygonArea(f.ring)
             faceAreas[fi] = a
             let o = faceOwner[fi]
+            guard o >= 0 else { continue }
             nationArea[o, default: 0] += a
             nationFaceCount[o, default: 0] += 1
         }
         do {
             var visited = [Bool](repeating: false, count: faces.count)
-            for fi in faces.indices where !visited[fi] {
+            for fi in faces.indices where !visited[fi] && faceOwner[fi] >= 0 {
                 let own = faceOwner[fi]
                 var q = [fi]; visited[fi] = true; var h = 0
                 while h < q.count {
@@ -343,9 +355,55 @@ public enum Regions {
         for (a, b) in surface.rivers.segments {
             rivers.insert(edgeKey(Vertex(key: "p\(a)", x: 0, y: 0), Vertex(key: "p\(b)", x: 0, y: 0)))
         }
+        // v9.0.0：投影真实地理大河线段，为跨河/贴河相邻三角面施加自然河道分界阻力（仿 HOI4 沿河划州）
+        struct RiverSeg2D { let x1: Double, y1: Double, x2: Double, y2: Double, minX: Double, maxX: Double, minY: Double, maxY: Double, tier: Double }
+        var realRiverSegs = [RiverSeg2D]()
+        if let hreg = historicalRegion, hreg != .custom {
+            let lonMin = hreg.lonMin - 2.0, lonMax = hreg.lonMax + 2.0
+            let latMin = hreg.latMin - 2.0, latMax = hreg.latMax + 2.0
+            for rv in HistoricalGeography.realRivers where rv.points.count >= 2 {
+                let inBounds = rv.points.contains { $0.lon >= lonMin && $0.lon <= lonMax && $0.lat >= latMin && $0.lat <= latMax }
+                guard inBounds else { continue }
+                let pts = rv.points.map { HistoricalBasemaps.project(lon: $0.lon, lat: $0.lat, region: hreg, width: d.width, height: d.height) }
+                let tier = Double(rv.tier)
+                for k in 0..<(pts.count - 1) {
+                    let p1 = pts[k], p2 = pts[k + 1]
+                    realRiverSegs.append(RiverSeg2D(
+                        x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y,
+                        minX: min(p1.x, p2.x) - 5.5, maxX: max(p1.x, p2.x) + 5.5,
+                        minY: min(p1.y, p2.y) - 5.5, maxY: max(p1.y, p2.y) + 5.5,
+                        tier: tier
+                    ))
+                }
+            }
+        }
+        func riverResistance(_ mx: Double, _ my: Double, _ c1: (Double, Double), _ c2: (Double, Double)) -> Double {
+            guard !realRiverSegs.isEmpty else { return 0 }
+            var best = 0.0
+            for s in realRiverSegs {
+                if mx < s.minX || mx > s.maxX || my < s.minY || my > s.maxY { continue }
+                let vx = s.x2 - s.x1, vy = s.y2 - s.y1
+                let l2 = vx * vx + vy * vy
+                guard l2 > 1e-6 else { continue }
+                let t = max(0.0, min(1.0, ((mx - s.x1) * vx + (my - s.y1) * vy) / l2))
+                let px = s.x1 + t * vx, py = s.y1 + t * vy
+                let distSq = (mx - px) * (mx - px) + (my - py) * (my - py)
+                if distSq <= 22.0 {
+                    // 两侧面心若分居大河两岸，显著提升阻力，促使合并沿河岸止步
+                    let s1 = (c1.0 - s.x1) * vy - (c1.1 - s.y1) * vx
+                    let s2 = (c2.0 - s.x1) * vy - (c2.1 - s.y1) * vx
+                    let bonus = (s1 * s2 <= 0) ? (3.2 + s.tier * 1.6) : (1.2 + s.tier * 0.5)
+                    if bonus > best { best = bonus }
+                }
+            }
+            return best
+        }
+
         var clusters = faces.enumerated().map { i, f -> Cluster in
             let p = middle(f.ring)
-            return Cluster(ring: f.ring, area: faceAreas[i], x: p.0, y: p.1, height: f.height, members: [i])
+            var cl = Cluster(ring: f.ring, area: faceAreas[i], x: p.0, y: p.1, height: f.height, members: [i])
+            if faceOwner[i] < 0 { cl.live = false }
+            return cl
         }
         var clusterOwner = faceOwner
         var liveCount = nationFaceCount
@@ -355,14 +413,15 @@ public enum Regions {
         }
 
         var edgeOwner = [String: Int]()
-        for i in faces.indices {
+        for i in faces.indices where faceOwner[i] >= 0 {
             let f = faces[i]
             for k in f.ring.indices {
                 let a = f.ring[k], b = f.ring[(k + 1) % f.ring.count]
                 let key = edgeKey(a, b)
                 let length = jsHypot(a.x - b.x, a.y - b.y)
                 if let j = edgeOwner[key] {
-                    let resistance = 1 + max(0, (f.height + faces[j].height) / 2 - 55) / 18 + abs(f.height - faces[j].height) / 15 + (rivers.contains(key) ? 3 : 0)
+                    let realRv = realRiverSegs.isEmpty ? 0.0 : riverResistance((a.x + b.x) * 0.5, (a.y + b.y) * 0.5, (clusters[i].x, clusters[i].y), (clusters[j].x, clusters[j].y))
+                    let resistance = 1 + max(0, (f.height + faces[j].height) / 2 - 55) / 18 + abs(f.height - faces[j].height) / 15 + (rivers.contains(key) ? 3 : 0) + realRv
                     let border = Border(length: length, resistance: length * resistance, edges: 1)
                     clusters[i].adjacent.set(j, border)
                     clusters[j].adjacent.set(i, border)
@@ -376,8 +435,8 @@ public enum Regions {
         func offer(_ aa: Int, _ bb: Int) {
             let a = min(aa, bb), b = max(aa, bb)
             let owner = clusterOwner[a]
-            // 严格国界锁定：不同历史国家的聚簇永不入队、永不合并！
-            guard owner == clusterOwner[b] else { return }
+            // 严格国界锁定：无人之地与不同历史国家的聚簇永不入队、永不合并！
+            guard owner >= 0, owner == clusterOwner[b] else { return }
             guard (liveCount[owner] ?? 0) > (targetPerNation[owner] ?? 1) else { return }
             let x = clusters[a], y = clusters[b]
             guard x.live, y.live, let border = x.adjacent[b] else { return }

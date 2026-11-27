@@ -112,6 +112,7 @@ struct NationInfo: Decodable {
     var centralCooldown: Int? = nil
     var reformCooldown: Int? = nil
     var autoDecide: Bool? = nil
+    var historicalEra: String? = nil
     struct RulerEvalInfo: Decodable { let tier: Int; let label: String; let summary: String }
     struct RealmStrainInfo: Decodable { let level: Int; let label: String; let summary: String }
     struct TacticalIQInfo: Decodable {

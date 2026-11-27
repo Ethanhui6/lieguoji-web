@@ -151,6 +151,8 @@ import LieguojiCore
     /// 沉浸式自适应 HUD 回调：玩家拖拽/双指缩放浏览地图时自动收起外围功能栏；轻点画布时唤回 HUD。
     var onMapBrowsing: ((Bool) -> Void)?
     var onMapTap: ((Bool) -> Void)?
+    /// v9.0.0：点中剧本外无人之地（无归属不可通行陆地）时的轻提示回调。
+    var onWastelandTap: (() -> Void)?
     /// Where the icon with this key is drawn now (set by the map view).
     var placed: ((String) -> (Double, Double)?)?
     /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
@@ -198,6 +200,10 @@ import LieguojiCore
     var onPick: ((Int) -> Void)?
     /// A sheet covers the map: immediately pauses decorative effects and freezes Metal when covering ≥62% of the map.
     var sheetOpen = false { didSet { onSheet?() } }
+    /// v9.0.0：历史事件全屏模态弹出时彻底冻结 Metal/Weather/Effects（0% GPU 争抢，UI 零卡顿）。
+    var modalOpen = false { didSet { if oldValue != modalOpen { onSheet?() } } }
+    /// v9.0.0：高速推演（≥4×）时静默装饰性天气粒子与海浪，将全部帧预算留给底图与行军。
+    var highSpeed = false { didSet { if oldValue != highSpeed { scheduleSync() } } }
     /// 当前竖屏底部抽屉占据屏幕高度的比例（如高档 0.89、半屏 0.50、低档 0.38、收起 0），用于镜头聚焦自动上移至可视安全区正中央及后台零帧率冻结。
     var sheetBottomFraction: Double = 0 {
         didSet {
@@ -206,8 +212,8 @@ import LieguojiCore
     }
     /// 当前横屏右侧边栏占据屏幕宽度的比例（如 0.44），用于横屏镜头聚焦自动左移至可视安全区正中央。
     var sheetTrailingFraction: Double = 0
-    /// 二级菜单/高抽屉覆盖主画面（底部弹窗 ≥62% 或全屏模态）时彻底冻结后台 Metal 与粒子渲染，省电防发烫并把 100% 帧率留给列表滚动。
-    public var sheetCoversMap: Bool { sheetOpen && sheetBottomFraction >= 0.62 }
+    /// 二级菜单/高抽屉或事件模态覆盖主画面（底部弹窗 ≥62% 或全屏模态）时彻底冻结后台 Metal 与粒子渲染，省电防发烫并把 100% 帧率留给列表与弹窗交互。
+    public var sheetCoversMap: Bool { modalOpen || (sheetOpen && sheetBottomFraction >= 0.62) }
     var onSheet: (() -> Void)?
     var onFleetTarget: ((Int) -> Void)?
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
@@ -475,6 +481,10 @@ struct MapView: UIViewRepresentable {
         private var lastClipMaskRect: CGRect = .null
         private var overlayMaskAttached = false
         private var needsFullLabelUpdate = false
+        /// v9.0.0：O(1) GPU 手势平移/缩放锚点与挂起底图更新标记（拖屏 0ms CPU 零卡顿）。
+        private var lastOverlayCamera: MapCamera?
+        private var overlayAnchorCamera: MapCamera?
+        private var deferredWorldUpdate = false
         private var lastAppearanceKey: (mode: MapMode, highlight: Int?, relations: [Int: UInt32], fills: [RGB]?, view: String)?
         private var lastBorderWide: Set<Int> = []
         private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 78 : 12 }
@@ -508,7 +518,7 @@ struct MapView: UIViewRepresentable {
             return clipped.isNull ? .zero : clipped
         }
         private func syncWaves() {
-            let want = !controller.drifting && !controller.sheetOpen && controller.reveal >= 1 && controller.play.seaWaves && mtk?.window != nil
+            let want = !controller.drifting && !controller.sheetOpen && !controller.modalOpen && !controller.highSpeed && controller.reveal >= 1 && controller.play.seaWaves && mtk?.window != nil
             if want { effects.startWaves() } else { effects.stopWaves() }
         }
         private let metrics = UILabel()
@@ -516,9 +526,14 @@ struct MapView: UIViewRepresentable {
         private var shownWeatherRevision = -1
         private var shownWeatherSeasonBucket = -999
         private func syncWeather(purePan: Bool = false) {
+            if panning || pinching || controller.highSpeed || controller.modalOpen {
+                weather.setPaused(true)
+                return
+            }
             if purePan && controller.weatherZones.isEmpty && weather.isZonesEmpty { return }
             guard let renderer, let mtk else { return }
             let active = !controller.drifting && !controller.sheetOpen && controller.reveal >= 1
+            weather.setPaused(!active)
             weather.update(seasonPhase: controller.seasonPhase, zones: controller.weatherZones, camera: renderer.camera, viewport: mtk.bounds.size, active: active, purePan: purePan)
         }
         private var stats = FrameStatistics()
@@ -874,7 +889,8 @@ struct MapView: UIViewRepresentable {
             sheetSettleWork = nil
             appliedFrameRange = nil
 
-            if controller.sheetOpen {
+            let sheetOrModal = controller.sheetOpen || controller.modalOpen
+            if sheetOrModal {
                 weather.setPaused(true)
                 effects.stopWaves()
                 drift?.invalidate(); drift = nil
@@ -1013,9 +1029,13 @@ struct MapView: UIViewRepresentable {
                 CATransaction.setDisableActions(true)
                 if mtk.frame != b { mtk.frame = b }
                 lastOverlayFullBounds = b
+                overlayCanvas.transform = .identity
+                overlayAnchorCamera = nil
+                overlayHost.layer.mask = nil
+                overlayMaskAttached = false
                 if overlayHost.frame != b { overlayHost.frame = b }
-                if overlayCanvas.frame != b { overlayCanvas.frame = b }
-                overlayClipMask.frame = b
+                overlayCanvas.bounds = b
+                overlayCanvas.center = CGPoint(x: b.midX, y: b.midY)
                 lastClipMaskRect = .null
                 if effects.frame != b { effects.frame = b }
                 if let labels, labels.frame != b { labels.frame = b }
@@ -1076,37 +1096,30 @@ struct MapView: UIViewRepresentable {
                 }
             }
         }
+        /// v9.0.0：纯硬件矩形裁剪（overlayHost.clipsToBounds + frame = clipRect），彻底废除离屏 CAShapeLayer.mask 合成开销！
         private func updateOverlayClipMask(clipRect: CGRect, fullBounds: CGRect) {
-            let coversFull = abs(clipRect.minX - fullBounds.minX) < 0.01
-                && abs(clipRect.minY - fullBounds.minY) < 0.01
-                && abs(clipRect.width - fullBounds.width) < 0.01
-                && abs(clipRect.height - fullBounds.height) < 0.01
-            if coversFull {
-                if overlayMaskAttached || overlayHost.layer.mask != nil {
-                    overlayHost.layer.mask = nil
-                    overlayMaskAttached = false
-                    lastClipMaskRect = .null
-                }
-            } else {
-                if !overlayMaskAttached || overlayHost.layer.mask !== overlayClipMask {
-                    overlayClipMask.frame = fullBounds
-                    overlayHost.layer.mask = overlayClipMask
-                    overlayMaskAttached = true
-                }
-                if lastClipMaskRect != clipRect {
-                    overlayClipMask.path = CGPath(rect: clipRect, transform: nil)
-                    lastClipMaskRect = clipRect
-                }
+            if overlayMaskAttached || overlayHost.layer.mask != nil {
+                overlayHost.layer.mask = nil
+                overlayMaskAttached = false
             }
+            if overlayHost.frame != clipRect {
+                overlayHost.frame = clipRect
+            }
+            let canvasCenter = CGPoint(x: fullBounds.midX - clipRect.minX, y: fullBounds.midY - clipRect.minY)
+            if overlayCanvas.bounds != fullBounds {
+                overlayCanvas.bounds = fullBounds
+            }
+            if overlayCanvas.center != canvasCenter {
+                overlayCanvas.center = canvasCenter
+            }
+            lastClipMaskRect = clipRect
         }
-        private func applyOverlays(skipLabels: Bool, purePan: Bool, camera clamped: MapCamera, viewport vpSize: CGSize, clipRect: CGRect, fullBounds: CGRect) {
+        private func applyOverlays(skipLabels: Bool, purePan: Bool, fastGesture: Bool, camera clamped: MapCamera, viewport vpSize: CGSize, clipRect: CGRect, fullBounds: CGRect) {
             guard let renderer else { return }
             if lastOverlayFullBounds != fullBounds {
                 lastOverlayFullBounds = fullBounds
-                if overlayHost.frame != fullBounds { overlayHost.frame = fullBounds }
-                if overlayCanvas.frame != fullBounds { overlayCanvas.frame = fullBounds }
-                overlayClipMask.frame = fullBounds
-                lastClipMaskRect = .null
+                overlayCanvas.transform = .identity
+                overlayAnchorCamera = nil
                 if effects.frame != fullBounds { effects.frame = fullBounds }
                 if let labels, labels.frame != fullBounds { labels.frame = fullBounds }
                 if floats.frame != fullBounds { floats.frame = fullBounds }
@@ -1114,6 +1127,33 @@ struct MapView: UIViewRepresentable {
                 if weather.frame != fullBounds { weather.frame = fullBounds }
             }
             updateOverlayClipMask(clipRect: clipRect, fullBounds: fullBounds)
+
+            // v9.0.0 O(1) GPU 手势变换快路径：拖拽/双指缩放/惯性滑行期间零 CPU 遍历地名、特效与兵力条，直接以 GPU 仿射矩阵跟手同步！
+            if fastGesture && !skipLabels {
+                if overlayAnchorCamera == nil, let prev = lastOverlayCamera {
+                    overlayAnchorCamera = prev
+                }
+                if let anchor = overlayAnchorCamera, anchor.scale > 1e-6 {
+                    let ratio = clamped.scale / anchor.scale
+                    if ratio >= 0.62 && ratio <= 1.62 && ratio.isFinite {
+                        let tx = (anchor.centerX - clamped.centerX) * clamped.scale
+                        let ty = (anchor.centerY - clamped.centerY) * clamped.scale
+                        if tx.isFinite && ty.isFinite {
+                            overlayCanvas.transform = CGAffineTransform(translationX: CGFloat(tx), y: CGFloat(ty))
+                                .scaledBy(x: CGFloat(ratio), y: CGFloat(ratio))
+                            needsFullLabelUpdate = true
+                            return
+                        }
+                    }
+                }
+            }
+
+            if overlayCanvas.transform != .identity {
+                overlayCanvas.transform = .identity
+            }
+            overlayAnchorCamera = fastGesture ? clamped : nil
+            lastOverlayCamera = clamped
+
             if !skipLabels, let labels, labels.alpha > 0.01 {
                 if purePan {
                     labels.repositionVisible(camera: clamped, viewport: vpSize, mapRect: clipRect)
@@ -1134,8 +1174,8 @@ struct MapView: UIViewRepresentable {
             }
             placeSpot()
         }
-        /// 统一原子提交帧：镜头平移/缩放/惯性/飞行/主页漂移时在同一 `CATransaction` 内同时定位所有覆盖层并执行 `mtk.draw()`
-        ///（`presentsWithTransaction = true` + `waitUntilScheduled()`），令国名、城名、兵力数字与 Metal 底图严锁同一 VSync，零左右晃动。
+        /// v9.0.0 纯异步管线提交帧：彻底移除 presentsWithTransaction = true 与阻塞主线程的同步 mtk.draw()（waitUntilScheduled），
+        /// 结合 O(1) GPU overlayCanvas.transform，拖拽/缩放/惯性滑行全程 0ms 主线程等待，丝滑满帧。
         private func syncPresentCameraFrame(skipLabels: Bool, purePan: Bool = false, forceSync: Bool = false, fromLayout: Bool = false, forceAsyncRedraw: Bool = false) {
             guard let renderer, let mtk else { return }
             let vpSize = mtk.bounds.size
@@ -1143,37 +1183,42 @@ struct MapView: UIViewRepresentable {
             let clamped = renderer.camera
             let clipRect = mapScreenRect(camera: clamped, viewport: vpSize)
             let fullBounds = CGRect(origin: .zero, size: vpSize)
-            let moving = cameraMoving || forceSync
-            let canDrawInline = moving && !fromLayout && !isDrawingInline && !mapFrozenForSheet && mtk.window != nil
+            let fastGesture = (panning || pinching || isFlinging) && !fromLayout && !forceSync
 
             CATransaction.begin()
             CATransaction.setDisableActions(true)
-            applyOverlays(skipLabels: skipLabels, purePan: purePan, camera: clamped, viewport: vpSize, clipRect: clipRect, fullBounds: fullBounds)
-            if canDrawInline {
-                if !mtk.presentsWithTransaction { mtk.presentsWithTransaction = true }
-                isDrawingInline = true
-                mtk.draw()
-                isDrawingInline = false
-            } else {
-                if mtk.presentsWithTransaction { mtk.presentsWithTransaction = false }
-                if !mapFrozenForSheet {
-                    requestAsyncMetalRedraw(force: forceAsyncRedraw)
-                }
+            applyOverlays(skipLabels: skipLabels, purePan: purePan, fastGesture: fastGesture, camera: clamped, viewport: vpSize, clipRect: clipRect, fullBounds: fullBounds)
+            if mtk.presentsWithTransaction { mtk.presentsWithTransaction = false }
+            if !mapFrozenForSheet {
+                requestAsyncMetalRedraw(force: cameraMoving || forceSync || forceAsyncRedraw)
             }
             CATransaction.commit()
         }
-        /// 手势、惯性滑行或飞行动画收尾：补齐一次完整国名/城名避让排版，并切回异步上屏（`presentsWithTransaction = false`）。
+        /// 手势、惯性滑行或飞行动画收尾：归零 GPU 变换矩阵，补齐一次完整国名/城名/特效/延迟世界更新。
         private func settleLabels(cameraOverride: MapCamera? = nil) {
+            overlayAnchorCamera = nil
+            if overlayCanvas.transform != .identity {
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                overlayCanvas.transform = .identity
+                CATransaction.commit()
+            }
+            if deferredWorldUpdate {
+                deferredWorldUpdate = false
+                sync()
+            }
             if let override = cameraOverride, override != camera {
                 set(override, sync: true, fastPan: false)
-                scheduleClearPresentsWithTransactionIfIdle()
                 return
             }
             if let mtk, mtk.presentsWithTransaction {
                 mtk.presentsWithTransaction = false
             }
-            if needsFullLabelUpdate && !mapFrozenForSheet {
-                syncPresentCameraFrame(skipLabels: false, purePan: false, forceSync: false)
+            if (needsFullLabelUpdate || lastOverlayCamera != camera) && !mapFrozenForSheet {
+                syncPresentCameraFrame(skipLabels: false, purePan: false, forceSync: true)
+            }
+            if !mapFrozenForSheet && !controller.highSpeed {
+                syncWeather()
             }
         }
         private func set(_ camera: MapCamera, sync: Bool = false, skipLabels: Bool = false, fastPan: Bool = false, fromLayout: Bool = false) {
@@ -1424,7 +1469,11 @@ struct MapView: UIViewRepresentable {
             let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
             if controller.terrainBrush { controller.onTerrainStroke?(w.x, w.y); controller.onTerrainStrokeEnd?(); return }
             var province: Int?
-            if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province.indices.contains(cell), map.province[cell] >= 0 { province = Int(map.province[cell]) }
+            var tappedWasteland = false
+            if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province.indices.contains(cell) {
+                if map.province[cell] >= 0 { province = Int(map.province[cell]) }
+                else if map.isLand(cell) { tappedWasteland = true }
+            }
             if controller.pickPrompt != nil {
                 if let province { impact.impactOccurred(); controller.onPick?(province) }
                 return
@@ -1472,6 +1521,7 @@ struct MapView: UIViewRepresentable {
                 }
             }
             if province != nil { showTapFeedback(worldX: w.x, worldY: w.y, isUnit: false) }
+            else if tappedWasteland { selection.selectionChanged(); controller.onWastelandTap?() }
             if province != controller.selectedProvince { selection.selectionChanged() }
             controller.onMapTap?(province == nil)
             controller.selectedProvince = province
@@ -1742,7 +1792,7 @@ struct MapView: UIViewRepresentable {
         func sync() {
             // 严格代次隔离：已过期旧世界视图绝不消费新世界的任何状态、军队、墨晕或地图更新。
             guard worldID == controller.activeWorldID, renderer != nil else { return }
-            if mapFrozenForSheet != controller.sheetCoversMap || controller.sheetOpen != sheetThrottled {
+            if mapFrozenForSheet != controller.sheetCoversMap || (controller.sheetOpen || controller.modalOpen) != sheetThrottled {
                 applySheetState()
             }
             var dirty = false
@@ -1776,19 +1826,24 @@ struct MapView: UIViewRepresentable {
             if controller.worldRevision != shownRevision, let next = controller.world,
                next.vertices.count == map.vertices.count, next.cellCount == map.cellCount,
                Self.worldChanged(next, map) {
-                shownRevision = controller.worldRevision
-                map = next
-                renderer?.setMap(next, skipStatic: controller.replayLocked, skipOutlines: controller.replayScrubbing, animateColors: !controller.replayLocked || controller.replayAnimate)
-                // 回放期间城池位置不变，跳过主线程 CoreText 全城重绘，彻底消除逐帧掉帧与卡顿。
-                if !controller.replayLocked { labels?.setCities(map: next) }
-                // 快速拖拽回放进度条期间跳过国名框重建，松手或单步/自动播放时即时更新。
-                if !controller.replayScrubbing {
-                    if let groups = controller.viewLabels { labels?.setGroups(groups, animated: false) } else { labels?.setNations(map: next, animated: false) }
-                    if !mapFrozenForSheet, let renderer, let mtk {
-                        labels?.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
+                if panning || pinching {
+                    // v9.0.0：手指拖屏/双指缩放期间暂缓重型底图重着色与城名重建，松手瞬间零卡顿一次性提交！
+                    deferredWorldUpdate = true
+                } else {
+                    shownRevision = controller.worldRevision
+                    map = next
+                    renderer?.setMap(next, skipStatic: controller.replayLocked, skipOutlines: controller.replayScrubbing, animateColors: !controller.replayLocked || controller.replayAnimate)
+                    // 回放期间城池位置不变，跳过主线程 CoreText 全城重绘，彻底消除逐帧掉帧与卡顿。
+                    if !controller.replayLocked { labels?.setCities(map: next) }
+                    // 快速拖拽回放进度条期间跳过国名框重建，松手或单步/自动播放时即时更新。
+                    if !controller.replayScrubbing {
+                        if let groups = controller.viewLabels { labels?.setGroups(groups, animated: false) } else { labels?.setNations(map: next, animated: false) }
+                        if !mapFrozenForSheet, let renderer, let mtk {
+                            labels?.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
+                        }
                     }
+                    dirty = true
                 }
-                dirty = true
             }
             // While a reveal clock runs the display link draws it; the published value is only coarse.
             if !mapFrozenForSheet && controller.revealClock != nil && !controller.revealDone && link == nil { startLink() }
@@ -1812,7 +1867,7 @@ struct MapView: UIViewRepresentable {
                 renderer?.setAppearance(mode: nextApp.mode, highlight: nextApp.highlight, tint: nextApp.relations.mapValues { RGB(hex: $0) }, fills: nextApp.fills, view: nextApp.view)
                 dirty = true
             }
-            if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
+            if controller.worldRevision != shownRevision && !deferredWorldUpdate { shownRevision = controller.worldRevision }
             if controller.editorRevision != shownEditorRevision, let next = controller.editorMap,
                next.vertices.count == map.vertices.count, next.cellCount == map.cellCount {
                 shownEditorRevision = controller.editorRevision

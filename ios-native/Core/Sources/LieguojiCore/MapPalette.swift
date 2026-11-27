@@ -84,7 +84,11 @@ public enum MapPalette {
         func mixed(_ state: RGB) -> RGB { func mix(_ s: Float) -> Float { linearToSrgb(gray + (srgbToLinear(s) - gray) * stateAlpha) }; return RGB(mix(state.r), mix(state.g), mix(state.b)) }
         if let provinceColors { let p = Int(map.province[cell]); if p >= 0 && p < provinceColors.count { return mixed(provinceColors[p]) } }
         guard let n = map.nation(ofCell: cell), n < nationColors.count else {
-            let s = linearToSrgb(gray); return RGB(s, s, s)
+            // v9.0.0 剧本外无人之地（Impassable Wasteland）：暖石羊皮纸低饱和地形色，与可玩列国及海洋一目了然区分
+            let wr = linearToSrgb(gray * 0.44 + srgbToLinear(0.68) * 0.56)
+            let wg = linearToSrgb(gray * 0.44 + srgbToLinear(0.65) * 0.56)
+            let wb = linearToSrgb(gray * 0.44 + srgbToLinear(0.59) * 0.56)
+            return RGB(wr, wg, wb)
         }
         let state = nationColors[n]
         func mix(_ s: Float) -> Float { linearToSrgb(gray + (srgbToLinear(s) - gray) * stateAlpha) }

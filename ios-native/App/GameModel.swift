@@ -100,6 +100,10 @@ import LieguojiCore
     private var lastForegroundHandledAt: CFTimeInterval = 0
     /// v8.0.0 待玩家抉择的真实历史大事件弹窗（如德奥合并、九一八事变、闪击波兰、西安事变）
     @Published var pendingHistoricalModal: HistoricalEvents.PendingModal? = nil
+    /// v9.0.0 快讯不暂停模式下的顶部历史事件浮条（零打断看海）
+    @Published var expressEventToast: HistoricalEvents.PendingModal? = nil
+    private var expressEventTask: Task<Void, Never>?
+    private var wasPlayingBeforeModal = false
     /// v8.0.0 当前对局的历史剧本推演路线（`"historical"` 史实路线 / `"sandbox"` 架空路线）
     @Published var activeHistoricalRoute: String = "historical"
     /// A one-line notice for the game screen (e.g. the computer's link broke).
@@ -621,12 +625,11 @@ import LieguojiCore
         }
         if shouldResumePlay && !playing { play() }
     }
-    /// 自动接入云服托管：v7.0 默认优先「本机满帧直演（0ms 延迟，A 系芯片 3× 极速看海）」同时保留全部账号/云存档/工坊/热更在线服务；
-    /// 玩家可在设置或行宫一键开启「九州云服 v13 零发热挂机（LGB1+UDP · 3Mbps 专调）」。
+    /// 自动接入九州云服托管（v9.0.0 默认开启：开局 0ms 本机即玩，后台无感自动握手广州九州云服 v15 接管长程零发热推演）。
     var autoRemote: Bool {
         get {
             if remoteOfflineManual { return false }
-            return UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? false
+            return UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true
         }
         set {
             objectWillChange.send()
@@ -1022,21 +1025,21 @@ import LieguojiCore
     private(set) var lastFounding: (path: String, seconds: Double)?
 
     init() {
-        // v8.0.0 本机优先 0ms 极速直演 + 永不卡连接修复（账号/云存档/工坊/热更全时在线；随时一键切九州云服 v14 LGB2+UDP）：
-        if !UserDefaults.standard.bool(forKey: "v800.localFirstNetFix") {
-            UserDefaults.standard.set(false, forKey: "remote.auto")
-            UserDefaults.standard.set(false, forKey: "remote.autoAll")
-            UserDefaults.standard.set(true, forKey: "remote.offlineManual")
-            UserDefaults.standard.set(true, forKey: "v700.localFirstEngine")
-            UserDefaults.standard.set(true, forKey: "v800.localFirstNetFix")
+        // v9.0.0 混合零延迟自动云算力架构：开局秒进不阻塞，后台自动直连广州九州云服（443/8765/8443+UDP 竞速），
+        // 丝滑平滑缓冲令云端行军如原生满帧；如无网络自动本地运行，恢复网络即无缝续连。
+        if !UserDefaults.standard.bool(forKey: "v900.cloudAutoHybrid") {
+            UserDefaults.standard.set(true, forKey: "remote.auto")
+            UserDefaults.standard.set(true, forKey: "remote.autoAll")
+            UserDefaults.standard.set(false, forKey: "remote.offlineManual")
+            UserDefaults.standard.set(true, forKey: "v900.cloudAutoHybrid")
         }
         if UserDefaults.standard.object(forKey: "remote.auto") == nil {
-            UserDefaults.standard.set(false, forKey: "remote.auto")
+            UserDefaults.standard.set(true, forKey: "remote.auto")
         }
         if UserDefaults.standard.object(forKey: "remote.autoAll") == nil {
-            UserDefaults.standard.set(false, forKey: "remote.autoAll")
+            UserDefaults.standard.set(true, forKey: "remote.autoAll")
         }
-        remoteOfflineManual = UserDefaults.standard.object(forKey: "remote.offlineManual") as? Bool ?? true
+        remoteOfflineManual = UserDefaults.standard.object(forKey: "remote.offlineManual") as? Bool ?? false
         let watcher = NetworkPathWatcher { [weak self] interfaceSig in
             Task { @MainActor [weak self] in
                 self?.handleNetworkPathRecovered(interfaceSig: interfaceSig)
@@ -1705,8 +1708,8 @@ import LieguojiCore
                         guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
                         let spent = Date().timeIntervalSince(started)
                         let basePeriod = Double(p.intervalMs) / 1000.0
-                        // v13 零冗余等待：队列已就绪帧以 0.72× 丝滑追帧，队列空时 0ms 立即等下一帧，彻底消除双倍休眠延迟！
-                        let targetPeriod: Double = stats.buffered >= 2 ? basePeriod * 0.72 : (stats.buffered == 1 ? basePeriod * 0.88 : 0.0)
+                        // v9.0.0 丝滑 1 帧抖动吸收窗：保留 1 帧缓冲抚平网络抖动，积压 ≥ 3 帧以 0.78× 柔顺追帧，告别军队一顿一顿！
+                        let targetPeriod: Double = stats.buffered >= 3 ? basePeriod * 0.78 : (stats.buffered == 2 ? basePeriod * 0.94 : (stats.buffered == 1 ? basePeriod : 0.0))
                         let rest = max(0.0, targetPeriod - spent)
                         if rest > 0.004 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) }
                         else { await Task.yield() }
@@ -1771,15 +1774,16 @@ import LieguojiCore
             }
         }
     }
-    func pause(saving: Bool = true) {
+    func pause(saving: Bool = true, fetchFullState: Bool = true) {
         let was = playing; loopToken = nil; loop?.cancel(); loop = nil; playing = false
+        controller.highSpeed = false
         let wasRemote = remoteAddress != nil
         if wasRemote && !appInBackground {
             Task { [weak self] in
                 guard let self else { return }
                 await self.syncRemoteStream(resetEpoch: true)
-                // 暂停时顺手拉回一份 LZ4 压缩完整状态，确保点击任意军团/国家页立即呈现完整细节文案
-                if let data = await self.native.state(), let full = await Self.decode(GameState.self, from: data), !self.playing, !self.appInBackground {
+                // 仅在普通手动暂停时拉回全量状态；历史事件弹窗轻量暂停跳过全量下载，彻底消除弹出卡顿！
+                if fetchFullState, let data = await self.native.state(), let full = await Self.decode(GameState.self, from: data), !self.playing, !self.appInBackground {
                     self.apply(full)
                 }
             }
@@ -1789,6 +1793,7 @@ import LieguojiCore
     }
     func cycleSpeed() {
         speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : speed == 16 ? 32 : speed == 32 ? 64 : 1
+        controller.highSpeed = playing && speed >= 4
     }
     func stepOnce() {
         guard !replayActive, !playing, phase == .playing, state != nil else { return }
@@ -1869,7 +1874,8 @@ import LieguojiCore
             if dt > 0.005 && dt < 0.85 { stepInterval = stepInterval * 0.78 + dt * 0.22 }
         }
         lastApplied = playing ? now : nil
-        controller.tween = playing ? min(0.42, max(0.032, stepInterval * 1.03)) : 0.22
+        controller.highSpeed = playing && speed >= 4
+        controller.tween = playing ? min(0.45, max(0.055, stepInterval * 1.12)) : 0.22
         let applying = CACurrentMediaTime()
         apply(next, fromSlimStream: isRemote && (remotePushActive || lz4Slim))
         onAdvanceApplied?(next.day)
@@ -1967,8 +1973,28 @@ import LieguojiCore
         }
         if let modal = next.pendingHistoricalEvent {
             if pendingHistoricalModal?.id != modal.id {
-                pendingHistoricalModal = modal
-                if playing && !ShotTour.on { pause() }
+                let expressMode = UserDefaults.standard.bool(forKey: "events.expressBanner")
+                    || (playing && speed >= 16 && activeHistoricalRoute == "historical")
+                if expressMode && !ShotTour.on {
+                    // 快讯不暂停模式：后台自动按史实首选落实，仅顶部轻量浮条提示，全程 0 暂停零卡顿！
+                    expressEventToast = modal
+                    expressEventTask?.cancel()
+                    expressEventTask = Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        let res = await self.native.resolveHistoricalEvent(eventId: modal.id, choiceIndex: 0)
+                        if let data = res.state, let resolved = await Self.decode(GameState.self, from: data), !self.playing {
+                            self.apply(resolved)
+                        }
+                        try? await Task.sleep(nanoseconds: 4_800_000_000)
+                        guard !Task.isCancelled else { return }
+                        if self.expressEventToast?.id == modal.id { self.expressEventToast = nil }
+                    }
+                } else {
+                    wasPlayingBeforeModal = playing
+                    pendingHistoricalModal = modal
+                    controller.modalOpen = true
+                    if playing && !ShotTour.on { pause(saving: false, fetchFullState: false) }
+                }
             }
         } else if next.pendingHistoricalEvent == nil && pendingHistoricalModal != nil {
             // 仅在事件已被外部解决时保持 UI 同步
@@ -3374,11 +3400,14 @@ extension GameModel {
         return o
     }
 
-    /// v8.0.0 决议历史大事件选项（德奥合并 / 九一八 / 闪击波兰 / 瓜分波兰等），立即执行真实引擎领土/外交/战事效果。
+    /// v8.0.0/v9.0.0 决议历史大事件选项（德奥合并 / 九一八 / 闪击波兰 / 瓜分波兰等），立即关闭弹窗解冻 Metal 并无缝恢复推演。
     func resolveHistoricalEvent(choiceIndex: Int) async {
         guard let modal = pendingHistoricalModal else { return }
-        let res = await native.resolveHistoricalEvent(eventId: modal.id, choiceIndex: choiceIndex)
+        let shouldResume = wasPlayingBeforeModal
+        wasPlayingBeforeModal = false
         pendingHistoricalModal = nil
+        controller.modalOpen = false
+        let res = await native.resolveHistoricalEvent(eventId: modal.id, choiceIndex: choiceIndex)
         if let data = res.state, let next = await Self.decode(GameState.self, from: data) {
             apply(next)
         }
@@ -3386,6 +3415,15 @@ extension GameModel {
             notice = res.reason
         }
         forcePublishForAction()
+        if shouldResume && !playing && phase == .playing && pendingHistoricalModal == nil {
+            play()
+        }
+    }
+
+    func dismissExpressEventToast() {
+        expressEventTask?.cancel()
+        expressEventTask = nil
+        expressEventToast = nil
     }
 
     /// v8.0.0 为指定国家切换军事学说（闪电战 / 大纵深 / 持久游击 / 航母特混 / 狼群等）。

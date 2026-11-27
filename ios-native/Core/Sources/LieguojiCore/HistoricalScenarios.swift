@@ -886,6 +886,13 @@ public enum HistoricalScenarios {
             book.parties = .null
             r.regimes.style[nid] = JS(resolvedStyle.id)
 
+            // v9.0.0：按历史时代与国情预置真实开局国策与法案（二战/一战/冷战采用 HOI4 经济/征兵/贸易/治理法案与国家专项国策）
+            let scEra = HistoricalEra(rawValue: scenario.eraOverride ?? "") ?? HistoricalEra.from(year: scenario.year)
+            if Regimes.isModernEra(scEra) {
+                let openingLaws = Self.openingModernLaws(scenarioId: scenario.id, spec: spec, era: scEra)
+                book.reforms = .array(openingLaws.map { JS($0) })
+            }
+
             for p in provinces where p.controller.optionalString == nid {
                 let pid = p.id.asString
                 r.regimes.faith[pid] = JS(validReligion)
@@ -967,6 +974,87 @@ public enum HistoricalScenarios {
         // 8. 写入世家开局关系，并确保回放箱保持清空等待开局最终首帧采集
         FamilyPolitics.seedOpeningRelations(r, seed: r.world.custom.seed.optionalString ?? scenario.id)
         r.regimes.replay = .null
+    }
+
+    /// v9.0.0：为一战/二战/冷战剧本的真实国家预置开局 HOI4 级经济动员、征兵、贸易、治理体制与国家专属专项国策。
+    private static func openingModernLaws(scenarioId: String, spec: HistoricalNationSpec, era: HistoricalEra) -> [String] {
+        let sid = spec.id
+        let is1939 = scenarioId == "ww2_europe_1939"
+        let is1941 = scenarioId == "ww2_asia_1941"
+        let is1936 = scenarioId == "ww2_eve_1936"
+        let is1914 = scenarioId == "ww1_1914"
+        let is1950 = scenarioId == "coldwar_1950"
+
+        var laws = [String]()
+        // 1. 经济动员法案
+        if (is1939 && ["germany", "poland", "uk", "france"].contains(sid))
+            || (is1941 && ["japan", "roc", "yanan", "manchukuo"].contains(sid))
+            || (is1914 && ["germany", "austria_hungary", "france", "russia", "britain", "serbia", "belgium", "ottoman"].contains(sid)) {
+            laws.append("econ_war")
+        } else if (is1936 && ["germany", "ussr", "italy"].contains(sid))
+            || ["ussr", "ussr_fe", "prc", "usa_pacific", "philippines", "uk_burma", "uk_malaya", "dutch_ei", "northeast"].contains(sid)
+            || (scenarioId == "china_1931" && ["roc", "cpc", "japan", "northeast"].contains(sid)) {
+            laws.append("econ_partial")
+        } else {
+            laws.append("econ_civilian")
+        }
+
+        // 2. 现代征兵法案
+        if ["germany", "ussr", "ussr_fe", "japan", "roc", "yanan", "cpc", "prc", "poland", "france", "austria_hungary", "russia", "serbia"].contains(sid) && !is1936 {
+            laws.append("draft_extensive")
+        } else if ["uk", "britain", "usa", "usa_pacific", "sweden", "switzerland", "ireland", "portugal"].contains(sid) && !is1914 {
+            laws.append(is1939 || is1941 ? "draft_limited" : "draft_volunteer")
+        } else {
+            laws.append("draft_limited")
+        }
+
+        // 3. 贸易路线
+        if ["germany", "ussr", "ussr_fe", "japan", "italy", "prc", "warsaw_east", "manchukuo"].contains(sid) {
+            laws.append("trade_autarky")
+        } else if ["uk", "britain", "usa", "usa_pacific", "netherlands", "dutch_ei", "uk_malaya", "sweden", "switzerland", "belgium"].contains(sid) {
+            laws.append("trade_free")
+        } else {
+            laws.append("trade_export")
+        }
+
+        // 4. 国家治理体制
+        if spec.style == "communist" || spec.style == "socialist" {
+            laws.append("gov_planned")
+        } else if ["nazi", "fascist", "dictatorship", "junta", "warlord", "regency"].contains(spec.style) || sid == "japan" {
+            laws.append("gov_wartime_ctrl")
+        } else {
+            laws.append("gov_const_parl")
+        }
+
+        // 5. 国家专属 HOI4 专项国策
+        switch sid {
+        case "germany":
+            laws.append("focus_four_year")
+            if !is1914 { laws.append("focus_blitz_armored") }
+        case "ussr", "ussr_fe":
+            laws.append("focus_five_year")
+            if is1950 { laws.append("focus_atomic_proj") }
+        case "uk", "britain":
+            if !is1914 { laws.append("focus_radar_airdef") }
+            laws.append("focus_carrier_fleet")
+        case "usa", "usa_pacific":
+            laws.append("focus_lend_lease")
+            laws.append("focus_carrier_fleet")
+            if is1950 { laws.append("focus_atomic_proj") }
+        case "japan":
+            laws.append("focus_carrier_fleet")
+            laws.append("focus_four_year")
+        case "roc", "yanan", "cpc", "prc":
+            laws.append("focus_people_war")
+            if is1950 { laws.append("focus_five_year") }
+        case "france":
+            laws.append("focus_radar_airdef")
+        case "finland", "switzerland", "greece", "poland", "yugoslavia":
+            laws.append("focus_people_war")
+        default:
+            break
+        }
+        return laws
     }
 
     /// 缔结历史剧本的开局同盟、宗属与开局战事，并初始化 v8.0.0 历史路线/事件链/军事学说与实装将领。
@@ -1446,7 +1534,7 @@ public enum HistoricalScenarios {
         description: "公元前260年，秦昭襄王远交近攻、白起陈兵上党，与赵国爆发决定天下命运的长平之战。三晋合纵岌岌可危，齐楚燕虎视关东，漠北匈奴、岭南百越与西陲羌戎各据一方。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 200,
+        provinceCount: 240,
         nations: [
             HistoricalNationSpec(
                 id: "qin", name: "秦国", shortName: "秦", color: "#363E4A",
@@ -1622,7 +1710,7 @@ public enum HistoricalScenarios {
         description: "建安十三年，曹操平定河北后挥师南下荆州，舳舻千里直指江东。孙权、刘备结盟于柴桑，赤壁烈火一触即发；益州刘璋、西凉马腾、汉中张鲁、辽东公孙、塞北鲜卑与交州士燮各守一方。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 210,
+        provinceCount: 250,
         nations: [
             HistoricalNationSpec(
                 id: "caowei", name: "曹魏", shortName: "魏", color: "#2D64A8",
@@ -1782,7 +1870,7 @@ public enum HistoricalScenarios {
         description: "公元755年，开元天宝盛世已臻极盛，大唐西域安西四镇远播葱岭，然吐蕃强盛于青藏、南诏崛起于滇中、黑衣大食虎视西域、回纥雄踞漠北、渤海与新罗拱卫海东。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 220,
+        provinceCount: 260,
         nations: [
             HistoricalNationSpec(
                 id: "tang", name: "大唐", shortName: "唐", color: "#D49B2A",
@@ -1916,7 +2004,7 @@ public enum HistoricalScenarios {
         description: "公元1142年，宋金绍兴和议初定，大金铁骑雄踞中原燕云，南宋偏安临安坐拥江南巴蜀富庶之地；西夏雄守河西、大理据守西南、蒙古诸部兴起于漠北草原，高丽、吐蕃诸部与大越环峙四方。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 200,
+        provinceCount: 240,
         nations: [
             HistoricalNationSpec(
                 id: "jin", name: "金朝", shortName: "金", color: "#C99327",
@@ -2052,7 +2140,7 @@ public enum HistoricalScenarios {
         description: "永禄三年五月，东海道第一弓取今川义元统率大军上洛，织田信长于尾张清洲孤注一掷奇袭桶狭间。甲斐武田与越后上杉激战川中岛，关东北条、中国毛利、畿内三好、美浓斋藤、九州岛津大友龙造寺与奥羽伊达十四强雄踞扶桑。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 190,
+        provinceCount: 240,
         nations: [
             HistoricalNationSpec(
                 id: "oda", name: "织田家", shortName: "织田", color: "#C6444B",
@@ -2254,7 +2342,7 @@ public enum HistoricalScenarios {
         description: "1812年夏，拿破仑率六十万大军强渡涅曼河远征莫斯科。法兰西第一帝国及其莱茵邦联、华沙大公国与意大利诸邦雄踞欧陆，大英帝国以制海权与西班牙半岛战线牵制法军，俄、奥、普、奥斯曼与北欧诸王各自博弈。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 220,
+        provinceCount: 260,
         nations: [
             HistoricalNationSpec(
                 id: "france", name: "法兰西第一帝国", shortName: "法", color: "#2557A7",
@@ -2437,7 +2525,7 @@ public enum HistoricalScenarios {
         description: "1914年8月，萨拉热窝枪声引爆欧陆大战。德军按施里芬计划经低地三国突击法国，奥匈挥师塞尔维亚与俄国，奥斯曼封锁海峡；20国细化局部欧洲战区，告别粗略世界大地图，精准呈现西线堑壕、东线坦能堡、巴尔干与阿尔卑斯山脉防线。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 230,
+        provinceCount: 280,
         nations: [
             HistoricalNationSpec(
                 id: "germany", name: "德意志帝国", shortName: "德", color: "#4A5568",
@@ -2726,18 +2814,18 @@ public enum HistoricalScenarios {
         eraOverride: "ww1"
     )
 
-    // 剧本 8：民国危局 · 九一八事变（公元 1931 年 9 月 · 中国全图 · 11 势力精绘）
+    // 剧本 8：民国危局 · 九一八事变（公元 1931 年 9 月 · 中国全图 · 15 势力精绘）
     private static let china1931 = HistoricalScenario(
         id: "china_1931",
         title: "民国危局 · 九一八事变",
-        subtitle: "1931年9月 · 柳条湖风雷与全民族觉醒",
+        subtitle: "1931年9月 · 柳条湖风雷与全民族觉醒 · 15势力精绘",
         region: .china,
         year: 1931,
         eraName: "民国二十年",
-        description: "1931年9月，日本关东军蓄谋制造柳条湖事件，铁蹄踏碎白山黑水。南京国民政府、张学良东北军、瑞金红军与晋绥、新桂、川军、西北马家军及新疆各据一方；遵循史实路线可亲历九一八、伪满洲国、西安事变与七七全面抗战，或走架空路线东北军就地决战！",
+        description: "1931年9月，日本关东军蓄谋制造柳条湖事件，铁蹄踏碎白山黑水。南京国民政府、张学良东北军、瑞金红军、晋绥、新桂、川军、滇军、西北马家军、新疆与西藏各据一方，周边英属印缅、法属印支、苏联远东与外蒙古环峙四境。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 220,
+        provinceCount: 270,
         nations: [
             HistoricalNationSpec(
                 id: "roc", name: "中华民国国民政府", shortName: "国", color: "#2B6CB0",
@@ -2834,9 +2922,8 @@ public enum HistoricalScenarios {
                 capitalLon: 104.07, capitalLat: 30.67, capitalName: "成都",
                 anchors: [
                     HistoricalAnchor(lon: 106.55, lat: 29.56, provinceName: "重庆", weight: 1.15),
-                    HistoricalAnchor(lon: 102.71, lat: 25.04, provinceName: "昆明", weight: 1.3),
-                    HistoricalAnchor(lon: 106.71, lat: 26.57, provinceName: "贵阳", weight: 1.15),
-                    HistoricalAnchor(lon: 91.13, lat: 29.65, provinceName: "拉萨", weight: 1.45),
+                    HistoricalAnchor(lon: 106.71, lat: 26.57, provinceName: "贵阳", weight: 1.1),
+                    HistoricalAnchor(lon: 104.64, lat: 28.75, provinceName: "宜宾", weight: 1.0),
                 ],
                 rulerName: "刘湘", rulerTitle: "川军总司令",
                 rulerMilitary: 82, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 82,
@@ -2893,13 +2980,65 @@ public enum HistoricalScenarios {
                 rulerMilitary: 82, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 80,
                 rulerTraits: ["IronFist", "Veteran"]
             ),
+            // v9.0.0 补齐 1931 中国全图四境真实势力（追加在末尾 11..14，完整保留 0..10 名将花名册索引）
+            HistoricalNationSpec(
+                id: "tibet", name: "西藏地方", shortName: "藏", color: "#B85C38",
+                culture: "tibetan", religion: "tantric", polity: "Theocracy", style: "lamaism",
+                capitalLon: 91.13, capitalLat: 29.65, capitalName: "拉萨",
+                anchors: [
+                    HistoricalAnchor(lon: 88.88, lat: 29.27, provinceName: "日喀则", weight: 1.25),
+                    HistoricalAnchor(lon: 97.17, lat: 31.14, provinceName: "昌都", weight: 1.15),
+                    HistoricalAnchor(lon: 80.10, lat: 32.50, provinceName: "阿里", weight: 1.35),
+                ],
+                rulerName: "土登嘉措", rulerTitle: "十三世达赖",
+                rulerMilitary: 62, rulerAdmin: 78, rulerDiplo: 78, rulerCharisma: 86,
+                rulerTraits: ["Patient", "Just"]
+            ),
+            HistoricalNationSpec(
+                id: "yunnan", name: "滇军龙云", shortName: "滇", color: "#3D8B6E",
+                culture: "chinese", religion: "confucian", polity: "Empire", style: "warlord",
+                capitalLon: 102.71, capitalLat: 25.04, capitalName: "昆明",
+                anchors: [
+                    HistoricalAnchor(lon: 100.23, lat: 25.60, provinceName: "大理", weight: 1.1),
+                    HistoricalAnchor(lon: 99.16, lat: 25.11, provinceName: "保山", weight: 1.05),
+                ],
+                rulerName: "龙云", rulerTitle: "云南省主席",
+                rulerMilitary: 82, rulerAdmin: 80, rulerDiplo: 78, rulerCharisma: 84,
+                rulerTraits: ["BattleHardened", "Veteran", "Stubborn"]
+            ),
+            HistoricalNationSpec(
+                id: "uk_india", name: "英属印度与缅甸", shortName: "英印", color: "#C95252",
+                culture: "english", religion: "hinduism", polity: "Republic", style: "protectorate",
+                capitalLon: 77.21, capitalLat: 28.61, capitalName: "新德里",
+                anchors: [
+                    HistoricalAnchor(lon: 88.36, lat: 22.57, provinceName: "加尔各答", weight: 1.35),
+                    HistoricalAnchor(lon: 96.08, lat: 21.95, provinceName: "曼德勒", weight: 1.25),
+                    HistoricalAnchor(lon: 74.35, lat: 31.55, provinceName: "拉合尔", weight: 1.3),
+                    HistoricalAnchor(lon: 85.32, lat: 27.72, provinceName: "加德满都", weight: 1.15),
+                ],
+                rulerName: "威灵顿勋爵", rulerTitle: "印度总督",
+                rulerMilitary: 78, rulerAdmin: 84, rulerDiplo: 82, rulerCharisma: 78,
+                rulerTraits: ["Administrator", "Financier"]
+            ),
+            HistoricalNationSpec(
+                id: "indochina", name: "法属印度支那", shortName: "印支", color: "#4A74B4",
+                culture: "vietnamese", religion: "catholic", polity: "Republic", style: "protectorate",
+                capitalLon: 105.84, capitalLat: 21.03, capitalName: "河内",
+                anchors: [
+                    HistoricalAnchor(lon: 102.63, lat: 17.97, provinceName: "万象", weight: 1.1),
+                    HistoricalAnchor(lon: 107.59, lat: 16.46, provinceName: "顺化", weight: 1.05),
+                ],
+                rulerName: "皮埃尔·帕斯基耶", rulerTitle: "印支总督",
+                rulerMilitary: 66, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 70,
+                rulerTraits: ["Administrator", "Patient"]
+            ),
         ],
         openingWars: [],
         openingAlliances: [
-            HistoricalAllianceSpec(name: "国民政府国防协定", memberIds: ["roc", "northeast", "shanxi", "sichuan", "ma_clique"]),
+            HistoricalAllianceSpec(name: "国民政府国防协定", memberIds: ["roc", "northeast", "shanxi", "sichuan", "yunnan", "ma_clique"]),
             HistoricalAllianceSpec(name: "苏蒙互助协定", memberIds: ["ussr_fe", "mongolia"]),
         ],
-        tags: ["民国", "九一八事变", "抗战史实链", "11势力精绘"],
+        tags: ["民国", "九一八事变", "抗战史实链", "15势力精绘"],
         rebelMode: "historical",
         eraOverride: "ww2"
     )
@@ -2915,7 +3054,7 @@ public enum HistoricalScenarios {
         description: "1936年，凡尔赛体系摇摇欲坠：莱茵兰非军事区、西班牙内战、德奥合并、慕尼黑协定、苏德密约、白色方案闪击波兰、威瑟演习、黄色方案绕道低地三国直至巴巴罗萨全面爆发——28国细化欧洲局部地图，支持严格史实路线或自由架空推演！",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 240,
+        provinceCount: 290,
         nations: [
             HistoricalNationSpec(
                 id: "germany", name: "德意志第三帝国", shortName: "德", color: "#3D454F",
@@ -3075,7 +3214,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "romania", name: "罗马尼亚王国", shortName: "罗", color: "#C9A227",
-                culture: "roman", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                culture: "roman", religion: "orthodox", polity: "Kingdom", style: "constitutional",
                 capitalLon: 26.1, capitalLat: 44.4, capitalName: "布加勒斯特",
                 anchors: [
                     HistoricalAnchor(lon: 23.6, lat: 46.8, provinceName: "克卢日", weight: 1.0),
@@ -3100,7 +3239,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "yugoslavia", name: "南斯拉夫王国", shortName: "南", color: "#5B6ABF",
-                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "regency",
                 capitalLon: 20.5, capitalLat: 44.8, capitalName: "贝尔格莱德",
                 anchors: [
                     HistoricalAnchor(lon: 16.0, lat: 45.8, provinceName: "萨格勒布", weight: 0.95),
@@ -3113,7 +3252,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "greece", name: "希腊王国", shortName: "希", color: "#4DA6E0",
-                culture: "greek", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                culture: "greek", religion: "orthodox", polity: "Republic", style: "dictatorship",
                 capitalLon: 23.7, capitalLat: 38.0, capitalName: "雅典",
                 anchors: [
                     HistoricalAnchor(lon: 22.9, lat: 40.6, provinceName: "塞萨洛尼基", weight: 0.95),
@@ -3205,7 +3344,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "bulgaria", name: "保加利亚王国", shortName: "保", color: "#4E8B63",
-                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                culture: "slavic", religion: "orthodox", polity: "Empire", style: "dualMonarchy",
                 capitalLon: 23.32, capitalLat: 42.70, capitalName: "索菲亚",
                 anchors: [
                     HistoricalAnchor(lon: 24.75, lat: 42.14, provinceName: "普罗夫迪夫", weight: 0.85),
@@ -3217,7 +3356,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "austria", name: "奥地利联邦国", shortName: "奥", color: "#E5C158",
-                culture: "german", religion: "catholic", polity: "Republic", style: "presidential",
+                culture: "german", religion: "catholic", polity: "Republic", style: "dictatorship",
                 capitalLon: 16.37, capitalLat: 48.21, capitalName: "维也纳",
                 anchors: [
                     HistoricalAnchor(lon: 15.44, lat: 47.07, provinceName: "格拉茨", weight: 0.78),
@@ -3291,7 +3430,7 @@ public enum HistoricalScenarios {
         description: "1939年9月1日，德军闪击波兰，英法对德宣战，第二次世界大战欧洲战场全面爆发。欧陆二十七国完整拆分（荷兰/比利时/卢森堡/瑞士/丹麦/葡萄牙/爱尔兰/保加利亚/斯洛伐克/波罗的海三国），真实还原苏德瓜分波兰、威瑟演习、黄色方案绕道低地三国与巴巴罗萨！",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 240,
+        provinceCount: 290,
         nations: [
             HistoricalNationSpec(
                 id: "germany", name: "德意志第三帝国", shortName: "德", color: "#3D454F",
@@ -3377,7 +3516,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "italy", name: "意大利王国", shortName: "意", color: "#3B8749",
-                culture: "italian", religion: "catholic", polity: "Kingdom", style: "regency",
+                culture: "italian", religion: "catholic", polity: "Republic", style: "fascist",
                 capitalLon: 12.5, capitalLat: 41.9, capitalName: "罗马",
                 anchors: [
                     HistoricalAnchor(lon: 9.2, lat: 45.5, provinceName: "米兰", weight: 1.05),
@@ -3394,7 +3533,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "spain", name: "西班牙", shortName: "西", color: "#D99B26",
-                culture: "spanish", religion: "catholic", polity: "Empire", style: "junta",
+                culture: "spanish", religion: "catholic", polity: "Republic", style: "fascist",
                 capitalLon: -3.7, capitalLat: 40.4, capitalName: "马德里",
                 anchors: [
                     HistoricalAnchor(lon: 2.2, lat: 41.4, provinceName: "巴塞罗那", weight: 1.1),
@@ -3458,7 +3597,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "romania", name: "罗马尼亚王国", shortName: "罗", color: "#C9A227",
-                culture: "roman", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                culture: "roman", religion: "orthodox", polity: "Republic", style: "dictatorship",
                 capitalLon: 26.1, capitalLat: 44.4, capitalName: "布加勒斯特",
                 anchors: [
                     HistoricalAnchor(lon: 23.6, lat: 46.8, provinceName: "克卢日", weight: 1.0),
@@ -3483,7 +3622,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "yugoslavia", name: "南斯拉夫王国", shortName: "南", color: "#5B6ABF",
-                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "regency",
                 capitalLon: 20.5, capitalLat: 44.8, capitalName: "贝尔格莱德",
                 anchors: [
                     HistoricalAnchor(lon: 16.0, lat: 45.8, provinceName: "萨格勒布", weight: 0.95),
@@ -3496,7 +3635,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "greece", name: "希腊王国", shortName: "希", color: "#4DA6E0",
-                culture: "greek", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                culture: "greek", religion: "orthodox", polity: "Republic", style: "dictatorship",
                 capitalLon: 23.7, capitalLat: 38.0, capitalName: "雅典",
                 anchors: [
                     HistoricalAnchor(lon: 22.9, lat: 40.6, provinceName: "塞萨洛尼基", weight: 0.95),
@@ -3589,7 +3728,7 @@ public enum HistoricalScenarios {
             ),
             HistoricalNationSpec(
                 id: "bulgaria", name: "保加利亚王国", shortName: "保", color: "#4E8B63",
-                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                culture: "slavic", religion: "orthodox", polity: "Empire", style: "dualMonarchy",
                 capitalLon: 23.32, capitalLat: 42.70, capitalName: "索菲亚",
                 anchors: [
                     HistoricalAnchor(lon: 24.75, lat: 42.14, provinceName: "普罗夫迪夫", weight: 0.85),
@@ -3668,7 +3807,7 @@ public enum HistoricalScenarios {
         description: "1941年12月，太平洋战争爆发，日军南下香港、马来、新加坡、荷属东印度与菲律宾；正面战场国民政府死守西南大后方，延安抗日根据地深入敌后牵制华北，关东军与苏联远东、外蒙古陈兵百万对峙，美军太平洋舰队严阵以待！",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 230,
+        provinceCount: 280,
         nations: [
             HistoricalNationSpec(
                 id: "roc", name: "中华民国国民政府", shortName: "国", color: "#2B6CB0",
@@ -3746,22 +3885,22 @@ public enum HistoricalScenarios {
                 capitalLon: 131.9, capitalLat: 43.1, capitalName: "海参崴",
                 anchors: [
                     HistoricalAnchor(lon: 135.1, lat: 48.5, provinceName: "伯力", weight: 1.45),
-                    HistoricalAnchor(lon: 113.5, lat: 52.0, provinceName: "赤塔", weight: 1.7),
+                    HistoricalAnchor(lon: 113.5, lat: 52.0, provinceName: "赤塔", weight: 1.65),
                     HistoricalAnchor(lon: 127.5, lat: 50.3, provinceName: "布拉戈维申斯克", weight: 1.4),
-                    HistoricalAnchor(lon: 106.9, lat: 47.9, provinceName: "乌兰巴托", weight: 1.75),
                 ],
                 rulerName: "约瑟夫·阿帕纳先科", rulerTitle: "远东方面军司令",
                 rulerMilitary: 88, rulerAdmin: 78, rulerDiplo: 70, rulerCharisma: 84,
                 rulerTraits: ["BattleHardened", "IronFist", "Veteran"]
             ),
             HistoricalNationSpec(
-                id: "uk_burma", name: "英属缅甸与马来", shortName: "英", color: "#D65A5A",
+                id: "uk_burma", name: "英属印度与缅甸", shortName: "英印", color: "#D65A5A",
                 culture: "english", religion: "protestant", polity: "Republic", style: "protectorate",
                 capitalLon: 96.2, capitalLat: 16.8, capitalName: "仰光",
                 anchors: [
-                    HistoricalAnchor(lon: 96.1, lat: 22.0, provinceName: "曼德勒", weight: 1.3),
-                    HistoricalAnchor(lon: 97.4, lat: 25.4, provinceName: "密支那", weight: 1.3),
-                    HistoricalAnchor(lon: 101.7, lat: 3.1, provinceName: "吉隆坡", weight: 1.25),
+                    HistoricalAnchor(lon: 96.1, lat: 22.0, provinceName: "曼德勒", weight: 1.25),
+                    HistoricalAnchor(lon: 97.4, lat: 25.4, provinceName: "密支那", weight: 1.25),
+                    HistoricalAnchor(lon: 88.4, lat: 22.6, provinceName: "加尔各答", weight: 1.35),
+                    HistoricalAnchor(lon: 93.9, lat: 24.8, provinceName: "英帕尔", weight: 1.2),
                     HistoricalAnchor(lon: 114.2, lat: 22.3, provinceName: "香港", weight: 0.72),
                 ],
                 rulerName: "阿奇博尔德·韦维尔", rulerTitle: "远东总司令",
@@ -3848,10 +3987,12 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "usa_pacific", name: "美军太平洋舰队", shortName: "美太", color: "#1F5EA8",
                 culture: "english", religion: "protestant", polity: "Federation", style: "federal",
-                capitalLon: 144.79, capitalLat: 13.44, capitalName: "关岛",
+                capitalLon: 147.0, capitalLat: -6.7, capitalName: "莱城",
                 anchors: [
+                    HistoricalAnchor(lon: 145.8, lat: -5.2, provinceName: "马当", weight: 1.15),
+                    HistoricalAnchor(lon: 143.6, lat: -3.55, provinceName: "韦瓦克", weight: 1.15),
+                    HistoricalAnchor(lon: 144.79, lat: 13.44, provinceName: "关岛", weight: 1.0),
                     HistoricalAnchor(lon: 145.75, lat: 15.18, provinceName: "塞班", weight: 1.0),
-                    HistoricalAnchor(lon: 142.2, lat: 27.1, provinceName: "小笠原前哨", weight: 0.9),
                 ],
                 rulerName: "切斯特·尼米兹", rulerTitle: "太平洋舰队总司令",
                 rulerMilitary: 97, rulerAdmin: 90, rulerDiplo: 84, rulerCharisma: 92,
@@ -3891,7 +4032,7 @@ public enum HistoricalScenarios {
         description: "1950年，铁幕横贯欧陆、新中国屹立东方，美苏两大超级大国进入原子弹与战略导弹威慑时代。北大西洋公约组织与东方阵营剑拔弩张，印度、不结盟国家与拉美各国在两极格局中寻求自立。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 260,
+        provinceCount: 300,
         nations: [
             HistoricalNationSpec(
                 id: "usa", name: "美利坚合众国", shortName: "美", color: "#2B6CB0",

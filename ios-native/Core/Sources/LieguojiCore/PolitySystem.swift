@@ -284,6 +284,8 @@ extension Regimes {
     static func realisticPoliticsMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)
+        // v9.0.0：历史剧本开启「史实路线」时严禁随机无厘头政体翻车（如二战德国突然立宪/苏联随机复辟），仅由真实历史事件推进政局演变
+        if HistoricalEvents.isHistoricalRoute(r) { return }
         let evRate = rule(r, "event")
         guard evRate > 0 else { return }
         // 两次重大政体剧变之间至少间隔 48 个月（四年稳态期，彻底杜绝政体反复横跳）。

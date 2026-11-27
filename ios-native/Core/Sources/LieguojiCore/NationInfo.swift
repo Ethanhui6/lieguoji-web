@@ -601,7 +601,10 @@ extension NativeEngine {
             swayRow("民生", signed(sway.growth), "年人口增长：君主行政魅力、制度"),
             swayRow("安定", "\(calm)", calm < 40 ? "民心离散，大叛乱随时爆发" : calm < 55 ? "暗流涌动，可能爆发大叛乱" : "民心安定，暂无大乱之虞"),
         ])
-        o.reforms = .array(Regimes.reforms.map { f in let x = JS.object(); x.id = JS(f.id); x.name = JS(f.name); x.text = JS(f.text); x.on = JS(held.contains(f.id)); return x })
+        let curEra = HistoricalEra.current(r)
+        o.historicalEra = JS(curEra.rawValue)
+        let eraReforms = Regimes.reforms(for: curEra)
+        o.reforms = .array(eraReforms.map { f in let x = JS.object(); x.id = JS(f.id); x.name = JS(f.name); x.text = JS(f.text); x.on = JS(held.contains(f.id)); return x })
         o.faiths = faithShares(id)
         let book = r.regimes.isNull ? JS.null : r.regimes.nations[id]
         // Each party with its line and what that line does in government.

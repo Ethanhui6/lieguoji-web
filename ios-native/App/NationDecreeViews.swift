@@ -64,6 +64,13 @@ struct NationDecreesTab: View {
         let tone: Color
     }
 
+    private var isModernEra: Bool {
+        if let e = info.historicalEra {
+            return e == "ww1" || e == "ww2" || e == "modern"
+        }
+        return (info.reforms ?? []).contains { $0.id.hasPrefix("econ_") || $0.id.hasPrefix("focus_") }
+    }
+
     static let strategies: [StrategyPreset] = [
         StrategyPreset(id: "warMobilize",  title: "战时动员", note: "义务兵役 · 军功授爵 · 御史", glyph: .war, tone: Theme.seal),
         StrategyPreset(id: "prosperTrade", title: "富国兴商", note: "开海通商 · 两税 · 行会 · 币制", glyph: .economy, tone: Theme.seal),
@@ -72,12 +79,31 @@ struct NationDecreesTab: View {
         StrategyPreset(id: "techFocus",    title: "格物兴科", note: "科举政教分离 · 议会 · 御史", glyph: .chronicle, tone: Theme.seal),
     ]
 
+    static let modernStrategies: [StrategyPreset] = [
+        StrategyPreset(id: "warMobilize",  title: "战时总动员", note: "战时经济 · 广泛征兵 · 四年军备", glyph: .war, tone: Theme.seal),
+        StrategyPreset(id: "prosperTrade", title: "工业与贸易", note: "民用经济 · 自由贸易 · 租借法案", glyph: .economy, tone: Theme.seal),
+        StrategyPreset(id: "stabilize",    title: "纵深国防",   note: "部分动员 · 防空雷达 · 持久战", glyph: .polity, tone: Theme.seal),
+        StrategyPreset(id: "expand",       title: "闪击扩张",   note: "战时经济 · 装甲闪击 · 航母舰队", glyph: .military, tone: Theme.seal),
+        StrategyPreset(id: "techFocus",    title: "重工科研",   note: "计划统筹 · 五年重工 · 战略科研", glyph: .chronicle, tone: Theme.seal),
+    ]
+
     enum ReformDomain: String, CaseIterable {
         case all = "全部"
         case governance = "官制宪政"
         case military = "军制兵役"
         case economy = "财税农商"
         case faith = "礼教宗法"
+
+        func label(modern: Bool) -> String {
+            guard modern else { return rawValue }
+            switch self {
+            case .all: return "全部"
+            case .governance: return "治理体制"
+            case .military: return "征兵战备"
+            case .economy: return "经济贸易"
+            case .faith: return "专项国策"
+            }
+        }
     }
 
     struct MutexGroup: Identifiable {
@@ -102,6 +128,13 @@ struct NationDecreesTab: View {
         MutexGroup(id: "church", domain: .faith, title: "国教与政教关系", hint: "互斥 · 二选一或均不施行", ids: ["stateChurch", "secular"]),
     ]
 
+    static let modernMutexGroups: [MutexGroup] = [
+        MutexGroup(id: "econ", domain: .economy, title: "经济动员法案", hint: "互斥 · 决定军工与民生配比", ids: ["econ_civilian", "econ_partial", "econ_war", "econ_total"]),
+        MutexGroup(id: "draft", domain: .military, title: "现代征兵法案", hint: "互斥 · 决定兵源动员深度", ids: ["draft_volunteer", "draft_limited", "draft_extensive", "draft_alladults"]),
+        MutexGroup(id: "trade", domain: .economy, title: "贸易与资源法案", hint: "互斥 · 外贸或战时统制", ids: ["trade_free", "trade_export", "trade_autarky"]),
+        MutexGroup(id: "gov", domain: .governance, title: "现代国家治理体制", hint: "互斥 · 议会/计划/战时统制", ids: ["gov_const_parl", "gov_planned", "gov_wartime_ctrl"]),
+    ]
+
     static let independentSpecs: [IndependentSpec] = [
         IndependentSpec(id: "audit", domain: .governance),
         IndependentSpec(id: "parliament", domain: .governance),
@@ -113,6 +146,17 @@ struct NationDecreesTab: View {
         IndependentSpec(id: "tiaobian", domain: .economy),
         IndependentSpec(id: "guild", domain: .economy),
         IndependentSpec(id: "navyAct", domain: .economy),
+    ]
+
+    static let modernIndependentSpecs: [IndependentSpec] = [
+        IndependentSpec(id: "focus_four_year", domain: .economy),
+        IndependentSpec(id: "focus_five_year", domain: .economy),
+        IndependentSpec(id: "focus_lend_lease", domain: .economy),
+        IndependentSpec(id: "focus_blitz_armored", domain: .military),
+        IndependentSpec(id: "focus_radar_airdef", domain: .military),
+        IndependentSpec(id: "focus_carrier_fleet", domain: .military),
+        IndependentSpec(id: "focus_people_war", domain: .faith),
+        IndependentSpec(id: "focus_atomic_proj", domain: .faith),
     ]
 
     static let reformCatalog: [String: Regimes.Reform] = Dictionary(uniqueKeysWithValues: Regimes.reforms.map { ($0.id, $0) })
@@ -344,20 +388,24 @@ struct NationDecreesTab: View {
     private var centralizationCard: some View {
         let cur = info.centralization ?? "balanced"
         let cd = info.centralCooldown ?? 0
+        let mod = isModernEra
+        let labels: [(String, String)] = mod
+            ? [("central", "中央统制"), ("balanced", "联邦均衡"), ("autonomous", "地方自治")]
+            : [("central", "高度集权"), ("balanced", "郡县均衡"), ("autonomous", "藩镇自治")]
         let note = cur == "central"
-            ? "高度集权 · 岁入 +12% · 进攻 +8% · 代价：安定 −6 · 腐化 +5"
+            ? (mod ? "中央统制 · 财政 +12% · 进攻 +8% · 代价：安定 −6 · 官僚腐化 +5" : "高度集权 · 岁入 +12% · 进攻 +8% · 代价：安定 −6 · 腐化 +5")
             : cur == "autonomous"
-                ? "藩镇自治 · 安定 +10 · 腐化 −6 · 人口 +3% · 代价：岁入 −10%"
-                : "郡县均衡 · 央地权责中正调和，无额外偏向"
+                ? (mod ? "地方自治 · 安定 +10 · 腐化 −6 · 人口 +3% · 代价：财政 −10%" : "藩镇自治 · 安定 +10 · 腐化 −6 · 人口 +3% · 代价：岁入 −10%")
+                : (mod ? "联邦均衡 · 中央与地方权责均衡，无额外偏向" : "郡县均衡 · 央地权责中正调和，无额外偏向")
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text("央地集权体制").font(Theme.sans(12.5, weight: .medium)).foregroundStyle(Theme.ink2)
+                Text(mod ? "国家央地体制" : "央地集权体制").font(Theme.sans(12.5, weight: .medium)).foregroundStyle(Theme.ink2)
                 Spacer()
                 Text(cd > 0 ? "磨合冷却 · 余 \(cd) 日" : "180 日转轨冷却")
                     .font(Theme.caption).foregroundStyle(cd > 0 ? Theme.seal : Theme.ink2).monospacedDigit()
             }
             HStack(spacing: 8) {
-                ForEach([("central", "高度集权"), ("balanced", "郡县均衡"), ("autonomous", "藩镇自治")], id: \.0) { mode, label in
+                ForEach(labels, id: \.0) { mode, label in
                     let on = cur == mode
                     EditorialTactileButton(
                         title: label,
@@ -384,23 +432,27 @@ struct NationDecreesTab: View {
         let byId = Dictionary(uniqueKeysWithValues: list.map { ($0.id, $0) })
         let activeRows = list.filter(\.on)
         let net = Self.netChips(for: activeRows.map(\.id))
+        let mod = isModernEra
+        let activeStrategies = mod ? Self.modernStrategies : Self.strategies
+        let activeMutex = mod ? Self.modernMutexGroups : Self.mutexGroups
+        let activeIndepSpecs = mod ? Self.modernIndependentSpecs : Self.independentSpecs
 
         LazyVStack(alignment: .leading, spacing: 22) {
             // 1. 现行国策总效（极简古籍统计 + Cormorant Garamond 衬线数字，无彩色胶囊堆砌）
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("现行长期国策").font(Theme.serif(16)).tracking(1.4).foregroundStyle(Theme.ink)
+                    Text(mod ? "现行法案与国家焦点" : "现行长期国策").font(Theme.serif(16)).tracking(1.4).foregroundStyle(Theme.ink)
                     if let rcd = info.reformCooldown, rcd > 0 {
-                        PaperTag(text: "变法磨合余 \(rcd) 日", color: Theme.seal, size: 10.5)
+                        PaperTag(text: (mod ? "法案磨合余 " : "变法磨合余 ") + "\(rcd) 日", color: Theme.seal, size: 10.5)
                     } else {
-                        PaperTag(text: "变法 100 金 · 90 日冷却", color: Theme.ink2, size: 10.5)
+                        PaperTag(text: (mod ? "颁行 100 金 · 90 日冷却" : "变法 100 金 · 90 日冷却"), color: Theme.ink2, size: 10.5)
                     }
                     Spacer()
                     EditorialValueText("\(activeRows.count)/\(max(1, list.count))", size: 22, color: Theme.seal)
                 }
                 InkBar(fraction: Double(activeRows.count) / Double(max(1, list.count)), color: Theme.seal, track: Theme.hairline, height: 2.5)
                 if net.isEmpty {
-                    Text("尚未确立长期国策，可在下方择定立国路线或开启专项制度。")
+                    Text(mod ? "尚未颁行现代经济与军事法案，可在下方设定动员法案或激活国家焦点。" : "尚未确立长期国策，可在下方择定立国路线或开启专项制度。")
                         .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2)
                 } else {
                     Text(net.map(\.text).joined(separator: "  ·  "))
@@ -415,7 +467,7 @@ struct NationDecreesTab: View {
             let stratCD = info.strategyCooldown ?? 0
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("国家大战略 · 唯一互斥").font(Theme.sans(12, weight: .medium)).tracking(1.0).foregroundStyle(Theme.ink2)
+                    Text(mod ? "国家大战略路线 · 唯一互斥" : "国家大战略 · 唯一互斥").font(Theme.sans(12, weight: .medium)).tracking(1.0).foregroundStyle(Theme.ink2)
                     Spacer()
                     Text(stratCD > 0 ? "转轨稳固中 · 余 \(stratCD) 日" : "切换将自动更替专项组合")
                         .font(Theme.sans(11.5)).foregroundStyle(stratCD > 0 ? Theme.seal : Theme.ink2).monospacedDigit()
@@ -423,7 +475,7 @@ struct NationDecreesTab: View {
                 .padding(.horizontal, Theme.Layout.pageInset)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(Self.strategies) { sp in
+                        ForEach(activeStrategies) { sp in
                             let active = info.strategy == sp.id
                             let locked = active || stratCD > 0 || busy
                             Button {
@@ -468,7 +520,7 @@ struct NationDecreesTab: View {
                             withAnimation(Motion.tap) { reformDomain = dom }
                         } label: {
                             VStack(spacing: 5) {
-                                Text(dom.rawValue)
+                                Text(dom.label(modern: mod))
                                     .font(Theme.sans(13.5, weight: on ? .semibold : .regular))
                                     .foregroundStyle(on ? Theme.seal : Theme.ink2)
                                 Rectangle()
@@ -486,20 +538,20 @@ struct NationDecreesTab: View {
                 Group2 { Row(label: "国策", value: "当前政体暂无可选长期国策") }
                     .padding(.horizontal, Theme.Layout.pageInset)
             } else {
-                let groups = Self.mutexGroups.filter { g in
+                let groups = activeMutex.filter { g in
                     (reformDomain == .all || g.domain == reformDomain) && g.ids.contains { byId[$0] != nil }
                 }
                 if !groups.isEmpty {
-                    SectionLabel("立国路线 · 同组互斥")
+                    SectionLabel(mod ? "核心国家法案 · 同组互斥" : "立国路线 · 同组互斥")
                     ForEach(groups) { g in
                         let available = g.ids.compactMap { byId[$0] }
                         mutexRouteCard(group: g, rows: available)
                     }
                 }
 
-                let groupedIds = Set(Self.mutexGroups.flatMap(\.ids))
-                let specIds = Set(Self.independentSpecs.map(\.id))
-                let specRows: [NationInfo.ReformRow] = Self.independentSpecs.compactMap { spec in
+                let groupedIds = Set(activeMutex.flatMap(\.ids))
+                let specIds = Set(activeIndepSpecs.map(\.id))
+                let specRows: [NationInfo.ReformRow] = activeIndepSpecs.compactMap { spec in
                     guard reformDomain == .all || spec.domain == reformDomain else { return nil }
                     return byId[spec.id]
                 }
@@ -511,7 +563,7 @@ struct NationDecreesTab: View {
                 let slotsMax = info.reformSlotsMax ?? 3
                 if !independents.isEmpty {
                     HStack(alignment: .firstTextBaseline) {
-                        SectionLabel("专项制度 · 朝纲槽位", inset: false)
+                        SectionLabel(mod ? "国家专项国策 · 焦点槽位" : "专项制度 · 朝纲槽位", inset: false)
                         Spacer()
                         Text("已行 \(slotsUsed)/\(slotsMax) 槽\(slotsUsed >= slotsMax ? "（已满）" : "")")
                             .font(Theme.sans(12)).foregroundStyle(slotsUsed >= slotsMax ? Theme.seal : Theme.ink2).monospacedDigit()
@@ -540,7 +592,8 @@ struct NationDecreesTab: View {
                 Text(activeName.map { "已行 · \($0)" } ?? group.hint)
                     .font(Theme.sans(12)).foregroundStyle(activeName != nil ? Theme.seal : Theme.ink2)
             }
-            HStack(spacing: 8) {
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: rows.count <= 3 ? max(1, rows.count) : 2)
+            LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(rows, id: \.id) { r in
                     let chips = Self.effectChips(for: r.id)
                     Button { toggleReform(r) } label: {
@@ -631,17 +684,50 @@ struct NationDecreesTab: View {
         .disabled(busy)
     }
 
+    private static func modernDecreeTitle(_ id: String, fallback: String) -> String {
+        switch id {
+        case "prosper": return "民生休养计划"
+        case "antiCorruption": return "整顿官僚行政"
+        case "deposeMonarch": return "议会不信任弹劾"
+        case "grandFeast": return "全国国庆盛典"
+        case "imperialInspection": return "国防战区视察"
+        case "relief": return "紧急救济民生"
+        case "landSurvey": return "全国资产税查"
+        case "roadNetwork": return "铁路公路网建设"
+        case "granary": return "国家战略物资储备"
+        case "warBond": return "发行战争公债"
+        case "mobilize": return "战时应急总动员"
+        case "promoteCommander": return "授衔前线元帅"
+        case "eliteDrill": return "全军大演习"
+        case "rewardArmies": return "前线军需犒劳"
+        case "fortifyBorder": return "修筑边境筑垒防线"
+        case "armsUpgrade": return "军工装备换装"
+        case "navalDockyard": return "扩建现代海军船坞"
+        case "techAcademy": return "国防科研院攻关"
+        case "recruitTalent": return "延揽军政专家"
+        case "assimilateCulture": return "国民教育整合"
+        case "convertFaith": return "国民思想动员"
+        case "amnesty": return "战时政治特赦"
+        case "academy": return "兴办国立大学"
+        case "scholarlyEdict": return "发布外交白皮书"
+        case "envoyGoodwill": return "派遣外交特使"
+        case "taxRelief": return "减税纾困稳民"
+        default: return fallback
+        }
+    }
+
     @ViewBuilder
     private var decreesGridSection: some View {
         let items = Self.decrees.filter { $0.category == category }
         let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
+        let mod = isModernEra
         let cds = info.decreeCooldowns ?? [:]
         let qUsed = info.edictQuotaUsed ?? 0
         let qMax = info.edictQuotaMax ?? 2
         let quotaFull = qUsed >= qMax
         let curGold = Int(info.gold)
         VStack(alignment: .leading, spacing: 8) {
-            SectionLabel("\(lex.decreePrefix)\(category.rawValue)")
+            SectionLabel(mod ? "行政命令 · \(category.rawValue)" : "\(lex.decreePrefix)\(category.rawValue)")
             Text("每季限颁 \(qMax) 道政令（已用 \(qUsed)/\(qMax)），付费政令严格核验国库，颁行后进入 90–360 日冷却期，不可免费刷取。")
                 .font(Theme.sans(12)).foregroundStyle(quotaFull ? Theme.seal : Theme.ink2)
                 .padding(.horizontal, Theme.Layout.sectionInset)
@@ -654,10 +740,11 @@ struct NationDecreesTab: View {
                     let onCooldown = remDays > 0
                     let shortGold = item.cost > 0 && curGold < item.cost
                     let locked = busy || onCooldown || quotaFull || shortGold
-                    let actionLabel = onCooldown ? "冷却中" : (quotaFull ? "本季已满" : (shortGold ? "缺 \(item.cost - curGold) 金" : "颁行"))
+                    let actionLabel = onCooldown ? "冷却中" : (quotaFull ? "本季已满" : (shortGold ? "缺 \(item.cost - curGold) 金" : (mod ? "执行" : "颁行")))
                     let isCostly = item.badge.contains("−") || item.badge.contains("耗") || item.note.contains("−")
+                    let displayTitle = mod ? Self.modernDecreeTitle(item.id, fallback: item.title) : item.title
                     EditorialActionRow(
-                        title: item.title,
+                        title: displayTitle,
                         detail: item.note,
                         consequence: onCooldown ? "休养余 \(remDays) 日" : item.badge,
                         icon: Self.phosphorFor(item.glyph),

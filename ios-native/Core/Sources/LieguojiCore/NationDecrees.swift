@@ -625,17 +625,29 @@ extension NativeEngine {
             return (true, "已废立更君：由\(newName)执掌\(stateName)，腐化 −8。")
 
         case let k where k.hasPrefix("strategy:"):
-            // 唯一互斥大战略方案（切换时自动清空其他战略遗留的独立专项制度，绝不允许逐个点击无限叠加，且带 180 日转轨冷却）
+            // 唯一互斥大战略方案（按历史时代分别匹配现代 HOI4 法案国策或古典制度，杜绝跨时代古制乱入与无限叠加，带 180 日转轨冷却）
             let preset = String(k.dropFirst("strategy:".count))
             let nb = Regimes.book(r, id)
+            let modern = Regimes.isModernEra(HistoricalEra.current(r))
             let spec: (title: String, reforms: [String], bias: String)? = {
-                switch preset {
-                case "warMobilize":  return ("战时动员", ["conscription", "junxian", "jungong", "audit"], "military")
-                case "prosperTrade": return ("富国兴商", ["seaopen", "free", "liangshui", "guild", "minting"], "council")
-                case "stabilize":    return ("固本维稳", ["keju", "juntian", "audit", "charter"], "crown")
-                case "expand":       return ("经略扩张", ["mubing", "seaopen", "jungong", "navyAct"], "military")
-                case "techFocus":    return ("格物兴科", ["keju", "secular", "free", "parliament", "audit"], "council")
-                default: return nil
+                if modern {
+                    switch preset {
+                    case "warMobilize":  return ("战时总动员", ["econ_war", "draft_extensive", "trade_autarky", "gov_wartime_ctrl", "focus_four_year"], "military")
+                    case "prosperTrade": return ("民用工业与贸易", ["econ_civilian", "draft_volunteer", "trade_free", "gov_const_parl", "focus_lend_lease"], "council")
+                    case "stabilize":    return ("国防纵深维稳", ["econ_partial", "draft_limited", "trade_export", "gov_const_parl", "focus_radar_airdef", "focus_people_war"], "crown")
+                    case "expand":       return ("闪击扩张战略", ["econ_war", "draft_extensive", "trade_autarky", "gov_wartime_ctrl", "focus_blitz_armored", "focus_carrier_fleet"], "military")
+                    case "techFocus":    return ("重工科研强国", ["econ_partial", "draft_limited", "trade_export", "gov_planned", "focus_five_year", "focus_atomic_proj"], "council")
+                    default: return nil
+                    }
+                } else {
+                    switch preset {
+                    case "warMobilize":  return ("战时动员", ["conscription", "junxian", "jungong", "audit"], "military")
+                    case "prosperTrade": return ("富国兴商", ["seaopen", "free", "liangshui", "guild", "minting"], "council")
+                    case "stabilize":    return ("固本维稳", ["keju", "juntian", "audit", "charter"], "crown")
+                    case "expand":       return ("经略扩张", ["mubing", "seaopen", "jungong", "navyAct"], "military")
+                    case "techFocus":    return ("格物兴科", ["keju", "secular", "free", "parliament", "audit"], "council")
+                    default: return nil
+                    }
                 }
             }()
             guard let spec else { return (false, "未知战略预设：\(preset)。") }

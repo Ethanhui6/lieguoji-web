@@ -3,8 +3,8 @@ import Foundation
 /// 新世界交给 Swift 引擎的静态几何（src/native-bridge/native-statics.ts nativeStatics、seaStatic，
 /// native-export/diplomacy-state diplomacyStatic，original-politics originalCellProvinces）。键序与网页一致。
 public enum CreationStatics {
-    /// originalCellProvinces：每个 Voronoi 格所属辖区（按其周围三角重心投票，海为 −1）。
-    public static func cellProvinces(_ d: TerrainDocument, elevations: [Int], provinces: [JS], scale: Double) -> [Int] {
+    /// originalCellProvinces：每个 Voronoi 格所属辖区（按其周围三角重心投票，海与无人之地为 −1）。
+    public static func cellProvinces(_ d: TerrainDocument, elevations: [Int], provinces: [JS], scale: Double, wastelandCells: [Bool]? = nil) -> [Int] {
         let rings = provinces.map { p in p.polygon.asArray.map { TravelPoint(x: $0.x.asNumber / scale, y: $0.y.asNumber / scale) } }
         let size = 32.0, columns = Int((d.width / size).rounded(.up)), rows = Int((d.height / size).rounded(.up))
         var buckets = [[Int]](repeating: [], count: columns * rows)
@@ -33,6 +33,7 @@ public enum CreationStatics {
         }
         var result = [Int](repeating: -1, count: n)
         for cell in 0..<n where !tallies[cell].isEmpty {
+            if let wl = wastelandCells, cell < wl.count, wl[cell] { continue }
             for (owner, v) in tallies[cell] where v > count[cell] || v == count[cell] && owner < best[cell] { best[cell] = owner; count[cell] = v }
             result[cell] = best[cell]
         }
@@ -42,12 +43,14 @@ public enum CreationStatics {
             let cx = sx / Double(ring.count), cy = sy / Double(ring.count)
             var bestCell = -1, distance = Double.infinity
             for cell in 0..<n where elevations[cell] >= 20 {
+                if let wl = wastelandCells, cell < wl.count, wl[cell] { continue }
                 let dx = d.points[cell].0 - cx, dy = d.points[cell].1 - cy, dd = dx * dx + dy * dy
                 if dd < distance { distance = dd; bestCell = cell }
             }
             if bestCell >= 0 { result[bestCell] = index }
         }
         for _ in 0..<4 { for cell in 0..<n where elevations[cell] >= 20 && result[cell] < 0 {
+            if let wl = wastelandCells, cell < wl.count, wl[cell] { continue }
             if let next = d.neighbors[cell].first(where: { result[$0] >= 0 }) { result[cell] = result[next] }
         } }
         return result
@@ -65,7 +68,7 @@ public enum CreationStatics {
     }
 
     /// nativeStatics（不含 labelGrid 与 map）。`r` 为建好海陆编制后的整局。
-    public static func build(_ r: JS, _ d: TerrainDocument, elevations: [Int], sea: SeaGraph, travel g: CreationGeography.Graph) -> JS {
+    public static func build(_ r: JS, _ d: TerrainDocument, elevations: [Int], sea: SeaGraph, travel g: CreationGeography.Graph, wastelandCells: [Bool]? = nil) -> JS {
         let w = r.world, provinces = w.provinces.asArray, scale = r.scale.asNumber
         var provinceIndex = [String: Int](); for (i, p) in provinces.enumerated() { provinceIndex[p.id.asString] = i }
         let ctx = r.terrainContext.provinces, cities = w.cities.asArray
@@ -74,7 +77,7 @@ public enum CreationStatics {
         let bin = CreationGeography.travelBinary(g, scale: scale, mountain: provinces.map { ctx[$0.id.asString].mountain.isTruthy },
                                                  plateau: provinces.map { ctx[$0.id.asString].plateau.isTruthy }, targets: targets, faceBiomes: faces)
         // borders：nativeFilterProvinceCells53 的外缘邻格所属辖区。
-        let owners = cellProvinces(d, elevations: elevations, provinces: provinces, scale: scale)
+        let owners = cellProvinces(d, elevations: elevations, provinces: provinces, scale: scale, wastelandCells: wastelandCells)
         var cellsOf = [[Int]](repeating: [], count: provinces.count)
         for (cell, o) in owners.enumerated() where o >= 0 { cellsOf[o].append(cell) }
         let borders = JS.array()

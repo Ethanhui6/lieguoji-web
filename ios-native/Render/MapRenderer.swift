@@ -999,7 +999,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     private func progress(_ now: CFTimeInterval) -> Float {
         guard now.isFinite, legStart.isFinite, legLength.isFinite, legLength > 1e-6 else { return 1 }
-        return Float(min(1, max(0, (now - legStart) / legLength)))
+        let elapsed = now - legStart
+        if elapsed <= 0 { return 0 }
+        if elapsed <= legLength { return Float(elapsed / legLength) }
+        // v9.0.0 阻尼惯性滑行窗（最多 0.12s / 0.32 步长）：吸收云端推流网络抖动，消除军队每步顿挫刹车感！
+        let grace = min(0.12, legLength * 0.65)
+        guard grace > 1e-5 else { return 1 }
+        let extra = min(grace, elapsed - legLength)
+        let damped = extra * (1.0 - 0.5 * (extra / grace))
+        return min(1.32, 1.0 + Float(damped / legLength))
     }
     func displayedPoint(_ s: ArmySprite) -> SIMD2<Float> { displayed(s) }
     private func displayed(_ s: ArmySprite) -> SIMD2<Float> {
@@ -1009,14 +1017,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else {
             return (s.x.isFinite && s.y.isFinite) ? SIMD2(s.x, s.y) : .zero
         }
-        if t >= 1 {
-            return (b.x.isFinite && b.y.isFinite) ? b : ((s.x.isFinite && s.y.isFinite) ? SIMD2(s.x, s.y) : .zero)
-        }
         return Self.hermite(a, b, legLead[s.key] ?? (b - a), t)
     }
     static func hermite(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ m0: SIMD2<Float>, _ t: Float) -> SIMD2<Float> {
         let fallback = (b.x.isFinite && b.y.isFinite) ? b : ((a.x.isFinite && a.y.isFinite) ? a : SIMD2<Float>(0, 0))
         guard a.x.isFinite, a.y.isFinite, b.x.isFinite, b.y.isFinite, m0.x.isFinite, m0.y.isFinite, t.isFinite else { return fallback }
+        if t > 1 {
+            let coast = min(0.32, t - 1)
+            let p = b + (b - a) * coast
+            return (p.x.isFinite && p.y.isFinite) ? p : fallback
+        }
         let clamped = min(1, max(0, t))
         let t2 = clamped * clamped, t3 = t2 * clamped
         let p = a * (2 * t3 - 3 * t2 + 1) + m0 * (t3 - 2 * t2 + clamped) + b * (3 * t2 - 2 * t3) + (b - a) * (t3 - t2)
@@ -1027,7 +1037,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private(set) var spread: [String: SIMD2<Float>] = [:]
     private func advanceChase(at time: CFTimeInterval) -> Float {
         let t = progress(time)
-        chasing = t < 1
+        let grace = legLength > 1e-6 ? min(0.12, legLength * 0.65) : 0
+        chasing = legLength > 1e-6 && (time - legStart) < (legLength + grace)
         return t
     }
 
@@ -1051,11 +1062,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             }
         }
         let result: [(sprite: ArmySprite, x: Float, y: Float)]
-        if t >= 1 {
+        let settled = !chasing && t >= 1
+        if settled {
             result = armySprites.map { s in
                 let p: SIMD2<Float>
-                if !s.key.isEmpty, let b = legTo[s.key], b.x.isFinite, b.y.isFinite {
-                    p = b
+                if !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] {
+                    p = Self.hermite(a, b, legLead[s.key] ?? (b - a), t)
                 } else if s.x.isFinite && s.y.isFinite {
                     p = SIMD2(s.x, s.y)
                 } else {
@@ -1184,9 +1196,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         var end = SIMD2<Float>(0, 0)
         var lead = SIMD2<Float>(0, 0)
         func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
-            for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, fade, size, end.x, end.y, sx, sy, lead.x, lead.y])
+            var arr = byRole[role] ?? []
+            if arr.isEmpty { arr.reserveCapacity(max(90, sprites.count * 30)) }
+            let corners: [(Float, Float)] = [(-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)]
+            for (cx, cy) in corners {
+                arr.append(at.x); arr.append(at.y); arr.append(cx); arr.append(cy)
+                arr.append(c.r); arr.append(c.g); arr.append(c.b); arr.append(fade)
+                arr.append(size); arr.append(end.x); arr.append(end.y); arr.append(sx)
+                arr.append(sy); arr.append(lead.x); arr.append(lead.y)
             }
+            byRole[role] = arr
         }
         var spread = [String: SIMD2<Float>]()
         do {
@@ -2082,23 +2101,29 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         bool fighting = (tint.a > 1.5);
         bool dying = (tint.a < -1.5);
         float sinkY = 0.0;
+        float fadeP = clamp(progress, 0.0, 1.0);
         if (dying) {
             float d = -tint.a - 2.0;
-            float fadeT = clamp((progress - d) / 0.16, 0.0, 1.0);
+            float fadeT = clamp((fadeP - d) / 0.16, 0.0, 1.0);
             tint.a = 1.0 - fadeT;
             sinkY = fadeT * 0.22 * pixels;
         } else if (tint.a < 0.0) {
-            tint.a = progress;
+            tint.a = fadeP;
         } else if (fighting) {
             tint.a = 1.0;
         }
-        float t = progress, t2 = t * t, t3 = t2 * t;
         float2 a = float2(s.center), b = float2(s.target);
         float2 delta = b - a;
         float dist = length(delta);
         bool moving = (dist > 0.06);
         float2 dir = moving ? (delta / dist) : float2(1.0, 0.0);
-        float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + delta * (t3 - t2);
+        float2 walk;
+        if (progress > 1.0) {
+            walk = b + delta * min(0.32, progress - 1.0);
+        } else {
+            float t = fadeP, t2 = t * t, t3 = t2 * t;
+            walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + delta * (t3 - t2);
+        }
         // 真实航向踏步倾身、弹性呼吸与交战双向冲锋回弹（仅顶点着色器运算，零片元负担，完整保留 4.1 雕漆兵牌造型）
         float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2831853;
         float2 corner = float2(s.corner);

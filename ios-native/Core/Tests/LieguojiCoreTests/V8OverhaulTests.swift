@@ -116,7 +116,7 @@ final class V8OverhaulTests: XCTestCase {
         XCTAssertTrue(eu36.nations.contains { $0.id == "austria" })
         XCTAssertTrue(eu36.nations.contains { $0.id == "czechoslovakia" })
 
-        XCTAssertEqual(cn31.nations.count, 11, "1931 九一八中国战区应包含 11 方真实势力")
+        XCTAssertEqual(cn31.nations.count, 15, "1931 九一八中国战区应包含 15 方真实势力（含西藏/滇军/英属印缅/法属印支）")
         XCTAssertEqual(ww1.region, .europe, "1914 一战应聚焦精细化局部欧洲战区，告别粗略全球大地图")
         XCTAssertEqual(ww1.nations.count, 20, "1914 一战欧洲应细化为 20 国")
         XCTAssertEqual(asia41.nations.count, 13, "1941 亚太战场应细化至 13 国（含马来新加坡/荷印/外蒙/美太）")

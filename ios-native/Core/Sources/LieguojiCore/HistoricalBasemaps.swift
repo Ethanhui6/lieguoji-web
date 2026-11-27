@@ -62,7 +62,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .huaxia: return 95.5
         case .china: return 73.0
         case .europe: return -11.5
-        case .eastAsiaJapan: return 92.0
+        case .eastAsiaJapan: return 88.0
         case .japanDetail: return 128.0
         case .mediterranean: return -10.0
         case .world: return -168.0
@@ -75,7 +75,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .huaxia: return 129.0
         case .china: return 136.0
         case .europe: return 46.5
-        case .eastAsiaJapan: return 147.5
+        case .eastAsiaJapan: return 150.0
         case .japanDetail: return 146.5
         case .mediterranean: return 55.0
         case .world: return 176.0
@@ -88,7 +88,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .huaxia: return 18.0
         case .china: return 17.5
         case .europe: return 34.5
-        case .eastAsiaJapan: return 4.5
+        case .eastAsiaJapan: return -8.5
         case .japanDetail: return 30.0
         case .mediterranean: return 24.0
         case .world: return -55.0
@@ -101,7 +101,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .huaxia: return 44.5
         case .china: return 54.0
         case .europe: return 67.5
-        case .eastAsiaJapan: return 49.5
+        case .eastAsiaJapan: return 50.5
         case .japanDetail: return 46.0
         case .mediterranean: return 56.0
         case .world: return 72.0

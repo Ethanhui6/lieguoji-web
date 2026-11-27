@@ -361,9 +361,9 @@ public enum CreationMap {
     }
 
     /// buildWorldMap：`{bin, meta}`（bin 为 base64）与格子所属辖区（labelGrid 用）。
-    public static func build(_ x: Inputs, run r: JS, elevations h: [Int], seed: String, template: String, historicalRegion: HistoricalRegion? = nil) -> (map: JS, cells: [Int]) {
+    public static func build(_ x: Inputs, run r: JS, elevations h: [Int], seed: String, template: String, historicalRegion: HistoricalRegion? = nil, wastelandCells: [Bool]? = nil) -> (map: JS, cells: [Int]) {
         let g = x.grid, w = r.world, sc = r.scale.asNumber
-        let province = CreationStatics.cellProvinces(x.document, elevations: h, provinces: w.provinces.asArray, scale: sc)
+        let province = CreationStatics.cellProvinces(x.document, elevations: h, provinces: w.provinces.asArray, scale: sc, wastelandCells: wastelandCells)
         let (ids, paths) = biomes(x, elevations: h, historicalRegion: historicalRegion)
         let rgb = biomeRGB(g, ids)
         let coastSegments = coast(x, elevations: h)

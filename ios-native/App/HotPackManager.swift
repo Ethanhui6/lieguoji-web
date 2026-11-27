@@ -106,12 +106,12 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return nil
     }
 
-    /// 优先返回热更下载的 228MB GIS 图集目录，否则回落至安装包内置 `HistoricalAtlas`。
+    /// 优先返回随新版本内置的最新 20K 权威 GIS 图集（防止旧版 v5 残留目录覆盖新版 12 剧本无人之地与国界），60K/120K 仍由 `HDMeshes/` 自动叠加生效。
     nonisolated static func bestAtlasDirectoryURL() -> URL? {
-        if let downloaded = downloadedAtlasDirectoryURL() {
-            return downloaded
+        if let bundled = Bundle.main.url(forResource: "HistoricalAtlas", withExtension: nil) {
+            return bundled
         }
-        return Bundle.main.url(forResource: "HistoricalAtlas", withExtension: nil)
+        return downloadedAtlasDirectoryURL()
     }
 
     nonisolated private static func atomicWrite(_ data: Data, to dst: URL) throws {

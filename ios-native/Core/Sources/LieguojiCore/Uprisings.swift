@@ -327,7 +327,16 @@ extension Regimes {
 
     // MARK: 制度
 
-    public struct Reform: Sendable { public let id: String, name: String; let polities: [String]?; let conflicts: [String]; public let effect: Leverage
+    public enum EraGroup: String, Sendable { case classic, modern, both }
+    public struct Reform: Sendable {
+        public let id: String, name: String
+        let polities: [String]?
+        let conflicts: [String]
+        public let effect: Leverage
+        public let eraGroup: EraGroup
+        public init(id: String, name: String, polities: [String]?, conflicts: [String], effect: Leverage, eraGroup: EraGroup = .classic) {
+            self.id = id; self.name = name; self.polities = polities; self.conflicts = conflicts; self.effect = effect; self.eraGroup = eraGroup
+        }
         public var text: String {
             var parts = [String]()
             func add(_ label: String, _ v: Double, _ unit: String = "%") { if v != 0 { parts.append("\(label) \(v > 0 ? "+" : "−")\(Int(abs(v)))\(unit)") } }
@@ -335,8 +344,17 @@ extension Regimes {
             return parts.joined(separator: "，")
         }
     }
+    public static func isModernEra(_ era: HistoricalEra) -> Bool {
+        era == .ww1 || era == .ww2 || era == .modern
+    }
+    public static func reforms(for era: HistoricalEra) -> [Reform] {
+        let modern = isModernEra(era)
+        return reforms.filter { modern ? ($0.eraGroup == .modern || $0.eraGroup == .both) : ($0.eraGroup == .classic || $0.eraGroup == .both) }
+    }
     public static let independentReformIds: Set<String> = [
-        "audit", "parliament", "charter", "jungong", "knight", "minting", "liangshui", "tiaobian", "guild", "navyAct"
+        "audit", "parliament", "charter", "jungong", "knight", "minting", "liangshui", "tiaobian", "guild", "navyAct",
+        "focus_four_year", "focus_five_year", "focus_lend_lease", "focus_blitz_armored",
+        "focus_radar_airdef", "focus_carrier_fleet", "focus_people_war", "focus_atomic_proj"
     ]
     /// 专项制度行政承载上限（3–5 槽，随行政科技与掌权者治政能力扩容），彻底杜绝无脑全开叠加全部增益。
     public static func maxIndependentReforms(_ r: JS, _ id: String) -> Int {
@@ -348,6 +366,7 @@ extension Regimes {
         return cap
     }
     public static let reforms: [Reform] = [
+        // ================= 古典/中古/火药时代（传统帝制与近代早期国策） =================
         Reform(id: "keju", name: "科举取士", polities: ["Kingdom", "Empire"], conflicts: ["jiupin"], effect: Leverage(income: 3, stability: 4, corruption: -5)),
         Reform(id: "jiupin", name: "九品中正", polities: ["Kingdom", "Empire"], conflicts: ["keju"], effect: Leverage(defense: 5, stability: 3, corruption: 5)),
         Reform(id: "junxian", name: "郡县制", polities: ["Kingdom", "Empire", "Republic"], conflicts: ["fengjian"], effect: Leverage(income: 5, stability: 5, corruption: 2)),
@@ -372,6 +391,34 @@ extension Regimes {
         Reform(id: "navyAct", name: "航海条例", polities: nil, conflicts: ["sealock"], effect: Leverage(attack: 4, defense: -3, income: 9)),
         Reform(id: "audit", name: "御史监察", polities: nil, conflicts: [], effect: Leverage(income: -2, stability: 5, corruption: -10)),
         Reform(id: "conscription", name: "义务兵役", polities: nil, conflicts: ["fubing", "mubing"], effect: Leverage(attack: 8, defense: 6, income: -4, growth: -3)),
+        // ================= 一战 / 二战 / 冷战现代（HOI4 级经济法案·征兵法案·贸易法案·治理体制·专项国策） =================
+        // 1. 经济动员法案（4 选 1）
+        Reform(id: "econ_civilian", name: "民用经济", polities: nil, conflicts: ["econ_partial", "econ_war", "econ_total"], effect: Leverage(attack: -4, income: 9, growth: 6, stability: 8, corruption: -4), eraGroup: .modern),
+        Reform(id: "econ_partial", name: "部分动员", polities: nil, conflicts: ["econ_civilian", "econ_war", "econ_total"], effect: Leverage(attack: 5, defense: 4, income: 4, stability: 2), eraGroup: .modern),
+        Reform(id: "econ_war", name: "战时经济", polities: nil, conflicts: ["econ_civilian", "econ_partial", "econ_total"], effect: Leverage(attack: 11, defense: 8, income: -2, growth: -2, stability: -2), eraGroup: .modern),
+        Reform(id: "econ_total", name: "总体战动员", polities: nil, conflicts: ["econ_civilian", "econ_partial", "econ_war"], effect: Leverage(attack: 16, defense: 12, income: -6, growth: -5, stability: -6), eraGroup: .modern),
+        // 2. 现代征兵法案（4 选 1）
+        Reform(id: "draft_volunteer", name: "志愿兵役", polities: nil, conflicts: ["draft_limited", "draft_extensive", "draft_alladults"], effect: Leverage(attack: -2, income: 6, growth: 5, stability: 6), eraGroup: .modern),
+        Reform(id: "draft_limited", name: "有限征兵", polities: nil, conflicts: ["draft_volunteer", "draft_extensive", "draft_alladults"], effect: Leverage(attack: 4, defense: 4, income: 1, stability: 2), eraGroup: .modern),
+        Reform(id: "draft_extensive", name: "广泛征兵", polities: nil, conflicts: ["draft_volunteer", "draft_limited", "draft_alladults"], effect: Leverage(attack: 10, defense: 8, income: -4, growth: -3, stability: -2), eraGroup: .modern),
+        Reform(id: "draft_alladults", name: "全民皆兵", polities: nil, conflicts: ["draft_volunteer", "draft_limited", "draft_extensive"], effect: Leverage(attack: 14, defense: 14, income: -8, growth: -6, stability: -6), eraGroup: .modern),
+        // 3. 贸易与工业路线（3 选 1）
+        Reform(id: "trade_free", name: "自由贸易", polities: nil, conflicts: ["trade_export", "trade_autarky"], effect: Leverage(defense: -2, income: 12, growth: 3, corruption: -2), eraGroup: .modern),
+        Reform(id: "trade_export", name: "重点出口", polities: nil, conflicts: ["trade_free", "trade_autarky"], effect: Leverage(attack: 3, income: 8, stability: 2), eraGroup: .modern),
+        Reform(id: "trade_autarky", name: "战时统制经济", polities: nil, conflicts: ["trade_free", "trade_export"], effect: Leverage(attack: 6, defense: 7, income: -3, stability: 3), eraGroup: .modern),
+        // 4. 现代国家治理体制（3 选 1）
+        Reform(id: "gov_const_parl", name: "宪政议会监督", polities: nil, conflicts: ["gov_planned", "gov_wartime_ctrl"], effect: Leverage(income: 5, growth: 3, stability: 9, corruption: -8), eraGroup: .modern),
+        Reform(id: "gov_planned", name: "计划经济统筹", polities: nil, conflicts: ["gov_const_parl", "gov_wartime_ctrl"], effect: Leverage(attack: 5, defense: 7, income: 6, stability: 4, corruption: -3), eraGroup: .modern),
+        Reform(id: "gov_wartime_ctrl", name: "战时大本营统制", polities: nil, conflicts: ["gov_const_parl", "gov_planned"], effect: Leverage(attack: 11, defense: 6, stability: -3, corruption: 3), eraGroup: .modern),
+        // 5. HOI4 专项战略国策（独立槽位，可按国情搭配）
+        Reform(id: "focus_four_year", name: "四年重工军备计划", polities: nil, conflicts: ["focus_five_year"], effect: Leverage(attack: 9, income: 6, stability: -2, corruption: 2), eraGroup: .modern),
+        Reform(id: "focus_five_year", name: "五年重工业计划", polities: nil, conflicts: ["focus_four_year"], effect: Leverage(defense: 8, income: 8, growth: -2, stability: 2), eraGroup: .modern),
+        Reform(id: "focus_lend_lease", name: "租借法案与民主兵工厂", polities: nil, conflicts: [], effect: Leverage(attack: 5, defense: 6, income: 10, stability: 3), eraGroup: .modern),
+        Reform(id: "focus_blitz_armored", name: "装甲集群闪击学说", polities: nil, conflicts: [], effect: Leverage(attack: 13, defense: -2, income: -4), eraGroup: .modern),
+        Reform(id: "focus_radar_airdef", name: "本土雷达与防空网", polities: nil, conflicts: [], effect: Leverage(defense: 12, income: -2, stability: 5), eraGroup: .modern),
+        Reform(id: "focus_carrier_fleet", name: "航母机动舰队决战", polities: nil, conflicts: [], effect: Leverage(attack: 9, defense: 5, income: -5), eraGroup: .modern),
+        Reform(id: "focus_people_war", name: "持久战与敌后游击", polities: nil, conflicts: [], effect: Leverage(defense: 14, growth: 4, stability: 6, corruption: -4), eraGroup: .modern),
+        Reform(id: "focus_atomic_proj", name: "绝密战略科研工程", polities: nil, conflicts: [], effect: Leverage(attack: 8, defense: 4, income: -6, corruption: -4), eraGroup: .modern),
     ]
     static func heldReforms(_ r: JS, _ id: String) -> [Reform] {
         guard !r.regimes.isNull, !r.regimes.nations[id].reforms.isNull else { return [] }
@@ -397,7 +444,14 @@ extension Regimes {
         let tag = "\(id)|\(key)|reform"
         guard chance(tag) < 0.035 else { return }
         let polity = r.civilization.nations[id].polity.optionalString ?? "Kingdom", held = heldReforms(r, id)
-        let open = reforms.filter { f in !held.contains { $0.id == f.id } && (f.polities?.contains(polity) ?? true) }
+        let era = HistoricalEra.current(r)
+        let pool = reforms(for: era)
+        let open = pool.filter { f in
+            guard !held.contains(where: { $0.id == f.id }) else { return false }
+            guard f.polities?.contains(polity) ?? true else { return false }
+            if f.id == "focus_atomic_proj" && era != .modern { return false }
+            return true
+        }
         guard !open.isEmpty else { return }
         let f = open[Int(draw(tag + "|which") % UInt32(open.count))]
         // At most five at once: the oldest gives way.
@@ -405,7 +459,8 @@ extension Regimes {
         let replaced = held.filter { f.conflicts.contains($0.id) }.map(\.name)
         setReform(r, id, f, on: true)
         addGold(-1)
-        _ = People.announce(r, kind: "reform", text: "\(n.name.asString)推行\(f.name)", reason: (replaced.isEmpty ? "" : "废\(replaced.joined(separator: "、"))。") + "朝议既定，颁行天下，耗一月岁入：\(f.text)。", nations: [id], province: nil)
+        let verb = isModernEra(era) ? "颁行法案与国策" : "朝议既定，颁行天下"
+        _ = People.announce(r, kind: "reform", text: "\(n.name.asString)推行\(f.name)", reason: (replaced.isEmpty ? "" : "废\(replaced.joined(separator: "、"))。") + "\(verb)，耗一月岁入：\(f.text)。", nations: [id], province: nil)
     }
 
     // MARK: 文化与宗教

@@ -833,6 +833,24 @@ private struct GameTopChrome: View {
                 trailInset: trailSafe
             )
 
+            if let express = model.expressEventToast, model.pendingHistoricalModal == nil {
+                VStack {
+                    HistoricalExpressBanner(
+                        modal: express,
+                        onTapOpen: {
+                            model.dismissExpressEventToast()
+                        },
+                        onDismiss: {
+                            model.dismissExpressEventToast()
+                        }
+                    )
+                    .padding(.top, barHeight + 10)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(88)
+            }
+
             if let modal = model.pendingHistoricalModal {
                 HistoricalEventModalOverlay(
                     modal: modal,
@@ -842,7 +860,7 @@ private struct GameTopChrome: View {
                         Task { await model.resolveHistoricalEvent(choiceIndex: idx) }
                     }
                 )
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 .zIndex(95)
             }
         }
@@ -2453,6 +2471,9 @@ private struct GameLifecycleModifier: ViewModifier {
         controller.onMapBrowsing = nil
         controller.onMapTap = { _ in
             if weatherDrawerOpen { withAnimation(Motion.tap) { weatherDrawerOpen = false } }
+        }
+        controller.onWastelandTap = {
+            say("无人之地 · 剧本疆域外不可通行与占领")
         }
         controller.onGroupTarget = { province in
             let armies = controller.groupArmies, defend = rtsDefend

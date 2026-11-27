@@ -61,7 +61,17 @@ public enum NativeCreation {
         } else {
             count = max(2, min(100, o.count))
         }
-        var cityCount = max(count, min(provCap, o.historicalScenario?.provinceCount ?? o.cityCount))
+        let baseCityTarget: Int = {
+            guard let sc = o.historicalScenario else { return o.cityCount }
+            // v9.0.0：60K/120K 高精拓扑网格自动释放更高 HOI4 级州郡密度，同时保持流畅帧率与计算速度
+            if doc.points.count > 80_000 {
+                return min(820, Int((Double(sc.provinceCount) * 2.25).rounded()))
+            } else if doc.points.count > 25_000 {
+                return min(560, Int((Double(sc.provinceCount) * 1.65).rounded()))
+            }
+            return sc.provinceCount
+        }()
+        var cityCount = max(count, min(provCap, baseCityTarget))
         Climate.precipitationInput = o.precipitation; Climate.temperatureOffset = o.temperatureOffset; Climate.north = o.north; Climate.south = o.south
         let heights: [Int]
         if let drawn = o.heights {
@@ -79,7 +89,7 @@ public enum NativeCreation {
         } else { heights = TerrainGenerator.generate(graph: x.grid, seed: o.seed, template: o.template).map(Int.init) }
         progress?("people")
         // 陆地太碎（岛屿、湖泊）放不下所选州数时，州数按网页的步长增加直到放得下。
-        var found: (run: JS, travel: CreationGeography.Graph, sea: SeaGraph, provinceNames: [String]?, popDensities: [UInt8]?)?
+        var found: (run: JS, travel: CreationGeography.Graph, sea: SeaGraph, provinceNames: [String]?, popDensities: [UInt8]?, wastelandCells: [Bool]?)?
         // App 新世界（organicBorders == true）清理极小孤立礁石，避免 80 城模板被 1%–3% 边角微岛占掉名额（手绘自定布局/手绘州郡、历史底图与网页基准测试保持原地形不变）。
         let effectiveHeights = (o.historicalScenario == nil && o.layout == nil && o.customProvinces == nil && o.organicBorders) ? Regions.cleanTinyIslets(doc, elevations: heights, cities: cityCount) : heights
         let hasCustomProvinces = o.customProvinces != nil || o.historicalScenario?.customProvinceCells != nil
@@ -90,7 +100,7 @@ public enum NativeCreation {
                 cityCount = raised(cityCount, cap: provCap)
             }
         }
-        guard let (r, travel, sea, historicalProvinceNames, historicalPopDensities) = found else {
+        guard let (r, travel, sea, historicalProvinceNames, historicalPopDensities, wastelandCells) = found else {
             throw CreationError.message("无法生成有效世界地图。")
         }
         progress?("armies")
@@ -114,7 +124,7 @@ public enum NativeCreation {
                 r.offices47 = savedOffices
             }
             if !r.regimes.isNull { r.regimes.replay = .null }
-            statics = CreationStatics.build(r, doc, elevations: effectiveHeights, sea: sea, travel: travel)
+            statics = CreationStatics.build(r, doc, elevations: effectiveHeights, sea: sea, travel: travel, wastelandCells: wastelandCells)
             var warEngine: DeclarationEngine? = nil
             if !sc.openingWars.isEmpty || o.relations == "war" {
                 _ = try NativeEngine(created: r, statics: statics)
@@ -161,7 +171,7 @@ public enum NativeCreation {
                 }
             }
         }
-        let map = CreationMap.build(x, run: r, elevations: effectiveHeights, seed: o.seed, template: o.template, historicalRegion: o.historicalScenario?.region)
+        let map = CreationMap.build(x, run: r, elevations: effectiveHeights, seed: o.seed, template: o.template, historicalRegion: o.historicalScenario?.region, wastelandCells: wastelandCells)
         statics.labelGrid = CreationMap.labelGrid(x.grid, elevations: effectiveHeights, cells: map.cells)
         statics.map = map.map
         return World(run: r, statics: statics, cityCount: r.world.provinces.length)
@@ -173,11 +183,12 @@ public enum NativeCreation {
         return (res.run, res.travel, res.sea)
     }
 
-    private static func openingWithNames(_ o: Options, doc: TerrainDocument, heights: [Int], count: Int, cityCount: Int, enabled: [String], worldId: String, runId: String) throws -> (run: JS, travel: CreationGeography.Graph, sea: SeaGraph, provinceNames: [String]?, popDensities: [UInt8]?)? {
+    private static func openingWithNames(_ o: Options, doc: TerrainDocument, heights: [Int], count: Int, cityCount: Int, enabled: [String], worldId: String, runId: String) throws -> (run: JS, travel: CreationGeography.Graph, sea: SeaGraph, provinceNames: [String]?, popDensities: [UInt8]?, wastelandCells: [Bool]?)? {
         let regions: [Regions.Region]
         let layout: (seeds: [Int], owners: [Int])
         var historicalProvinceNames: [String]? = nil
         var historicalPopDensities: [UInt8]? = nil
+        var wastelandCells: [Bool]? = nil
 
         let customCells = o.customProvinces ?? o.historicalScenario?.customProvinceCells
         if let customCells, let customPart = Regions.fromCellAssignment(doc, elevations: heights, cellProvinces: customCells) {
@@ -197,8 +208,11 @@ public enum NativeCreation {
                   let gis = HistoricalBasemaps.bakedScenarioGIS(id: sc.id, expectedCount: doc.points.count),
                   gis.ownerMask.count == doc.points.count,
                   gis.nationCount == sc.nations.count,
-                  let borderPart = Regions.partitionWithinBordersWithFaces(doc, elevations: heights, ownerMask: gis.ownerMask, cities: cityCount) {
+                  let borderPart = Regions.partitionWithinBordersWithFaces(doc, elevations: heights, ownerMask: gis.ownerMask, cities: cityCount, historicalRegion: sc.region) {
             regions = borderPart.regions
+            if gis.ownerMask.contains(-2) {
+                wastelandCells = gis.ownerMask.map { $0 == -2 }
+            }
             var lockedOwners = borderPart.owners
             let seeds = HistoricalScenarios.pickSeedsForLockedOwners(
                 scenario: sc,
@@ -264,13 +278,13 @@ public enum NativeCreation {
         OpeningGovernment.attach(r, terrain: g.terrain, cells: g.cells, combat: g.combat)
         let provinces = r.world.provinces.asArray
         let sea = SeaGraph(doc, elevations: heights, provinces: provinces, blockedRegion: o.historicalScenario?.region)
-        guard let travel = CreationGeography.buildTravel(doc, elevations: heights, provinces: provinces, sea: sea) else { return nil }
+        guard let travel = CreationGeography.buildTravel(doc, elevations: heights, provinces: provinces, sea: sea, allowWasteland: wastelandCells != nil) else { return nil }
         let positions = CreationGeography.armyPositions(r, graph: travel, binding: CreationGeography.binding(doc, elevations: heights, provinces: provinces))
         // 政府段各字段按网页的顺序排在整局末尾。
         let staged: [(String, JS)] = [("units", r.units), ("tactics", r.tactics), ("terrainContext", r.terrainContext), ("upperCombat", r.upperCombat), ("finance", r.finance),
                                       ("economy", r.economy), ("destiny", r.destiny), ("armyPositions", positions), ("governmentOpening", r.governmentOpening)]
         for (k, _) in staged { r.delete(k) }
         for (k, v) in staged { r[k] = v }
-        return (r, travel, sea, historicalProvinceNames, historicalPopDensities)
+        return (r, travel, sea, historicalProvinceNames, historicalPopDensities, wastelandCells)
     }
 }

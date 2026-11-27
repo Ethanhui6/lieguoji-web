@@ -79,9 +79,10 @@ public enum CreationGeography {
         return inside
     }
 
-    public static func travelGraph(_ d: TerrainDocument, elevations: [Int], provinces: [JS], sea: SeaGraph) -> Graph { buildTravel(d, elevations: elevations, provinces: provinces, sea: sea)! }
+    public static func travelGraph(_ d: TerrainDocument, elevations: [Int], provinces: [JS], sea: SeaGraph, allowWasteland: Bool = false) -> Graph { buildTravel(d, elevations: elevations, provinces: provinces, sea: sea, allowWasteland: allowWasteland)! }
     /// 同上；陆面无法唯一归属辖区或面积不符时为 nil（网页抛出含“辖区”的错误，建世界时加州数重试）。
-    public static func buildTravel(_ d: TerrainDocument, elevations: [Int], provinces: [JS], sea: SeaGraph) -> Graph? {
+    /// v9.0.0：`allowWasteland = true` 时，剧本外无人之地陆面不纳入行军图，物理杜绝任何陆海部队进入、穿越或登岸！
+    public static func buildTravel(_ d: TerrainDocument, elevations: [Int], provinces: [JS], sea: SeaGraph, allowWasteland: Bool = false) -> Graph? {
         let scale = 1000 / max(d.width, d.height)
         struct Group { let poly: [TravelPoint]; let minX: Double, maxX: Double, minY: Double, maxY: Double }
         let groups = provinces.map { p -> Group in
@@ -103,6 +104,10 @@ public enum CreationGeography {
             let matches = (bins[bin(center.y) * 32 + bin(center.x)] ?? []).filter { k in
                 let g = groups[k]; if center.x < g.minX || center.x > g.maxX || center.y < g.minY || center.y > g.maxY { return false }
                 return contains(g.poly, center)
+            }
+            if matches.isEmpty {
+                if allowWasteland { continue }
+                return nil
             }
             if matches.count != 1 { return nil }
             areas[matches[0]] += CreationForces.polygonArea(polygon)

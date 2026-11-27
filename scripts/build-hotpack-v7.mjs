@@ -47,7 +47,7 @@ const REGIONS = [
   { name: 'china',           lonMin: 73.0,   lonMax: 136.0, latMin: 17.5,  latMax: 54.0, pad: 0.025, z5Shards: 3 },
   { name: 'huaxia',          lonMin: 95.5,   lonMax: 129.0, latMin: 18.0,  latMax: 44.5, pad: 0.025, z5Shards: 3 },
   { name: 'europe',          lonMin: -11.5,  lonMax: 46.5,  latMin: 34.5,  latMax: 67.5, pad: 0.025, z5Shards: 3 },
-  { name: 'east_asia_japan', lonMin: 92.0,   lonMax: 147.5, latMin: 4.5,   latMax: 49.5, pad: 0.025, z5Shards: 3 },
+  { name: 'east_asia_japan', lonMin: 88.0,   lonMax: 150.0, latMin: -8.5,  latMax: 50.5, pad: 0.025, z5Shards: 3 },
   { name: 'japan_detail',    lonMin: 128.0,  lonMax: 146.5, latMin: 30.0,  latMax: 46.0, pad: 0.035, z5Shards: 2 },
   { name: 'mediterranean',   lonMin: -10.0,  lonMax: 55.0,  latMin: 24.0,  latMax: 56.0, pad: 0.025, z5Shards: 2 },
   { name: 'world',           lonMin: -168.0, lonMax: 176.0, latMin: -55.0, latMax: 72.0, pad: 0.020, z5Shards: 2 },

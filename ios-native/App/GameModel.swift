@@ -1963,9 +1963,7 @@ import LieguojiCore
         if let hr = next.historicalRoute, !hr.isEmpty {
             activeHistoricalRoute = hr
         }
-        if let pe = next.pendingHistoricalEvent, !pe.isEmpty,
-           let peData = pe.data(using: .utf8),
-           let modal = try? JSONDecoder().decode(HistoricalEvents.PendingModal.self, from: peData) {
+        if let modal = next.pendingHistoricalEvent {
             if pendingHistoricalModal?.id != modal.id {
                 pendingHistoricalModal = modal
                 if playing && !ShotTour.on { pause() }

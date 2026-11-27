@@ -213,7 +213,7 @@ final class V8OverhaulTests: XCTestCase {
             XCTFail("缺少德波"); return
         }
         let doc = MilitaryDoctrines.doctrine(r, nationId: gerId)
-        XCTAssertEqual(doc.id, "blitzkrieg", "1939 德军默认军事学说应为闪电战")
+        XCTAssertEqual(doc.id, .blitzkrieg, "1939 德军默认军事学说应为闪电战")
         let speedMult = MilitaryDoctrines.marchSpeedMultiplier(r, nationId: gerId)
         XCTAssertGreaterThan(speedMult, 1.35, "闪电战行军穿插速度应明显高于常规部队（实际 \(speedMult)）")
         let mods = MilitaryDoctrines.combatModifiers(r, attacker: gerId, victim: polId)

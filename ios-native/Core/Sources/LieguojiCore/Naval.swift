@@ -759,14 +759,19 @@ public enum Naval {
                 }
                 func tryPortAttack() -> Bool {
                     var best: (port: Port, control: JS, distance: Double)?
-                    let rankedPorts = candidates.filter { port in
+                    var rankedPorts = candidates.filter { port in
                         let control = r.portControl.ports[port.provinceId]
                         let isBlockedHome = appNaval && control.landOwnerId.asString == nation && MaritimeWarfare.isPortBlockaded(r, provinceId: port.provinceId, landOwner: nation)
                         return isBlockedHome || portTarget(control, nation, enemy)
-                    }.sorted {
-                        jsHypot($0.center.x - v.point.x, $0.center.y - v.point.y) < jsHypot($1.center.x - v.point.x, $1.center.y - v.point.y)
                     }
-                    for port in rankedPorts.prefix(12) {
+                    if rankedPorts.count > 12 {
+                        let px = actual.point.x, py = actual.point.y
+                        rankedPorts.sort {
+                            jsHypot($0.center.x - px, $0.center.y - py) < jsHypot($1.center.x - px, $1.center.y - py)
+                        }
+                        rankedPorts = Array(rankedPorts.prefix(12))
+                    }
+                    for port in rankedPorts {
                         let control = r.portControl.ports[port.provinceId]
                         var row0: (port: Port, control: JS, distance: Double)?
                         if atAnchor(port) { row0 = (port, control, 0) }
@@ -846,10 +851,17 @@ public enum Naval {
                 if dispatched { continue }
             }
             var available = [(port: Port, distance: Double)]()
-            let sortedSafe = safe.sorted {
-                jsHypot($0.center.x - v.point.x, $0.center.y - v.point.y) < jsHypot($1.center.x - v.point.x, $1.center.y - v.point.y)
+            let safePool: [Port]
+            let safeCap = low ? 8 : 12
+            if safe.count > safeCap {
+                let px = actual.point.x, py = actual.point.y
+                safePool = Array(safe.sorted {
+                    jsHypot($0.center.x - px, $0.center.y - py) < jsHypot($1.center.x - px, $1.center.y - py)
+                }.prefix(safeCap))
+            } else {
+                safePool = safe
             }
-            for port in sortedSafe.prefix(low ? 6 : 10) {
+            for port in safePool {
                 if atAnchor(port) { available.append((port, 0)); continue }
                 let p = preview(r, id, .sail(port: port.id), heldOverride: view.held, landById: landById)
                 if p.valid && (low || food >= rationNow * (days(p.distance) + 3)) { available.append((port, p.distance)) }

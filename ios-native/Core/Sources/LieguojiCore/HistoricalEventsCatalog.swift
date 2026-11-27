@@ -1017,9 +1017,11 @@ extension HistoricalEvents {
                 Choice(title: "全线贯通滇缅国际大动脉（史实）", subtitle: "西南大后方补给与工业显著增强", isHistorical: true, effectCode: "ic:roc:18|ic:yunnan:14|gold:roc:360|gold:yunnan:220|ally:roc:uk_india"),
             ]
         ),
+    ]
 
-        // MARK: - 3. 1941 二战亚洲太平洋战场（18 条 HOI4 级太平洋与抗战事件链）
+    // MARK: - 3. 1941 二战亚洲太平洋战场（18 条 HOI4 级太平洋与抗战事件链）
 
+    private static let ww2Asia1941Events: [EventSpec] = [
         EventSpec(
             id: "pearl_harbor_1941",
             scenarioIds: ["ww2_asia_1941"],

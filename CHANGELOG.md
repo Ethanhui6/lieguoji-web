@@ -2,13 +2,13 @@
 
 ## 9.0.0 (Build 193)
 
-### 60fps 丝滑拖屏与云端零顿挫行军 × 144 条钢铁雄心级历史事件 × 剧本外不可通行「无人之地」 × 时代政体与 HOI4 国策法案 × 12 大精绘地图全面纠偏
+### 60fps 丝滑拖屏与云端零顿挫行军 × 158 条钢铁雄心级历史事件 × 剧本外不可通行「无人之地」 × 时代政体与 HOI4 国策法案 × 12 大精绘地图全面纠偏
 - **60/120fps 零卡顿丝滑拖屏、战争动效大瘦身与无感直连九州云服（`MapView.swift`、`MapEffects.swift`、`MapRenderer.swift`、`GameModel.swift`）**：
   - 彻底移除拖拽/缩放/惯性期间阻塞主线程的同步 `mtk.presentsWithTransaction = true` + 内联 `mtk.draw()`（`waitUntilScheduled` 停顿），废除全屏离屏 `CAShapeLayer.mask` 蒙版改用纯硬件矩形裁剪，并引入 O(1) GPU `overlayCanvas.transform` 手势快路径，拖屏/缩放期间延迟重型底图更新与天气粒子，手势松手一次性清晰重排；
   - 战争特效全面减负：新增视锥预裁剪、收紧同屏特效上限（陆海交锋 ≤14、围城 ≤14、战役箭头 ≤8 且 9 层精简为 2 层 12 点采样、闪旗 ≤5、爆点 ≤5），彻底移除逐帧 CPU 重光栅化的 `CAKeyframeAnimation(keyPath: "path")` 与逐战 `CAEmitterLayer`，序列帧调优至 18fps；
   - 默认恢复**开局无感自动直连广州九州云服**（`v900.cloudAutoHybrid`，进局 0ms 不阻塞，后台多端口竞速握手接管）；新增 1 帧抖动吸收缓冲与 `MapRenderer` 0.12s 阻尼惯性滑行窗（与 Metal `spriteVertex` 逐像素对齐），云端军队行走与本机原生同样丝滑不卡顿。
-- **144 条钢铁雄心级真实历史大事件链 × 零卡顿自适应弹窗与「快讯不暂停」模式（`HistoricalEventsCatalog.swift`、`HistoricalEvents.swift`、`HistoricalEventModal.swift`、`GameView.swift`、`GameModel.swift`）**：
-  - 将历史事件由 22 条大幅扩充至 **144 条**，全覆盖 12 大官方剧本（二战欧陆 1936/1939 32 条、民国 1931 18 条、二战亚太 1941 18 条、一战 1914 16 条、拿破仑 1812 10 条、冷战 1950 12 条、战国/三国/盛唐/宋金/日本战国 38 条），新增 `gold:` / `morale:` / `law:` 真实引擎实效并修复全部 5 处失效国家标识；
+- **158 条钢铁雄心级真实历史大事件链 × 零卡顿自适应弹窗与「快讯不暂停」模式（`HistoricalEventsCatalog.swift`、`HistoricalEvents.swift`、`HistoricalEventModal.swift`、`GameView.swift`、`GameModel.swift`）**：
+  - 将历史事件由 22 条大幅扩充至 **158 条**，全覆盖 12 大官方剧本（二战欧陆 1936/1939 46/32 条、民国 1931 18 条、二战亚太 1941 18 条、一战 1914 16 条、拿破仑 1812 10 条、冷战 1950 12 条、战国/三国/盛唐/宋金/日本战国 38 条），新增 `gold:` / `morale:` / `law:` 真实引擎实效并修复全部 5 处失效国家标识；
   - 重构历史事件弹窗 UI/UX：异步 `ImageIO` 840px 缩略图解码 + `NSCache`（0ms 主线程解码）、弹出时冻结后台 Metal 渲染与跳过重型远程全量拉取、自适应横竖屏边界与固定置底按钮（零裁切零遮挡）、决议后自动恢复推演，并新增「快讯不暂停」顶部播报条（16× 及以上高速看海自动零打断）。
 - **HOI4 级 12 大剧本精确 GIS 地图纠偏 × 原生不可通行「无人之地（Impassable Wasteland）」（`bake-v9-maps.mjs`、`Regions.swift`、`CreationGeography.swift`、`CreationStatics.swift`、`CreationMap.swift`、`MapPalette.swift`、`NativeCreation.swift`、`HistoricalBasemaps.swift`）**：
   - 原生实装 Paradox / HOI4 级**不可通行无人之地（`ownerMask == -2`）**：地图边缘与剧本无关的域外陆地保留真实山川地形并以低饱和暖石羊皮纸色呈现，彻底不归属任何国家、不纳入行军与海运图、不可进入/撤出/占领/建港/涂色，点按轻提示「无人之地 · 剧本疆域外不可通行与占领」；

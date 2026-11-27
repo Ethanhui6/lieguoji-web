@@ -3,7 +3,7 @@ import Foundation
 @testable import LieguojiCore
 
 /// v9.0.0 全维度回归验收测试：
-/// 1. 140+ 钢铁雄心级全历史剧本事件目录完整性校验（无悬空 scenarioId / specId / 效果码 / 事件卷轴贴图键）；
+/// 1. 158 条钢铁雄心级全历史剧本事件目录完整性校验（无悬空 scenarioIds / specId / 效果码 / 52 幅事件卷轴贴图键）；
 /// 2. 全部 12 大官方剧本 GIS 掩膜与不可通行「无人之地（-2）」校验（0 空国、每国 >= 6 格、无人之地绝不纳入州郡与行军图）；
 /// 3. 真实历史政体与时代国策法案过滤（现代剧本仅展示现代经济/征兵/贸易/体制法案与 HOI4 国策；史实路线禁止随机政体翻转）。
 final class V9OverhaulTests: XCTestCase {
@@ -27,25 +27,28 @@ final class V9OverhaulTests: XCTestCase {
         ArmyAutonomy.temper = nil
     }
 
-    // MARK: - 1. 140+ 历史事件完整性校验
+    // MARK: - 1. 158 条历史事件完整性校验
 
     func testExpandedHistoricalEventsCatalogIntegrity() {
         let all = HistoricalEvents.allEvents
-        XCTAssertGreaterThanOrEqual(all.count, 130, "v9.0.0 历史事件总数应达到 130+ 条，实际仅 \(all.count)")
+        XCTAssertGreaterThanOrEqual(all.count, 150, "v9.0.0 历史事件总数应达到 150+ 条，实际仅 \(all.count)")
 
         let scenarioById = Dictionary(uniqueKeysWithValues: HistoricalScenarios.officialScenarios.map { ($0.id, $0) })
         let validScrollKeys: Set<String> = [
-            "scroll_anchluss", "scroll_atomic_bomb", "scroll_barbarossa", "scroll_berlin_fall", "scroll_blitzkrieg",
-            "scroll_borodino", "scroll_britain_air", "scroll_changping", "scroll_changsha", "scroll_chibi",
-            "scroll_cold_war", "scroll_d_day", "scroll_guandu", "scroll_guadalcanal", "scroll_honnoji",
-            "scroll_imjin", "scroll_iron_curtain", "scroll_japan_surrender", "scroll_kawanakajima", "scroll_korean_war",
-            "scroll_kursk", "scroll_lugouqiao", "scroll_manchukuo", "scroll_marne", "scroll_midway",
-            "scroll_moscow_winter", "scroll_mukden", "scroll_munich", "scroll_nagashino", "scroll_nanjing",
-            "scroll_normandy", "scroll_okehazama", "scroll_pearl_harbor", "scroll_poland_blitz", "scroll_poland_partition",
-            "scroll_qing_collapse", "scroll_sarajevo", "scroll_sekigahara", "scroll_shaoxing", "scroll_shanghai",
-            "scroll_singapore", "scroll_somme", "scroll_stalingrad", "scroll_taierzhuang", "scroll_talas",
-            "scroll_tang_anshi", "scroll_verdun", "scroll_versailles", "scroll_waterloo", "scroll_winter_war",
-            "scroll_xian", "scroll_yuefei",
+            "event_anschluss_1938", "event_august_storm_1945", "event_barbarossa_1941", "event_bohemia_1939",
+            "event_chibi_208", "event_fall_gelb_1940", "event_fall_weiss_1939", "event_korean_war_1950",
+            "event_manchukuo_1932", "event_marco_polo_1937", "event_midway_1942", "event_molotov_ribbentrop",
+            "event_moscow_winter", "event_mukden_1931", "event_munich_1938", "event_pearl_harbor_1941",
+            "event_poland_partition", "event_schlieffen_1914", "event_sengoku_gun", "event_uk_hurricane_1952",
+            "event_weserubung_1940", "event_winter_1812", "event_xian_1936",
+            "scroll_anshi_755", "scroll_austerlitz_1805", "scroll_bagration_1944", "scroll_berlin_1945",
+            "scroll_berlin_airlift_1948", "scroll_borodino_1812", "scroll_britain_1940", "scroll_changping_260bce",
+            "scroll_changsha_1939", "scroll_cuban_1962", "scroll_dunkirk_1940", "scroll_el_alamein_1942",
+            "scroll_guandu_200", "scroll_hundred_regiments", "scroll_jutland_1916", "scroll_kursk_1943",
+            "scroll_leyte_1944", "scroll_marne_1914", "scroll_nato_warsaw_1955", "scroll_normandy_1944",
+            "scroll_sekigahara_1600", "scroll_silkroad_peace", "scroll_singapore_1942", "scroll_songhu_1937",
+            "scroll_stalingrad_1942", "scroll_taierzhuang_1938", "scroll_tannenberg_1914", "scroll_verdun_1916",
+            "scroll_yancheng_1140",
         ]
 
         var seenIds = Set<String>()
@@ -53,43 +56,42 @@ final class V9OverhaulTests: XCTestCase {
 
         for ev in all {
             XCTAssertTrue(seenIds.insert(ev.id).inserted, "存在重复事件 id: \(ev.id)")
-            guard let sc = scenarioById[ev.scenarioId] else {
-                XCTFail("事件 \(ev.id) 引用了不存在的剧本 \(ev.scenarioId)")
-                continue
-            }
-            eventsPerScenario[ev.scenarioId, default: 0] += 1
-            let nationIds = Set(sc.nations.map(\.id))
-
-            XCTAssertTrue(nationIds.contains(ev.actorSpecId), "事件 \(ev.id) 的 actorSpecId=\(ev.actorSpecId) 不在剧本 \(ev.scenarioId) 中")
-            if let t = ev.targetSpecId {
-                XCTAssertTrue(nationIds.contains(t), "事件 \(ev.id) 的 targetSpecId=\(t) 不在剧本 \(ev.scenarioId) 中")
-            }
+            XCTAssertFalse(ev.scenarioIds.isEmpty, "事件 \(ev.id) 缺少 scenarioIds")
             XCTAssertTrue(validScrollKeys.contains(ev.illustration), "事件 \(ev.id) 使用了未打包的插画键 \(ev.illustration)")
             XCTAssertFalse(ev.choices.isEmpty, "事件 \(ev.id) 缺少抉择选项")
 
-            for ch in ev.choices where !ch.effectCode.isEmpty {
-                for rawCmd in ch.effectCode.split(separator: ";") {
-                    let parts = rawCmd.split(separator: ":").map(String.init)
-                    guard let op = parts.first else { continue }
-                    switch op {
-                    case "annex", "war", "ally", "peace", "vassal", "cedehalf":
-                        if parts.count >= 3 {
-                            XCTAssertTrue(nationIds.contains(parts[1]), "事件 \(ev.id) 效果 \(rawCmd) 的 \(parts[1]) 不在 \(ev.scenarioId) 中")
-                            XCTAssertTrue(nationIds.contains(parts[2]), "事件 \(ev.id) 效果 \(rawCmd) 的 \(parts[2]) 不在 \(ev.scenarioId) 中")
+            for sid in ev.scenarioIds {
+                guard let sc = scenarioById[sid] else {
+                    XCTFail("事件 \(ev.id) 引用了不存在的剧本 \(sid)")
+                    continue
+                }
+                eventsPerScenario[sid, default: 0] += 1
+                let nationIds = Set(sc.nations.map(\.id))
+
+                XCTAssertTrue(nationIds.contains(ev.actorSpecId), "事件 \(ev.id) 的 actorSpecId=\(ev.actorSpecId) 不在剧本 \(sid) 中")
+                if let t = ev.targetSpecId {
+                    XCTAssertTrue(nationIds.contains(t), "事件 \(ev.id) 的 targetSpecId=\(t) 不在剧本 \(sid) 中")
+                }
+
+                for ch in ev.choices where !ch.effectCode.isEmpty {
+                    for rawCmd in ch.effectCode.split(separator: "|") {
+                        let parts = rawCmd.split(separator: ":").map(String.init)
+                        guard let op = parts.first else { continue }
+                        switch op {
+                        case "annex", "war", "ally", "peace", "vassal", "pact", "cede", "cede_east":
+                            if parts.count >= 3 {
+                                XCTAssertTrue(nationIds.contains(parts[1]), "事件 \(ev.id) (\(sid)) 效果 \(rawCmd) 的 \(parts[1]) 不存在")
+                                XCTAssertTrue(nationIds.contains(parts[2]), "事件 \(ev.id) (\(sid)) 效果 \(rawCmd) 的 \(parts[2]) 不存在")
+                            }
+                        case "buff", "gold", "morale", "law", "ic", "nuke":
+                            if parts.count >= 2 {
+                                XCTAssertTrue(nationIds.contains(parts[1]), "事件 \(ev.id) (\(sid)) 效果 \(rawCmd) 的 \(parts[1]) 不存在")
+                            }
+                        case "tension", "none":
+                            break
+                        default:
+                            XCTFail("事件 \(ev.id) 包含未知效果指令 \(op)")
                         }
-                    case "cede":
-                        if parts.count >= 4 {
-                            XCTAssertTrue(nationIds.contains(parts[1]), "事件 \(ev.id) 效果 \(rawCmd) 的 \(parts[1]) 不在 \(ev.scenarioId) 中")
-                            XCTAssertTrue(nationIds.contains(parts[2]), "事件 \(ev.id) 效果 \(rawCmd) 的 \(parts[2]) 不在 \(ev.scenarioId) 中")
-                        }
-                    case "buff", "gold", "morale", "law":
-                        if parts.count >= 2 {
-                            XCTAssertTrue(nationIds.contains(parts[1]), "事件 \(ev.id) 效果 \(rawCmd) 的 \(parts[1]) 不在 \(ev.scenarioId) 中")
-                        }
-                    case "none":
-                        break
-                    default:
-                        XCTFail("事件 \(ev.id) 包含未知效果指令 \(op)")
                     }
                 }
             }
@@ -97,7 +99,7 @@ final class V9OverhaulTests: XCTestCase {
 
         // 12 个官方剧本全部覆盖丰富历史事件
         for sc in HistoricalScenarios.officialScenarios {
-            XCTAssertGreaterThanOrEqual(eventsPerScenario[sc.id] ?? 0, 5, "剧本 \(sc.id) 至少应拥有 5 条以上真实历史事件")
+            XCTAssertGreaterThanOrEqual(eventsPerScenario[sc.id] ?? 0, 7, "剧本 \(sc.id) 至少应拥有 7 条以上真实历史事件")
         }
     }
 

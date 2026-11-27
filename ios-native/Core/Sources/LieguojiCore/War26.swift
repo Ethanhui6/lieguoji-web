@@ -48,11 +48,11 @@ public enum War26 {
             + reactors * 5.0
 
         // 2. 四线科技现代化水平（陆军/经济/治国/海军 1..6 级）
-        let tMil = WorldDepth.techLevel(r, nation: id, branch: "military")
-        let tEco = WorldDepth.techLevel(r, nation: id, branch: "economy")
-        let tSta = WorldDepth.techLevel(r, nation: id, branch: "statecraft")
-        let tNav = WorldDepth.techLevel(r, nation: id, branch: "naval")
-        let techScore = Double(tMil * 9 + tEco * 8 + tSta * 6 + tNav * 7)
+        let tMil: Int = WorldDepth.techLevel(r, nation: id, branch: .military)
+        let tEco: Int = WorldDepth.techLevel(r, nation: id, branch: .economy)
+        let tSta: Int = WorldDepth.techLevel(r, nation: id, branch: .statecraft)
+        let tNav: Int = WorldDepth.techLevel(r, nation: id, branch: .naval)
+        let techScore: Double = Double(tMil) * 9.0 + Double(tEco) * 8.0 + Double(tSta) * 6.0 + Double(tNav) * 7.0
 
         // 3. 军队质量、海军远洋投送与战略威慑（数量递减防人海碾压，乘以科技与工业质量权重）
         var armyRaw = 0.0, navyRaw = 0.0
@@ -65,13 +65,13 @@ public enum War26 {
         for fl in (r.navy.fleets.isNull ? [] : r.navy.fleets.asArray) where fl.nationId.asString == id && fl.status.asString != "lost" {
             navyRaw += max(0.0, min(14.0, fl.ships.asNumber)) / 4.0
         }
-        let dampedArmy = armyRaw <= 22.0 ? armyRaw : (22.0 + (armyRaw - 22.0) * 0.42)
-        let landQuality = 0.68 + 0.17 * Double(tMil) + 0.18 * indIdx.squareRoot()
-        let navBonus = (r.regimes.isNull || r.regimes.historicalPower.isNull) ? 0.0 : (r.regimes.historicalPower[id].navalPowerBonus.optionalNumber ?? 0.0)
-        let nukes = (r.regimes.isNull || r.regimes.nuclear.isNull) ? 0.0 : max(0.0, r.regimes.nuclear[id].nukes.optionalNumber ?? 0.0)
-        let militaryScore = dampedArmy * landQuality * 2.15
-            + navyRaw * (3.8 + 0.85 * Double(tNav)) * (1.0 + navBonus * 1.45)
-            + nukes * 20.0
+        let dampedArmy: Double = armyRaw <= 22.0 ? armyRaw : (22.0 + (armyRaw - 22.0) * 0.42)
+        let landQuality: Double = 0.68 + 0.17 * Double(tMil) + 0.18 * indIdx.squareRoot()
+        let navBonus: Double = (r.regimes.isNull || r.regimes.historicalPower.isNull) ? 0.0 : (r.regimes.historicalPower[id].navalPowerBonus.optionalNumber ?? 0.0)
+        let nukes: Double = (r.regimes.isNull || r.regimes.nuclear.isNull) ? 0.0 : max(0.0, r.regimes.nuclear[id].nukes.optionalNumber ?? 0.0)
+        let landPart: Double = dampedArmy * landQuality * 2.15
+        let seaPart: Double = navyRaw * (3.8 + 0.85 * Double(tNav)) * (1.0 + navBonus * 1.45)
+        let militaryScore: Double = landPart + seaPart + nukes * 20.0
 
         // 4. 有效核心人口与递减疆域（西伯利亚/荒原广土强烈递减，人口稠密核心区稳定加分）
         var owned = 0
@@ -99,7 +99,12 @@ public enum War26 {
                 if members.contains(id) { allies += max(0, members.count - 1) }
             }
         }
-        let vassals = Vassals.vassals(r, id).count
+        var vassals = 0
+        if !r.vassals.isNull && !r.vassals.records.isNull {
+            for rec in r.vassals.records.asArray where rec.endedTick.isNull && rec.overlordId.asString == id {
+                vassals += 1
+            }
+        }
         let diplomacyScore = stability * 0.18 + min(12.0, destiny / 8.5) + warSupport * 0.12
             + min(15.0, Double(allies) * 3.0) + min(12.0, Double(vassals) * 4.5)
 

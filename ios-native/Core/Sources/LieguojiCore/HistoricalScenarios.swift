@@ -1097,16 +1097,18 @@ public enum HistoricalScenarios {
             let techMil = Int(hp.techMil.optionalNumber ?? 3.0)
             let warSupport = hp.warSupport.optionalNumber ?? 60.0
 
-            let targetArmies: Int = {
-                if let explicit = hp.startingArmies.optionalNumber, explicit >= 1 {
-                    return max(1, min(26, Int(explicit.rounded())))
-                }
-                let maxCap = hp.maxArmies.optionalNumber.map { Int($0.rounded()) }
-                    ?? max(3, min(28, Int((3.5 + indIdx * 4.5 + mpScale * 3.0 + Double(techMil) * 0.7).rounded())))
+            let targetArmies: Int
+            if let explicit = hp.startingArmies.optionalNumber, explicit >= 1 {
+                targetArmies = max(1, min(26, Int(explicit.rounded())))
+            } else {
+                let fallbackEst = 3.5 + indIdx * 4.5 + mpScale * 3.0 + Double(techMil) * 0.7
+                let fallbackCap = max(3, min(28, Int(fallbackEst.rounded())))
+                let maxCap = hp.maxArmies.optionalNumber.map { Int($0.rounded()) } ?? fallbackCap
                 let ratio = max(0.32, min(0.68, 0.44 + (warSupport - 55.0) / 220.0))
                 let raw = max(1, Int((Double(maxCap) * ratio).rounded()))
-                return max(1, min(22, min(raw, max(2, owned.count * 2))))
-            }()
+                let ownedLimit = max(2, owned.count * 2)
+                targetArmies = max(1, min(22, min(raw, ownedLimit)))
+            }
 
             let capPid = capitalPidByNation[nid] ?? owned.first(where: { $0.name.optionalString == capitalNameByNationId[nid] })?.id.asString ?? owned[0].id.asString
             let enemies = warEnemies[nid] ?? []

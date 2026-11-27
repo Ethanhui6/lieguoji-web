@@ -108,7 +108,7 @@ DEFAULT_RELEASE_NOTES: list[str] = [
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 21,
+    "version": 22,
     "notice": "v9.0.0 丝滑满帧与钢铁雄心级大改版上线：60fps 零卡顿拖屏 · 云服自动秒连顺滑行军 · 158 条史实事件 · 不可通行无人之地 · 12 剧本精确地图与 HOI4 国策",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16, "64": 32},
@@ -282,7 +282,7 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 21,
+        "patchVersion": 22,
         "updatedAt": int(time.time() * 1000),
         "summary": "v9.0.0 丝滑满帧与钢铁雄心级大改版：60fps 零卡顿拖屏 · 云服自动秒连顺滑行军 · 158 条史实事件 · 不可通行无人之地 · 12 剧本精确地图与 HOI4 国策",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),

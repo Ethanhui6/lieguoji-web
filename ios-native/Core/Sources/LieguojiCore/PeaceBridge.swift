@@ -415,7 +415,9 @@ public enum PeaceBridge {
         let w = world(r)
         let maximum = r.diplomacy.maximumMonths.asInt, start = People.start(r), spd = r.life.secondsPerDay.asNumber
         func monthsSince(_ t: Double) -> Int { DiplomacyCalendar.wholeMonths(DiplomacyCalendar.date(t, secondsPerDay: spd, start: start), DiplomacyCalendar.date(f(w.gameTime), secondsPerDay: spd, start: start)) }
-        for id in maximum <= 0 ? [] : complete().filter({ $0.internal.isNull && monthsSince($0.startTime.asNumber) >= maximum }).map({ $0.id.asInt }) {
+        let isHistoricalRoute = !r.regimes.isNull && r.regimes.historicalRoute.optionalString == "historical" && !r.regimes.historicalScenarioId.isNull
+        let effectiveMaximum = isHistoricalRoute ? max(maximum, 60) : maximum
+        for id in effectiveMaximum <= 0 ? [] : complete().filter({ $0.internal.isNull && monthsSince($0.startTime.asNumber) >= effectiveMaximum }).map({ $0.id.asInt }) {
             if let c = complete().first(where: { $0.id.asInt == id }) { settle(r, c, reason: 4) }
         }
         for id in complete().map(\.id.asInt) {
@@ -424,7 +426,15 @@ public enum PeaceBridge {
             let ai = PeaceAI(war: war(c), world: world(r))
             PeaceAI.odds = { a, b in Regimes.odds(r, nation(r, a), nation(r, b)) }
             if !ai.hasAutonomousParticipant() { continue }
-            if let reason = ai.decide() { settle(r, c, reason: reason) }
+            if let reason = ai.decide() {
+                // v11.0.0 历史路线总体战防早停：史实剧本主战（如二战/一战）不因短期厌战(4)提前白和，须决出崩溃(2)/决胜(1)或满 24 月后方能停战议和
+                if isHistoricalRoute && c.internal.isNull {
+                    let warMonths = monthsSince(c.startTime.asNumber)
+                    if reason == 4 && warMonths < 36 { continue }
+                    if reason == 0 && warMonths < 18 { continue }
+                }
+                settle(r, c, reason: reason)
+            }
         }
     }
 }

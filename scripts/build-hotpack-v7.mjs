@@ -40,7 +40,6 @@ const { Delaunay } = await import(pathToFileURL(path.join(MAIN_REPO_ROOT, 'node_
 const MAP_W = 1600;
 const MAP_H = 900;
 const HOTPACK_TAG = 'hotpack-v7';
-const PUBLIC_HOST = '111.230.153.235';
 const MAX_SINGLE_BYTES = 94 * 1024 * 1024; // 严格 < 94 MB，确保国内 5 路镜像 206 分片满速零拦截
 
 const REGIONS = [
@@ -1417,18 +1416,19 @@ function buildPureChineseEncyclopedia(existingCitiesZh) {
 
   for (const c of existingCitiesZh) addCity(c.n, c.lon, c.lat, c.pop, c.cap, c.iso);
 
-  for (const fn of ['ne_10m_populated_places.geojson', 'ne_10m_cities.geojson']) {
-    const geo = JSON.parse(fs.readFileSync(path.join(SRC_DIR, fn), 'utf8'));
-    for (const f of geo.features || []) {
-      if (f.geometry?.type !== 'Point') continue;
-      const [lon, lat] = f.geometry.coordinates;
-      const p = f.properties || {};
-      const raw = p.NAME_ZH || p.name_zh || p.NAME_ZHT || p.name_zht || p.NAME || p.name || p.NAMEASCII;
-      const pop = p.POP_MAX || p.pop_max || p.POP2020 || p.GN_POP || 35000;
-      const cap = (p.ADM0CAP === 1 || p.FEATURECLA === 'Admin-0 capital') ? 1 : 0;
-      const iso = p.ISO_A2 || p.ADM0_A3 || p.SOV_A3 || 'XX';
-      addCity(raw, lon, lat, pop, cap, iso);
-    }
+  // 仅读取含权威 NAME_ZH 与 ISO_A2 的 ne_10m_populated_places.geojson，彻底剔除无中文/无 ISO 的重复 ne_10m_cities.geojson 与机械音译乱码！
+  const geo = JSON.parse(fs.readFileSync(path.join(SRC_DIR, 'ne_10m_populated_places.geojson'), 'utf8'));
+  for (const f of geo.features || []) {
+    if (f.geometry?.type !== 'Point') continue;
+    const [lon, lat] = f.geometry.coordinates;
+    const p = f.properties || {};
+    const raw = p.NAME_ZH || p.name_zh || p.NAME_ZHT || p.name_zht;
+    if (!raw || !/[\u4e00-\u9fff]/.test(String(raw))) continue;
+    const pop = p.POP_MAX || p.pop_max || p.POP2020 || p.GN_POP || 35000;
+    const cap = (p.ADM0CAP === 1 || p.FEATURECLA === 'Admin-0 capital') ? 1 : 0;
+    const iso = p.ISO_A2 && p.ISO_A2 !== '-99' ? p.ISO_A2 : (p.ADM0_A3 || p.SOV_A3 || '');
+    if (!iso || iso === 'XX' || iso === '-99') continue;
+    addCity(raw, lon, lat, pop, cap, iso);
   }
 
   // 补充欧亚/中国/日本/低地三国/中东欧核心历史城邦与战略要冲（全部纯中文）
@@ -1926,6 +1926,7 @@ function synthesizeStudioEraMusic(era, mv) {
     const lenS = Math.min(total - startS, Math.floor(barSec * sr));
     const bassFreq = midiToHz(chord[0] - 12);
     const freqs = chord.map(midiToHz);
+    const strPhases = freqs.map(() => 0);
     for (let i = 0; i < lenS; i++) {
       const t = i / sr;
       const env = Math.min(1, t / 0.45) * Math.min(1, (lenS - i) / (sr * 0.55));
@@ -1937,8 +1938,9 @@ function synthesizeStudioEraMusic(era, mv) {
       for (let c = 0; c < freqs.length; c++) {
         const f = freqs[c];
         const vib = 1 + 0.0022 * Math.sin(2 * Math.PI * (4.6 + c * 0.25) * t + c);
-        // 温暖交响弦乐群（微失谐双声部）
-        const s1 = Math.sin(2 * Math.PI * f * vib * t) * 0.11 + Math.sin(4 * Math.PI * f * t) * 0.035;
+        strPhases[c] += (2 * Math.PI * f * vib) / sr;
+        // 温暖交响弦乐群（微失谐双声部，真相位积分无 FM 畸变）
+        const s1 = Math.sin(strPhases[c]) * 0.11 + Math.sin(2 * strPhases[c]) * 0.035;
         const s2 = Math.sin(2 * Math.PI * f * 1.003 * t + 0.7) * 0.09;
         const pan = c === 0 ? 0.28 : c === 1 ? 0.5 : 0.72;
         pL += (s1 + s2) * (1 - pan) * 1.25;
@@ -1973,20 +1975,22 @@ function synthesizeStudioEraMusic(era, mv) {
     const freq = midiToHz(midi);
     const startS = Math.floor(h * hornStep * sr);
     const lenS = Math.min(total - startS, Math.floor(hornStep * 0.78 * sr));
+    let hornPhase = 0;
     for (let i = 0; i < lenS; i++) {
       const t = i / sr;
       const env = Math.min(1, t / 0.22) * Math.exp(-Math.max(0, t - 0.8) * 0.65) * Math.min(1, (lenS - i) / (sr * 0.3));
       const vib = 1 + 0.0018 * Math.sin(2 * Math.PI * 4.8 * t);
-      const tone = Math.sin(2 * Math.PI * freq * vib * t) * 0.65
-                 + Math.sin(4 * Math.PI * freq * vib * t) * 0.22
-                 + Math.sin(6 * Math.PI * freq * t) * 0.07;
+      hornPhase += (2 * Math.PI * freq * vib) / sr;
+      const tone = Math.sin(hornPhase) * 0.65
+                 + Math.sin(2 * hornPhase) * 0.22
+                 + Math.sin(3 * hornPhase) * 0.07;
       const s = tone * env * 0.16;
       L[startS + i] += s * 0.92;
       R[startS + i] += s * 1.08;
     }
   }
 
-  // 4) 沉稳低频太鼓/定音鼓脉冲（仅轻柔沉厚鼓皮，绝不吵闹）
+  // 4) 沉稳低频太鼓/定音鼓脉冲（真相位积分，消除 FM 折返刺耳感）
   const drumStep = (mv === 2) ? beatSec : beatSec * 2;
   const drumCount = Math.floor(durationSec / drumStep);
   for (let d = 0; d < drumCount; d++) {
@@ -1994,10 +1998,12 @@ function synthesizeStudioEraMusic(era, mv) {
     const startS = Math.floor(d * drumStep * sr);
     const accent = d % 4 === 0;
     const len = Math.min(total - startS, Math.floor(sr * 0.36));
+    let drumPhase = 0;
     for (let i = 0; i < len; i++) {
       const t = i / sr;
       const f = (accent ? 78 : 98) * Math.exp(-t * 11) + 42;
-      const thump = Math.sin(2 * Math.PI * f * t) * Math.min(1, t * 220) * Math.exp(-t * 8.5) * (accent ? 0.24 : 0.13);
+      drumPhase += (2 * Math.PI * f) / sr;
+      const thump = Math.sin(drumPhase) * Math.min(1, t * 220) * Math.exp(-t * 8.5) * (accent ? 0.24 : 0.13);
       L[startS + i] += thump;
       R[startS + i] += thump;
     }
@@ -2040,12 +2046,15 @@ function synthesizeOrganicSfx(kind, era) {
   }
 
   if (kind === 'seal') {
-    // 温润玉印/紫檀木落印声：柔和低沉木腔 + 极短微击，丝毫不刺耳
+    // 温润玉印/紫檀木落印声：真相位积分柔和低沉木腔 + 极短微击，丝毫不刺耳
+    let phase = 0;
     for (let i = 0; i < n; i++) {
       const t = i / sr;
-      const thud = Math.sin(2 * Math.PI * (122 * pitch * Math.exp(-t * 22) + 58) * t) * Math.min(1, t * 400) * Math.exp(-t * 18);
-      const wood = Math.sin(2 * Math.PI * 340 * pitch * t) * Math.exp(-t * 42) * 0.25;
-      const tap = pink[i] * Math.exp(-t * 75) * 0.22;
+      const instF = 115 * pitch * Math.exp(-t * 22) + 58;
+      phase += (2 * Math.PI * instF) / sr;
+      const thud = Math.sin(phase) * Math.min(1, t * 400) * Math.exp(-t * 18);
+      const wood = Math.sin(2 * Math.PI * 340 * pitch * t) * Math.exp(-t * 42) * 0.22;
+      const tap = pink[i] * Math.exp(-t * 75) * 0.20;
       L[i] = R[i] = (thud * 0.58 + wood + tap) * 0.72;
     }
     biquadLowpassInPlace(L, sr, 1900); biquadLowpassInPlace(R, sr, 1900);
@@ -2069,35 +2078,43 @@ function synthesizeOrganicSfx(kind, era) {
     }
     biquadLowpassInPlace(L, sr, 2300); biquadLowpassInPlace(R, sr, 2300);
   } else if (kind === 'march') {
-    // 远景沉稳行军鼓点（三下柔和低频太鼓）
+    // 远景沉稳行军鼓点（三下柔和低频太鼓，真相位积分）
     for (const offset of [0.0, 0.42, 0.84]) {
       const s0 = Math.floor(offset * sr);
       const len = Math.min(n - s0, Math.floor(sr * 0.38));
+      let phase = 0;
       for (let i = 0; i < len; i++) {
         const t = i / sr;
         const f = 92 * pitch * Math.exp(-t * 14) + 46;
-        const drum = Math.sin(2 * Math.PI * f * t) * Math.min(1, t * 240) * Math.exp(-t * 10) * 0.44;
+        phase += (2 * Math.PI * f) / sr;
+        const drum = Math.sin(phase) * Math.min(1, t * 240) * Math.exp(-t * 10) * 0.44;
         const step = pink[s0 + i] * Math.exp(-t * 28) * 0.14;
         L[s0 + i] += drum + step * 0.9; R[s0 + i] += drum + step * 1.1;
       }
     }
     biquadLowpassInPlace(L, sr, 1200); biquadLowpassInPlace(R, sr, 1200);
   } else if (kind === 'clash') {
-    // 沉稳交响定音鼓重击 + 温润低阻尼拔剑拨弦（彻底摒弃旧版 1840Hz 刺耳尖叫！）
+    // 沉稳交响定音鼓重击 + 温润低阻尼拔剑拨弦（真相位积分，彻底消除尖啸）
     addKarplusStrongPluck(L, R, Math.floor(sr * 0.03), Math.floor(sr * 0.7), 310 * pitch, 0.28, 0.35, 0.991, sr, 303);
     addKarplusStrongPluck(L, R, Math.floor(sr * 0.09), Math.floor(sr * 0.65), 465 * pitch, 0.20, 0.65, 0.988, sr, 307);
+    let phase = 0;
     for (let i = 0; i < n; i++) {
       const t = i / sr;
-      const timp = Math.sin(2 * Math.PI * (88 * pitch * Math.exp(-t * 9) + 44) * t) * Math.min(1, t * 220) * Math.exp(-t * 4.2) * 0.52;
+      const f = 88 * pitch * Math.exp(-t * 9) + 44;
+      phase += (2 * Math.PI * f) / sr;
+      const timp = Math.sin(phase) * Math.min(1, t * 220) * Math.exp(-t * 4.2) * 0.52;
       const rumble = pink[i] * Math.exp(-t * 3.8) * 0.22;
       L[i] += timp + rumble * 0.95; R[i] += timp + rumble * 1.05;
     }
     biquadLowpassInPlace(L, sr, 2200); biquadLowpassInPlace(R, sr, 2200);
   } else if (kind === 'cannon') {
-    // 远景沉雷重炮（深沉低频 42Hz 冲击 + 滚动远雷低通粉噪）
+    // 远景沉雷重炮（真相位积分深沉低频 42Hz 冲击 + 滚动远雷低通粉噪）
+    let phase = 0;
     for (let i = 0; i < n; i++) {
       const t = i / sr;
-      const sub = Math.sin(2 * Math.PI * (74 * pitch * Math.exp(-t * 8.5) + 34) * t) * Math.min(1, t * 180) * Math.exp(-t * 2.2) * 0.64;
+      const f = 74 * pitch * Math.exp(-t * 8.5) + 34;
+      phase += (2 * Math.PI * f) / sr;
+      const sub = Math.sin(phase) * Math.min(1, t * 180) * Math.exp(-t * 2.2) * 0.64;
       const thunder = pink[i] * Math.min(1, t * 40) * Math.exp(-t * 1.9) * 0.48;
       L[i] = sub + thunder * 0.94; R[i] = sub + thunder * 1.06;
     }
@@ -2184,15 +2201,12 @@ function flatAssetName(relPath) { return relPath.replace(/\//g, '__'); }
 function buildCdnUrls(relPath) {
   const asset = encodeURIComponent(flatAssetName(relPath));
   const ghRelease = `https://github.com/Ethanhui6/lieguoji-web/releases/download/${HOTPACK_TAG}/${asset}`;
-  const quotedRel = relPath.split('/').map(encodeURIComponent).join('/');
   return [
-    `https://gh-proxy.com/${ghRelease}`,
     `https://cdn.gh-proxy.org/${ghRelease}`,
-    `https://gh-proxy.org/${ghRelease}`,
     `https://edgeone.gh-proxy.com/${ghRelease}`,
-    `https://lieguoji-edge.pages.dev/api/cdn/hotpack/${quotedRel}`,
+    `https://gh-proxy.com/${ghRelease}`,
+    `https://gh-proxy.org/${ghRelease}`,
     ghRelease,
-    `http://${PUBLIC_HOST}/api/v1/hotpack/download/${quotedRel}`,
   ];
 }
 function walkFiles(dir, base = dir) {

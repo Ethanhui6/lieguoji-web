@@ -12,11 +12,12 @@ import LieguojiCore
 struct InkPipelines {
     let composite: MTLRenderPipelineState
 
-    static func make(device: MTLDevice, library: MTLLibrary, mainFormat: MTLPixelFormat, sampleCount: Int) throws -> InkPipelines {
+    static func make(device: MTLDevice, library: MTLLibrary, mainFormat: MTLPixelFormat, depthFormat: MTLPixelFormat, sampleCount: Int) throws -> InkPipelines {
         let c = MTLRenderPipelineDescriptor()
         c.vertexFunction = library.makeFunction(name: "inkCompositeVertex")
         c.fragmentFunction = library.makeFunction(name: "inkCompositeFragment")
         c.colorAttachments[0].pixelFormat = mainFormat
+        c.depthAttachmentPixelFormat = depthFormat
         c.rasterSampleCount = sampleCount
         c.colorAttachments[0].isBlendingEnabled = true
         c.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha; c.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha

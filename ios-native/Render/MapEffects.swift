@@ -412,6 +412,7 @@ final class EffectsView: UIView {
         ap.addQuadCurve(to: CGPoint(x: 24, y: 19), controlPoint: CGPoint(x: 22.5, y: 24.5))
         anchor.path = ap.cgPath; anchor.fillColor = nil
         anchor.strokeColor = ink.cgColor; anchor.lineWidth = 1.9; anchor.lineCap = .round; anchor.lineJoin = .round
+        anchor.shadowPath = ap.cgPath
         anchor.shadowColor = UIColor(red: 0.99, green: 0.97, blue: 0.91, alpha: 1).cgColor
         anchor.shadowOpacity = 0.85; anchor.shadowRadius = 1.5; anchor.shadowOffset = .zero
         root.addSublayer(anchor)

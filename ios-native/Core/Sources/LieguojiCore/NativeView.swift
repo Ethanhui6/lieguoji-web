@@ -35,7 +35,47 @@ extension NativeEngine {
             labelGridCache = built
             cache = built
         }
-        let cellsX = grid.cellsX.asInt, pts = cache.points, cells = cache.cells
+        let fit = run.regimes.enabled.isTruthy
+        var capitalPos = [Int: (Double, Double)]()
+        if fit && name == nil {
+            let sc = run.scale.asNumber
+            let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
+            var cityPosById = [String: (Double, Double)]()
+            for c in run.world.cities.asArray {
+                if let cid = c.id.optionalString, !c.position.isNull {
+                    cityPosById[cid] = (c.position.x.asNumber / safeScale, c.position.y.asNumber / safeScale)
+                }
+            }
+            for (i, nation) in run.world.nations.asArray.enumerated() {
+                if let cid = nation.capitalId.optionalString, let pos = cityPosById[cid] {
+                    capitalPos[i] = pos
+                }
+            }
+        }
+        return Self.computeStateLabelBoxes(
+            cellsX: grid.cellsX.asInt,
+            points: cache.points,
+            cells: cache.cells,
+            owners: owners,
+            fit: fit,
+            nameOf: { k in
+                name?(k) ?? (k >= 0 && k < run.world.nations.length ? (run.world.nations[k].name.optionalString ?? "") : "")
+            },
+            capitalPos: capitalPos
+        )
+    }
+
+    /// 供建世第 0 帧（`CreationMap.build`）与推演中疆域易主（`NativeEngine.labels`）共享的连通域 + 8 邻域不可达极点 + 15 点境内框解算器：
+    /// 彻底根除建世首帧使用旧质心导致国名落入海中、漂移至邻国或隐藏低地/战国小国的问题！
+    public static func computeStateLabelBoxes(
+        cellsX: Int,
+        points pts: [Double],
+        cells: [Int],
+        owners: [Int],
+        fit: Bool,
+        nameOf: (Int) -> String,
+        capitalPos: [Int: (Double, Double)] = [:]
+    ) -> JS {
         let n = cells.count, unit = 1600.0 / 240.0
         guard n > 0, cellsX > 0, pts.count >= 2 * n else { return .array() }
         func group(_ c: Int) -> Int? {
@@ -46,10 +86,6 @@ extension NativeEngine {
         for c in 0..<n { guard let k = group(c) else { continue }; if groups[k] == nil { order.append(k) }; groups[k, default: []].append(c) }
         var singles = [Int: Int](); for o in owners { singles[o, default: 0] += 1 }
         var out = [JS]()
-        // 国名分块 (as the original labels a state): each connected piece of a state's land gets its own
-        // name — a state with land in the east and the west is named in both, not once in the gap
-        // between them over another state. Pieces under a quarter of the largest (and under forty grid
-        // points) stay unnamed.
         var parts = [(Int, [Int])]()
         for k in order {
             guard let all = groups[k] else { continue }
@@ -69,30 +105,9 @@ extension NativeEngine {
             let largest = pieces.map(\.count).max() ?? 0
             for piece in pieces where piece.count == largest || piece.count >= max(40, largest / 4) { parts.append((k, piece)) }
         }
-        // 国名入境 (app worlds): the name stands on the deepest ground of its piece, along the longest straight
-        // run of its own land through that point, sized to fit. On a tangled continent a centroid falls on a
-        // neighbour's land and names pile up there.
-        let fit = run.regimes.enabled.isTruthy
         let rows = n / max(1, cellsX), x0 = pts[0], y0 = pts[1]
         let dx = cellsX > 1 ? (pts[2 * (cellsX - 1)] - x0) / Double(cellsX - 1) : unit, dy = rows > 1 ? (pts[2 * (n - cellsX) + 1] - y0) / Double(rows - 1) : unit
         var depth = [Int32](repeating: -1, count: fit ? n : 0)
-        // App 规则国家图预索引都城地图坐标，排布国名时避开本国都城印记
-        var capitalPos = [Int: (Double, Double)]()
-        if fit && name == nil {
-            let sc = run.scale.asNumber
-            let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
-            var cityPosById = [String: (Double, Double)]()
-            for c in run.world.cities.asArray {
-                if let cid = c.id.optionalString, !c.position.isNull {
-                    cityPosById[cid] = (c.position.x.asNumber / safeScale, c.position.y.asNumber / safeScale)
-                }
-            }
-            for (i, nation) in run.world.nations.asArray.enumerated() {
-                if let cid = nation.capitalId.optionalString, let pos = cityPosById[cid] {
-                    capitalPos[i] = pos
-                }
-            }
-        }
         func cell(_ x: Double, _ y: Double) -> Int? {
             let row = Int(((y - y0) / dy).rounded()), column = Int(((x - x0) / dx).rounded())
             return row >= 0 && row < rows && column >= 0 && column < cellsX ? row * cellsX + column : nil
@@ -115,9 +130,6 @@ extension NativeEngine {
             var start = pole, end = pole
             while start % cellsX > 0 && group(start - 1) == k { start -= 1 }
             while (end + 1) % cellsX > 0 && end + 1 < n && group(end + 1) == k { end += 1 }
-            // 国名随领土倾斜 (the original lays a state's name along its land): the long axis of the
-            // state's points (their principal direction), tilted at most 35°, the name as long as the land
-            // is along it (the middle 80%) and centred on it. Recomputed whenever the borders move.
             var sxx = 0.0, syy = 0.0, sxy = 0.0
             for c in list { let dx = pts[2 * c] - cx, dy = pts[2 * c + 1] - cy; sxx += dx * dx; syy += dy * dy; sxy += dx * dy }
             var theta = 0.5 * atan2(2 * sxy, sxx - syy)
@@ -202,7 +214,7 @@ extension NativeEngine {
                 let gentleTheta = max(-0.24, min(0.24, theta))
                 let candidateAngles: [Double] = (eigenRatio >= 2.1 && abs(gentleTheta) >= 0.10) ? [0, gentleTheta] : [0]
 
-                let letters = Double(max(1, MapLayers.stateLabel(name?(k) ?? (k >= 0 && k < run.world.nations.length ? run.world.nations[k].name.optionalString ?? "" : ""), full: true).count))
+                let letters = Double(max(1, MapLayers.stateLabel(nameOf(k), full: true).count))
                 let step = min(dx, dy) * 0.55
                 let capPos = capitalPos[k]
                 var bestScore = -Double.infinity
@@ -221,7 +233,6 @@ extension NativeEngine {
                         let a = reach(ax, ay), b = reach(-ax, -ay)
                         let span = a + b
                         guard span > 0 else { continue }
-                        // 限制中点偏移，确保国名锚点始终留在腹地深处、绝不漂移进狭颈或越界
                         var mid = (a - b) * 0.5
                         let maxShift = min(span * 0.25, Double(depth[place]) * min(dx, dy) * 0.45)
                         mid = max(-maxShift, min(maxShift, mid))
@@ -230,7 +241,6 @@ extension NativeEngine {
                         let centerClear = Double(depth[centerCell]) * min(dx, dy) * 0.5
                         let rawW = span * 0.76
                         let rawH = min(max(rawW / max(2.2, letters * 0.92), unit * 1.4), max(unit * 1.15, centerClear * 1.65))
-                        // 二维 3×5 = 15 点内接矩形境内校验：尝试 100% / 85% / 72% 尺度，保证国名整框稳居疆域内部
                         var chosenW = rawW, chosenH = rawH, chosenInside = 0.0
                         for shrink in [1.0, 0.85, 0.72] {
                             let halfW = rawW * shrink * 0.45
@@ -257,7 +267,6 @@ extension NativeEngine {
                         let height = chosenH / unit
                         let away = ((x - cx) * (x - cx) + (y - cy) * (y - cy)).squareRoot() / unit
                         let baseSize = min(width / letters, height)
-                        // 端正水平排版享受 1.35× 优先权；非完全境内候选施加严厉立方惩罚
                         let orientationBonus: Double = angle == 0 ? 1.35 : 1.0
                         let insideFactor = chosenInside >= 0.86 ? (0.85 + chosenInside * 0.15) : (chosenInside * chosenInside * chosenInside * 0.55)
                         let depthBonus = 1.0 + min(0.28, Double(depth[centerCell]) / max(4.0, Double(deepestDepth)) * 0.28)
@@ -303,8 +312,21 @@ extension NativeEngine {
         let date = GameState.Date(year: current.year.asInt, month: current.month.asInt, day: current.day.asInt)
         var era: String?, yearOffset: Int?
         if !r.regimes.isNull, !r.regimes.calendar.isNull { era = r.regimes.calendar.era.optionalString; yearOffset = r.regimes.calendar.offset.optionalNumber.map { Int($0) } }
-        // 国名框只在归属变化时才有：由原有的计算得出，再转成结构体（不常发生）。
-        let labelBoxes: [WorldMeta.LabelBox]? = includeLabels ? Profile.measure("s.labels") { (try? JSONDecoder().decode([WorldMeta.LabelBox].self, from: Data(labels(owners).json.utf8))) ?? [] } : nil
+        // v11.0.0 零 JSON 往返直接构造 [WorldMeta.LabelBox]（消除 JS -> JSON -> UTF8 -> JSONDecoder 冗余开销）
+        let labelBoxes: [WorldMeta.LabelBox]? = includeLabels ? Profile.measure("s.labels") {
+            labels(owners).asArray.map { o in
+                WorldMeta.LabelBox(
+                    nation: o.nation.asInt,
+                    x: Float(o.x.asNumber),
+                    y: Float(o.y.asNumber),
+                    width: Float(o.width.asNumber),
+                    height: Float(o.height.asNumber),
+                    fontMax: Float(o.fontMax.asNumber),
+                    fontMin: Float(o.fontMin.asNumber),
+                    angle: o.angle.optionalNumber.map(Float.init)
+                )
+            }
+        } : nil
         // Per-state totals in one pass over provinces, cities, armies and relations (each state used
         // to filter all of them again, every step).
         let cities = w.cities.asArray

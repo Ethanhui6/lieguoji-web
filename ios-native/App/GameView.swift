@@ -640,6 +640,21 @@ private struct GameHudCanvas: View {
                     say: say
                 )
             }
+            .overlay {
+                // v11.0.0：将历史重大抉择弹窗提升至顶层独立叠层，彻底脱离顶栏弹簧动画子树，弹出 0 抖动零卡顿！
+                if let modal = model.pendingHistoricalModal {
+                    HistoricalEventModalOverlay(
+                        modal: modal,
+                        route: model.activeHistoricalRoute,
+                        onChoose: { idx in
+                            GameFeel.shared.tap()
+                            Task { await model.resolveHistoricalEvent(choiceIndex: idx) }
+                        }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                    .zIndex(95)
+                }
+            }
             .overlay(alignment: .topTrailing) {
                 GameCleanMapChip(
                     visible: chromeIn && !hudVisible && !hiddenByMode,
@@ -822,47 +837,7 @@ private struct GameTopChrome: View {
                     say: say
                 )
             }
-
-            GameHeraldHost(
-                model: model,
-                controller: controller,
-                hudVisible: hudVisible,
-                panelOpen: panel != nil,
-                viewsOpen: viewsOpen,
-                leadInset: leadSafe,
-                trailInset: trailSafe
-            )
-
-            if let express = model.expressEventToast, model.pendingHistoricalModal == nil {
-                VStack {
-                    HistoricalExpressBanner(
-                        modal: express,
-                        onTapOpen: {
-                            model.dismissExpressEventToast()
-                        },
-                        onDismiss: {
-                            model.dismissExpressEventToast()
-                        }
-                    )
-                    .padding(.top, barHeight + 10)
-                    Spacer()
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .zIndex(88)
-            }
-
-            if let modal = model.pendingHistoricalModal {
-                HistoricalEventModalOverlay(
-                    modal: modal,
-                    route: model.activeHistoricalRoute,
-                    onChoose: { idx in
-                        GameFeel.shared.tap()
-                        Task { await model.resolveHistoricalEvent(choiceIndex: idx) }
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                .zIndex(95)
-            }
+            // v11.0.0：已彻底移除顶部跑马灯/传报横幅/快讯飘条，并把 HistoricalEventModalOverlay 提升至顶层独立叠层
         }
         .animation(Motion.panel, value: panel?.id)
         .animation(GameView.hudSpring, value: model.remoteReconnecting)
@@ -1270,9 +1245,11 @@ private struct ComputeRouteSheet: View {
                                         GameFeel.shared.tap()
                                         switchingId = route.id
                                         Task {
-                                            await model.switchComputeRoute(route.id)
+                                            let ok = await model.switchComputeRoute(route.id)
                                             switchingId = nil
-                                            say("已切换至「\(route.name)」")
+                                            if ok {
+                                                say("已切换至「\(route.name)」")
+                                            }
                                         }
                                     } label: {
                                         Text(isBusy ? "连接中" : "切换此线")
@@ -1887,16 +1864,7 @@ private struct GameBottomChrome: View {
     var body: some View {
         Group {
             if landscape {
-                HStack(spacing: 0) {
-                    EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }
-                        .frame(maxWidth: min(360, max(180, totalWidth - leadSafe - trailSafe - 16)))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.leading, leadSafe)
-                .padding(.trailing, trailSafe)
-                .padding(.bottom, 4)
-                .opacity(panel == nil ? 0.94 : 0)
-                .allowsHitTesting(panel == nil)
+                EmptyView()
             } else {
                 GamePortraitBottomBar(model: model, activeTab: panel?.tab, tabMarker: tabMarker, show: show)
             }
@@ -1922,7 +1890,6 @@ private struct GamePortraitBottomBar: View {
 
     var body: some View {
         VStack(spacing: Theme.Control.gap) {
-            EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }
             HStack(spacing: Theme.Control.gap) {
                 HStack(spacing: 0) {
                     TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: activeTab == "nations", marker: tabMarker, flexible: true, compact: false) { show(.nations) }

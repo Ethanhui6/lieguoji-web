@@ -25,9 +25,10 @@ import Darwin
 //    以及服务端每 60 秒自动双写热备（`autosave.lgj` + 最多 10 份 `world-<id>.lgj`）与 SIGTERM/SIGINT 优雅落盘退出。
 
 setvbuf(stdout, nil, _IONBF, 0)
-let serverVersionTag = "lieguoji-server/v14"
+let serverVersionTag = "lieguoji-server/v15"
 let env = ProcessInfo.processInfo.environment
-let udpPushPort: UInt16 = UInt16(env["LGJ_UDP_PORT"] ?? "") ?? 8767
+let enableUDPPush = (env["LGJ_ENABLE_UDP"] == "1" || env["LGJ_ENABLE_UDP"]?.lowercased() == "true")
+let udpPushPort: UInt16 = enableUDPPush ? (UInt16(env["LGJ_UDP_PORT"] ?? "") ?? 8767) : 0
 /// 出向带宽整形上限（默认 2480 kbps = 310 KB/s，专为 3 Mbps 腾讯云轻量云服留出 17% 防拥塞余量，杜绝 policer 丢包抖动；高带宽服可通过 `LGJ_MAX_KBPS` 调高）。
 let configuredMaxBytesPerSec: Double = {
     if let kbps = Double(env["LGJ_MAX_KBPS"] ?? ""), kbps >= 400 {
@@ -210,10 +211,18 @@ func receiveExactly(_ s: Socket, _ count: Int) -> Data? {
 
 func readU32(_ s: Socket) -> Int? { receiveExactly(s, 4).map { EngineWire.readU32($0, at: 0) } }
 
+/// v15 非阻塞优先级异步发送通道：
+/// - 独立后台写线程按 `highQueue`（MUX_PONG 心跳优先插队）→ `normalQueue`（RPC 回包 / 有序 LGB2 推流帧）顺序写 socket；
+/// - TCP 读线程永不阻塞在 `send()` / `writeLock` 上，大回包期间 `MUX_PING` 依然 0ms 入高优队列并在 32KB 分片间隙即时发出！
 final class DirectClient: @unchecked Sendable {
     let socket: Socket
     let gen: UInt64
     let writeLock = NSLock()
+    private let sendCond = NSCondition()
+    private var highQueue: [Data] = []
+    private var normalQueue: [Data] = []
+    private var writerStarted = false
+    private var writerFinished = false
     var mux = false
     var compress = false
     var closed = false
@@ -230,12 +239,75 @@ final class DirectClient: @unchecked Sendable {
         return closed
     }
 
+    func startMuxWriter() {
+        sendCond.lock()
+        if writerStarted || closed {
+            sendCond.unlock()
+            return
+        }
+        writerStarted = true
+        sendCond.unlock()
+
+        Thread.detachNewThread { [weak self] in
+            guard let self else { return }
+            while true {
+                self.sendCond.lock()
+                while self.highQueue.isEmpty && self.normalQueue.isEmpty && !self.closed {
+                    self.sendCond.wait()
+                }
+                if self.closed {
+                    self.highQueue.removeAll()
+                    self.normalQueue.removeAll()
+                    self.writerFinished = true
+                    self.sendCond.broadcast()
+                    self.sendCond.unlock()
+                    return
+                }
+                let nextFrame: Data
+                if !self.highQueue.isEmpty {
+                    nextFrame = self.highQueue.removeFirst()
+                } else {
+                    nextFrame = self.normalQueue.removeFirst()
+                }
+                self.sendCond.unlock()
+
+                if !sendAll(self.socket, nextFrame) {
+                    self.markClosed()
+                }
+            }
+        }
+    }
+
     @discardableResult
-    func sendMux(type: UInt8, id: UInt32, body: Data) -> Bool {
+    func sendMux(type: UInt8, id: UInt32, body: Data, highPriority: Bool = false) -> Bool {
+        let frame = EngineWire.muxFrame(type: type, id: id, body: body)
+        sendCond.lock()
+        if closed {
+            sendCond.unlock()
+            return false
+        }
+        if writerStarted {
+            // 防止异常慢消费导致内存无限膨胀（>64 帧直接主动断链触发客户端快速重连）
+            if normalQueue.count > 64 && !highPriority {
+                sendCond.unlock()
+                markClosed()
+                return false
+            }
+            if highPriority || type == EngineWire.muxPong {
+                highQueue.append(frame)
+            } else {
+                normalQueue.append(frame)
+            }
+            sendCond.signal()
+            sendCond.unlock()
+            return true
+        }
+        sendCond.unlock()
+
         writeLock.lock()
         defer { writeLock.unlock() }
         if closed { return false }
-        return sendAll(socket, EngineWire.muxFrame(type: type, id: id, body: body))
+        return sendAll(socket, frame)
     }
 
     @discardableResult
@@ -246,28 +318,40 @@ final class DirectClient: @unchecked Sendable {
         return sendAll(socket, data)
     }
 
-    /// 幂等标记断开并立即 shutdown(SHUT_RDWR/SD_BOTH) 唤醒阻塞在 recv() 的读线程，不提前释放 fd 避免 accept() 复用竞态。
+    /// 幂等标记断开并立即唤醒写线程 + shutdown(SHUT_RDWR/SD_BOTH) 唤醒阻塞在 recv() 的读线程。
     func markClosed() {
         writeLock.lock()
         let already = closed
         closed = true
         writeLock.unlock()
+
+        sendCond.lock()
+        highQueue.removeAll()
+        normalQueue.removeAll()
+        sendCond.broadcast()
+        sendCond.unlock()
+
         if !already {
             _ = shutdown(socket, 2)
         }
     }
 
-    /// 仅由 handleLANClient 退出时的 defer 调用：确保读线程已退出且无在途写操作后，幂等关闭底层 socket fd。
+    /// 仅由 handleLANClient 退出时的 defer 调用：确保写线程与读线程均已退出后再幂等关闭底层 socket fd。
     func closeDescriptor() {
+        markClosed()
+        sendCond.lock()
+        if writerStarted {
+            let deadline = Date().addingTimeInterval(2.0)
+            while !writerFinished && Date() < deadline {
+                sendCond.wait(until: deadline)
+            }
+        }
+        sendCond.unlock()
+
         writeLock.lock()
-        let needShutdown = !closed
-        closed = true
         let shouldClose = !fdClosed
         fdClosed = true
         writeLock.unlock()
-        if needShutdown {
-            _ = shutdown(socket, 2)
-        }
         if shouldClose {
             closeSocket(socket)
         }
@@ -625,14 +709,14 @@ final class SimStreamer {
         cond.unlock()
     }
 
-    func park() {
+    func park(syncDisk: Bool = false) {
         cond.lock()
         self.playing = false
         self.bufferedFrame = nil
         cond.broadcast()
         cond.unlock()
         relayPusher.clear()
-        saveCheckpoint(force: true, sync: true)
+        saveCheckpoint(force: true, sync: syncDisk)
     }
 
     func stopForIdle() {
@@ -788,8 +872,8 @@ final class SimStreamer {
                         self.cond.unlock()
 
                         if stillValid {
-                            // 优先经 UDP 单包推送（0 队头阻塞）；超大关键帧或 UDP 未注册时自动走 TCP MUX
-                            let sentUDP = useBinary && udpGateway.trySend(tag: tag, compressedBody: compressed)
+                            // v15 默认纯有序 TCP MUX 推流（彻底杜绝 UDP 丢包/乱序造成 LGB2 有状态差量错乱与窗口死锁）；仅显式开启 LGJ_ENABLE_UDP=1 时才启用 UDP
+                            let sentUDP = enableUDPPush && useBinary && udpGateway.trySend(tag: tag, compressedBody: compressed)
                             if sentUDP {
                                 self.cond.lock()
                                 self.pushedUDPCount += 1
@@ -966,10 +1050,12 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         return service.handle("park", args, payload: nil)
     }
     if call == "enableMux" {
-        let tok = udpGateway.issueToken()
-        let uPort = udpGateway.boundPort
-        var r = EngineService.Reply(ok: true, reason: "mux-v14")
-        if uPort > 0 { r.text = "udp:\(uPort)|tok:\(tok)" }
+        var r = EngineService.Reply(ok: true, reason: "mux-v15")
+        if enableUDPPush {
+            let tok = udpGateway.issueToken()
+            let uPort = udpGateway.boundPort
+            if uPort > 0 { r.text = "udp:\(uPort)|tok:\(tok)" }
+        }
         return r
     }
     if call == "resumeWorld" {
@@ -1061,7 +1147,6 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
 // MARK: - 云端中转工作线程（双路热连接接指令 + 单向推流通道发状态）
 
 let relayBases = [
-    "https://lieguoji-edge.pages.dev/api/relay",
     "https://claude-native-map.lieguoji-web.pages.dev/api/relay",
     "https://lieguoji-web.pages.dev/api/relay"
 ]
@@ -1293,7 +1378,24 @@ func startUDPDiscovery(tcpPort: UInt16, roomCode: String) {
 
 // MARK: - 直连 TCP（支持局域网与公网专属云服务器，多路复用主动推流 + TCP_NODELAY + SO_KEEPALIVE）
 
-func tuneClientSocket(_ s: Socket) {
+func setSocketTimeouts(_ s: Socket, seconds: Int) {
+    let sec = max(2, seconds)
+    #if os(Windows)
+    var timeoutMs: DWORD = DWORD(sec * 1000)
+    withUnsafePointer(to: &timeoutMs) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
+            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_RCVTIMEO), ptr, 4)
+            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_SNDTIMEO), ptr, 4)
+        }
+    }
+    #else
+    var tv = timeval(tv_sec: sec, tv_usec: 0)
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+    setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+    #endif
+}
+
+func tuneClientSocket(_ s: Socket, handshakeOnly: Bool = true) {
     var one: Int32 = 1
     var sockBuf: Int32 = 131_072
     #if os(Windows)
@@ -1309,13 +1411,6 @@ func tuneClientSocket(_ s: Socket) {
             _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_RCVBUF), ptr, 4)
         }
     }
-    var timeoutMs: DWORD = 180_000
-    withUnsafePointer(to: &timeoutMs) {
-        $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
-            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_RCVTIMEO), ptr, 4)
-            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_SNDTIMEO), ptr, 4)
-        }
-    }
     #elseif canImport(Glibc)
     var keepIdle: Int32 = 15
     var keepIntvl: Int32 = 5
@@ -1328,18 +1423,13 @@ func tuneClientSocket(_ s: Socket) {
     setsockopt(s, Int32(IPPROTO_TCP), TCP_KEEPCNT, &keepCnt, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sockBuf, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_RCVBUF, &sockBuf, socklen_t(MemoryLayout<Int32>.size))
-    var tv = timeval(tv_sec: 180, tv_usec: 0)
-    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
-    setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     #else
     setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sockBuf, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_RCVBUF, &sockBuf, socklen_t(MemoryLayout<Int32>.size))
-    var tv = timeval(tv_sec: 180, tv_usec: 0)
-    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
-    setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     #endif
+    setSocketTimeouts(s, seconds: handshakeOnly ? 8 : 180)
 }
 
 func localAddresses() -> [String] {
@@ -1453,7 +1543,7 @@ func installShutdownSignals() {
         shutdownLock.unlock()
         if already { return }
         print("收到 \(name)，正在安全暂停推演并同步落盘热备…")
-        streamer.park()
+        streamer.park(syncDisk: true)
         clientLock.lock()
         let cur = activeDirect
         activeDirect = nil
@@ -1522,30 +1612,41 @@ final class MuxRPCStats: @unchecked Sendable {
     var started = Date()
 }
 
+let connCountLock = NSLock()
+var activeConnThreads = 0
+let maxConcurrentConnThreads = 32
+
 func handleLANClient(_ conn: DirectClient) {
-    defer { conn.closeDescriptor() }
+    defer {
+        conn.closeDescriptor()
+        connCountLock.lock()
+        activeConnThreads = max(0, activeConnThreads - 1)
+        connCountLock.unlock()
+    }
     let client = conn.socket
-    tuneClientSocket(client)
+    tuneClientSocket(client, handshakeOnly: true)
     var promoted = false
 
-    // 阶段一：经典 EngineWire 握手（完全兼容 v4/v5/v6；health/ping 探针绝不驱逐活跃手机连接，收到真实业务指令或 enableMux 才接管会话）
+    // 阶段一：经典 EngineWire 握手（8s 握手超时防 443 扫描占线程；只有合法 enableMux 或真实业务请求成功时才接管活跃连接）
     while !conn.mux,
-          let headerLength = readU32(client), headerLength >= 0, headerLength < 16 << 20,
+          let headerLength = readU32(client), headerLength > 0, headerLength < 16 << 20,
           let header = receiveExactly(client, headerLength),
           let payloadLength = readU32(client), payloadLength >= 0, payloadLength < 1 << 30,
           let payload = receiveExactly(client, payloadLength) {
-        let o = (try? JSONSerialization.jsonObject(with: header)) as? [String: Any] ?? [:]
-        let call = o["call"] as? String ?? "", args = o["args"] as? [String: Any] ?? [:]
+        guard let o = (try? JSONSerialization.jsonObject(with: header)) as? [String: Any],
+              let call = o["call"] as? String, !call.isEmpty else { break }
+        let args = o["args"] as? [String: Any] ?? [:]
         if call == "ping" {
             let v = (args["v"] as? NSNumber)?.intValue ?? (args["v"] as? Int) ?? 0
             if v >= 6 { conn.compress = true }
         }
-        if call != "health" && call != "ping" && call != "worldInfo" && !promoted {
+        let reply = serve(call, args, payload.isEmpty ? nil : payload)
+        if call != "health" && call != "ping" && call != "worldInfo" && reply.ok && !promoted {
             promoted = true
+            setSocketTimeouts(client, seconds: 180)
             promoteToActiveDirect(conn)
             print("（直连 TCP）手机已接入 [#\(conn.gen)]")
         }
-        let reply = serve(call, args, payload.isEmpty ? nil : payload)
         if call == "open" {
             print(reply.ok ? "（直连）世界已载入，准备推演" : "（直连）世界载入失败：\(reply.reason)")
         }
@@ -1555,15 +1656,15 @@ func handleLANClient(_ conn: DirectClient) {
         if isMuxUpgrade {
             conn.mux = true
             conn.compress = true
-            print("（直连 TCP [#\(conn.gen)]）已升级至 v12 16Mbps 非阻塞全双工推流 + 动态滑窗背压 + 32× 爽看海模式")
+            conn.startMuxWriter()
+            print("（直连 TCP [#\(conn.gen)]）已升级至 v15 非阻塞高优异步写队列 + 有序 LGB2 推流模式")
             break
         }
         if call == "health" { break }
     }
 
-    // 阶段二：v10 真·非阻塞全双工多路复用：
-    // TCP 读线程永不阻塞在 serve() 上；MUX_PING <1ms 瞬回、MUX_ACK 0ms 释放滑动窗口，
-    // 每条 MUX_REQ 均派发至连接专属串行队列 lieguoji.mux.rpc.<gen> 异步执行与回包。
+    // 阶段二：v15 真·非阻塞全双工多路复用：
+    // 读线程 0ms 消化 MUX_ACK / 瞬投高优 MUX_PONG，写线程独立异步发包，绝不互相阻塞！
     if conn.mux {
         let rpcQueue = DispatchQueue(label: "lieguoji.mux.rpc.\(conn.gen)", qos: .userInitiated)
         let rpcStats = MuxRPCStats()
@@ -1580,7 +1681,7 @@ func handleLANClient(_ conn: DirectClient) {
             }
             if type == EngineWire.muxPing {
                 streamer.touch()
-                if !conn.sendMux(type: EngineWire.muxPong, id: frameId, body: body) { break }
+                if !conn.sendMux(type: EngineWire.muxPong, id: frameId, body: body, highPriority: true) { break }
                 continue
             }
             if type == EngineWire.muxRequest {
@@ -1638,6 +1739,14 @@ func acceptLoop(on sock: Socket) {
             if stopping { break }
             #endif
             Thread.sleep(forTimeInterval: 0.05)
+            continue
+        }
+        connCountLock.lock()
+        let allowed = activeConnThreads < maxConcurrentConnThreads
+        if allowed { activeConnThreads += 1 }
+        connCountLock.unlock()
+        if !allowed {
+            closeSocket(client)
             continue
         }
         clientLock.lock()

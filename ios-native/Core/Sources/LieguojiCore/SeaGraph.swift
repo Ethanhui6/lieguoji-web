@@ -129,7 +129,13 @@ public struct SeaGraph: @unchecked Sendable {
         let v2 = method == "capital-neighbor-v2"
         var openComponents = Set<Int>()
         if v2 { off = 0; while off < tr.count { for j in 0..<3 { let a = tr[off + j], b = tr[off + (j + 1) % 3]; if uses[min(a, b) * n + max(a, b)] == 1, let nd = nodes[off / 3] { openComponents.insert(nd.component) } }; off += 3 } }
-        func open(_ id: Int) -> Bool { let nd = nodes[id]!; return v2 ? openComponents.contains(nd.component) : nd.ocean }
+        func open(_ id: Int) -> Bool {
+            let nd = nodes[id]!
+            // v11.0.0 致命修复：区域历史剧本将地图外框 2.6% 切入 blockedSeaIds 后，原 openComponents 仅收外框孤格，
+            // 导致全部 11 个区域历史剧本生成 0 港口、0 海军！存在禁航带时直接以真实可航海域 nd.ocean 为准。
+            if !blockedSeaIds.isEmpty { return nd.ocean && !blockedSeaIds.contains(id) }
+            return v2 ? openComponents.contains(nd.component) : nd.ocean
+        }
         var shoreOwners = [EdgeKey: String]()
         for p in provinces { let poly = p.polygon.asArray.map(SeaGraph.point); for i in 0..<poly.count { shoreOwners[EdgeKey(poly[i], poly[(i + 1) % poly.count])] = p.id.asString } }
         var coasts = [String: [(node: Int, shore: TravelPoint)]](), sizes = [Int: Int]()

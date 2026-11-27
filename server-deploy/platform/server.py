@@ -99,17 +99,17 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
-DEFAULT_LATEST_VERSION = "10.0.0"
-DEFAULT_LATEST_BUILD = 194
+DEFAULT_LATEST_VERSION = "11.0.0"
+DEFAULT_LATEST_BUILD = 196
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【本机 Apple Silicon 0ms 零延迟重构 × 流畅度与网络十大硬核进步】默认切回本机 0ms 原生演算（彻底摆脱 3 Mbps 广域网云端卡顿，账号/云档/工坊/热更仍 100% 在线）；新增 overlayOriginView 根治拖屏缩放文字特效狂闪、同 VSync Metal 相位锁、手势零 SwiftUI 重绘、1.6s 单轮竞速连服、掉线无缝回落本机永不暂停、高速 6Hz 限频与 O(1) 月结征兵。",
-    "【打破固定州数死规矩 × 非均匀地理精绘 × AoH3 级日本战国 24 大名】移除固定 280 州限制，按真实地理人口密度自动划分（俄西伯利亚/青藏/戈壁广袤大州，欧陆核心/日本/中国核心/台湾/港澳/新加坡超细战术州）；日本战国地图框面积翻倍并扩充至 24 家真实 1560 大名（含松平/足利幕府/浅井/六角/北畠/尼子/宇喜多/佐竹/最上/南部）与虾夷地无人区。",
-    "【真实开局兵力编制 × 五维综合国力排行 × 政权王权党派全考据】废除按省份面积在西伯利亚无脑刷兵，严格按国情编制部署至交战前线与战略枢纽；全新五维综合国力排行（工业/质量军事海权/四线科技/递减核心体量/外交稳定）准确呈现二战德英苏日美实力；全面纠偏意希罗君主制、北条派系、一党制选举锁与王权等级体系。",
+    "【双模 0 卡顿丝滑架构：本机 Apple Silicon 0ms 瞬开 + 九州云服 v15 1s 极速秒连】彻底根治开局 15–30Hz SwiftUI 重绘风暴、apply(step) 串行阻塞、Metal 60–80% 陆下海面无效过绘与 MapLabels/TroopLabels 主线程微顿；云服升级至 v15 纯有序 TCP MUX + 独立异步高优写线程，移除开局多余 30MB 冗余下载与 UDP 失序帧，切回云服 1 秒内秒连且稳态 25–40ms！",
+    "【全 12 历史剧本港口舰队恢复 + 真河道防线 + 7,289 座 100% 简体纯中文城市大典】修复局部剧本所有历史港口与舰队消失、修复地图外缘伪海岸线并还原历史剧本真实缩略图预览；彻底清洗 825 条繁体与残字地名，补全日本战国 360+ 真实城下町；史实路线严格锁定史实事件时间门控、AI 宣战/退盟与总力战过早白和，开放架空路线自由抉择。",
+    "【全面关闭跑马灯 + 工作室级纯净无杂音音频引擎 + 2.06GB 断点续传热更包 v11】彻底移除全端所有跑马灯/快讯横幅并提升历史事件弹窗至顶层 0 抖动叠层；默认启用经典原声 + AVAudioEngine 六声部多复音拟音池并重制纯净相位积分音效；2GB 热更支持 .part+.meta 真实分片断点续传、单模块独立挂载与 IPA SHA256 完整性校验。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 23,
-    "notice": "v10.0.0 终极流畅与真实史诗大改版上线：本机 0ms 零延迟架构与十大流畅进步 · 拖屏零闪烁 · 开放非均匀真实地理精绘 · AoH3 级 24 大名日本战国 · 真实开局兵力与五维综合国力排行",
+    "version": 26,
+    "notice": "",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16, "64": 32},
     "tuning": {
@@ -145,11 +145,10 @@ def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
     b = int(build or DEFAULT_LATEST_BUILD)
     fname = f"lieguoji-{v}-build{b}-unsigned.ipa"
     return [
-        f"https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
+        f"https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
-        f"https://ghfast.top/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"http://{PUBLIC_HOST}/downloads/lieguoji-latest.ipa",
     ]
@@ -161,6 +160,26 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
         "build": DEFAULT_LATEST_BUILD,
         "date": "2026-11-27",
         "lines": list(DEFAULT_RELEASE_NOTES),
+    },
+    {
+        "version": "10.1.0",
+        "build": 195,
+        "date": "2026-11-27",
+        "lines": [
+            "【彻底根治拖屏左右摆动】将 Metal 底图与 UIKit 文字覆盖层锁入同一 CATransaction 原子提交。",
+            "【清除 2,146 条机翻乱码地名】重建纯正中文城市库，第 0 帧即启用连通域与不可达极点解算器。",
+            "【全面关闭跑马灯与修复 5.4s 心跳误杀】大包上传期间跳过探针误杀并优选国内高速镜像。",
+        ],
+    },
+    {
+        "version": "10.0.0",
+        "build": 194,
+        "date": "2026-11-27",
+        "lines": [
+            "【本机 Apple Silicon 0ms 零延迟重构】默认切回本机 0ms 原生演算并支持算力线路面板 1 键切换云服。",
+            "【开放非均匀地理精绘与 AoH3 级日本战国 24 大名】打破固定州数限制并扩充日本战国至 24 家大名。",
+            "【真实开局兵力与五维综合国力排行】按历史编制部署至战略前线与核心枢纽。",
+        ],
     },
     {
         "version": "9.0.0",
@@ -292,9 +311,9 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 23,
+        "patchVersion": 26,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v10.0.0 终极流畅与真实史诗大改版：本机 0ms 零延迟架构与十大流畅进步 · 拖屏零闪烁 · 非均匀地理精绘 · AoH3 级 24 大名日本战国 · 真实开局兵力与五维综合国力",
+        "summary": "v11.0.0 终极稳态大版本：本机 0ms + 九州云服 v15 1s 秒连 · Early-Z 渲染与零卡顿引擎 · 港口舰队与 7,289 纯简体地名 · 史实锁盟与纯净音频 · 2GB 断点续传热更",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -701,20 +720,20 @@ def init_db() -> None:
             except Exception as exc:
                 print(f"升级持久化发版配置失败，保留原值: {exc}", flush=True)
 
-        # 同步将旧版 hotpack_meta (packVersion < 8) 平滑升级至 v8（v9.0 精绘 12 剧本与无人之地热更包）
+        # 同步将旧版 hotpack_meta (packVersion < 11) 平滑升级至 v11（v11.0 100% 简体纯净地名库与真实断点续传国内高速多源热更包）
         hp_row = DB.execute("SELECT v FROM kv_store WHERE k = 'hotpack_meta'").fetchone()
         if hp_row:
             try:
                 hp_meta = json.loads(hp_row["v"])
-                if int(hp_meta.get("packVersion", 0)) < 8:
+                if int(hp_meta.get("packVersion", 0)) < 11:
                     DB.execute(
                         "UPDATE kv_store SET v = ?, updated_at = ? WHERE k = 'hotpack_meta'",
                         (
                             json.dumps(
                                 {
-                                    "packVersion": 8,
-                                    "releaseTag": "v9.0 · 2.06GB HOI4级精绘地图与无人之地典藏热更包 v8",
-                                    "summary": "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部历史战区 GIS 国界（含不可通行无人之地）、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制 24 首交响 + 49 条实感拟音",
+                                    "packVersion": 11,
+                                    "releaseTag": "v11.0 · 2.06GB 纯简体中文城市大典与断点续传多源热更包 v11",
+                                    "summary": "全量 7 大零水分实装模块：全面净化 7,289 座 100% 简体纯中文真实城市库（0 繁体/0 机翻/0 残字）、移除失效 404 回源并支持 2GB 分片真实断点续传与单模块独立挂载生效",
                                 },
                                 ensure_ascii=False,
                             ),
@@ -775,6 +794,38 @@ def _normalize_release_notes(raw: Any) -> list[str]:
     return list(DEFAULT_RELEASE["releaseNotes"])
 
 
+_ipa_sha_lock = threading.Lock()
+_ipa_sha_cache: tuple[int, int, str] = (0, 0, "")
+
+
+def get_latest_ipa_sha256() -> str:
+    global _ipa_sha_cache
+    latest_ipa = DOWNLOADS_DIR / "lieguoji-latest.ipa"
+    try:
+        st = latest_ipa.stat()
+    except OSError:
+        return ""
+    if st.st_size < 1_000_000:
+        return ""
+    with _ipa_sha_lock:
+        if _ipa_sha_cache[0] == st.st_mtime_ns and _ipa_sha_cache[1] == st.st_size and _ipa_sha_cache[2]:
+            return _ipa_sha_cache[2]
+    h = hashlib.sha256()
+    try:
+        with latest_ipa.open("rb") as f:
+            while True:
+                chunk = f.read(262_144)
+                if not chunk:
+                    break
+                h.update(chunk)
+        digest = h.hexdigest()
+    except OSError:
+        return ""
+    with _ipa_sha_lock:
+        _ipa_sha_cache = (st.st_mtime_ns, st.st_size, digest)
+    return digest
+
+
 def get_release_config() -> dict[str, Any]:
     with _db_lock:
         row = DB.execute("SELECT v FROM kv_store WHERE k = 'release'").fetchone()
@@ -794,13 +845,14 @@ def get_release_config() -> dict[str, Any]:
     if not cfg.get("downloadUrl"):
         cfg["downloadUrl"] = f"https://github.com/Ethanhui6/lieguoji-web/releases/tag/v{ver.lstrip('v')}"
     mirrors = cfg.get("ipaMirrors")
+    bad_hosts = ("lieguoji-web.pages.dev", "lieguoji-edge.pages.dev", "ghfast.top")
     if not isinstance(mirrors, list) or not [m for m in mirrors if isinstance(m, str) and m.strip()]:
         mirrors = build_default_ipa_mirrors(ver, build)
     else:
         mirrors = [
             str(m).strip()
             for m in mirrors
-            if isinstance(m, str) and m.strip() and "lieguoji-web.pages.dev" not in str(m).lower()
+            if isinstance(m, str) and m.strip() and not any(bh in str(m).lower() for bh in bad_hosts)
         ]
         if not mirrors:
             mirrors = build_default_ipa_mirrors(ver, build)
@@ -813,11 +865,15 @@ def get_release_config() -> dict[str, Any]:
             cfg["ipaSizeMB"] = round(latest_ipa.stat().st_size / (1024 * 1024), 1)
     cfg["ipaMirrors"] = mirrors
     cur_direct = str(cfg.get("directIpaUrl") or "").strip()
-    if not cur_direct or cur_direct == local_ipa_url or "lieguoji-web.pages.dev" in cur_direct.lower():
+    if not cur_direct or cur_direct == local_ipa_url or any(bh in cur_direct.lower() for bh in bad_hosts):
         # 优先分配中国大陆实测满速主线（兼容旧版本客户端单流直下，避免 3 Mbps 源站限速与失效域名）
         cfg["directIpaUrl"] = mirrors[0] if mirrors else local_ipa_url
     if not cfg.get("webDownloadUrl"):
         cfg["webDownloadUrl"] = f"http://{PUBLIC_HOST}/download"
+    if not str(cfg.get("ipaSha256") or "").strip():
+        sha = get_latest_ipa_sha256()
+        if sha:
+            cfg["ipaSha256"] = sha
     return cfg
 
 
@@ -936,30 +992,28 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
     direct_download_url = f"http://{PUBLIC_HOST}/api/v1/hotpack/download/{quoted_rel}"
     top_low = top.lower()
 
-    # Hotpack v7 2.1+ GB 全生效七大典藏模块：国内实测最快五路 CDN 并发，零消耗广州 3 Mbps 源站出向带宽
+    # Hotpack v7 2.1+ GB 全生效七大典藏模块：仅列实测可用的中国大陆高速镜像 + GitHub 直连（2GB 大包不在 40GB VPS 落盘，移除 VPS 404 回源）
     if top_low in ("hdmeshes", "relieftiles", "encyclopedia", "eraunits", "eventscrolls", "generalportraits", "audiohd"):
         flat_asset = urllib.parse.quote(rel.replace("/", "__"), safe="")
         gh_release_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/{HOTPACK_V7_RELEASE_TAG}/{flat_asset}"
         return [
-            f"https://gh-proxy.com/{gh_release_asset}",
             f"https://cdn.gh-proxy.org/{gh_release_asset}",
-            f"https://gh-proxy.org/{gh_release_asset}",
             f"https://edgeone.gh-proxy.com/{gh_release_asset}",
-            f"https://lieguoji-edge.pages.dev/api/cdn/hotpack/{quoted_rel}",
+            f"https://gh-proxy.com/{gh_release_asset}",
+            f"https://gh-proxy.org/{gh_release_asset}",
             gh_release_asset,
-            direct_download_url,
         ]
 
-    # Hotpack v5 229+ MB GIS & 5000-Year Atlas modules: 实测最快国内多镜像优先（剔除超时死节点）
+    # Hotpack v5 229+ MB GIS & 5000-Year Atlas modules: 按广州实测最快国内多镜像优先（剔除 HTTP 403 死节点）
     if top_low in ("gis-basemaps-10m", "gis-historical-45eras", "gis-cities-encyclopedia"):
         asset_name = urllib.parse.quote(Path(rel).name, safe="")
         gh_release_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/{HOTPACK_V5_RELEASE_TAG}/{asset_name}"
         return [
-            f"https://gh-proxy.com/{gh_release_asset}",
             f"https://cdn.gh-proxy.org/{gh_release_asset}",
-            f"https://gh-proxy.org/{gh_release_asset}",
             f"https://edgeone.gh-proxy.com/{gh_release_asset}",
-            f"https://lieguoji-edge.pages.dev/api/cdn/hotpack/{quoted_rel}",
+            f"https://gh-proxy.com/{gh_release_asset}",
+            f"https://gh-proxy.org/{gh_release_asset}",
+            f"https://ghfast.top/{gh_release_asset}",
             gh_release_asset,
             direct_download_url,
         ]
@@ -970,17 +1024,15 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
         gh_path = f"server-deploy/platform/hotpack-content/{rest}" if top_low == "content" else f"server-deploy/platform/hotpack-content/{top_low}/{rest}"
     else:
         return [
-            f"https://lieguoji-edge.pages.dev/api/cdn/hotpack/{quoted_rel}",
             direct_download_url,
         ]
     quoted = urllib.parse.quote(gh_path, safe="/")
     return [
-        f"https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://cdn.gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
-        f"https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://gcore.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main/{quoted}",
-        f"https://lieguoji-edge.pages.dev/api/cdn/raw/{quoted}",
         direct_download_url,
     ]
 
@@ -1025,7 +1077,16 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
                 mod_id = str(item.get("module") or _resolve_hotpack_module(rel))
                 sz = int(item.get("size", 0))
                 sha = str(item.get("sha256", ""))
-                cdns = item.get("cdnUrls") or _cdn_urls_for_hotpack_rel(rel)
+                raw_cdns = item.get("cdnUrls") or _cdn_urls_for_hotpack_rel(rel)
+                top_dir = rel.split("/", 1)[0].lower() if "/" in rel else ""
+                is_external_rel = top_dir in ("hdmeshes", "relieftiles", "encyclopedia", "eraunits", "eventscrolls", "generalportraits", "audiohd", "eras45")
+                cdns = [
+                    u for u in raw_cdns
+                    if isinstance(u, str)
+                    and "lieguoji-edge.pages.dev" not in u.lower()
+                    and "ghfast.top" not in u.lower()
+                    and not (is_external_rel and "/api/v1/hotpack/" in u)
+                ]
                 entry = {"path": rel, "module": mod_id, "size": sz, "sha256": sha}
                 if cdns:
                     entry["cdnUrls"] = cdns
@@ -1339,6 +1400,10 @@ def create_session(user_id: str, device_name: str, app_version: str) -> str:
     return token
 
 
+_touch_lock = threading.Lock()
+_touch_cache: dict[str, float] = {}
+
+
 def authenticate_token(auth_header: Optional[str]) -> Optional[tuple[sqlite3.Row, str]]:
     if not auth_header:
         return None
@@ -1350,6 +1415,10 @@ def authenticate_token(auth_header: Optional[str]) -> Optional[tuple[sqlite3.Row
         return None
     th = hash_token(token)
     ts = now_ms()
+    now_mono = time.monotonic()
+    with _touch_lock:
+        last_t = _touch_cache.get(th, 0.0)
+        should_touch = (now_mono - last_t) >= 60.0
     with _db_lock:
         row = DB.execute(
             """
@@ -1360,9 +1429,16 @@ def authenticate_token(auth_header: Optional[str]) -> Optional[tuple[sqlite3.Row
             (th, ts),
         ).fetchone()
         if row:
-            DB.execute("UPDATE sessions SET last_used_at = ? WHERE token_hash = ?", (ts, th))
-            DB.execute("UPDATE users SET last_seen_at = ? WHERE id = ?", (ts, row["id"]))
-            DB.commit()
+            if should_touch:
+                DB.execute("UPDATE sessions SET last_used_at = ? WHERE token_hash = ?", (ts, th))
+                DB.execute("UPDATE users SET last_seen_at = ? WHERE id = ?", (ts, row["id"]))
+                DB.commit()
+                with _touch_lock:
+                    if len(_touch_cache) > 5000:
+                        cutoff_m = now_mono - 300.0
+                        for k in [kk for kk, vv in _touch_cache.items() if vv < cutoff_m]:
+                            _touch_cache.pop(k, None)
+                    _touch_cache[th] = now_mono
             return row, th
     return None
 
@@ -1418,7 +1494,7 @@ def render_public_landing_page() -> str:
     primary_url = f"https://cdn.gh-proxy.org/{gh_asset}"
     edgeone_url = f"https://edgeone.gh-proxy.com/{gh_asset}"
     mirror_b_url = f"https://gh-proxy.org/{gh_asset}"
-    cf_overseas_url = f"https://lieguoji-edge.pages.dev/api/cdn/ipa/v{ver}/{fname}"
+    mirror_c_url = f"https://gh-proxy.com/{gh_asset}"
     origin_fallback_url = "/downloads/lieguoji-latest.ipa"
     gh_release_url = str(rel.get("downloadUrl") or "https://github.com/Ethanhui6/lieguoji-web/releases/latest")
 
@@ -1504,9 +1580,9 @@ def render_public_landing_page() -> str:
           <span class="mirror-name">极速主线 B</span>
           <span class="mirror-tag">国内直连镜像</span>
         </a>
-        <a class="mirror-card" href="{html.escape(cf_overseas_url)}">
-          <span class="mirror-name">Cloudflare 海外</span>
-          <span class="mirror-tag muted">海外网络首选</span>
+        <a class="mirror-card" href="{html.escape(mirror_c_url)}">
+          <span class="mirror-name">国内加速节点 C</span>
+          <span class="mirror-tag">高速分流镜像</span>
         </a>
         <a class="mirror-card" href="{html.escape(origin_fallback_url)}">
           <span class="mirror-name">源站兜底</span>
@@ -2182,15 +2258,18 @@ class PlatformHandler(BaseHTTPRequestHandler):
             for r in ann_rows
         ]
 
+        raw_auth = (self.headers.get("Authorization") or "").strip()
         user_payload = None
-        auth = authenticate_token(self.headers.get("Authorization"))
+        auth = authenticate_token(raw_auth)
         if auth:
             user_payload = serialize_user(auth[0])
+        auth_expired = bool(raw_auth.lower().startswith("bearer ") and auth is None)
 
         pack = get_hotpack_manifest()
         self.send_json(
             {
                 "ok": True,
+                "authExpired": auth_expired,
                 "update": {
                     "hasAppUpdate": has_app_update,
                     "forceUpdate": force_update,
@@ -2199,10 +2278,11 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     "latestVersion": latest_ver,
                     "latestBuild": latest_build,
                     "releaseDate": rel.get("releaseDate", ""),
-                    "ipaSizeMB": rel.get("ipaSizeMB", 42.7),
+                    "ipaSizeMB": rel.get("ipaSizeMB", 44.5),
                     "downloadUrl": rel.get("downloadUrl", ""),
                     "directIpaUrl": rel.get("directIpaUrl", ""),
                     "ipaMirrors": rel.get("ipaMirrors", []),
+                    "ipaSha256": str(rel.get("ipaSha256") or ""),
                     "webDownloadUrl": rel.get("webDownloadUrl", f"http://{PUBLIC_HOST}/download"),
                     "releaseNotes": rel.get("releaseNotes", []),
                 },
@@ -2660,8 +2740,8 @@ class PlatformHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": "舆图标题长度须为 1–60 字"}, 400)
             return
         nations = scenario.get("nations")
-        if not isinstance(nations, list) or not (2 <= len(nations) <= 24):
-            self.send_json({"ok": False, "error": "舆图列国数量须在 2–24 国之间"}, 400)
+        if not isinstance(nations, list) or not (2 <= len(nations) <= 100):
+            self.send_json({"ok": False, "error": "舆图列国数量须在 2–100 国之间"}, 400)
             return
         region = str(scenario.get("region") or "").strip()[:32]
         if not region:
@@ -2686,7 +2766,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
         era_name = str(scenario.get("eraName") or scenario.get("era") or "").strip()[:32]
         description = str(scenario.get("description") or scenario.get("summary") or "").strip()[:600]
         nation_count = len(nations)
-        province_count = max(nation_count, min(480, _safe_int(scenario.get("provinceCount"), 80)))
+        province_count = max(nation_count, min(2400, _safe_int(scenario.get("provinceCount"), 80)))
         raw_tags = scenario.get("tags")
         tags = [str(t).strip()[:20] for t in raw_tags if str(t).strip()][:10] if isinstance(raw_tags, list) else []
 
@@ -2771,11 +2851,15 @@ class PlatformHandler(BaseHTTPRequestHandler):
             return
         with _db_lock:
             cur = DB.execute("UPDATE workshop_maps SET likes = likes + 1 WHERE id = ?", (clean_id,))
-            if cur.rowcount == 0:
-                self.send_json({"ok": False, "error": "找不到该工坊舆图"}, 404)
-                return
-            DB.commit()
-            row = DB.execute("SELECT likes FROM workshop_maps WHERE id = ?", (clean_id,)).fetchone()
+            found = cur.rowcount > 0
+            if found:
+                DB.commit()
+                row = DB.execute("SELECT likes FROM workshop_maps WHERE id = ?", (clean_id,)).fetchone()
+            else:
+                row = None
+        if not found:
+            self.send_json({"ok": False, "error": "找不到该工坊舆图"}, 404)
+            return
         self.send_json({"ok": True, "likes": int(row["likes"]) if row else 1})
 
     def handle_workshop_delete(self, map_id: str) -> None:
@@ -2851,17 +2935,28 @@ class PlatformHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "reason": f"账号云端卷宗已达上限（{MAX_SAVES_PER_USER} 卷），请先清理旧卷"}, 400)
             return
         self._body_consumed = True
-        payload = self.rfile.read(cl)
-        if len(payload) != cl:
-            self.send_json({"ok": False, "reason": "存档上传不完整，请重试"}, 400)
-            return
         user_dir = SAVES_DIR / user_id
         user_dir.mkdir(parents=True, exist_ok=True)
         fpath = user_dir / f"{safe_id}.bin"
         tmp = user_dir / f"{safe_id}.{secrets.token_hex(6)}.tmp"
+        written = 0
         try:
             with tmp.open("wb") as f:
-                f.write(payload)
+                remaining = cl
+                while remaining > 0:
+                    chunk = self.rfile.read(min(262_144, remaining))
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    written += len(chunk)
+                    remaining -= len(chunk)
+            if written != cl:
+                try:
+                    tmp.unlink(missing_ok=True)
+                except OSError:
+                    pass
+                self.send_json({"ok": False, "reason": "存档上传不完整，请重试"}, 400)
+                return
             tmp.replace(fpath)
         except Exception:
             try:
@@ -2893,7 +2988,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
                     encoding=excluded.encoding, device=excluded.device, file_path=excluded.file_path,
                     updated_at=excluded.updated_at
                 """,
-                (user_id, safe_id, title, date_text, nations, provinces, day, len(payload), encoding, device, str(fpath), ts),
+                (user_id, safe_id, title, date_text, nations, provinces, day, written, encoding, device, str(fpath), ts),
             )
             DB.execute("UPDATE users SET exp = exp + 5 WHERE id = ?", (user_id,))
             DB.commit()
@@ -2901,7 +2996,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
             "ok": True,
             "save": {
                 "id": safe_id, "title": title, "date": date_text, "nations": nations,
-                "provinces": provinces, "day": day, "sizeBytes": len(payload),
+                "provinces": provinces, "day": day, "sizeBytes": written,
                 "updatedAt": float(ts), "device": device, "encoding": encoding,
             },
         })
@@ -2991,24 +3086,27 @@ class PlatformHandler(BaseHTTPRequestHandler):
         body = self.read_json_body()
         if body is None:
             return
+        found = False
         with _db_lock:
             row = DB.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
-            if not row:
-                self.send_json({"ok": False, "error": "找不到该史官"}, 404)
-                return
-            if "expDelta" in body:
-                delta = max(-5000, min(5000, _safe_int(body.get("expDelta"), 0)))
-                DB.execute("UPDATE users SET exp = MAX(0, exp + ?) WHERE id = ?", (delta, uid))
-            if "banned" in body and row["role"] != "admin":
-                b = 1 if body["banned"] else 0
-                DB.execute("UPDATE users SET banned = ? WHERE id = ?", (b, uid))
-                if b:
-                    DB.execute("DELETE FROM sessions WHERE user_id = ?", (uid,))
-            if "nickname" in body and str(body["nickname"]).strip():
-                DB.execute("UPDATE users SET nickname = ? WHERE id = ?", (str(body["nickname"]).strip()[:16], uid))
-            if body.get("clearLeaderboard"):
-                DB.execute("DELETE FROM leaderboard WHERE user_id = ?", (uid,))
-            DB.commit()
+            if row:
+                found = True
+                if "expDelta" in body:
+                    delta = max(-5000, min(5000, _safe_int(body.get("expDelta"), 0)))
+                    DB.execute("UPDATE users SET exp = MAX(0, exp + ?) WHERE id = ?", (delta, uid))
+                if "banned" in body and row["role"] != "admin":
+                    b = 1 if body["banned"] else 0
+                    DB.execute("UPDATE users SET banned = ? WHERE id = ?", (b, uid))
+                    if b:
+                        DB.execute("DELETE FROM sessions WHERE user_id = ?", (uid,))
+                if "nickname" in body and str(body["nickname"]).strip():
+                    DB.execute("UPDATE users SET nickname = ? WHERE id = ?", (str(body["nickname"]).strip()[:16], uid))
+                if body.get("clearLeaderboard"):
+                    DB.execute("DELETE FROM leaderboard WHERE user_id = ?", (uid,))
+                DB.commit()
+        if not found:
+            self.send_json({"ok": False, "error": "找不到该史官"}, 404)
+            return
         self.send_json({"ok": True})
 
     def handle_admin_announcements_list(self) -> None:
@@ -3124,7 +3222,7 @@ class PlatformHandler(BaseHTTPRequestHandler):
         cur = get_release_config()
         prev_ver = str(cur.get("latestVersion") or DEFAULT_RELEASE["latestVersion"])
         prev_build = int(cur.get("latestBuild") or DEFAULT_RELEASE["latestBuild"])
-        for k in ("latestVersion", "latestBuild", "minSupportedBuild", "forceUpdate", "maintenance", "maintenanceMessage", "releaseDate", "ipaSizeMB", "downloadUrl", "directIpaUrl", "ipaMirrors", "webDownloadUrl", "releaseNotes"):
+        for k in ("latestVersion", "latestBuild", "minSupportedBuild", "forceUpdate", "maintenance", "maintenanceMessage", "releaseDate", "ipaSizeMB", "ipaSha256", "downloadUrl", "directIpaUrl", "ipaMirrors", "webDownloadUrl", "releaseNotes"):
             if k in body:
                 if k == "ipaMirrors":
                     if isinstance(body[k], list):

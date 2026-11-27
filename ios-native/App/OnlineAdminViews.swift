@@ -85,29 +85,10 @@ struct HubAdminTabView: View {
         }
     }
 
-    // MARK: 1. 政令（跑马灯 / 公告 / 全服信匣 / 维护模式）
+    // MARK: 1. 政令（公告 / 全服信匣 / 维护模式）
 
     private var edictSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionLabel("标题页实时跑马灯")
-            Group2 {
-                VStack(alignment: .leading, spacing: 10) {
-                    TextField("", text: $noticeText, prompt: Text("输入全服跑马灯内容（留空则隐藏）").foregroundColor(Theme.ink2.opacity(0.55)))
-                        .paperField()
-                    EditorialTactileButton(title: busy ? "颁行中…" : "立即更新跑马灯", icon: .edict, solid: true, compact: true, fullWidth: true, disabled: busy) {
-                        Task {
-                            busy = true
-                            let err = await platform.adminPost("/api/v1/admin/notice", body: ["notice": noticeText])
-                            if err == nil { _ = await platform.bootstrap(manual: true, autoPrompt: false) }
-                            busy = false
-                            onToast(err ?? "跑马灯已热更新至全服")
-                        }
-                    }
-                }
-                .padding(.vertical, 12)
-            }
-            .padding(.horizontal, Theme.Layout.pageInset)
-
             SectionLabel("发布太史院公告")
             Group2 {
                 VStack(alignment: .leading, spacing: 10) {

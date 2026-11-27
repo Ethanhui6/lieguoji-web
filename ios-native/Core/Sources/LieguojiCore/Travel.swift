@@ -107,32 +107,87 @@ public struct TravelGraph: Sendable {
     public func path(from start: Int, to end: Int, allowSea: Bool = true, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)? = nil, aStar: Bool = false, seaRate: Double = 1, terrainCost: Bool = false) -> (nodes: [Int], cost: Double)? {
         Profile.measure("p.path") { path0(from: start, to: end, allowSea: allowSea, canEnterProvince: canEnterProvince, embark: embark, aStar: aStar, seaRate: seaRate, terrainCost: terrainCost) }
     }
+    /// v11.0.0 零分配可复用寻路工作区（按世代号 gen O(1) 逻辑清零，彻底消灭每次寻路 1MB 数组堆分配）。
+    private final class PathScratch {
+        var gen: UInt32 = 0
+        var seen: [UInt32]
+        var settledStamp: [UInt32]
+        var cost: [Double]
+        var prev: [Int]
+        var allowedStamp: [UInt32]
+        var allowedVal: [UInt8]
+        var heap = MinHeap()
+
+        init(nodes: Int, provinces: Int) {
+            seen = [UInt32](repeating: 0, count: nodes)
+            settledStamp = [UInt32](repeating: 0, count: nodes)
+            cost = [Double](repeating: 0, count: nodes)
+            prev = [Int](repeating: -1, count: nodes)
+            allowedStamp = [UInt32](repeating: 0, count: provinces)
+            allowedVal = [UInt8](repeating: 0, count: provinces)
+        }
+
+        func nextGen() -> UInt32 {
+            if gen == UInt32.max - 1 {
+                for i in seen.indices { seen[i] = 0; settledStamp[i] = 0 }
+                for i in allowedStamp.indices { allowedStamp[i] = 0 }
+                gen = 1
+            } else {
+                gen &+= 1
+            }
+            heap.reset()
+            return gen
+        }
+    }
+    nonisolated(unsafe) private static var scratchLock = NSLock()
+    nonisolated(unsafe) private static var scratchPool: [PathScratch] = []
+
+    private func borrowScratch() -> PathScratch {
+        let n = count, p = mountain.count
+        Self.scratchLock.lock()
+        if let idx = Self.scratchPool.lastIndex(where: { $0.seen.count == n && $0.allowedStamp.count == p }) {
+            let s = Self.scratchPool.remove(at: idx)
+            Self.scratchLock.unlock()
+            return s
+        }
+        Self.scratchLock.unlock()
+        return PathScratch(nodes: n, provinces: p)
+    }
+
+    private func returnScratch(_ s: PathScratch) {
+        Self.scratchLock.lock()
+        if Self.scratchPool.count < 4 { Self.scratchPool.append(s) }
+        Self.scratchLock.unlock()
+    }
+
     func path0(from start: Int, to end: Int, allowSea: Bool, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)?, aStar: Bool, seaRate: Double, terrainCost: Bool) -> (nodes: [Int], cost: Double)? {
-        var allowed = [Int8](repeating: 0, count: mountain.count)
+        let scratch = borrowScratch()
+        defer { returnScratch(scratch) }
+        let gen = scratch.nextGen()
         func enter(_ i: Int) -> Bool {
             let q = Int(provinces[i]); if q < 0 { return allowSea }
-            if allowed[q] == 0 { allowed[q] = canEnterProvince(q) ? 1 : 2 }
-            return allowed[q] == 1
+            if scratch.allowedStamp[q] != gen {
+                scratch.allowedStamp[q] = gen
+                scratch.allowedVal[q] = canEnterProvince(q) ? 1 : 2
+            }
+            return scratch.allowedVal[q] == 1
         }
         guard (isSea(start) ? allowSea : true), enter(end) else { return nil }
-        let n = count
-        var cost = [Double](repeating: .infinity, count: n), prev = [Int](repeating: -1, count: n), settled = [Bool](repeating: false, count: n)
-        // seaRate (app worlds, after the original's SEA_ROUTE cost multipliers): open sea is cheaper to
-        // cross than land, so a long march may take ship; the heuristic is scaled with it.
         let goal = centers[end], rate = aStar ? TravelGraph.cheapestRate(self) * min(1, seaRate) : 0
         func h(_ i: Int) -> Double { rate == 0 ? 0 : ((centers[i].x - goal.x) * (centers[i].x - goal.x) + (centers[i].y - goal.y) * (centers[i].y - goal.y)).squareRoot() * rate }
-        var heap = MinHeap(); cost[start] = 0; heap.push(h(start), start)
-        while !settled[end], let (f, a) = heap.pop() {
-            if settled[a] || f > cost[a] + h(a) + 1e-9 { continue }
-            let c = cost[a]
-            settled[a] = true
+        scratch.seen[start] = gen
+        scratch.cost[start] = 0
+        scratch.prev[start] = -1
+        scratch.heap.push(h(start), start)
+        while scratch.settledStamp[end] != gen, let (f, a) = scratch.heap.pop() {
+            if scratch.settledStamp[a] == gen || f > scratch.cost[a] + h(a) + 1e-9 { continue }
+            let c = scratch.cost[a]
+            scratch.settledStamp[a] = gen
             for k in linkStart[a]..<linkStart[a + 1] {
                 let b = linkTo[k]
-                if settled[b] || !enter(b) { continue }
+                if scratch.settledStamp[b] == gen || !enter(b) { continue }
                 var step = linkCost[k]
                 if seaRate != 1, provinces[a] < 0, provinces[b] < 0 { step *= seaRate }
-                // 地形真实参与寻路（本作规则，与 ForceMotion.armySpeed 完全共用同一套地形速比）：
-                // 山地 0.50× 速对应 2.0× 代价，冰川 0.58× / 沼泽荒漠 ~0.66× / 深林 ~0.78×，短绕走平畴谷道、长绕才翻险阻。
                 if terrainCost, provinces[b] >= 0 {
                     let qb = Int(provinces[b])
                     if mountain.indices.contains(qb), mountain[qb] {
@@ -153,13 +208,18 @@ public struct TravelGraph: Sendable {
                 }
                 if let embark, provinces[b] < 0, provinces[a] >= 0 { step += embark(Int(provinces[a])) }
                 let next = Native.fr(c + step)
-                if next < cost[b] { cost[b] = next; prev[b] = a; heap.push(next + h(b), b) }
+                if scratch.seen[b] != gen || next < scratch.cost[b] {
+                    scratch.seen[b] = gen
+                    scratch.cost[b] = next
+                    scratch.prev[b] = a
+                    scratch.heap.push(next + h(b), b)
+                }
             }
         }
-        guard settled[end] else { return nil }
+        guard scratch.settledStamp[end] == gen else { return nil }
         var nodes = [end], i = end
-        while i != start { i = prev[i]; nodes.append(i) }
-        return (nodes.reversed(), cost[end])
+        while i != start { i = scratch.prev[i]; nodes.append(i) }
+        return (nodes.reversed(), scratch.cost[end])
     }
 }
 
@@ -179,6 +239,7 @@ extension TravelGraph {
 /// Binary heap ordered by (cost, index), as the web's search frontier.
 struct MinHeap {
     private var c: [Double] = [], i: [Int] = []
+    mutating func reset() { c.removeAll(keepingCapacity: true); i.removeAll(keepingCapacity: true) }
     private func before(_ a: Int, _ b: Int) -> Bool { c[a] < c[b] || c[a] == c[b] && i[a] < i[b] }
     mutating func push(_ cost: Double, _ id: Int) {
         c.append(cost); i.append(id); var k = c.count - 1

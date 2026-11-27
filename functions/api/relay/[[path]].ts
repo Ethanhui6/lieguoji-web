@@ -3,7 +3,7 @@
 type RoomStub = { fetch(request: Request): Promise<Response> };
 type Rooms = { idFromName(name: string): unknown; get(id: unknown): RoomStub };
 
-const ALLOWED = /^\/api\/relay(\/room\/([A-Za-z0-9]{6,16})\/(status|ping|ws|call|next|reply|saves)(?:\/[A-Za-z0-9._-]{1,64})?)$/;
+const ALLOWED = /^\/api\/relay(\/room\/([A-Za-z0-9]{6,16})\/(status|ping|ws|call|next|reply|push|saves)(?:\/[A-Za-z0-9._-]{1,64})?)$/;
 
 export const onRequest = async (context: { request: Request; env: { ROOMS?: Rooms } }) => {
   const { request, env } = context;

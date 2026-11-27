@@ -31,7 +31,9 @@ public final class JS: CustomStringConvertible {
     }
     public var storage: Value
     public init(_ value: Value) { self.storage = value }
-    public static var null: JS { JS(.null) }
+    /// v11.0.0 零分配只读空值单例：热循环读取缺失键不再每秒堆分配数百万个 JS(.null) 对象！
+    nonisolated(unsafe) private static let sharedNull = JS(.null)
+    public static var null: JS { sharedNull }
     public static func object() -> JS { JS(.object(Object())) }
     public static func array(_ items: [JS] = []) -> JS { JS(.array(items)) }
     public convenience init(_ n: Double) { self.init(.number(n)) }
@@ -82,12 +84,19 @@ public final class JS: CustomStringConvertible {
     }
     public var asArray: [JS] {
         get { if case .array(let a) = storage { return a }; JS.lenient("not an array"); return [] }
-        set { storage = .array(newValue) }
+        set { guard self !== Self.sharedNull else { return }; storage = .array(newValue) }
     }
     public var length: Int { asArray.count }
     public var objectKeys: [String] { if case .object(let o) = storage { return o.keys }; JS.lenient("not an object"); return [] }
     /// Object.entries order.
     public var objectEntries: [(String, JS)] { if case .object(let o) = storage { return o.entries }; JS.lenient("not an object"); return [] }
+    /// 零中间数组分配遍历对象键值（热路径替代 objectEntries）。
+    public func forEachEntry(_ body: (String, JS) -> Void) {
+        guard case .object(let o) = storage else { return }
+        for k in o.keys {
+            if let v = o.values[k] { body(k, v) }
+        }
+    }
     public var objectValues: [JS] { objectEntries.map(\.1) }
     public func has(_ key: String) -> Bool { if case .object(let o) = storage { return o[key] != nil }; return false }
 

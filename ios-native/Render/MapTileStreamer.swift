@@ -39,17 +39,27 @@ final class MapTileStreamer: @unchecked Sendable {
     private let lock = NSLock()
     private let decodeQueue = DispatchQueue(label: "lieguoji.tile.streamer", qos: .userInitiated)
     private var archives: [String: TileArchive] = [:]
-    private var textures: [String: MTLTexture] = [:]
-    private var lruOrder: [String] = []
-    private var inflight: Set<String> = []
+    private var regionIds: [String: UInt64] = [:]
+    private var textures: [UInt64: MTLTexture] = [:]
+    private var lruStamps: [UInt64: UInt64] = [:]
+    private var lruClock: UInt64 = 0
+    private var inflight: Set<UInt64> = []
+    private var cachedLoaderDeviceID: ObjectIdentifier?
+    private var cachedLoader: MTKTextureLoader?
     private let maxCachedTextures = 48
     private var totalArchiveBytes: Int64 = 0
     private var totalTileCount: Int = 0
     /// 后台解码并上传完新 GPU 瓦片后通知主线程重绘一次，确保静止镜头缩放停下后高清瓦片也能瞬间显现。
     var onTileReady: (@Sendable () -> Void)?
 
+    @inline(__always)
     private static func tileKey(z: Int, x: Int, y: Int) -> UInt64 {
         (UInt64(z & 0xFF) << 32) | (UInt64(x & 0xFFFF) << 16) | UInt64(y & 0xFFFF)
+    }
+
+    @inline(__always)
+    private static func cacheKey(regionId: UInt64, z: Int, x: Int, y: Int) -> UInt64 {
+        (regionId << 40) | tileKey(z: z, x: x, y: y)
     }
 
     /// 扫描并挂载 `HotPackManager.rootURL/ReliefTiles/` 下全部 `.lgtr` 真实卫星地貌瓦片包（只读头部索引，耗时 < 2ms）。
@@ -76,12 +86,18 @@ final class MapTileStreamer: @unchecked Sendable {
                 }
             }
         }
+        var nextIds: [String: UInt64] = [:]
+        for (idx, reg) in parsed.keys.sorted().enumerated() {
+            nextIds[reg] = UInt64(idx + 1) & 0xFF_FFFF
+        }
         lock.lock()
         archives = parsed
+        regionIds = nextIds
         totalArchiveBytes = bytesSum
         totalTileCount = tilesSum
         textures.removeAll()
-        lruOrder.removeAll()
+        lruStamps.removeAll()
+        lruClock = 0
         inflight.removeAll()
         lock.unlock()
     }
@@ -101,7 +117,8 @@ final class MapTileStreamer: @unchecked Sendable {
     func clearGPUCache() {
         lock.lock()
         textures.removeAll()
-        lruOrder.removeAll()
+        lruStamps.removeAll()
+        lruClock = 0
         inflight.removeAll()
         lock.unlock()
     }
@@ -117,7 +134,7 @@ final class MapTileStreamer: @unchecked Sendable {
     ) -> [VisibleTile] {
         guard !region.isEmpty, viewport.width > 1, viewport.height > 1, mapWidth > 1, mapHeight > 1 else { return [] }
         lock.lock()
-        guard let archive = archives[region] else {
+        guard let archive = archives[region], let regId = regionIds[region] else {
             lock.unlock()
             return []
         }
@@ -147,15 +164,17 @@ final class MapTileStreamer: @unchecked Sendable {
         let ty1 = max(0, min(grid - 1, Int(floor(max(0, maxY - 1e-4) / tileH))))
 
         var out = [VisibleTile]()
-        var toRequest = [(cacheKey: String, record: TileRecord)]()
-        var fallbackParents = Set<String>()
+        out.reserveCapacity((tx1 - tx0 + 1) * (ty1 - ty0 + 1))
+        var toRequest = [(cacheKey: UInt64, record: TileRecord)]()
+        var fallbackParents = Set<UInt64>()
 
         lock.lock()
         for ty in ty0...ty1 {
             for tx in tx0...tx1 {
-                let cKey = "\(region)/\(z)/\(tx)_\(ty)"
+                let cKey = Self.cacheKey(regionId: regId, z: z, x: tx, y: ty)
                 if let tex = textures[cKey] {
-                    touchLRU(cKey)
+                    lruClock &+= 1
+                    lruStamps[cKey] = lruClock
                     out.append(VisibleTile(
                         texture: tex,
                         x: Float(Double(tx) * tileW),
@@ -171,7 +190,7 @@ final class MapTileStreamer: @unchecked Sendable {
                     // 优雅回落：用最近的已缓存祖先瓦片垫底，彻底避免缩放黑块闪烁
                     var pz = z - 1, px = tx >> 1, py = ty >> 1
                     while pz >= 0 {
-                        let pKey = "\(region)/\(pz)/\(px)_\(py)"
+                        let pKey = Self.cacheKey(regionId: regId, z: pz, x: px, y: py)
                         if let pTex = textures[pKey] {
                             if fallbackParents.insert(pKey).inserted {
                                 let pGrid = Double(1 << pz)
@@ -194,9 +213,19 @@ final class MapTileStreamer: @unchecked Sendable {
         if !toRequest.isEmpty {
             decodeQueue.async { [weak self] in
                 guard let self else { return }
-                let loader = MTKTextureLoader(device: device)
+                let devId = ObjectIdentifier(device)
+                let loader: MTKTextureLoader
+                if self.cachedLoaderDeviceID == devId, let existing = self.cachedLoader {
+                    loader = existing
+                } else {
+                    let created = MTKTextureLoader(device: device)
+                    self.cachedLoaderDeviceID = devId
+                    self.cachedLoader = created
+                    loader = created
+                }
                 var handles = [URL: FileHandle]()
                 defer { for fh in handles.values { try? fh.close() } }
+                var uploadedAny = false
                 for item in toRequest {
                     let fh: FileHandle
                     if let cached = handles[item.record.url] {
@@ -216,8 +245,18 @@ final class MapTileStreamer: @unchecked Sendable {
                         }
                         let tex = try loader.newTexture(data: data, options: [.SRGB: false, .generateMipmaps: false])
                         self.storeTexture(tex, forKey: item.cacheKey)
+                        uploadedAny = true
                     } catch {
                         self.clearInflight([item.cacheKey])
+                    }
+                }
+                // v11.0.0 合并通知：一整批可见瓦片解码完毕后只触发 1 次主线程重绘（消除单次缩放 16 连重绘风暴）
+                if uploadedAny {
+                    self.lock.lock()
+                    let cb = self.onTileReady
+                    self.lock.unlock()
+                    if let cb {
+                        DispatchQueue.main.async { cb() }
                     }
                 }
             }
@@ -225,30 +264,24 @@ final class MapTileStreamer: @unchecked Sendable {
         return out
     }
 
-    private func touchLRU(_ key: String) {
-        if let idx = lruOrder.firstIndex(of: key) {
-            lruOrder.remove(at: idx)
-        }
-        lruOrder.append(key)
-    }
-
-    private func storeTexture(_ tex: MTLTexture, forKey key: String) {
+    private func storeTexture(_ tex: MTLTexture, forKey key: UInt64) {
         lock.lock()
         textures[key] = tex
         inflight.remove(key)
-        touchLRU(key)
-        while lruOrder.count > maxCachedTextures {
-            let victim = lruOrder.removeFirst()
-            textures.removeValue(forKey: victim)
+        lruClock &+= 1
+        lruStamps[key] = lruClock
+        while textures.count > maxCachedTextures {
+            if let victim = lruStamps.min(by: { $0.value < $1.value })?.key {
+                lruStamps.removeValue(forKey: victim)
+                textures.removeValue(forKey: victim)
+            } else {
+                break
+            }
         }
-        let cb = onTileReady
         lock.unlock()
-        if let cb {
-            DispatchQueue.main.async { cb() }
-        }
     }
 
-    private func clearInflight(_ keys: [String]) {
+    private func clearInflight(_ keys: [UInt64]) {
         lock.lock()
         for k in keys { inflight.remove(k) }
         lock.unlock()

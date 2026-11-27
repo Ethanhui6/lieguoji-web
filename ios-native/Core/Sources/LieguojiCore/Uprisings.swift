@@ -441,21 +441,40 @@ extension Regimes {
         b.reforms = .array(held.map { JS($0) })
     }
     static func reformMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void) {
+        let era = HistoricalEra.current(r)
+        // v11.0.0 历史剧本史实路线下，现代国家法案由开局真实考据与历史事件驱动，禁止 AI 每月随机乱改国策踢掉战时经济！
+        if isModernEra(era) && HistoricalEvents.isHistoricalRoute(r) { return }
         let tag = "\(id)|\(key)|reform"
         guard chance(tag) < 0.035 else { return }
         let polity = r.civilization.nations[id].polity.optionalString ?? "Kingdom", held = heldReforms(r, id)
-        let era = HistoricalEra.current(r)
+        let styleId = Regimes.style(r, id).id
+        let isCommunist = styleId == "communist" || styleId == "soviet" || styleId == "people_republic"
+        let isFascist = styleId == "fascist" || styleId == "nazi" || styleId == "military_junta" || styleId == "shogunate"
+        let isDemo = polity == "Republic" || polity == "Federation" || styleId == "constMonarchy"
         let pool = reforms(for: era)
         let open = pool.filter { f in
             guard !held.contains(where: { $0.id == f.id }) else { return false }
             guard f.polities?.contains(polity) ?? true else { return false }
             if f.id == "focus_atomic_proj" && era != .modern { return false }
+            // 现代意识形态门控：绝不允许纳粹切宪政议会/五年计划，或民主国家切大本营统制
+            if isModernEra(era) {
+                if (f.id == "gov_planned" || f.id == "focus_five_year") && !isCommunist { return false }
+                if (f.id == "gov_const_parl" || f.id == "focus_lend_lease") && (isFascist || isCommunist) { return false }
+                if (f.id == "gov_wartime_ctrl" || f.id == "focus_four_year") && isDemo { return false }
+            }
             return true
         }
         guard !open.isEmpty else { return }
         let f = open[Int(draw(tag + "|which") % UInt32(open.count))]
-        // At most five at once: the oldest gives way.
-        if held.count >= 5, let oldest = book(r, id).reforms.asArray.first?.asString, let old = reforms.first(where: { $0.id == oldest }) { setReform(r, id, old, on: false) }
+        // At most five at once: 现代时代永不驱逐 4 大核心基础槽位（经济/征兵/贸易/治理）
+        if held.count >= 5 {
+            let corePrefixes = ["econ_", "draft_", "trade_", "gov_"]
+            let currentIds = book(r, id).reforms.asArray.map(\.asString)
+            let evictId = isModernEra(era)
+                ? (currentIds.first { cid in !corePrefixes.contains(where: { cid.hasPrefix($0) }) })
+                : currentIds.first
+            if let evictId, let old = reforms.first(where: { $0.id == evictId }) { setReform(r, id, old, on: false) }
+        }
         let replaced = held.filter { f.conflicts.contains($0.id) }.map(\.name)
         setReform(r, id, f, on: true)
         addGold(-1)
@@ -483,6 +502,22 @@ extension Regimes {
         guard chance(tag) < 0.05 else { return }
         func corrupt(_ d: Double) { Finance.setCorruption(r, id, Finance.corruption(r, id) + d) }
         func say(_ text: String, _ reason: String) { _ = People.announce(r, kind: "culture", text: text, reason: reason, nations: [id], province: nil) }
+        // v11.0.0 现代时代切换真实工业/科研/国防文化事件，彻底杜绝二战德苏美刷出“广开书院/胡服骑射/大修国史”！
+        if isModernEra(HistoricalEra.current(r)) {
+            switch Int(draw(tag + "|which") % 8) {
+            case 0: addGold(2); addDestiny(1); say("\(name)工业技术革新", "流水线与重工技改提速增产：国库增两月岁入，国运 +1。")
+            case 1: addDestiny(2); corrupt(-3); say("\(name)国家科学院扩建", "理工人才云集攻关：国运 +2，腐化 −3。")
+            case 2: addGold(-1); addDestiny(3); say("\(name)广播与新闻动员", "全民舆论凝聚向心：耗一月岁入，国运 +3。")
+            case 3:
+                for a in monthArmies(r, id) { a.morale = JS(min(100, a.morale.asNumber + 5)) }
+                say("\(name)国防军校扩编", "现代参谋与装甲步炮协同实训：全军士气 +5。")
+            case 4: addGold(1); say("\(name)铁路枢纽电气化", "干线运力提升：国库增一月岁入。")
+            case 5: addGold(-1); corrupt(-4); say("\(name)审计署反腐整顿", "严查军需与财政积弊：耗一月岁入，腐化 −4。")
+            case 6: addDestiny(-2); corrupt(3); say("\(name)战时黑市滋生", "物资走私与囤积居奇抬头：国运 −2，腐化 +3。")
+            default: addDestiny(2); say("\(name)国民教育普及", "识字率与技工储备显著提升：国运 +2。")
+            }
+            return
+        }
         switch Int(draw(tag + "|which") % 12) {
         case 0: addDestiny(2); say("\(name)诗文鼎盛", "文人辈出，名篇传诵：国运 +2。")
         case 1: addDestiny(1); corrupt(-3); say("\(name)百家争鸣", "学派林立，议论蜂起：国运 +1，腐化 −3。")

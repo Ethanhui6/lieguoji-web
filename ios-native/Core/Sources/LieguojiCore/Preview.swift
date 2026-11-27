@@ -270,11 +270,16 @@ public enum PreviewWorld {
         heights: [UInt8],
         width: Int,
         nations previewNations: Int = 0,
-        seed: String = ""
+        seed: String = "",
+        ownerMask: [Int]? = nil,
+        nationColors: [String]? = nil,
+        capitals: [(x: Float, y: Float)]? = nil
     ) -> (rgba: [UInt8], width: Int, height: Int, stats: ThumbnailStats) {
         let map = input.base, picker = CellPicker(map: map)
         let w = max(2, width), h = max(2, Int(Float(w) * map.height / map.width))
         var field = [Float](repeating: 0, count: w * h)
+        let useBakedOwners = ownerMask != nil && !(nationColors?.isEmpty ?? true)
+        var bakedOwnerGrid = [Int](repeating: -1, count: useBakedOwners ? w * h : 0)
         var landPixels = 0, mountainPixels = 0, forestPixels = 0, coastPixels = 0
         for y in 0..<h {
             for x in 0..<w {
@@ -282,6 +287,9 @@ public enum PreviewWorld {
                 if let c = picker.cell(atX: px, y: py), c < heights.count {
                     let v = Float(heights[c])
                     field[y * w + x] = v
+                    if useBakedOwners, let mask = ownerMask, c < mask.count {
+                        bakedOwnerGrid[y * w + x] = mask[c]
+                    }
                     if v >= 20 {
                         landPixels += 1
                         if v >= 62 { mountainPixels += 1 }
@@ -290,9 +298,19 @@ public enum PreviewWorld {
                 }
             }
         }
-        // 可选势力分布预演：基于当前种子与陆地采样点按 Voronoi 划分示意版图与都城星标
+        // 可选势力分布预演：若有烘焙历史版图掩码则严格按史实各国色与首都绘制，否则基于种子随机 Voronoi 示意
         var anchors: [(x: Float, y: Float, color: RGB)] = []
-        if previewNations > 0 && landPixels > 0 {
+        if useBakedOwners, let nColors = nationColors {
+            let sx = Float(w) / max(1, map.width), sy = Float(h) / max(1, map.height)
+            for (i, hex) in nColors.enumerated() {
+                let col = RGB(css: hex) ?? RGB(css: palette[i % palette.count]) ?? RGB(0.65, 0.58, 0.48)
+                if let caps = capitals, i < caps.count {
+                    anchors.append((caps[i].x * sx, caps[i].y * sy, col))
+                } else {
+                    anchors.append((-100, -100, col))
+                }
+            }
+        } else if previewNations > 0 && landPixels > 0 {
             var rng: UInt64 = 14695981039346656037
             for b in seed.utf8 { rng = (rng ^ UInt64(b)) &* 1099511628211 }
             rng ^= UInt64(previewNations) &* 0x9E3779B97F4A7C15
@@ -350,8 +368,8 @@ public enum PreviewWorld {
             let top = ramp[ramp.count - 1].color
             return (top.r, top.g, top.b)
         }
-        var ownerGrid = [Int](repeating: -1, count: anchors.isEmpty ? 0 : w * h)
-        if !anchors.isEmpty {
+        var ownerGrid = useBakedOwners ? bakedOwnerGrid : [Int](repeating: -1, count: anchors.isEmpty ? 0 : w * h)
+        if !useBakedOwners && !anchors.isEmpty {
             // 有机自然疆域划分：通过三频域扭曲噪声（Domain Warping）+ 山脊地形阻隔，
             // 令势力边界顺着山脉、河谷与自然地势蜿蜒舒展，彻底消除直来直去的正方几何切割。
             let seedPhase = Float(seed.utf8.reduce(UInt32(17)) { ($0 &* 31) &+ UInt32($1) } % 1000) * 0.013
@@ -406,9 +424,15 @@ public enum PreviewWorld {
                     }
                 } else {
                     c = land(v)
-                    if !anchors.isEmpty, ownerGrid[i] >= 0 {
-                        let ac = anchors[ownerGrid[i]].color
-                        c = (c.0 * 0.44 + ac.r * 0.56, c.1 * 0.44 + ac.g * 0.56, c.2 * 0.44 + ac.b * 0.56)
+                    if !anchors.isEmpty {
+                        let o = ownerGrid[i]
+                        if o >= 0 && o < anchors.count {
+                            let ac = anchors[o].color
+                            c = (c.0 * 0.40 + ac.r * 0.60, c.1 * 0.40 + ac.g * 0.60, c.2 * 0.40 + ac.b * 0.60)
+                        } else if o == -2 {
+                            // 无人之地呈素宣淡墨灰调
+                            c = (c.0 * 0.50 + 0.36, c.1 * 0.50 + 0.34, c.2 * 0.50 + 0.30)
+                        }
                     }
                     let slope = (v - nw) * 0.026 + (v - north) * 0.01 + (v - west) * 0.01
                     let light = max(0.76, min(1.22, 1 + slope))

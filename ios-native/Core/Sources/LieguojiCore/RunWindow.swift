@@ -449,7 +449,13 @@ public enum RunWindow {
                     now = UnitKinds.enabled && stalled > 16 ? stop : end
                 }
             }
-            for (id, until) in (r.maritime.retreating.isNull ? [] : r.maritime.retreating.objectEntries) where until.asNumber <= Double(tick) { r.maritime.retreating.delete(id) }
+            if boundary && !r.maritime.retreating.isNull {
+                var expired = [String]()
+                r.maritime.retreating.forEachEntry { id, until in
+                    if until.asNumber <= Double(tick) { expired.append(id) }
+                }
+                for id in expired { r.maritime.retreating.delete(id) }
+            }
             r.clock.tick = JS(tick); r.forceClock.now = JS(tick)
             Profile.measure("w.afterTick") { afterTick?(r, tick == untilDay, boundary) }
             if !boundary { continue }

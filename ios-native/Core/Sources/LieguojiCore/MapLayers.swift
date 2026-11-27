@@ -8,8 +8,14 @@ public struct ColoredMesh: Sendable {
     public init() {}
     public var vertexCount: Int { vertices.count / 6 }
 
+    @inline(__always)
     private mutating func vertex(_ x: Float, _ y: Float, _ c: RGB, _ a: Float) {
-        vertices.append(contentsOf: [x, y, c.r, c.g, c.b, a])
+        vertices.append(x)
+        vertices.append(y)
+        vertices.append(c.r)
+        vertices.append(c.g)
+        vertices.append(c.b)
+        vertices.append(a)
     }
     /// A filled simple polygon (flat x, y pairs), triangulated by ear clipping.
     public mutating func fill(_ points: [Float], _ color: RGB, alpha: Float) {
@@ -565,56 +571,23 @@ public enum MapLayers {
         let isletInk = RGB(hex: 0x6D5F4C)
         var m = ColoredMesh()
 
-        // 统计每块连通陆地单元数：海中微小孤岛（<= 14 格）自动采用极柔淡墨细岸与浅滩过渡，彻底消除生硬粗黑框
-        var landComp = [Int](repeating: -1, count: map.cellCount)
-        var compSizes = [Int]()
-        var landAdj = [[Int]](repeating: [], count: map.cellCount)
-        for e in map.edges where e.a >= 0 && e.b >= 0 {
-            let a = Int(e.a), b = Int(e.b)
-            if map.isLand(a) && map.isLand(b) { landAdj[a].append(b); landAdj[b].append(a) }
-        }
-        for c in 0..<map.cellCount where map.isLand(c) && landComp[c] < 0 {
-            let cid = compSizes.count
-            var q = [c], head = 0
-            landComp[c] = cid
-            while head < q.count {
-                let cur = q[head]; head += 1
-                for nb in landAdj[cur] where landComp[nb] < 0 { landComp[nb] = cid; q.append(nb) }
-            }
-            compSizes.append(q.count)
-        }
-
-        // 1. 流畅连续斜接古舆图海岸线（BorderCurve.chain + BorderCurve.smooth 彻底根除锯齿折角与竹节黑点，区分大陆清锐双色岸线与海岛淡墨细岸）
+        // 1. 流畅连续斜接古舆图海岸线（v11.0.0 按地形拓扑缓存，领土易手/选国时零重复 BFS 与曲线平滑开销！）
         let coastShadow = RGB(hex: 0x3A5E68)
         let mainlandInk = RGB(hex: 0x3B2F22)
-        var mainCoastSegs = [BorderCurve.Segment]()
-        var isletCoastSegs = [BorderCurve.Segment]()
-        for e in map.edges where e.a >= 0 && e.b >= 0 {
-            let a = Int(e.a), b = Int(e.b)
-            let la = map.isLand(a), lb = map.isLand(b)
-            guard la != lb else { continue }
-            let landCell = la ? a : b
-            let isIslet = landComp[landCell] >= 0 && compSizes[landComp[landCell]] <= 14
-            if isIslet {
-                isletCoastSegs.append(.init(e.x1, e.y1, e.x2, e.y2))
-            } else {
-                mainCoastSegs.append(.init(e.x1, e.y1, e.x2, e.y2))
-            }
-        }
-        let mainCoasts = BorderCurve.smooth(BorderCurve.chain(mainCoastSegs))
-        let isletCoasts = BorderCurve.smooth(BorderCurve.chain(isletCoastSegs))
-        for loop in mainCoasts {
+        let coasts = cachedCoasts(map)
+        for loop in coasts.main {
             m.smoothPolyline(loop, width: lineWidth * 1.12, coastShadow, alpha: 0.22)
         }
-        for loop in mainCoasts {
+        for loop in coasts.main {
             m.smoothPolyline(loop, width: lineWidth * 0.64, mainlandInk, alpha: 0.74)
         }
-        for loop in isletCoasts {
+        for loop in coasts.islets {
             m.smoothPolyline(loop, width: lineWidth * 0.42, isletInk, alpha: 0.46)
         }
 
         let allPairs = boundaries(map)
         var landFrontierLines: [[Float]] = []
+        var wastelandFrontierLines: [[Float]] = []
         var emphasisLines: [(lines: [[Float]], color: RGB)] = []
 
         func ribbonColor(_ n: Int) -> RGB {
@@ -642,33 +615,41 @@ public enum MapLayers {
             let oa = owner(map, pair.a), ob = owner(map, pair.b)
             guard oa != ob else { continue }
             let isLandBorder = oa != nil && ob != nil
-            if isLandBorder { landFrontierLines.append(contentsOf: pair.lines) }
+            let isWastelandBorder = !isLandBorder && pair.a >= 0 && pair.b >= 0
+            if isLandBorder {
+                landFrontierLines.append(contentsOf: pair.lines)
+            } else if isWastelandBorder {
+                wastelandFrontierLines.append(contentsOf: pair.lines)
+            }
             if let na = oa, na < lineColors.count {
                 if wide.contains(na) { emphasisLines.append((pair.lines, lineColors[na])) }
                 let rc = ribbonColor(na)
-                let wRim = isLandBorder ? lineWidth * 2.55 : lineWidth * 1.38
+                let wRim = isLandBorder ? lineWidth * 2.05 : lineWidth * 1.15
                 for line in pair.lines {
                     let sgn = sideSign(line, toward: pair.a)
-                    if sgn != 0 { m.innerGradientRibbon(line, width: wRim, side: sgn, rc, edgeAlpha: isLandBorder ? 0.56 : 0.30, innerAlpha: 0.0) }
+                    if sgn != 0 { m.innerGradientRibbon(line, width: wRim, side: sgn, rc, edgeAlpha: isLandBorder ? 0.46 : 0.24, innerAlpha: 0.0) }
                 }
             }
             if let nb = ob, nb < lineColors.count {
                 if wide.contains(nb) { emphasisLines.append((pair.lines, lineColors[nb])) }
                 let rc = ribbonColor(nb)
-                let wRim = isLandBorder ? lineWidth * 2.55 : lineWidth * 1.38
+                let wRim = isLandBorder ? lineWidth * 2.05 : lineWidth * 1.15
                 for line in pair.lines {
                     let sgn = sideSign(line, toward: pair.b)
-                    if sgn != 0 { m.innerGradientRibbon(line, width: wRim, side: sgn, rc, edgeAlpha: isLandBorder ? 0.56 : 0.30, innerAlpha: 0.0) }
+                    if sgn != 0 { m.innerGradientRibbon(line, width: wRim, side: sgn, rc, edgeAlpha: isLandBorder ? 0.46 : 0.24, innerAlpha: 0.0) }
                 }
             }
         }
 
-        // 3. 陆地国界连续斜接暖白微衬边 + 锐利浓墨主脊线（无重叠竹节黑点，一眼区分相邻列国）
-        for line in landFrontierLines {
-            m.smoothPolyline(line, width: lineWidth * 1.38, frontierIvory, alpha: 0.24)
+        // 3. 陆地国界与无人之地边界：连续斜接暖白微衬边 + 锐利浓墨主脊线（无重叠竹节黑点，一眼区分相邻列国与战区外框）
+        for line in wastelandFrontierLines {
+            m.smoothPolyline(line, width: lineWidth * 0.72, RGB(hex: 0x5B4E3F), alpha: 0.68)
         }
         for line in landFrontierLines {
-            m.smoothPolyline(line, width: lineWidth * 0.94, frontierInk, alpha: 0.92)
+            m.smoothPolyline(line, width: lineWidth * 1.26, frontierIvory, alpha: 0.22)
+        }
+        for line in landFrontierLines {
+            m.smoothPolyline(line, width: lineWidth * 0.86, frontierInk, alpha: 0.94)
         }
 
         // 4. 选中国家国界置于最顶层：宣金亮边 + 深朱红实线，轮廓清晰聚焦
@@ -722,7 +703,56 @@ public enum MapLayers {
         return value
     }
     private static var boundaryCache: (key: String, value: [(a: Int, b: Int, lines: [[Float]])])?
+    private static var coastCache: (key: String, value: (main: [[Float]], islets: [[Float]]))?
     private static let boundaryLock = NSLock()
+
+    /// 按地形拓扑缓存大陆与海岛海岸线曲线（仅在海陆网格变化时重建，领土变动/选中列国时 O(1) 命中）。
+    private static func cachedCoasts(_ map: WorldMap) -> (main: [[Float]], islets: [[Float]]) {
+        var h: UInt64 = 1469598103934665603
+        for i in stride(from: 0, to: map.cellCount, by: 7) {
+            h = (h ^ (map.isLand(i) ? UInt64(i + 1) : 0)) &* 1099511628211
+        }
+        let key = "coast|\(map.cellCount)|\(map.edges.count)|\(h)"
+        boundaryLock.lock()
+        if let c = coastCache, c.key == key { boundaryLock.unlock(); return c.value }
+        boundaryLock.unlock()
+
+        var landComp = [Int](repeating: -1, count: map.cellCount)
+        var compSizes = [Int]()
+        var landAdj = [[Int]](repeating: [], count: map.cellCount)
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let a = Int(e.a), b = Int(e.b)
+            if map.isLand(a) && map.isLand(b) { landAdj[a].append(b); landAdj[b].append(a) }
+        }
+        for c in 0..<map.cellCount where map.isLand(c) && landComp[c] < 0 {
+            let cid = compSizes.count
+            var q = [c], head = 0
+            landComp[c] = cid
+            while head < q.count {
+                let cur = q[head]; head += 1
+                for nb in landAdj[cur] where landComp[nb] < 0 { landComp[nb] = cid; q.append(nb) }
+            }
+            compSizes.append(q.count)
+        }
+        var mainCoastSegs = [BorderCurve.Segment]()
+        var isletCoastSegs = [BorderCurve.Segment]()
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let a = Int(e.a), b = Int(e.b)
+            let la = map.isLand(a), lb = map.isLand(b)
+            guard la != lb else { continue }
+            let landCell = la ? a : b
+            let isIslet = landComp[landCell] >= 0 && compSizes[landComp[landCell]] <= 14
+            if isIslet {
+                isletCoastSegs.append(.init(e.x1, e.y1, e.x2, e.y2))
+            } else {
+                mainCoastSegs.append(.init(e.x1, e.y1, e.x2, e.y2))
+            }
+        }
+        let value = (main: BorderCurve.smooth(BorderCurve.chain(mainCoastSegs)),
+                     islets: BorderCurve.smooth(BorderCurve.chain(isletCoastSegs)))
+        boundaryLock.lock(); coastCache = (key, value); boundaryLock.unlock()
+        return value
+    }
 
     /// The heavy map layers of one world, built off the main thread (world generation, loading) and
     /// handed to the renderer, which otherwise built them on the main thread as the map appeared —
@@ -750,7 +780,7 @@ public enum MapLayers {
         var m = ColoredMesh()
         // 州郡内界采用无重叠斜接细丝，拉近匀净无竹节黑点、远观绝不与国界主脊线抢戏。
         for pair in boundaries(map) where pair.a >= 0 && pair.b >= 0 && owner(map, pair.a) == owner(map, pair.b) {
-            for line in pair.lines { m.smoothPolyline(line, width: lineWidth * 0.28, provinceInk, alpha: 0.23) }
+            for line in pair.lines { m.smoothPolyline(line, width: lineWidth * 0.22, provinceInk, alpha: 0.18) }
         }
         return m
     }

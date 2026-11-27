@@ -10,9 +10,9 @@ import LieguojiCore
 
     @Published var music: Bool { didSet { store(); music ? play() : fadeOut() } }
     @Published var volume: Double { didSet { store(); player?.volume = Float(volume) } }
-    @Published var sfx: Bool { didSet { store() } }
-    @Published var sfxVolume: Double { didSet { store() } }
-    /// v8.0.0 音画方案：`"studio"`（重制版物理建模时代交响+实感拟音，须热更 v7 音画包）或 `"classic"`（经典原作纯古风音轨与柔和木石音效）。
+    @Published var sfx: Bool { didSet { store(); if !sfx { stopAllSfxVoices() } } }
+    @Published var sfxVolume: Double { didSet { store(); sfxMixer.outputVolume = Float(sfxVolume) } }
+    /// v11.0.0 音画方案：默认 `"classic"`（5 首原作实录交响配乐 + 多声道零爆音木石金铁拟音）；可选 `"studio"`（需热更重制母带）。
     @Published var audioProfile: String { didSet { store(); reloadAudioEngine() } }
     @Published var haptics: Bool { didSet { store() } }
     @Published var particles: Bool { didSet { store(); EffectsView.particles = particles } }
@@ -41,11 +41,15 @@ import LieguojiCore
                              "era-modern-1": "铁幕电波 · 冷战深空", "era-modern-2": "多极穹顶 · 现代风云", "era-modern-3": "星河远望 · 世纪新章", "era-modern-4": "和平曙光 · 宏大终章"]
     @Published private(set) var activeEraAudio: String = ""
     private var player: AVAudioPlayer?
-    private var sfxPlayers = [InkSound: AVAudioPlayer]()
+    private let sfxEngine = AVAudioEngine()
+    private let sfxMixer = AVAudioMixerNode()
+    private var sfxVoices: [AVAudioPlayerNode] = []
+    private var sfxVoiceCursor = 0
+    private var sfxBuffers = [InkSound: AVAudioPCMBuffer]()
+    private var sfxEngineReady = false
     private var queue: [String] = []
 
-    /// 仅当热更 v7+ 重制母带标记 `AudioHD/studio-master-v8.json` 存在且用户选择重制方案时启用时代交响/拟音，
-    /// 彻底拦截旧版 v6 刺耳合成 WAV！
+    /// 仅当热更 v8+ 重制母带标记 `AudioHD/studio-master-v8.json` 存在且用户主动选择重制方案时启用时代交响/拟音。
     private var hasV8StudioMaster: Bool {
         let marker = HotPackManager.rootURL.appendingPathComponent("AudioHD/studio-master-v8.json")
         return FileManager.default.fileExists(atPath: marker.path)
@@ -55,8 +59,36 @@ import LieguojiCore
         audioProfile == "studio" && hasV8StudioMaster
     }
 
+    private func ensureSfxEngine() -> Bool {
+        if sfxEngineReady && sfxEngine.isRunning { return true }
+        if !sfxEngineReady {
+            sfxEngine.attach(sfxMixer)
+            let mixerFormat = sfxEngine.mainMixerNode.outputFormat(forBus: 0)
+            let targetFormat = AVAudioFormat(standardFormatWithSampleRate: max(44_100, mixerFormat.sampleRate), channels: 2)
+            sfxEngine.connect(sfxMixer, to: sfxEngine.mainMixerNode, format: targetFormat)
+            sfxVoices = (0..<6).map { _ in
+                let node = AVAudioPlayerNode()
+                sfxEngine.attach(node)
+                sfxEngine.connect(node, to: sfxMixer, format: targetFormat)
+                return node
+            }
+            sfxMixer.outputVolume = Float(sfxVolume)
+            sfxEngine.prepare()
+            sfxEngineReady = true
+        }
+        if !sfxEngine.isRunning {
+            try? sfxEngine.start()
+        }
+        return sfxEngine.isRunning
+    }
+
+    private func stopAllSfxVoices() {
+        for v in sfxVoices { v.stop() }
+    }
+
     func reloadAudioEngine() {
-        sfxPlayers.removeAll()
+        stopAllSfxVoices()
+        sfxBuffers.removeAll()
         queue.removeAll()
         if music {
             player?.stop()
@@ -65,13 +97,13 @@ import LieguojiCore
         }
     }
 
-    /// 切换历史时代时按当前音画方案切曲（v8 物理建模重制时代交响 / 经典原作纯净原声）。
+    /// 切换历史时代时按当前音画方案切曲（经典原作 5 首交响原声 / 重制时代交响），离场传空串清理时代状态。
     func setHistoricalEra(_ eraId: String) {
         let clean = eraId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard clean != activeEraAudio else { return }
         activeEraAudio = clean
-        sfxPlayers.removeAll()
-        guard useStudioAudio else { return }
+        sfxBuffers.removeAll()
+        guard useStudioAudio, !clean.isEmpty else { return }
         let eraTrack1 = "era-\(clean)-1"
         let eraTrack2 = "era-\(clean)-2"
         let eraTrack3 = "era-\(clean)-3"
@@ -103,7 +135,14 @@ import LieguojiCore
         volume = d.object(forKey: "feel.volume") as? Double ?? 0.55
         sfx = d.object(forKey: "feel.sfx") as? Bool ?? true
         sfxVolume = d.object(forKey: "feel.sfxVolume") as? Double ?? 0.58
-        audioProfile = d.string(forKey: "feel.audioProfile") ?? "studio"
+        // v11.0.0：默认回归经典实录交响配乐 + 零爆音拟音引擎（一次性把 v10 旧默认值 "studio" 迁回 "classic"）
+        if !d.bool(forKey: "feel.audioProfile.v11Migrated") {
+            d.set(true, forKey: "feel.audioProfile.v11Migrated")
+            d.set("classic", forKey: "feel.audioProfile")
+            audioProfile = "classic"
+        } else {
+            audioProfile = d.string(forKey: "feel.audioProfile") ?? "classic"
+        }
         haptics = d.object(forKey: "feel.haptics") as? Bool ?? true
         particles = d.object(forKey: "feel.particles") as? Bool ?? true
         pauseInMenus = d.object(forKey: "feel.pauseInMenus") as? Bool ?? true
@@ -181,15 +220,8 @@ import LieguojiCore
 
     private let light = UIImpactFeedbackGenerator(style: .light), heavy = UIImpactFeedbackGenerator(style: .heavy), rigid = UIImpactFeedbackGenerator(style: .rigid)
     private let notice = UINotificationFeedbackGenerator()
-    func playSfx(_ sound: InkSound, gain: Float = 1.0) {
-        guard sfx, !ShotTour.on else { return }
-        guard due("sfx.\(sound.rawValue)", sound == .seal ? 0.08 : 0.25) else { return }
-        if let cached = sfxPlayers[sound] {
-            cached.volume = Float(sfxVolume) * gain
-            cached.currentTime = 0
-            cached.play()
-            return
-        }
+    private func loadSfxBuffer(_ sound: InkSound) -> AVAudioPCMBuffer? {
+        if let hit = sfxBuffers[sound] { return hit }
         let studioUrl: URL? = useStudioAudio ? (
             (!activeEraAudio.isEmpty ? HotPackManager.resourceURL(name: "\(sound.rawValue)-\(activeEraAudio)", ext: "wav", subdirectory: "AudioHD/SFX") : nil)
             ?? HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "AudioHD/SFX")
@@ -197,11 +229,57 @@ import LieguojiCore
         guard let url = studioUrl
                 ?? HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "Audio")
                 ?? Bundle.main.url(forResource: sound.rawValue, withExtension: "wav"),
-              let p = try? AVAudioPlayer(contentsOf: url) else { return }
-        p.volume = Float(sfxVolume) * gain
-        p.prepareToPlay()
-        p.play()
-        sfxPlayers[sound] = p
+              let file = try? AVAudioFile(forReading: url) else { return nil }
+        let srcFormat = file.processingFormat
+        let frameCount = AVAudioFrameCount(file.length)
+        guard frameCount > 0, let srcBuf = AVAudioPCMBuffer(pcmFormat: srcFormat, frameCapacity: frameCount) else { return nil }
+        do { try file.read(into: srcBuf) } catch { return nil }
+
+        let targetFormat = sfxMixer.inputFormat(forBus: 0)
+        if srcFormat.sampleRate == targetFormat.sampleRate && srcFormat.channelCount == targetFormat.channelCount && srcFormat.commonFormat == targetFormat.commonFormat {
+            sfxBuffers[sound] = srcBuf
+            return srcBuf
+        }
+        guard let converter = AVAudioConverter(from: srcFormat, to: targetFormat) else {
+            sfxBuffers[sound] = srcBuf
+            return srcBuf
+        }
+        let ratio = targetFormat.sampleRate / max(1.0, srcFormat.sampleRate)
+        let outCap = AVAudioFrameCount(ceil(Double(frameCount) * ratio)) + 64
+        guard let outBuf = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: outCap) else { return nil }
+        var consumed = false
+        var err: NSError?
+        converter.convert(to: outBuf, error: &err) { _, outStatus in
+            if consumed {
+                outStatus.pointee = .endOfStream
+                return nil
+            }
+            consumed = true
+            outStatus.pointee = .haveData
+            return srcBuf
+        }
+        guard err == nil, outBuf.frameLength > 0 else { return nil }
+        sfxBuffers[sound] = outBuf
+        return outBuf
+    }
+
+    /// v11.0.0 6 声部零爆音多声道拟音播放（AVAudioEngine + 预解码 PCM 缓冲，连点绝不截断咔嗒、音量实时响应）
+    func playSfx(_ sound: InkSound, gain: Float = 1.0) {
+        guard sfx, !ShotTour.on else { return }
+        guard due("sfx.\(sound.rawValue)", sound == .seal ? 0.06 : 0.22) else { return }
+        guard ensureSfxEngine(), let buf = loadSfxBuffer(sound), !sfxVoices.isEmpty else { return }
+        // 优先挑空闲声部，全部在播时按轮询自然复用（零非过零强行重头截断爆音）
+        let node: AVAudioPlayerNode
+        if let idle = sfxVoices.first(where: { !$0.isPlaying }) {
+            node = idle
+        } else {
+            node = sfxVoices[sfxVoiceCursor % sfxVoices.count]
+            sfxVoiceCursor &+= 1
+        }
+        sfxMixer.outputVolume = Float(sfxVolume)
+        node.volume = max(0.05, min(1.2, gain))
+        node.scheduleBuffer(buf, at: nil, options: .interrupts, completionHandler: nil)
+        if !node.isPlaying { node.play() }
     }
     func tap() { if haptics { light.impactOccurred() }; playSfx(.seal, gain: 0.42) }
     func scrollOpen() { if haptics { light.impactOccurred(intensity: 0.55) }; playSfx(.scroll, gain: 0.55) }
@@ -260,17 +338,17 @@ struct RemoteSettings: View {
         if model.remoteAddress != nil {
             let rtt = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
             let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.2fKB/帧", model.remoteFrameKB ?? 0) : ""
-            return "九州云服 v14 在线（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
+            return "九州云服 v15 在线（\(model.remoteTransport.isEmpty ? "TCP MUX" : model.remoteTransport)\(rtt)\(kb)）"
         }
-        if model.remoteReconnecting { return "正在后台静默续连九州云服 v14（本机零中断畅玩）" }
-        return model.autoRemote ? "正在待命连接九州云服 v14" : "本机满帧直演 · 0ms 零延迟"
+        if model.remoteReconnecting { return "正在后台静默续连九州云服 v15（本机零中断畅玩）" }
+        return model.autoRemote ? "正在待命连接九州云服 v15" : "本机满帧直演 · 0ms 零延迟"
     }
     private var statusSubtitle: String {
         if let addr = model.remoteAddress {
-            return "\(addr) · v14 LGB2 军队差量 (<0.8KB/帧) + UDP 8767 零队头阻塞，断线自动无感回落本机永不卡死"
+            return "\(addr) · v15 纯有序 TCP MUX + LGB2 差量 (<1KB/帧) + 高优心跳防断，断线自动无感回落本机永不卡死"
         }
         if model.remoteReconnecting { return "后台自动重连期间本机照常 0ms 推演与操作，绝无需手动干预" }
-        return model.autoRemote ? "LGB2 差量 + UDP 零阻塞专调推流，开局 0ms 直进不等待" : "默认本机优先：开局零等待直进地图，满血发挥 A 系芯片算力，账号/云档/热更全程在线"
+        return model.autoRemote ? "LGB2 有序二进制差量推流 + 秒级免地图直连，畅享 25–40ms 低耗挂机" : "默认本机优先：开局零等待直进地图，随时一键切换至广州九州云服 v15 省电挂机"
     }
 
     var body: some View {

@@ -79,15 +79,6 @@ struct HotpatchSyncBanner: View {
             .padding(.vertical, 8)
             .background(Theme.paperLight.opacity(0.96), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.line, lineWidth: 0.75))
-        } else if let text = platform.hotpatchBanner {
-            HStack(spacing: 6) {
-                PhosphorIcon(glyph: .check, size: 12, weight: .fill).foregroundStyle(Theme.jade)
-                Text(text).font(Theme.caption).foregroundStyle(Theme.ink).lineLimit(1)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Theme.paperLight.opacity(0.95), in: Capsule())
-            .overlay(Capsule().stroke(Theme.hairline, lineWidth: 0.75))
         }
     }
 }
@@ -104,7 +95,8 @@ struct HotUpdateSheet: View {
     }
 
     private var progressBytesText: String {
-        let total = max(hotPack.pendingBytes, hotPack.downloadedBytes)
+        let selected = hotPack.selectedPendingBytes > 0 ? hotPack.selectedPendingBytes : hotPack.pendingBytes
+        let total = max(selected, hotPack.downloadedBytes)
         guard total > 0 else { return "" }
         return "\(HotPackManager.formatBytes(hotPack.downloadedBytes)) / \(HotPackManager.formatBytes(total))"
     }
@@ -157,7 +149,7 @@ struct HotUpdateSheet: View {
                                     Text("校验方式")
                                         .font(Theme.caption)
                                         .foregroundStyle(Theme.ink2)
-                                    Text("12 路并发 · SHA256 差分")
+                                    Text("多路断点续传 · SHA256 差分")
                                         .font(Theme.label)
                                         .foregroundStyle(Theme.ink)
                                         .lineLimit(1)

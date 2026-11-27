@@ -165,8 +165,10 @@ public enum CombatReader {
                 polAtk = f(polAtk * f(0.88))
                 polDef = f(polDef * f(0.88))
             }
+            // v11.0.0 复用单次 SupplyContext 消除每军团齐射重复建两遍全图 280 州补给字典
+            var supplyCtx = ArmyTactics.SupplyContext(r)
             // 合围断道战力重挫（−22%）：孤军被敌包围且无海路接济时陷入绝境
-            if ArmyTactics.isEncircled(r, army: a, provinceIndex: index) {
+            if ArmyTactics.isEncircled(r, army: a, provinceIndex: index, ctx: &supplyCtx) {
                 polAtk = f(polAtk * f(0.78))
                 polDef = f(polDef * f(0.78))
             }
@@ -189,7 +191,7 @@ public enum CombatReader {
             let form = ArmyTactics.formation(r, armyId: aid)
             let fldOrder = ArmyTactics.fieldOrder(r, armyId: aid)
             let vet = ArmyTactics.veterancyInfo(r, armyId: aid, nationId: nation)
-            let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: index)
+            let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: index, ctx: &supplyCtx)
             let role = UnitKinds.byKey[unitKey]?.role
             var formAtk = form.attackFactor
             if form == .wedge && (role == .cavalry || role == .heavy || role == .horseArcher) { formAtk += 0.06 }
@@ -217,8 +219,22 @@ public enum CombatReader {
             if (role == .cavalry || role == .heavy || role == .horseArcher), Trade.holdings(r, nation)[3, default: 0] > 0 {
                 polAtk = f(polAtk * f(1.15))
             }
-            // v5.0 将领统帅实效：名将临阵可提振三军攻防至高 +52% / 破城 +35%，庸将怯帅则令全军战力锐减（−32%），使任免名将真正左右战局。
-            if let cmd = Regimes.activeCommander(r, nation: nation, enemy: enemy) {
+            // v11.0.0 单军团直属历史名将 + 军事学说攻城加成真实施效（不再全国平均化！）
+            let activeDoc = MilitaryDoctrines.doctrine(r, nationId: nation)
+            if activeDoc.siegeBonusPct != 0 {
+                dmgProv = f(dmgProv * f(max(0.70, 1.0 + activeDoc.siegeBonusPct / 100.0)))
+            }
+            if let armyCmd = MilitaryDoctrines.commander(r, armyId: aid) {
+                let milDelta = Double(armyCmd.military - 72) * 0.0085
+                let cmdMul = f(max(0.85, min(1.38, 1.0 + milDelta)))
+                polAtk = f(polAtk * (attacking ? cmdMul : f(1.0 + milDelta * 0.7)))
+                polDef = f(polDef * (attacking ? f(1.0 + milDelta * 0.7) : cmdMul))
+                if armyCmd.tacticTag.contains("闪电") || armyCmd.tacticTag.contains("突破") {
+                    if attacking { polAtk = f(polAtk * f(1.08)); dmgProv = f(dmgProv * f(1.12)) }
+                } else if armyCmd.tacticTag.contains("防") || armyCmd.tacticTag.contains("天炉") || armyCmd.tacticTag.contains("坚守") {
+                    if !attacking { polDef = f(polDef * f(1.10)) }
+                }
+            } else if let cmd = Regimes.activeCommander(r, nation: nation, enemy: enemy) {
                 if cmd.combatBonusPct != 0 {
                     let cf = f(max(0.60, 1.0 + Double(cmd.combatBonusPct) / 100.0))
                     polAtk = f(polAtk * cf)

@@ -41,7 +41,9 @@ public enum War26 {
         let fin = r.finance.isNull ? JS.null : r.finance.nations[id]
         let gold = max(0.0, fin.gold.optionalNumber ?? 0.0)
         let income = max(0.0, fin.goldPerMonth.optionalNumber ?? 0.0)
-        let reactors = r.regimes.isNull || r.regimes.nuclear.isNull ? 0.0 : max(0.0, r.regimes.nuclear[id].reactors.optionalNumber ?? 0.0)
+        // v11.0.0 统一读取 NuclearWarfare 真核账本（兼容旧存档 r.regimes.nuclear 兜底），修复局内建造反应堆与核弹不计入综合国力的 Bug！
+        let legacyReactors = r.regimes.isNull || r.regimes.nuclear.isNull ? 0.0 : max(0.0, r.regimes.nuclear[id].reactors.optionalNumber ?? 0.0)
+        let reactors = max(Double(NuclearWarfare.reactors(r, nationId: id)), legacyReactors)
         let indCore: Double = pow(max(0.15, indIdx), 1.42) * 46.0
         let indCash: Double = min(28.0, (income + 1.0).squareRoot() * 1.45) + min(10.0, (gold + 1.0).squareRoot() * 0.10)
         let industryScore: Double = indCore + indCash + reactors * 8.0
@@ -67,7 +69,8 @@ public enum War26 {
         let dampedArmy: Double = armyRaw <= 22.0 ? armyRaw : (22.0 + (armyRaw - 22.0) * 0.42)
         let landQuality: Double = 0.55 + 0.19 * Double(tMil) + 0.24 * indIdx.squareRoot()
         let navBonus: Double = (r.regimes.isNull || r.regimes.historicalPower.isNull) ? 0.0 : (r.regimes.historicalPower[id].navalPowerBonus.optionalNumber ?? 0.0)
-        let nukes: Double = (r.regimes.isNull || r.regimes.nuclear.isNull) ? 0.0 : max(0.0, r.regimes.nuclear[id].nukes.optionalNumber ?? 0.0)
+        let legacyNukes: Double = (r.regimes.isNull || r.regimes.nuclear.isNull) ? 0.0 : max(0.0, r.regimes.nuclear[id].nukes.optionalNumber ?? 0.0)
+        let nukes: Double = max(Double(NuclearWarfare.nukes(r, nationId: id)), legacyNukes)
         let landPart: Double = dampedArmy * landQuality * 2.35
         let seaPart: Double = navyRaw * (4.5 + 1.15 * Double(tNav)) * (1.0 + navBonus * 1.65)
         let militaryScore: Double = landPart + seaPart + nukes * 25.0
@@ -94,7 +97,9 @@ public enum War26 {
         var allies = 0
         if !r.alliances.isNull && !r.alliances.records.isNull {
             for rec in r.alliances.records.asArray where rec.endedTick.isNull {
-                let members = rec.memberIds.asArray.map(\.asString)
+                // v11.0.0 修复字段名：同盟记录实际字段为 rec.members（此前误读 rec.memberIds 致全图外交同盟分永久归零！）
+                let memberArr = rec.members.isArray ? rec.members.asArray : rec.memberIds.asArray
+                let members = memberArr.map(\.asString)
                 if members.contains(id) { allies += max(0, members.count - 1) }
             }
         }

@@ -87,6 +87,12 @@ public enum NativeCreation {
             }
             if heights.filter({ $0 >= 20 }).count < count * 4 { throw CreationError.message("历史底图陆地太少，无法生成该剧本。") }
         } else { heights = TerrainGenerator.generate(graph: x.grid, seed: o.seed, template: o.template).map(Int.init) }
+        // v11.0.0 按真实陆地格数自适应上限（确保每州至少 12 格，防止日本战国等海岛图在 60K/120K 下被切碎成 740 州耗尽日文地名出「国354」）
+        if o.historicalScenario != nil {
+            let landCellCount = heights.reduce(0) { $0 + ($1 >= 20 ? 1 : 0) }
+            let healthyMax = max(count * 2, landCellCount / 12)
+            cityCount = max(count, min(cityCount, healthyMax))
+        }
         progress?("people")
         // 陆地太碎（岛屿、湖泊）放不下所选州数时，州数按网页的步长增加直到放得下。
         var found: (run: JS, travel: CreationGeography.Graph, sea: SeaGraph, provinceNames: [String]?, popDensities: [UInt8]?, wastelandCells: [Bool]?)?
@@ -133,6 +139,10 @@ public enum NativeCreation {
                 warEngine = Session.engine
             }
             HistoricalScenarios.applyDiplomacy(run: r, scenario: sc, engine: warEngine, route: o.historicalRoute)
+            if !r.regimes.isNull {
+                // v11.0.0：架空/多分支路线自动启用玩家历史节点抉择弹窗；史实路线保持事件按真实史实自动推演
+                r.regimes.playerInteractiveEvents = JS(o.historicalRoute == "sandbox")
+            }
             if o.relations == "war" && sc.openingWars.isEmpty, let engine = warEngine {
                 CreationPolitics.openingWars(r, engine: engine)
             }

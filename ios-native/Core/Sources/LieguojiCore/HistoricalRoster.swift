@@ -3335,13 +3335,16 @@ public enum HistoricalRoster {
           power: pw(ind: 0.45, mp: 0.95, mil: 3, eco: 2, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
                     traits: ["CavalryTradition", "HomelandDefense"], lifetime: true, term: 40, warSupport: 78)
         ),
-        // 8 新疆省政府
+        // 8 新疆省政府（1931 年 9 月在任主席为金树仁，1933 年四一二政变后由盛世才接掌）
         n(8,
-          founder: p("盛世才", "盛", "世才", "新疆边防督办", 36, 80, 78, 76, 74, ["Ambitious", "IronFist"], "Ruler", "新疆督办"),
-          successors: [p("金树仁", "金", "树仁", "省主席", 52, 64, 68, 68, 66, ["Stubborn", "Paranoid"], "Successor", "前省主席")],
-          notables: [p("张培元", "张", "培元", "伊犁屯垦使", 37, 80, 72, 70, 76, ["Brave", "Veteran"], "WarCommander", "伊犁守将")],
-          families: [f("盛", "迪化督办署", 82, 80, ruling: true)],
-          parties: [pt("新疆边防督办署", 100)],
+          founder: p("金树仁", "金", "树仁", "新疆省主席", 52, 66, 68, 68, 66, ["Stubborn", "Paranoid"], "Ruler", "1931年新疆省主席"),
+          successors: [p("盛世才", "盛", "世才", "新疆边防督办", 36, 80, 78, 76, 74, ["Ambitious", "IronFist"], "Successor", "边防督办接班人")],
+          notables: [
+              p("盛世才", "盛", "世才", "新疆边防督办参谋", 36, 80, 78, 76, 74, ["Ambitious", "IronFist"], "WarCommander", "迪化军权实掌者"),
+              p("张培元", "张", "培元", "伊犁屯垦使", 37, 80, 72, 70, 76, ["Brave", "Veteran"], "WarCommander", "伊犁守将"),
+          ],
+          families: [f("金", "迪化省府", 80, 80, ruling: true), f("盛", "新疆边防督办署", 76, 68)],
+          parties: [pt("新疆省政府", 64), pt("边防督办系", 36)],
           power: pw(ind: 0.42, mp: 0.75, mil: 2, eco: 2, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
                     traits: ["HomelandDefense"], lifetime: true, term: 40, warSupport: 68)
         ),
@@ -3430,14 +3433,41 @@ public enum HistoricalRoster {
             list[idx].power.startingArmies = 12
             list[idx].power.maxArmies = 30
         }
+        // 替换 2 大英帝国 1936 真实内阁（斯坦利·鲍德温任首相，张伯伦任财相，丘吉尔为在野主战派警示者）
+        if let idx = list.firstIndex(where: { $0.nationIndex == 2 }) {
+            list[idx].notables = [
+                p("斯坦利·鲍德温", "鲍德温", "斯坦利", "大英帝国首相", 68, 58, 82, 80, 78, ["Patient", "Dovish", "Administrator"], "Chancellor", "1936年英国在任首相"),
+                p("内维尔·张伯伦", "张伯伦", "内维尔", "财政大臣", 66, 60, 84, 80, 74, ["Financier", "Dovish", "Administrator"], "Treasurer", "财政大臣"),
+                p("温斯顿·丘吉尔", "丘吉尔", "温斯顿", "国会议员·重整军备派", 61, 84, 88, 92, 95, ["Visionary", "Charismatic", "Hawkish", "SeaVision"], "Diplomat", "警示纳粹扩张的主战派"),
+                p("约翰·戈特", "戈特", "约翰", "帝国总参谋长", 49, 82, 78, 70, 80, ["Brave", "Veteran"], "WarCommander", "英军总参谋长"),
+                p("厄恩利·查特菲尔德", "查特菲尔德", "厄恩利", "第一海务大臣·海军元帅", 62, 88, 82, 76, 84, ["NavalMastery", "SeaVision", "Strategist"], "Admiral", "皇家海军元帅"),
+            ]
+        }
         // 替换 3 法国 1936 人民阵线总理莱昂·布鲁姆
         if let idx = list.firstIndex(where: { $0.nationIndex == 3 }) {
             list[idx].founder = p("莱昂·布鲁姆", "布鲁姆", "莱昂", "法兰西总理", 64, 64, 80, 82, 80, ["Reformer", "Scholar", "Diplomatic"], "Ruler", "人民阵线总理")
+            list[idx].parties = [pt("人民阵线", 58), pt("激进社会党", 24), pt("右翼共和联盟", 18)]
             list[idx].power.startingArmies = 10
         }
-        // 替换 6 西班牙第二共和国总统阿萨尼亚
+        // 替换 6 西班牙第二共和国 1936 真实政府与党派（杜绝 1936 开局套用 1939 佛朗哥长枪党）
         if let idx = list.firstIndex(where: { $0.nationIndex == 6 }) {
             list[idx].founder = p("曼努埃尔·阿萨尼亚", "阿萨尼亚", "曼努埃尔", "西班牙共和国总统", 56, 66, 80, 80, 82, ["Scholar", "Reformer", "Patient"], "Ruler", "第二共和国总统")
+            list[idx].successors = [
+                p("胡安·内格林", "内格林", "胡安", "共和国总理", 44, 68, 82, 80, 78, ["Administrator", "Stubborn"], "Successor", "战时共和总理"),
+                p("弗朗西斯科·佛朗哥", "佛朗哥", "弗朗西斯科", "国民军总司令", 43, 84, 82, 84, 82, ["Patient", "IronFist", "Veteran"], "Successor", "国民军领袖"),
+            ]
+            list[idx].notables = [
+                p("弗朗西斯科·拉尔戈·卡瓦列罗", "卡瓦列罗", "弗朗西斯科", "共和国总理", 66, 64, 78, 74, 80, ["Reformer", "Stubborn"], "Chancellor", "工人社会党领袖"),
+                p("文森特·罗霍", "罗霍", "文森特", "共和军总参谋长", 41, 86, 80, 72, 80, ["Strategist", "Tactician"], "WarCommander", "马德里保卫战名将"),
+                p("何塞·米亚哈", "米亚哈", "何塞", "马德里防卫司令", 57, 82, 74, 70, 82, ["Brave", "Veteran"], "WarCommander", "共和军宿将"),
+            ]
+            list[idx].families = [
+                f("阿萨尼亚", "马德里共和派", 78, 82, ruling: true),
+                f("卡瓦列罗", "社会党与工会阵线", 74, 72),
+                f("佛朗哥", "非洲军团与长枪党", 76, 20),
+            ]
+            list[idx].parties = [pt("人民阵线", 58), pt("中间共和派", 18), pt("右翼自治联盟与长枪党", 24)]
+            list[idx].familyRelations = [fr("阿萨尼亚", "佛朗哥", -65)]
         }
         // 替换 15 土耳其国父凯末尔（1936 在世）
         if let idx = list.firstIndex(where: { $0.nationIndex == 15 }) {

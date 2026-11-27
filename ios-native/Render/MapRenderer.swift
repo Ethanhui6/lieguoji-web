@@ -80,6 +80,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     var washFrame = WashFrame.empty
     var washEpoch = 0
     var sweepMeshCache: (revision: Int, vertices: MTLBuffer, indices: MTLBuffer, count: Int)?
+    let sweepVertexPool = MapBufferPool()
+    let sweepIndexPool = MapBufferPool()
     var washCaptures: [Int: (nation: Int, armies: [SIMD2<Float>], time: Float)] = [:]
     var washRegimes: [Int: Float] = [:]
     var washOld: [Float] = []
@@ -91,8 +93,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let reliefTilePipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
-    private let scrollBorderPipeline: MTLRenderPipelineState
-    private let scrollArtPipeline: MTLRenderPipelineState
+    private let landDepthState: MTLDepthStencilState?
+    private let seaDepthState: MTLDepthStencilState?
+    private let noDepthState: MTLDepthStencilState?
     /// 当前激活的真实地理分区（用于流式挂载 HotPack v6 `ReliefTiles/{region}.lgtr` 8K–16K 卫星地貌瓦片）。
     var activeHistoricalRegion: String = ""
     private var loadedUnitEra: String = ""
@@ -131,16 +134,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var coastRefined = false
     /// 博物馆级御览手卷矢量装裱画框（24 段 Phong 紫檀滚轴 + 碧玉葫芦轴头 + 鎏金回纹包角 + 云锦菱格 + 45° 斜接柔影，任意倍缩放纤毫毕现）。
     private var scrollFrameMesh: (buffer: MTLBuffer, count: Int)?
-    private var scrollMount: (buffer: MTLBuffer, count: Int)?
-    private var scrollArtH: (buffer: MTLBuffer, count: Int)?
-    private var scrollArtV: (buffer: MTLBuffer, count: Int)?
-    private var scrollArtCorners: (buffer: MTLBuffer, count: Int)?
     private var sea: MTLTexture?
     private let parchment: MTLTexture?
     private let paperDetail: MTLTexture?
-    private let scrollBorderHTex: MTLTexture?
-    private let scrollRollerVTex: MTLTexture?
-    private let scrollCornerTex: MTLTexture?
     private let sampler: MTLSamplerState?
     private let repeatSampler: MTLSamplerState?
     private let mirrorSampler: MTLSamplerState?
@@ -178,10 +174,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         var seasonWeights: SIMD4<Float> = SIMD4(0, 0, 0, 0)
     }
 
-    /// 跨世界复用的 12 条精简单 Pass Metal 管线与共享贴图（启动编译一次，后续切换世界零编译耗时）。
+    /// 跨世界复用的 11 条精简单 Pass Metal 管线、Early-Z 深度状态与共享贴图（启动编译一次，后续切换世界零编译耗时）。
     private struct SharedMetalAssets {
         let deviceID: ObjectIdentifier
         let pixelFormat: MTLPixelFormat
+        let depthFormat: MTLPixelFormat
         let sampleCount: Int
         let cellPipeline: MTLRenderPipelineState
         let revealPipeline: MTLRenderPipelineState
@@ -194,15 +191,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let reliefTilePipeline: MTLRenderPipelineState
         let multiplyPipeline: MTLRenderPipelineState
         let spritePipeline: MTLRenderPipelineState
-        let scrollBorderPipeline: MTLRenderPipelineState
-        let scrollArtPipeline: MTLRenderPipelineState
         let sweepPipeline: MTLRenderPipelineState
         let inkPipes: InkPipelines
+        let landDepthState: MTLDepthStencilState?
+        let seaDepthState: MTLDepthStencilState?
+        let noDepthState: MTLDepthStencilState?
         let parchment: MTLTexture?
         let paperDetail: MTLTexture?
-        let scrollBorderHTex: MTLTexture?
-        let scrollRollerVTex: MTLTexture?
-        let scrollCornerTex: MTLTexture?
         let sampler: MTLSamplerState?
         let repeatSampler: MTLSamplerState?
         let mirrorSampler: MTLSamplerState?
@@ -242,10 +237,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         self.device = device; self.queue = queue; self.map = map; self.vertexCount = map.vertices.count / 2
         nationColors = map.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         camera = MapCamera.fit(map: (Double(map.width), Double(map.height)), viewport: (390, 844))
-        // 2× MSAA + 无深度缓冲 + framebufferOnly：清晰抗锯齿且带宽仅为 4× MSAA 一半，显著降温降内存。
+        // v11.0.0：2× MSAA + 16-bit 片上 Early-Z 深度缓冲（storeAction=.dontCare 零 DRAM 写回）+ framebufferOnly：
+        // 陆地先绘写深度、海面后绘深度测试剔除 60–80% 陆下无效海面片元，显著降温提帧！
         view.sampleCount = device.supportsTextureSampleCount(2) ? 2 : 1
         view.colorPixelFormat = .bgra8Unorm
-        view.depthStencilPixelFormat = .invalid
+        view.depthStencilPixelFormat = .depth16Unorm
+        view.clearDepth = 1.0
         view.framebufferOnly = true
 
         let devID = ObjectIdentifier(device)
@@ -253,6 +250,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if let cached = Self.sharedAssets,
            cached.deviceID == devID,
            cached.pixelFormat == view.colorPixelFormat,
+           cached.depthFormat == view.depthStencilPixelFormat,
            cached.sampleCount == view.sampleCount {
             assets = cached
         } else {
@@ -264,6 +262,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     d.vertexFunction = library.makeFunction(name: vertex)
                     d.fragmentFunction = library.makeFunction(name: fragment)
                     d.colorAttachments[0].pixelFormat = view.colorPixelFormat
+                    d.depthAttachmentPixelFormat = view.depthStencilPixelFormat
                     d.rasterSampleCount = view.sampleCount
                     let a: MTLRenderPipelineColorAttachmentDescriptor = d.colorAttachments[0]
                     switch blend {
@@ -279,15 +278,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     }
                     return try device.makeRenderPipelineState(descriptor: d)
                 }
+                let landDSDesc = MTLDepthStencilDescriptor()
+                landDSDesc.depthCompareFunction = .always
+                landDSDesc.isDepthWriteEnabled = true
+                let landDS = device.makeDepthStencilState(descriptor: landDSDesc)
+                let seaDSDesc = MTLDepthStencilDescriptor()
+                seaDSDesc.depthCompareFunction = .less
+                seaDSDesc.isDepthWriteEnabled = false
+                let seaDS = device.makeDepthStencilState(descriptor: seaDSDesc)
+                let noDSDesc = MTLDepthStencilDescriptor()
+                noDSDesc.depthCompareFunction = .always
+                noDSDesc.isDepthWriteEnabled = false
+                let noDS = device.makeDepthStencilState(descriptor: noDSDesc)
+
                 let loader = MTKTextureLoader(device: device)
                 let pTex: MTLTexture? = parchmentURL.flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
                 let dTex: MTLTexture? = Bundle.main.url(forResource: "paper-detail", withExtension: "jpg", subdirectory: "World")
-                    .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
-                let sbHTex: MTLTexture? = Bundle.main.url(forResource: "scroll-border-h", withExtension: "png", subdirectory: "Art")
-                    .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
-                let srVTex: MTLTexture? = Bundle.main.url(forResource: "scroll-roller-v", withExtension: "png", subdirectory: "Art")
-                    .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
-                let scTex: MTLTexture? = Bundle.main.url(forResource: "scroll-corner", withExtension: "png", subdirectory: "Art")
                     .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
                 let sDesc = MTLSamplerDescriptor()
                 sDesc.minFilter = .linear; sDesc.magFilter = .linear; sDesc.mipFilter = .linear
@@ -371,6 +377,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 assets = SharedMetalAssets(
                     deviceID: devID,
                     pixelFormat: view.colorPixelFormat,
+                    depthFormat: view.depthStencilPixelFormat,
                     sampleCount: view.sampleCount,
                     cellPipeline: try pipeline("cellVertex", "landFragment", .none),
                     revealPipeline: try pipeline("revealVertex", "revealFragment", .none),
@@ -383,15 +390,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     reliefTilePipeline: try pipeline("seaVertex", "reliefTileFragment", .alpha),
                     multiplyPipeline: try pipeline("seaVertex", "parchmentFragment", .multiply),
                     spritePipeline: try pipeline("spriteVertex", "spriteFragment", .alpha),
-                    scrollBorderPipeline: try pipeline("scrollRingVertex", "scrollShadowFragment", .alpha),
-                    scrollArtPipeline: try pipeline("scrollArtVertex", "scrollArtFragment", .alpha),
                     sweepPipeline: try pipeline("sweepVertex", "sweepFragment", .alpha),
-                    inkPipes: try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount),
+                    inkPipes: try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, depthFormat: view.depthStencilPixelFormat, sampleCount: view.sampleCount),
+                    landDepthState: landDS,
+                    seaDepthState: seaDS,
+                    noDepthState: noDS,
                     parchment: pTex,
                     paperDetail: dTex,
-                    scrollBorderHTex: sbHTex,
-                    scrollRollerVTex: srVTex,
-                    scrollCornerTex: scTex,
                     sampler: smp,
                     repeatSampler: rsmp,
                     mirrorSampler: msmp,
@@ -414,15 +419,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         reliefTilePipeline = assets.reliefTilePipeline
         multiplyPipeline = assets.multiplyPipeline
         spritePipeline = assets.spritePipeline
-        scrollBorderPipeline = assets.scrollBorderPipeline
-        scrollArtPipeline = assets.scrollArtPipeline
         sweepPipeline = assets.sweepPipeline
         inkPipes = assets.inkPipes
+        landDepthState = assets.landDepthState
+        seaDepthState = assets.seaDepthState
+        noDepthState = assets.noDepthState
         parchment = assets.parchment
         paperDetail = assets.paperDetail
-        scrollBorderHTex = assets.scrollBorderHTex
-        scrollRollerVTex = assets.scrollRollerVTex
-        scrollCornerTex = assets.scrollCornerTex
         sampler = assets.sampler
         repeatSampler = assets.repeatSampler
         mirrorSampler = assets.mirrorSampler
@@ -456,10 +459,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         fineDetail = buffer(ready?.fine ?? MapLayers.fineDetail(map).vertices, stride: 6)
         seaMask = ready?.sea ?? MapLayers.waterlines(map)
         scrollFrameMesh = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
-        scrollMount = Self.buildScrollMount(device: device, width: map.width, height: map.height)
-        scrollArtH = nil
-        scrollArtV = nil
-        scrollArtCorners = nil
         uploadSea()
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
@@ -538,10 +537,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         portIcons = nil
         forts = nil
         scrollFrameMesh = nil
-        scrollMount = nil
-        scrollArtH = nil
-        scrollArtV = nil
-        scrollArtCorners = nil
         route = nil
         armySprites.removeAll(keepingCapacity: false)
         dying.removeAll(keepingCapacity: false)
@@ -557,84 +552,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         cachedPlacedSpritesTime = -1
         armySpritesRevision &+= 1
         units.removeAll(keepingCapacity: false)
+        armyRoleBuffers.removeAll(keepingCapacity: false)
         unitBufferPool.removeAll(keepingCapacity: false)
         colorBufferPool.reset()
         prevColorBufferPool.reset()
-    }
-
-    /// 中空四边带卷轴内外投影网格（仅 24 顶点覆盖外缘投影区与画心窄内影带，画心中央 90% 面积 0% 过绘）。
-    private static func buildScrollMount(device: MTLDevice, width w: Float, height h: Float) -> (MTLBuffer, Int)? {
-        guard w > 0, h > 0 else { return nil }
-        let u = min(w, h)
-        let padX = u * (0.082 + 0.044)
-        let padY = u * (0.056 + 0.044)
-        let innerW = min(u * 0.026, min(w, h) * 0.45)
-
-        var out: [Float] = []
-        out.reserveCapacity(48)
-        func strip(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float) {
-            guard x1 > x0 && y1 > y0 else { return }
-            out.append(contentsOf: [
-                x0, y0, x1, y0, x0, y1,
-                x0, y1, x1, y0, x1, y1,
-            ])
-        }
-        strip(-padX, -padY, w + padX, innerW)
-        strip(-padX, h - innerW, w + padX, h + padY)
-        strip(-padX, innerW, innerW, h - innerW)
-        strip(w - innerW, innerW, w + padX, h - innerW)
-
-        guard !out.isEmpty,
-              let buf = device.makeBuffer(bytes: out, length: out.count * 4, options: .storageModeShared) else { return nil }
-        return (buf, out.count / 2)
-    }
-
-    /// 构建真实手绘生图卷轴装裱网格（`scroll-border-h.png` 上下宋锦绫边 + `scroll-roller-v.png` 左右紫檀滚轴与宋锦侧边 + `scroll-corner.png` 四角白玉鎏金云纹包角）：
-    /// 全部位于画心外缘，0% 画心过绘，近景缩放自动视锥剔除，全视网膜分辨率纤毫毕现。
-    private static func buildScrollArt(device: MTLDevice, width w: Float, height h: Float)
-        -> (h: (MTLBuffer, Int)?, v: (MTLBuffer, Int)?, corners: (MTLBuffer, Int)?) {
-        guard w > 0, h > 0 else { return (nil, nil, nil) }
-        let u = min(w, h)
-        let matH = u * 0.056
-        let sideTotal = u * 0.082
-        let silkW = sideTotal * 0.56
-        let cornerS = u * 0.096
-
-        func makeBuf(_ verts: [Float]) -> (MTLBuffer, Int)? {
-            guard !verts.isEmpty,
-                  let b = device.makeBuffer(bytes: verts, length: verts.count * 4, options: .storageModeShared) else { return nil }
-            return (b, verts.count / 4)
-        }
-        func appendQuad(_ arr: inout [Float], x0: Float, y0: Float, x1: Float, y1: Float, u0: Float, v0: Float, u1: Float, v1: Float) {
-            arr.append(contentsOf: [
-                x0, y0, u0, v0,
-                x1, y0, u1, v0,
-                x0, y1, u0, v1,
-                x0, y1, u0, v1,
-                x1, y0, u1, v0,
-                x1, y1, u1, v1,
-            ])
-        }
-
-        // 1. 上下宋锦织锦横边（mirrorRepeat 无缝按 1024×192 原比例平铺，绝不拉伸变形）
-        let uSpan = max(1.0, w / max(1.0, matH * 5.3333))
-        var hVerts: [Float] = []
-        appendQuad(&hVerts, x0: 0, y0: -matH, x1: w, y1: 0, u0: 0, v0: 0, u1: uSpan, v1: 1)
-        appendQuad(&hVerts, x0: 0, y0: h, x1: w, y1: h + matH, u0: 0, v0: 1, u1: uSpan, v1: 0)
-
-        // 2. 左右紫檀雕云木轴＋宋锦侧绫边（左侧原图、右侧水平镜像，绫边紧贴画心、木轴居外侧）
-        var vVerts: [Float] = []
-        appendQuad(&vVerts, x0: -sideTotal, y0: -matH, x1: 0, y1: h + matH, u0: 0, v0: 0, u1: 1, v1: 1)
-        appendQuad(&vVerts, x0: w, y0: -matH, x1: w + sideTotal, y1: h + matH, u0: 1, v0: 0, u1: 0, v1: 1)
-
-        // 3. 四角白玉鎏金云纹包角（严密落在四隅宋锦框上，不侵占画心分毫）
-        var cVerts: [Float] = []
-        appendQuad(&cVerts, x0: -silkW, y0: -matH, x1: -silkW + cornerS, y1: -matH + cornerS, u0: 0, v0: 0, u1: 1, v1: 1)
-        appendQuad(&cVerts, x0: w + silkW - cornerS, y0: -matH, x1: w + silkW, y1: -matH + cornerS, u0: 1, v0: 0, u1: 0, v1: 1)
-        appendQuad(&cVerts, x0: -silkW, y0: h + matH - cornerS, x1: -silkW + cornerS, y1: h + matH, u0: 0, v0: 1, u1: 1, v1: 0)
-        appendQuad(&cVerts, x0: w + silkW - cornerS, y0: h + matH - cornerS, x1: w + silkW, y1: h + matH, u0: 1, v0: 1, u1: 0, v1: 0)
-
-        return (makeBuf(hVerts), makeBuf(vVerts), makeBuf(cVerts))
+        sweepVertexPool.reset()
+        sweepIndexPool.reset()
     }
 
     func setTerrain(_ next: WorldMap, refreshSea: Bool) {
@@ -799,7 +722,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let rebuildIcons = !noStatic && (icons == nil || capitals != lastCapitalKey)
         if rebuildIcons { lastCapitalKey = capitals }
         let wide = borderWide
-        let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
+        let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade, needsShadedTerrain: reveal < 1)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard self != nil else { return }
             let vertices = skipOutlines ? nil : MapLayers.outlines(next, wide: wide).vertices
@@ -826,23 +749,33 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     struct BaseInputs {
         let mode: MapMode; let nationColors: [RGB]; let highlight: Int?; let tint: [Int: RGB]; let fills: [RGB]?
-        let density: Float; let terrain: [Float]?; let shade: [Float]
+        let density: Float; let terrain: [Float]?; let shade: [Float]; var needsShadedTerrain: Bool = false
     }
     static func baseColors(_ map: WorldMap, _ i: BaseInputs) -> (land: [Float], terrain: [Float], terrainBase: [Float], shade: [Float]) {
         var c = CellMesh.colors(map: map, mode: i.mode, nationColors: i.nationColors, highlightProvince: i.highlight, tint: i.tint, provinceColors: i.mode == .political ? i.fills : nil)
         let terrainBase = (i.terrain?.count == c.count ? i.terrain : nil) ?? CellMesh.colors(map: map, mode: .terrain, nationColors: i.nationColors)
-        var terrain = terrainBase
         if i.mode == .political && i.density < 1 {
             let k = i.fills != nil ? max(0.84, i.density) : max(0, i.density)
-            for j in 0..<min(c.count, terrain.count) where j % 4 != 3 { c[j] = terrain[j] + (c[j] - terrain[j]) * k }
+            for j in 0..<min(c.count, terrainBase.count) where j % 4 != 3 { c[j] = terrainBase[j] + (c[j] - terrainBase[j]) * k }
         }
         let shade = i.shade.count == map.vertices.count / 2 ? i.shade : MapLayers.vertexHillshade(map)
-        let safeLimit = min(shade.count, c.count / 4, terrain.count / 4)
-        for v in 0..<safeLimit {
-            let k = shade[v], o = v * 4
-            for j in 0..<3 { c[o + j] = min(1, c[o + j] * k); terrain[o + j] = min(1, terrain[o + j] * k) }
+        let safeLimit = min(shade.count, c.count / 4)
+        if i.needsShadedTerrain {
+            var terrain = terrainBase
+            let tLimit = min(safeLimit, terrain.count / 4)
+            for v in 0..<tLimit {
+                let k = shade[v], o = v * 4
+                c[o] = min(1, c[o] * k); c[o + 1] = min(1, c[o + 1] * k); c[o + 2] = min(1, c[o + 2] * k)
+                terrain[o] = min(1, terrain[o] * k); terrain[o + 1] = min(1, terrain[o + 1] * k); terrain[o + 2] = min(1, terrain[o + 2] * k)
+            }
+            return (c, terrain, terrainBase, shade)
+        } else {
+            for v in 0..<safeLimit {
+                let k = shade[v], o = v * 4
+                c[o] = min(1, c[o] * k); c[o + 1] = min(1, c[o + 1] * k); c[o + 2] = min(1, c[o + 2] * k)
+            }
+            return (c, [], terrainBase, shade)
         }
-        return (c, terrain, terrainBase, shade)
     }
 
     private var workRevision = MapWorkRevision()
@@ -1057,7 +990,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let now = pinnedFrameTime ?? CACurrentMediaTime()
         let t = progress(now)
         if cachedPlacedSpritesRevision == armySpritesRevision && cachedPlacedSpritesTime >= 0 {
-            if (t >= 1 && cachedPlacedSpritesTime == .infinity) || cachedPlacedSpritesTime == now {
+            if (t >= 1 && cachedPlacedSpritesTime == .infinity) || cachedPlacedSpritesTime == now || (pinnedFrameTime == nil && abs(now - cachedPlacedSpritesTime) < 0.004) {
                 return cachedPlacedSprites
             }
         }
@@ -1186,26 +1119,35 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
 
+    private var armyRoleBuffers: [String: [Float]] = [:]
+
     private func rebuildArmies() {
         let sprites = armySprites + dying
         let ghosts = Set(dying.map(\.key))
         let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6)
-        var byRole: [String: [Float]] = [:]
-        byRole.reserveCapacity(16)
+        // v11.0.0：原地复用角色顶点缓冲，彻底消除旧版 `var arr = byRole[role] ?? []; ...; byRole[role] = arr` 的 O(K²) CoW 拷贝风暴（每步省 7MB+）！
+        for key in armyRoleBuffers.keys {
+            armyRoleBuffers[key]?.removeAll(keepingCapacity: true)
+        }
+        let reserveHint = max(90, sprites.count * 30)
         var fade: Float = 1
         var end = SIMD2<Float>(0, 0)
         var lead = SIMD2<Float>(0, 0)
         func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
-            var arr = byRole[role] ?? []
-            if arr.isEmpty { arr.reserveCapacity(max(90, sprites.count * 30)) }
-            let corners: [(Float, Float)] = [(-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)]
-            for (cx, cy) in corners {
-                arr.append(at.x); arr.append(at.y); arr.append(cx); arr.append(cy)
-                arr.append(c.r); arr.append(c.g); arr.append(c.b); arr.append(fade)
-                arr.append(size); arr.append(end.x); arr.append(end.y); arr.append(sx)
-                arr.append(sy); arr.append(lead.x); arr.append(lead.y)
+            if armyRoleBuffers[role] == nil {
+                var freshArr = [Float]()
+                freshArr.reserveCapacity(reserveHint)
+                armyRoleBuffers[role] = freshArr
             }
-            byRole[role] = arr
+            let corners: [(Float, Float)] = [(-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)]
+            armyRoleBuffers[role]!.reserveCapacity(armyRoleBuffers[role]!.count + 90)
+            for (cx, cy) in corners {
+                armyRoleBuffers[role]!.append(at.x); armyRoleBuffers[role]!.append(at.y)
+                armyRoleBuffers[role]!.append(cx); armyRoleBuffers[role]!.append(cy)
+                armyRoleBuffers[role]!.append(c.r); armyRoleBuffers[role]!.append(c.g); armyRoleBuffers[role]!.append(c.b); armyRoleBuffers[role]!.append(fade)
+                armyRoleBuffers[role]!.append(size); armyRoleBuffers[role]!.append(end.x); armyRoleBuffers[role]!.append(end.y); armyRoleBuffers[role]!.append(sx)
+                armyRoleBuffers[role]!.append(sy); armyRoleBuffers[role]!.append(lead.x); armyRoleBuffers[role]!.append(lead.y)
+            }
         }
         var spread = [String: SIMD2<Float>]()
         do {
@@ -1279,11 +1221,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             default: return 3
             }
         }
-        units = byRole.keys.sorted {
+        units = armyRoleBuffers.keys.sorted {
             let oa = roleLayerOrder($0), ob = roleLayerOrder($1)
             return oa != ob ? oa < ob : $0 < $1
         }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)? in
-            guard let data = byRole[role], !data.isEmpty, let texture = unitTextures[role] else { return nil }
+            guard let data = armyRoleBuffers[role], !data.isEmpty, let texture = unitTextures[role] else { return nil }
             let byteLen = data.count * MemoryLayout<Float>.stride
             let pool = unitBufferPool[role] ?? MapBufferPool()
             unitBufferPool[role] = pool
@@ -1331,7 +1273,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private func rebuildAppearance(fade: Bool = false, viewSwitch: Bool = true) {
         guard !released else { return }
         let work = workRevision.changeAppearance(), map = self.map
-        let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
+        let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade, needsShadedTerrain: reveal < 1)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard self != nil else { return }
             let colours = MapRenderer.baseColors(map, inputs)
@@ -1445,7 +1387,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let mapScissor = MTLScissorRect(x: sx0, y: sy0, width: sx1 - sx0, height: sy1 - sy0)
         let deskVisible = sx0 > 0 || sy0 > 0 || sx1 < dw || sy1 < dh
 
+        // 深度缓冲纯片上 SRAM 暂态使用（.dontCare 零 DRAM 带宽写回）
+        pass.depthAttachment.clearDepth = 1.0
+        pass.depthAttachment.loadAction = .clear
+        pass.depthAttachment.storeAction = .dontCare
         guard let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
+        if let noDepthState { encoder.setDepthStencilState(noDepthState) }
 
         // 0. 仅当缩远露出书案时绘制「御案织锦」背景（近景满屏看图时完全跳过，0 像素开销）
         if deskVisible {
@@ -1482,27 +1429,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let stage = reveal
             func ramp(_ from: Float) -> Float { min(1, max(0, (stage - from) / 0.07)) }
 
-            // 1. 宋画青绿海图底图（浅海青碧渐变 + 解析双波日照波光 + 铜版细浪 + 极北冬冰，零噪声）
-            quad(sea, seaPipeline, x: 0, y: 0, width: map.width, height: map.height)
-            if stage < 0.2 {
-                var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
-                var sheet = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, stage)
-                let deep = MapPalette.ocean(display.ocean).deep
-                var water = SIMD4<Float>(deep.r, deep.g, deep.b, 0), extent = SIMD4<Float>(map.width, map.height, 0, 0)
-                encoder.setRenderPipelineState(veilPipeline)
-                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-                encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
-                encoder.setFragmentBytes(&sheet, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
-                encoder.setFragmentBytes(&water, length: MemoryLayout<SIMD4<Float>>.stride, index: 1)
-                encoder.setFragmentBytes(&extent, length: MemoryLayout<SIMD4<Float>>.stride, index: 2)
-                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
-            }
-
-            // 2. 陆地地块（西北日照浮雕明暗 + 四季天光与北国冬雪，零噪声；硬校验缓冲字节长度）
+            // 1 & 2. v11.0.0 Early-Z 深度零过绘顺序：
+            // 常规模式（stage >= 1）先绘不透明陆地写深度 z=0，再绘海面做 depth < 1.0 硬件早剔，跳过 60–80% 陆下无效海面片元！
+            // 开卷动画阶段（stage < 1）维持海面先绘、陆地渐现。
             let minColorBytes = vertexCount * 16
             let minFieldBytes = vertexCount * 8
             let canDrawLand = indexCount > 0 && vertexCount > 0 && positions.length >= minFieldBytes && colors.length >= minColorBytes
-            if canDrawLand {
+
+            func drawLandPass() {
+                guard canDrawLand else { return }
                 if stage < 1, let rb = revealBuffers(), rb.terrain.length >= minColorBytes, rb.fields.length >= minFieldBytes {
                     var r = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, stage)
                     encoder.setRenderPipelineState(revealPipeline)
@@ -1530,7 +1465,31 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
             }
 
-            // 2.5. 8K–16K 真实卫星地貌与海深 GPU 瓦片金字塔叠层（HotPack v6 ReliefTiles/*.lgtr，按视口流式采样）
+            if stage >= 1 && canDrawLand, let landDepthState, let seaDepthState {
+                encoder.setDepthStencilState(landDepthState)
+                drawLandPass()
+                encoder.setDepthStencilState(seaDepthState)
+                quad(sea, seaPipeline, x: 0, y: 0, width: map.width, height: map.height)
+                if let noDepthState { encoder.setDepthStencilState(noDepthState) }
+            } else {
+                quad(sea, seaPipeline, x: 0, y: 0, width: map.width, height: map.height)
+                if stage < 0.2 {
+                    var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
+                    var sheet = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, stage)
+                    let deep = MapPalette.ocean(display.ocean).deep
+                    var water = SIMD4<Float>(deep.r, deep.g, deep.b, 0), extent = SIMD4<Float>(map.width, map.height, 0, 0)
+                    encoder.setRenderPipelineState(veilPipeline)
+                    encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                    encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+                    encoder.setFragmentBytes(&sheet, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
+                    encoder.setFragmentBytes(&water, length: MemoryLayout<SIMD4<Float>>.stride, index: 1)
+                    encoder.setFragmentBytes(&extent, length: MemoryLayout<SIMD4<Float>>.stride, index: 2)
+                    encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+                }
+                drawLandPass()
+            }
+
+            // 2.5. 8K–16K 真实卫星地貌与海深 GPU 瓦片金字塔叠层（v11.0.0 管线与采样器提至循环外单次绑定，消除 16–36 次重复状态切换）
             if stage >= 0.95 && !activeHistoricalRegion.isEmpty && (display.mapDetail ?? true) {
                 let tiles = MapTileStreamer.shared.visibleTiles(
                     region: activeHistoricalRegion,
@@ -1542,8 +1501,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 )
                 if !tiles.isEmpty {
                     u.alpha = isTerrainMode ? 0.56 : (fills == nil ? 0.24 : 0.14)
+                    encoder.setRenderPipelineState(reliefTilePipeline)
+                    encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                    encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                    encoder.setFragmentSamplerState(sampler, index: 0)
                     for tile in tiles {
-                        quad(tile.texture, reliefTilePipeline, x: tile.x, y: tile.y, width: tile.w, height: tile.h)
+                        var q = QuadUniforms(origin: SIMD2(tile.x, tile.y), size: SIMD2(tile.w, tile.h))
+                        encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+                        encoder.setFragmentTexture(tile.texture, index: 0)
+                        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
                     }
                     u.alpha = 1
                 }

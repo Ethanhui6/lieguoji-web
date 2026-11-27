@@ -198,15 +198,11 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
             if model.phase == .playing { Task { await model.handleAppBackground() } }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            if model.phase == .playing { Task { await model.handleAppForeground() } }
-        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             if model.phase == .playing { Task { await model.handleAppForeground() } }
         }
         .task { GameFeel.shared.start() }
-        // 启动即刻并行预热 5 路推流线路测速（443 / 8765 / 8443 / 局域网 / Cloudflare），进局零等待秒连最快线路。
-        .task { model.prewarmCloudRoutes() }
+        // v10.1.0 移除冷启动局域网 UDP 广播与多路空连探测，杜绝开机弹窗与后台抢占带宽；玩家打开算力线路面板时再按需测速。
         // 启动自动检测云端版本、免换包 228MB+ 真实 GIS 典藏热更清单、续签账号会话与腾讯云专属服。
         .task {
             let applied = await platform.bootstrap(manual: false)
@@ -387,18 +383,17 @@ struct InkPressStyle: ButtonStyle {
     }
 }
 
-/// 顶栏的战事：交叉的戈与战争数。新开一场战争时戈一跳、朱圈一荡，战时轻缓呼吸。
+/// 顶栏的战事：交叉的戈与战争数。新开一场战争时戈一跳、朱圈一荡（v11.0.0 移除常驻 `.repeatForever` 动画，地图静止时彻底休眠 0fps）。
 struct WarCount: View {
     let count: Int
     var compact: Bool = false
     @State private var bump = false
     @State private var ring = false
-    @State private var pulse = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         HStack(spacing: 3) {
             InkIcon(glyph: .war, size: 14, weight: 2.0, accent: Theme.seal.opacity(0.55))
-                .scaleEffect(bump ? 1.35 : (pulse ? 1.07 : 1)).rotationEffect(.degrees(bump ? -10 : 0))
+                .scaleEffect(bump ? 1.32 : 1).rotationEffect(.degrees(bump ? -10 : 0))
                 .background {
                     Circle().stroke(Theme.seal.opacity(ring ? 0 : 0.6), lineWidth: 1.2).scaleEffect(ring ? 2.2 : 0.6)
                 }
@@ -406,12 +401,8 @@ struct WarCount: View {
                 .contentTransition(.numericText()).animation(Motion.tap, value: count)
         }
         .foregroundStyle(Theme.seal)
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { pulse = true }
-        }
         .onChange(of: count) { old, new in
-            guard new > old else { return }
+            guard new > old, !reduceMotion else { return }
             ring = false
             withAnimation(Motion.stamp) { bump = true }
             withAnimation(Motion.reveal) { ring = true }

@@ -53,6 +53,8 @@ extension DiplomacyBridge {
     /// evaluateAlliance47 on the run state.
     @discardableResult
     public static func evaluateAlliance(_ r: JS, _ nationId: String, engine: DeclarationEngine) -> String? {
+        // v11.0.0 历史剧本「史实路线」先拦截再算外交力：全面禁止 AI 自主新建/乱拉/解散同盟（杜绝“德瑞联盟”且不白扣 100 外交力）
+        if UnitKinds.enabled && HistoricalEvents.isHistoricalRoute(r) { return nil }
         guard r.diplomacy.worldAuto.isTruthy, r.diplomacy.nations[nationId].optionalBool == true, Vassals.overlord(r, nationId) == nil,
               let i = r.world.nations.asArray.firstIndex(where: { $0.id.asString == nationId }) else { return nil }
         if !Vassals.alive(r, nationId) { return nil }

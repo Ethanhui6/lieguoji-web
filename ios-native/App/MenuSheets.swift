@@ -51,8 +51,6 @@ struct MenuSheet: View {
                 Group2 {
                     PaperSwitch(title: "显示战争箭头", on: $controller.play.warArrows)
                     Divider2()
-                    PaperSwitch(title: "大事传报横幅", on: $controller.play.showHeralds)
-                    Divider2()
                     PaperSwitch(title: "战况伤亡飘字", on: $controller.play.showBattleFloats)
                     Divider2()
                     PaperSwitch(title: "海面动态波浪", on: $controller.play.seaWaves)

@@ -21,7 +21,7 @@ public enum BinaryStateWire {
         "idle", "moving", "fighting", "sieging", "retreating", "garrison", "reorganizing", "destroyed", "embarked"
     ]
     private static let travelTable: [String] = [
-        "land", "sea", "embarking", "disembarking", "air"
+        "moving", "arrived", "halted", "blocked", "land", "sea", "embarking", "disembarking", "air"
     ]
     private static let fleetStatusTable: [String] = [
         "idle", "sailing", "fighting", "patrol", "blockading", "escorting", "repairing", "lost"

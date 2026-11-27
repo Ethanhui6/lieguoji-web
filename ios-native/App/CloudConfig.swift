@@ -34,7 +34,12 @@ import LieguojiCore
 
     private func apply(_ data: Data) -> Bool {
         guard let p = try? JSONDecoder().decode(Payload.self, from: data) else { return false }
-        notice = (p.notice ?? "").isEmpty ? nil : p.notice
+        // v11.0.0 单调版本守卫：防止低版本 GitHub 静态配置回滚平台服已下发的高版本热调数值
+        if let incoming = p.version, incoming > 0, incoming < version {
+            return false
+        }
+        // v11.0.0 永久关闭跑马灯横幅
+        notice = nil
         version = max(version, p.version ?? 0)
         if let host = p.computeHost, !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             computeHost = host.trimmingCharacters(in: .whitespacesAndNewlines)

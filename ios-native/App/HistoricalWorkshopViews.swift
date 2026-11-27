@@ -26,6 +26,19 @@ final class HistoricalThumbnailCache {
         } else {
             heights = HistoricalBasemaps.generateHeights(region: scenario.region, graph: inputs.grid)
         }
+        // v11.0.0：优先按烘焙真实历史版图（scenarios_gis.bin）上色与标注各国都城，让剧本卡片直接呈现准确史实疆域！
+        if let gis = HistoricalBasemaps.bakedScenarioGIS(id: scenario.id, expectedCount: inputs.grid.points.count),
+           gis.ownerMask.count == inputs.grid.points.count,
+           gis.nationCount == scenario.nations.count {
+            let colors = scenario.nations.map(\.color)
+            let w = Double(inputs.base.width), h = Double(inputs.base.height)
+            let caps: [(x: Float, y: Float)] = scenario.nations.map { n in
+                let pt = HistoricalBasemaps.project(lon: n.capitalLon, lat: n.capitalLat, region: scenario.region, width: w, height: h)
+                return (Float(pt.x), Float(pt.y))
+            }
+            let thumb = PreviewWorld.thumbnail(inputs, heights: heights, width: 400, nations: scenario.nations.count, seed: scenario.id, ownerMask: gis.ownerMask, nationColors: colors, capitals: caps)
+            return makeUIImage(rgba: thumb.rgba, width: thumb.width, height: thumb.height)
+        }
         let nationCount = max(2, min(100, scenario.nations.count))
         let thumb = PreviewWorld.thumbnail(inputs, heights: heights, width: 400, nations: nationCount, seed: scenario.id)
         return makeUIImage(rgba: thumb.rgba, width: thumb.width, height: thumb.height)
@@ -105,7 +118,7 @@ private struct HistoricalScenarioThumb: View {
     }
 }
 
-/// 历史地域过滤选项（全部 / 华夏精图 / 中国 / 欧洲 / 东亚日本 / 日本列岛 / 地中海 / 世界）。
+/// 历史地域过滤选项（仅展示存在官方剧本的战区，消除点击空页面的「地中海」空标签）。
 private enum AtlasRegionFilter: String, CaseIterable, Identifiable {
     case all = "all"
     case huaxia = "huaxia"
@@ -113,7 +126,6 @@ private enum AtlasRegionFilter: String, CaseIterable, Identifiable {
     case europe = "europe"
     case eastAsiaJapan = "east_asia_japan"
     case japanDetail = "japan_detail"
-    case mediterranean = "mediterranean"
     case world = "world"
 
     var id: String { rawValue }
@@ -125,7 +137,6 @@ private enum AtlasRegionFilter: String, CaseIterable, Identifiable {
         case .europe: return "欧洲"
         case .eastAsiaJapan: return "东亚日本"
         case .japanDetail: return "日本列岛"
-        case .mediterranean: return "地中海"
         case .world: return "世界"
         }
     }
@@ -138,7 +149,6 @@ private enum AtlasRegionFilter: String, CaseIterable, Identifiable {
         case .europe: return region == .europe
         case .eastAsiaJapan: return region == .eastAsiaJapan
         case .japanDetail: return region == .japanDetail
-        case .mediterranean: return region == .mediterranean
         case .world: return region == .world
         }
     }
@@ -195,12 +205,7 @@ struct HistoricalAtlasBrowserView: View {
         var copy = sc
         copy.rebelMode = rebelMode
         copy.historicalRoute = historicalRoute
-        // 高精 60K/120K 网格下按比例放大州郡粒度，获得钢铁雄心4 / 历史时代3 级细密版图
-        if selectedTier == .high60K && copy.provinceCount < 420 {
-            copy.provinceCount = min(1200, max(copy.provinceCount * 2, 420))
-        } else if selectedTier == .ultra120K && copy.provinceCount < 720 {
-            copy.provinceCount = min(2400, max(copy.provinceCount * 3, 720))
-        }
+        // v11.0.0 统一由 NativeCreation.swift 按网格精度与真实陆地格数自适应缩放州郡粒度，彻底消除双重乘法切碎州郡与地名耗尽！
         return copy
     }
 

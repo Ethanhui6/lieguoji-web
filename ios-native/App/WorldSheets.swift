@@ -481,44 +481,6 @@ struct WarBalance: View {
 }
 
 /// One state's standing (engine diplomacyInfo).
-/// The newest chronicle line above the tab bar. Each line stays at least 1.6 seconds; lines that
-/// arrive meanwhile are skipped to the latest, so fast play no longer slides a new line in every step.
-struct EventTicker: View {
-    let latest: String?
-    let open: () -> Void
-    @State private var shown: String?
-    @State private var changed = Date.distantPast
-    @State private var pending: Task<Void, Never>?
-    var body: some View {
-        VStack {
-            if let text = shown {
-                Button(action: open) {
-                    HStack(spacing: 7) {
-                        Circle().fill(Theme.seal).frame(width: 6, height: 6)
-                            .overlay(Circle().stroke(Theme.seal.opacity(0.3), lineWidth: 2.5))
-                        Text(text).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
-                    }
-                    .padding(.horizontal, 14).frame(height: Theme.Control.tickerHeight).glass(Capsule())
-                }
-                .buttonStyle(PressStyle()).padding(.horizontal, 4)
-                .id(text).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .move(edge: .top).combined(with: .opacity)))
-            }
-        }
-        .onAppear { shown = latest; changed = Date() }
-        .onChange(of: latest) { _, next in
-            pending?.cancel()
-            let wait = 1.6 - Date().timeIntervalSince(changed)
-            if wait <= 0 { show(next) }
-            else { pending = Task { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)); if !Task.isCancelled { show(next) } } }
-        }
-    }
-    private func show(_ text: String?) {
-        guard text != shown else { return }
-        withAnimation(Motion.fade) { shown = text }
-        changed = Date()
-    }
-}
-
 struct DiplomacyOverview: Decodable {
     struct Pact: Decodable { let nation: Int; let kind: String; let months: Int }
     struct Truce: Decodable { let nation: Int; let days: Int }

@@ -142,6 +142,8 @@ public enum DiplomacyBridge {
     /// evaluateDeclaration47 for one state on its update day.
     @discardableResult
     public static func evaluateDeclaration(_ r: JS, _ nationId: String, engine: DeclarationEngine) -> JS? {
+        // v11.0.0 历史剧本「史实路线」严禁 AI 随机乱宣战（一切重大开战严格由真实历史事件链驱动）
+        if UnitKinds.enabled && HistoricalEvents.isHistoricalRoute(r) { return nil }
         guard let i = r.world.nations.asArray.firstIndex(where: { $0.id.asString == nationId }) else { return nil }
         var w = world(r)
         let known = w.relations.count

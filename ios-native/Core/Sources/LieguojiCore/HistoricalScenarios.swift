@@ -403,6 +403,36 @@ public enum HistoricalScenarios {
         ("府内", 131.61, 33.24), ("臼杵", 131.80, 33.12), ("中津", 131.19, 33.60), ("佐伯", 131.90, 32.96),
         ("延冈", 131.66, 32.58), ("佐土原", 131.47, 32.05), ("都城", 131.06, 31.72), ("鹿儿岛", 130.56, 31.60),
         ("内城", 130.57, 31.61), ("伊集院", 130.40, 31.63), ("对马", 129.29, 34.20), ("那霸", 127.68, 26.21),
+        // 补齐 60K/120K 令制国城下町与支城（杜绝战国日本高精网格耗尽日本真地名）
+        ("小牧山", 136.91, 35.29), ("长筱", 137.56, 34.92), ("设乐原", 137.51, 34.90), ("墨俣", 136.68, 35.37),
+        ("岩村", 137.44, 35.36), ("苗木", 137.49, 35.51), ("高天神", 138.03, 34.70), ("二俣", 137.81, 34.86),
+        ("兴国寺", 138.80, 35.15), ("蒲原", 138.60, 35.12), ("深志", 137.97, 36.24), ("林城", 138.01, 36.22),
+        ("砥石", 138.28, 36.44), ("盐尻", 137.95, 36.11), ("饭山", 138.37, 36.85), ("坂户", 138.89, 37.06),
+        ("栃尾", 139.00, 37.47), ("柏崎", 138.55, 37.37), ("糸鱼川", 137.86, 37.04), ("松仓", 137.45, 36.79),
+        ("增山", 137.02, 36.64), ("末森", 136.75, 36.84), ("大圣寺", 136.31, 36.30), ("丸冈", 136.27, 36.15),
+        ("金崎", 136.07, 35.66), ("佐和山", 136.27, 35.28), ("朽木", 135.92, 35.36), ("水口", 136.17, 34.97),
+        ("日野", 136.24, 35.01), ("雾山", 136.32, 34.51), ("大河内", 136.49, 34.54), ("鸟羽", 136.84, 34.48),
+        ("长岛", 136.69, 35.09), ("田边", 135.38, 33.73), ("根来", 135.32, 34.28), ("粉河", 135.41, 34.28),
+        ("高屋", 135.61, 34.56), ("饭盛山", 135.64, 34.72), ("芥川山", 135.60, 34.88), ("有冈", 135.42, 34.78),
+        ("八上", 135.26, 35.07), ("黑井", 135.10, 35.16), ("置盐", 134.67, 34.94), ("御着", 134.74, 34.82),
+        ("上月", 134.33, 34.97), ("天神山", 134.14, 34.83), ("沼城", 134.04, 34.73), ("高松城", 133.82, 34.69),
+        ("松山城", 133.62, 34.81), ("神边", 133.38, 34.54), ("三原", 133.08, 34.40), ("镜山", 132.73, 34.43),
+        ("樱尾", 132.33, 34.35), ("大内馆", 131.48, 34.19), ("且山", 131.02, 34.00), ("石见银山", 132.44, 35.11),
+        ("益田", 131.84, 34.67), ("羽衣石", 133.90, 35.46), ("若樱鬼城", 134.40, 35.34), ("胜瑞城", 134.53, 34.13),
+        ("白地", 133.80, 34.02), ("引田", 134.40, 34.22), ("十河", 134.11, 34.29), ("川之江", 133.57, 34.01),
+        ("黑濑", 132.51, 33.36), ("大洲", 132.54, 33.51), ("本山", 133.59, 33.76), ("安艺城", 133.91, 33.50),
+        ("岩屋", 130.52, 33.52), ("秋月", 130.69, 33.46), ("鹰取", 130.73, 33.77), ("唐津", 129.97, 33.45),
+        ("日野江", 130.25, 32.66), ("大村", 129.96, 32.90), ("宇土", 130.66, 32.69), ("相良", 130.76, 32.21),
+        ("冈城", 131.41, 32.97), ("角牟礼", 131.15, 33.29), ("高千穗", 131.31, 32.71), ("清武", 131.39, 31.85),
+        ("饭野", 130.87, 32.04), ("加治木", 130.66, 31.74), ("知览", 130.44, 31.38), ("指宿", 130.64, 31.25),
+        ("江户崎", 140.33, 35.95), ("土浦", 140.20, 36.07), ("笠间", 140.26, 36.38), ("结城", 139.88, 36.30),
+        ("唐沢山", 139.60, 36.35), ("金山", 139.38, 36.31), ("松井田", 138.80, 36.32), ("岩柜", 138.80, 36.56),
+        ("八王子", 139.25, 35.65), ("泷山", 139.33, 35.70), ("玉绳", 139.53, 35.35), ("三崎", 139.62, 35.14),
+        ("大多喜", 140.24, 35.29), ("小金", 139.93, 35.84), ("岩城", 140.89, 37.05), ("三春", 140.49, 37.44),
+        ("须贺川", 140.37, 37.29), ("桑折", 140.52, 37.85), ("黑川", 139.93, 37.49), ("寒河江", 140.28, 38.38),
+        ("尾浦", 139.75, 38.76), ("新庄", 140.30, 38.76), ("涌谷", 141.13, 38.54), ("登米", 141.28, 38.65),
+        ("一关", 141.13, 38.93), ("水泽", 141.14, 39.14), ("三户", 141.26, 40.38), ("九户", 141.30, 40.27),
+        ("大馆", 140.56, 40.27), ("角馆", 140.56, 39.60), ("本庄", 140.05, 39.39), ("汤泽", 140.49, 39.16),
     ]
 
     /// 在严格国界锁定的 `owners` 数组中，为每个历史国家选出最接近其都城坐标的所属州郡作为首都 seed。
@@ -540,11 +570,149 @@ public enum HistoricalScenarios {
             }
         }
 
-        // 4. 判定时代匹配词典（古代中国 / 日本战国 / 全球 4,200 真城库）
+        // 4. 判定时代与区域隔离（古代中国 / 日本战国 / 纯正中文全球城市库）
         let isAncientChina = ["zhanguo_260bce", "sanguo_208", "tang_755", "song_jin_1142"].contains(scenario.id)
             || (scenario.year < 1800 && (scenario.region == .china || scenario.region == .huaxia))
         let isSengokuJapan = scenario.id == "sengoku_1560"
             || (scenario.year < 1850 && scenario.region == .japanDetail)
+
+        let allowedISOs: Set<String> = (scenario.region == .japanDetail || isSengokuJapan) ? ["JP"] : []
+        let maxGlobalDeg: Double = {
+            switch scenario.region {
+            case .japanDetail: return 1.65
+            case .huaxia, .europe: return 3.2
+            case .china, .eastAsiaJapan, .mediterranean: return 4.8
+            case .world, .custom: return 7.5
+            }
+        }()
+
+        // 预先过滤：仅保留干净中文且符合区域 ISO 约束的候选城市，彻底杜绝日本战国出现釜山/清津或机翻乱码！
+        let filteredGlobalCities: [HistoricalBasemaps.GazetteerCity] = globalCities.filter { c in
+            guard !c.n.isEmpty else { return false }
+            let iso = c.iso.uppercased()
+            if iso.isEmpty || iso == "XX" || iso == "-99" { return false }
+            if !allowedISOs.isEmpty && !allowedISOs.contains(iso) { return false }
+            return true
+        }
+
+        // 5. 全局最近对优先分配（按距离由近到远撮合，杜绝邻州按数组顺序抢走东京/京都/柏林/巴黎/北京等核心真城名！）
+        func assignClosestPairsFromCurated(_ list: [(name: String, lon: Double, lat: Double)], maxDeg: Double) {
+            for _ in 0..<2 {
+                var pairs = [(ri: Int, name: String, dist: Double)]()
+                for ri in regions.indices where finalNames[ri].isEmpty {
+                    let g = provGeo[ri]
+                    var bestName = ""
+                    var bestDist = maxDeg
+                    for item in list where !usedNames.contains(item.name) {
+                        let d = geoDist(g.lon, g.lat, item.lon, item.lat)
+                        if d < bestDist {
+                            bestDist = d
+                            bestName = item.name
+                        }
+                    }
+                    if !bestName.isEmpty {
+                        pairs.append((ri, bestName, bestDist))
+                    }
+                }
+                if pairs.isEmpty { break }
+                pairs.sort { a, b in a.dist != b.dist ? a.dist < b.dist : a.ri < b.ri }
+                var assigned = 0
+                for p in pairs where finalNames[p.ri].isEmpty {
+                    if usedNames.insert(p.name).inserted {
+                        finalNames[p.ri] = p.name
+                        assigned += 1
+                    }
+                }
+                if assigned == 0 { break }
+            }
+        }
+
+        // v11.0.0 按国家 ID / 文化推导归属 ISO 优先集合，避免欧亚国界州跨国拉取邻国地名
+        func preferredISOs(forNationIndex ni: Int) -> Set<String> {
+            guard activeSpecs.indices.contains(ni) else { return [] }
+            let nid = activeSpecs[ni].id.lowercased()
+            if nid.contains("germany") || nid == "prussia" { return ["DE", "AT"] }
+            if nid.contains("austria") { return ["AT", "HU", "CZ", "SK", "HR", "SI"] }
+            if nid.contains("czech") { return ["CZ", "SK"] }
+            if nid.contains("france") { return ["FR", "DZ", "TN", "MA"] }
+            if nid.contains("uk") || nid.contains("brit") { return ["GB", "IE", "CY"] }
+            if nid.contains("poland") { return ["PL", "LT", "BY", "UA"] }
+            if nid.contains("ussr") || nid.contains("russia") { return ["RU", "UA", "BY", "KZ", "GE", "AZ", "AM"] }
+            if nid.contains("italy") { return ["IT", "LY"] }
+            if nid.contains("spain") { return ["ES"] }
+            if nid.contains("portugal") { return ["PT"] }
+            if nid.contains("netherland") { return ["NL"] }
+            if nid.contains("belgium") { return ["BE"] }
+            if nid.contains("luxembourg") { return ["LU"] }
+            if nid.contains("swiss") || nid.contains("switzer") { return ["CH"] }
+            if nid.contains("sweden") { return ["SE"] }
+            if nid.contains("norway") { return ["NO"] }
+            if nid.contains("denmark") { return ["DK"] }
+            if nid.contains("finland") { return ["FI"] }
+            if nid.contains("romania") { return ["RO", "MD"] }
+            if nid.contains("hungary") { return ["HU"] }
+            if nid.contains("yugoslav") || nid.contains("serbia") { return ["RS", "HR", "BA", "SI", "ME", "MK"] }
+            if nid.contains("greece") { return ["GR"] }
+            if nid.contains("bulgaria") { return ["BG"] }
+            if nid.contains("turkey") || nid.contains("ottoman") { return ["TR", "SY", "IQ"] }
+            if nid.contains("japan") || isSengokuJapan { return ["JP"] }
+            if nid.contains("korea") { return ["KR", "KP"] }
+            if nid.contains("prc") || nid.contains("roc") || nid.contains("china") || nid.contains("manchu") || nid.contains("sichuan") || nid.contains("shanxi") || nid.contains("guangxi") || nid.contains("xinjiang") || nid.contains("yunnan") || nid.contains("tibet") { return ["CN", "TW", "HK", "MO"] }
+            if nid.contains("mongol") { return ["MN"] }
+            if nid.contains("india") { return ["IN", "PK", "BD", "MM"] }
+            if nid.contains("usa") { return ["US"] }
+            if nid.contains("australia") { return ["AU", "NZ"] }
+            return []
+        }
+        let nationPrefISOs: [Set<String>] = (0..<activeSpecs.count).map { preferredISOs(forNationIndex: $0) }
+
+        func assignClosestPairsFromGlobal(maxDeg: Double) {
+            guard !filteredGlobalCities.isEmpty else { return }
+            for _ in 0..<2 {
+                var pairs = [(ri: Int, name: String, score: Double)]()
+                for ri in regions.indices where finalNames[ri].isEmpty {
+                    let g = provGeo[ri]
+                    let own = owners.indices.contains(ri) ? owners[ri] : -1
+                    let pref = (own >= 0 && own < nationPrefISOs.count) ? nationPrefISOs[own] : []
+                    var bestName = ""
+                    var bestScore = Double.infinity
+                    for c in filteredGlobalCities where !usedNames.contains(c.n) {
+                        let d = geoDist(g.lon, g.lat, c.lon, c.lat)
+                        guard d <= maxDeg else { continue }
+                        let popBoost = max(0.0, log10(max(1000.0, c.pop)) - 3.0) * 0.045
+                        let capBoost = c.cap > 0 ? 0.10 : 0.0
+                        let isoBonus = (!pref.isEmpty && pref.contains(c.iso.uppercased())) ? 0.45 : 0.0
+                        let score = d - min(0.24, popBoost + capBoost) - isoBonus
+                        if score < bestScore {
+                            bestScore = score
+                            bestName = c.n
+                        }
+                    }
+                    if !bestName.isEmpty {
+                        pairs.append((ri, bestName, bestScore))
+                    }
+                }
+                if pairs.isEmpty { break }
+                pairs.sort { a, b in a.score != b.score ? a.score < b.score : a.ri < b.ri }
+                var assigned = 0
+                for p in pairs where finalNames[p.ri].isEmpty {
+                    if usedNames.insert(p.name).inserted {
+                        finalNames[p.ri] = p.name
+                        assigned += 1
+                    }
+                }
+                if assigned == 0 { break }
+            }
+        }
+
+        if isAncientChina {
+            assignClosestPairsFromCurated(ancientChinaCities, maxDeg: 3.8)
+        } else if isSengokuJapan {
+            assignClosestPairsFromCurated(sengokuJapanCities, maxDeg: 2.0)
+            assignClosestPairsFromGlobal(maxDeg: maxGlobalDeg)
+        } else {
+            assignClosestPairsFromGlobal(maxDeg: maxGlobalDeg)
+        }
 
         func pickNearestFromCurated(_ list: [(name: String, lon: Double, lat: Double)], lon: Double, lat: Double, maxDeg: Double) -> String? {
             var bestName: String? = nil
@@ -559,22 +727,18 @@ public enum HistoricalScenarios {
             return bestName
         }
 
-        func pickNearestGlobal(lon: Double, lat: Double) -> String? {
-            guard !globalCities.isEmpty else { return nil }
+        func pickNearestGlobal(lon: Double, lat: Double, maxDeg: Double, ownerIndex: Int) -> String? {
+            guard !filteredGlobalCities.isEmpty else { return nil }
+            let pref = (ownerIndex >= 0 && ownerIndex < nationPrefISOs.count) ? nationPrefISOs[ownerIndex] : []
             var bestName: String? = nil
             var bestScore = Double.infinity
-            for c in globalCities {
-                guard !c.n.isEmpty, !usedNames.contains(c.n) else { continue }
+            for c in filteredGlobalCities where !usedNames.contains(c.n) {
                 let d = geoDist(lon, lat, c.lon, c.lat)
-                let score: Double
-                if d <= 6.0 {
-                    // 6° 内对大都市/首都给予温和加权（≤ 0.24°），确保名城压过近郊小镇且绝不跨区抢名
-                    let popBoost = max(0.0, log10(max(1000.0, c.pop)) - 3.0) * 0.045
-                    let capBoost = c.cap > 0 ? 0.10 : 0.0
-                    score = d - min(0.24, popBoost + capBoost)
-                } else {
-                    score = d
-                }
+                guard d <= maxDeg else { continue }
+                let popBoost = max(0.0, log10(max(1000.0, c.pop)) - 3.0) * 0.045
+                let capBoost = c.cap > 0 ? 0.10 : 0.0
+                let isoBonus = (!pref.isEmpty && pref.contains(c.iso.uppercased())) ? 0.45 : 0.0
+                let score = d - min(0.24, popBoost + capBoost) - isoBonus
                 if score < bestScore {
                     bestScore = score
                     bestName = c.n
@@ -592,22 +756,22 @@ public enum HistoricalScenarios {
         var extraCursor = [String: Int]()
         var allExtraCursor = 0
 
-        // 逐州赋名（包含未锁定重名首都的兜底情况）
+        // 逐州兜底赋名（仅剩极少数高密偏远州郡，严格遵守时代与文化隔离，古代华夏绝不混入现代城市！）
         for ri in regions.indices where finalNames[ri].isEmpty {
             let g = provGeo[ri]
+            let own = owners.indices.contains(ri) ? owners[ri] : 0
             var picked: String? = nil
 
             if isAncientChina {
-                picked = pickNearestFromCurated(ancientChinaCities, lon: g.lon, lat: g.lat, maxDeg: 3.8)
+                picked = pickNearestFromCurated(ancientChinaCities, lon: g.lon, lat: g.lat, maxDeg: 6.5)
             } else if isSengokuJapan {
-                picked = pickNearestFromCurated(sengokuJapanCities, lon: g.lon, lat: g.lat, maxDeg: 2.4)
+                picked = pickNearestFromCurated(sengokuJapanCities, lon: g.lon, lat: g.lat, maxDeg: 3.8)
             }
 
-            if picked == nil {
-                picked = pickNearestGlobal(lon: g.lon, lat: g.lat)
+            if picked == nil && !isAncientChina {
+                picked = pickNearestGlobal(lon: g.lon, lat: g.lat, maxDeg: maxGlobalDeg * 1.45, ownerIndex: own)
             }
 
-            // 仅当离线 cities_zh.json 未加载（如独立单测未调用 loadAtlasDirectory）时使用真实历史地名词池回退，绝不拼接方位假名！
             if picked == nil && isAncientChina {
                 picked = pickNearestFromCurated(ancientChinaCities, lon: g.lon, lat: g.lat, maxDeg: Double.infinity)
             }
@@ -616,7 +780,7 @@ public enum HistoricalScenarios {
             }
             if picked == nil {
                 let own = owners.indices.contains(ri) ? owners[ri] : 0
-                let culture = activeSpecs.indices.contains(own) ? activeSpecs[own].culture : "chinese"
+                let culture = isSengokuJapan ? "japanese" : (activeSpecs.indices.contains(own) ? activeSpecs[own].culture : "chinese")
                 if let pool = extraByCulture[culture] {
                     var idx = extraCursor[culture] ?? 0
                     while idx < pool.count {
@@ -626,7 +790,7 @@ public enum HistoricalScenarios {
                     extraCursor[culture] = idx
                 }
             }
-            if picked == nil {
+            if picked == nil && !isSengokuJapan && !isAncientChina {
                 while allExtraCursor < allExtra.count {
                     let cand = allExtra[allExtraCursor]; allExtraCursor += 1
                     if !usedNames.contains(cand) { picked = cand; break }
@@ -637,8 +801,9 @@ public enum HistoricalScenarios {
                 finalNames[ri] = name
             } else {
                 var n = ri + 1
-                while !usedNames.insert("郡\(n)").inserted { n += 1 }
-                finalNames[ri] = "郡\(n)"
+                let prefix = isSengokuJapan ? "国" : "郡"
+                while !usedNames.insert("\(prefix)\(n)").inserted { n += 1 }
+                finalNames[ri] = "\(prefix)\(n)"
             }
         }
 
@@ -3038,7 +3203,7 @@ public enum HistoricalScenarios {
                 rulerTraits: ["Brave", "BattleHardened", "Beloved"]
             ),
             HistoricalNationSpec(
-                id: "belgium", name: "比利时王国", shortName: "比", color: "#D4A017",
+                id: "belgium", name: "比利时王国", shortName: "比", color: "#B87A3D",
                 culture: "french", religion: "catholic", polity: "Kingdom", style: "constitutional",
                 capitalLon: 4.35, capitalLat: 50.85, capitalName: "布鲁塞尔",
                 anchors: [
@@ -3332,9 +3497,9 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 81.33, lat: 43.92, provinceName: "伊犁", weight: 1.25),
                     HistoricalAnchor(lon: 93.51, lat: 42.82, provinceName: "哈密", weight: 1.25),
                 ],
-                rulerName: "盛世才", rulerTitle: "新疆边防督办",
-                rulerMilitary: 78, rulerAdmin: 76, rulerDiplo: 76, rulerCharisma: 74,
-                rulerTraits: ["Ambitious", "IronFist"]
+                rulerName: "金树仁", rulerTitle: "新疆省主席",
+                rulerMilitary: 66, rulerAdmin: 68, rulerDiplo: 68, rulerCharisma: 66,
+                rulerTraits: ["Stubborn", "Paranoid"]
             ),
             HistoricalNationSpec(
                 id: "ussr_fe", name: "苏联远东", shortName: "苏", color: "#9B1C1C",
@@ -3658,7 +3823,7 @@ public enum HistoricalScenarios {
                 rulerTraits: ["Genius", "Reformer", "Unifier", "Visionary"]
             ),
             HistoricalNationSpec(
-                id: "belgium", name: "比利时王国", shortName: "比", color: "#D4A017",
+                id: "belgium", name: "比利时王国", shortName: "比", color: "#B87A3D",
                 culture: "french", religion: "catholic", polity: "Kingdom", style: "constitutional",
                 capitalLon: 4.35, capitalLat: 50.85, capitalName: "布鲁塞尔",
                 anchors: [
@@ -4042,7 +4207,7 @@ public enum HistoricalScenarios {
             ),
             // v8.0.0 彻底细化拆分：比利时、卢森堡、瑞士、丹麦、葡萄牙、爱尔兰、保加利亚、斯洛伐克、波罗的海三国（共 27 国！）
             HistoricalNationSpec(
-                id: "belgium", name: "比利时王国", shortName: "比", color: "#D4A017",
+                id: "belgium", name: "比利时王国", shortName: "比", color: "#B87A3D",
                 culture: "french", religion: "catholic", polity: "Kingdom", style: "constitutional",
                 capitalLon: 4.35, capitalLat: 50.85, capitalName: "布鲁塞尔",
                 anchors: [
@@ -4546,11 +4711,11 @@ public enum HistoricalScenarios {
                 rulerTraits: ["Patient", "Dovish", "Just"]
             ),
             HistoricalNationSpec(
-                id: "yugo_mideast", name: "南斯拉夫与中东", shortName: "不结盟", color: "#3D9970",
-                culture: "arab", religion: "islam", polity: "Republic", style: "socialist",
-                capitalLon: 31.2, capitalLat: 30.0, capitalName: "开罗",
+                id: "yugo_mideast", name: "不结盟国家阵营", shortName: "不结盟", color: "#3D9970",
+                culture: "slavic", religion: "orthodox", polity: "Republic", style: "socialist",
+                capitalLon: 20.5, capitalLat: 44.8, capitalName: "贝尔格莱德",
                 anchors: [
-                    HistoricalAnchor(lon: 20.5, lat: 44.8, provinceName: "贝尔格莱德", weight: 1.25),
+                    HistoricalAnchor(lon: 31.2, lat: 30.0, provinceName: "开罗", weight: 1.35),
                     HistoricalAnchor(lon: 32.9, lat: 39.9, provinceName: "安卡拉", weight: 1.3),
                     HistoricalAnchor(lon: 44.4, lat: 33.3, provinceName: "巴格达", weight: 1.4),
                     HistoricalAnchor(lon: 51.4, lat: 35.7, provinceName: "德黑兰", weight: 1.45),

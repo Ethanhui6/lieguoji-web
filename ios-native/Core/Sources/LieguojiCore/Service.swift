@@ -336,11 +336,18 @@ public final class EngineService {
         }
         e.advance(days: count)
     }
-    /// 本机推演一步并直接返回界面状态结构体（与 "step" 请求相同，只是不经 JSON）。
+    /// 本机推演一步并直接返回精简界面状态结构体（v11.0.0：启用 `slim: true` 跳过大地图不读的军团文案/详情拼装，零 JSON、提速 3×）。
     public func stepState(days: Int) -> GameState? {
         guard let e = engine else { return nil }
         e.advance(days: max(1, days))
-        return e.gameState(includeLabels: labelsDue(e, stepping: true))
+        return e.gameState(includeLabels: labelsDue(e, stepping: true), slim: true)
+    }
+
+    /// 本机执行操作后直接返回结构体状态（零 JSONEncoder / JSONDecoder 往返）。
+    public func currentGameState(includeLabels: Bool = true, slim: Bool = false) -> GameState? {
+        guard let e = engine else { return nil }
+        if includeLabels { lastOwners = []; lastNationSig = [] }
+        return e.gameState(includeLabels: labelsDue(e, stepping: false), slim: slim)
     }
 
     /// 采用本机刚建好的世界（NativeCreation，不经 JSON），回复与 "open" 相同：首个状态与地图。
@@ -362,7 +369,9 @@ public final class EngineService {
         func dbls(_ k: String) -> [Double] { (args[k] as? [Any])?.compactMap { ($0 as? NSNumber)?.doubleValue } ?? [] }
         func command(_ out: (ok: Bool, reason: String)?) -> Reply {
             guard let out else { return Reply(ok: false, reason: "世界尚未载入。") }
-            return Reply(ok: out.ok, reason: out.reason, data: out.ok ? state() : nil)
+            if !out.ok { return Reply(ok: false, reason: out.reason, data: nil) }
+            if bool("withoutState") { return Reply(ok: true, reason: out.reason, data: nil) }
+            return Reply(ok: true, reason: out.reason, data: state(slim: bool("slim")))
         }
         func data(_ d: Data?) -> Reply { Reply(ok: d != nil, reason: d == nil ? "世界尚未载入。" : "", data: d) }
 
@@ -435,7 +444,11 @@ public final class EngineService {
             do {
                 let e = try NativeEngine(world: unpacked)
                 engine = e; lastOwners = []; lastNationSig = []; resetSlimStaticCache()
-                var r = Reply(data: state()); r.map = e.mapJSON; return r
+                // v11.0.0 远程同步无需倒传 2–30MB 的 mapJSON 与完整 state()，支持 withoutMap / withoutState 毫秒级回包！
+                let replyData: Data? = bool("withoutState") ? nil : state(slim: bool("slim"))
+                var r = Reply(data: replyData)
+                if !bool("withoutMap") { r.map = e.mapJSON }
+                return r
             } catch { return Reply(ok: false, reason: error.localizedDescription) }
         case "isOpen": return Reply(ok: engine != nil)
         case "close": engine = nil; lastOwners = []; lastNationSig = []; resetSlimStaticCache(); return Reply()
@@ -450,9 +463,11 @@ public final class EngineService {
         case "province": return data(engine?.province(int("index")))
         case "nationInfo": return data(engine?.nationInfo(int("index")))
         case "diplomacyInfo": return data(engine?.diplomacyInfo(int("index")))
-        // 云端调校: the balance numbers from the cloud config.
+        // 云端调校: the balance numbers from the cloud config（v11.0.0 补齐 LZ4 解压，修复远程 tuning 恒报调校数据无效）.
         case "tuning":
-            guard let payload, let t = try? JSONDecoder().decode(Tuning.self, from: payload) else { return Reply(ok: false, reason: "调校数据无效。") }
+            guard let rawPayload = payload else { return Reply(ok: false, reason: "调校数据无效。") }
+            let unpacked = WireCodec.decompressIfNeeded(rawPayload)
+            guard let t = try? JSONDecoder().decode(Tuning.self, from: unpacked) else { return Reply(ok: false, reason: "调校数据无效。") }
             Tuning.current = t
             return Reply(ok: true, reason: "")
         case "tradeInfo": return data(engine?.tradeInfo(int("index")))
@@ -563,7 +578,15 @@ public final class EngineService {
         case "setOfficeTitle": return command(engine?.setOfficeTitle(int("n"), office: str("office"), title: optStr("title")))
         case "unitProfile": return data(engine?.unitProfile(int("n")))
         case "setUnitProfile": return command(engine?.setUnitProfile(int("n"), unit: str("unit"), name: optStr("name"), power: optInt("power").map(Double.init), speed: optInt("speed").map(Double.init), weight: optInt("weight").map(Double.init)))
-        case "leaveAlliance": return command(engine?.leaveAllianceForced(int("n")))
+        case "leaveAlliance":
+            guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
+            let idx = int("n")
+            let nations = e.run.world.nations.asArray
+            if UnitKinds.enabled && HistoricalEvents.isHistoricalRoute(e.run), nations.indices.contains(idx) {
+                let res = Alliances.leave(e.run, nations[idx].id.asString)
+                return command(res)
+            }
+            return command(e.leaveAllianceForced(idx))
         case "catalogEdits": return data(engine?.catalogEdits())
         case "setCultureEdit": return command(engine?.setCultureEdit(str("culture"), name: optStr("name"), text: optStr("text"), male: strs("male"), female: strs("female")))
         case "setFaithEdit": return command(engine?.setFaithEdit(str("faith"), name: optStr("name"), text: optStr("text")))
@@ -679,15 +702,17 @@ public final class EngineService {
             return data(Data(summary.json.utf8))
         case "resolveHistoricalEvent":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
-            let res = HistoricalEvents.resolveChoice(e.run, eventId: str("eventId"), choiceIndex: max(0, int("choice")))
+            let choiceIdx = max(0, optInt("choiceIndex") ?? optInt("choice") ?? 0)
+            let res = HistoricalEvents.resolveChoice(e.run, eventId: str("eventId"), choiceIndex: choiceIdx)
             lastOwners = []
             return command(res)
         case "setDoctrine":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
             let idx = int("n")
             let nations = e.run.world.nations.asArray
+            let rawDoc = optStr("doctrineId") ?? str("doctrine")
             guard nations.indices.contains(idx),
-                  let did = MilitaryDoctrines.DoctrineId(rawValue: str("doctrine")) else {
+                  let did = MilitaryDoctrines.DoctrineId(rawValue: rawDoc) else {
                 return Reply(ok: false, reason: "军事学说或国家参数无效。")
             }
             return command(MilitaryDoctrines.setDoctrine(e.run, nationId: nations[idx].id.asString, doctrineId: did))

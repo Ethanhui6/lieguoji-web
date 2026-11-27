@@ -131,14 +131,16 @@ public enum HistoricalEvents {
         }
 
         let playerNationId = r.regimes.playerNationId.optionalString
+        let interactiveSandbox = r.regimes.playerInteractiveEvents.isTruthy
 
         for ev in allEvents where ev.scenarioIds.contains(scId) {
             guard r.regimes.firedEvents[ev.id].isNull else { continue }
-            // 剧本开局首月事件（minDay <= 45，如白色方案第3日、瓜分波兰第22日、九一八第5日、珍珠港第4日）按相对开局日直接触发，不受建世默认1月约束
+            // v11.0.0 彻底移除 `|| curDay >= ev.minDay + 90` 致命后门！
+            // 严格按史实年份与月份触发，绝不再出现 1936 战云密布第 93 天就提前 3.5 年触发 1939 闪击波兰的时序错乱！
             let dateReached = (ev.minDay <= 45)
                 ? (curYear >= ev.triggerYear)
                 : ((curYear > ev.triggerYear) || (curYear == ev.triggerYear && curMonth >= ev.triggerMonth))
-            guard dateReached || curDay >= ev.minDay + 90 else { continue }
+            guard dateReached else { continue }
             guard curDay >= ev.minDay else { continue }
             guard let actorNid = nationId(r, specId: ev.actorSpecId), Vassals.alive(r, actorNid) else { continue }
             if let tSpec = ev.targetSpecId {
@@ -151,8 +153,8 @@ public enum HistoricalEvents {
             let targetNid = ev.targetSpecId.flatMap { nationId(r, specId: $0) }
             let involvesPlayer = (playerNationId != nil) && (playerNationId == actorNid || playerNationId == targetNid)
 
-            if involvesPlayer && ev.choices.count > 1 && !historical {
-                // 架空模式下若涉及玩家亲自掌控的国家，弹出多分支事件报刊供玩家拍板
+            if (involvesPlayer || interactiveSandbox) && ev.choices.count > 1 && !historical {
+                // 架空模式下交由玩家对重大历史转折点亲手拍板
                 storePendingModal(r, ev: ev, historical: historical)
                 return
             }
@@ -390,19 +392,57 @@ public enum HistoricalEvents {
 
     private static func annexNation(_ r: JS, winner: String, victim: String) {
         forceHistoricalPeace(r, a: winner, b: victim)
+        var annexedProvIds = Set<String>()
         for p in r.world.provinces.asArray where p.controller.optionalString == victim || p.legalOwner.optionalString == victim {
             p.controller = JS(winner)
             p.legalOwner = JS(winner)
+            annexedProvIds.insert(p.id.asString)
         }
-        // 将被吞并国现役军队遣散并补入新主国库与兵源
+        // v11.0.0 同步迁移被吞并国全部城池并清除亡国首都标记
+        for c in r.world.cities.asArray {
+            if c.nationId.optionalString == victim || annexedProvIds.contains(c.provinceId.asString) {
+                c.nationId = JS(winner)
+                c.isCapital = JS(false)
+            }
+        }
+        // 清理亡国现役陆军及其全部子账本（位置/速度/编制/自主AI）
         if r.world.armies.isArray {
-            let kept = r.world.armies.asArray.filter { $0.nationId.optionalString != victim }
+            var deadIds = [String]()
+            var kept = [JS]()
+            for a in r.world.armies.asArray {
+                if a.nationId.optionalString == victim { deadIds.append(a.id.asString) }
+                else { kept.append(a) }
+            }
             r.world.armies = .array(kept)
+            for aid in deadIds {
+                if !r.armyPositions.isNull && !r.armyPositions.records.isNull { r.armyPositions.records.delete(aid) }
+                if !r.tactics.isNull && !r.tactics.forces.isNull { r.tactics.forces.delete(aid) }
+                if !r.forceSpeed.isNull && !r.forceSpeed.armies.isNull { r.forceSpeed.armies.delete(aid) }
+                if !r.armyAutonomy.isNull && !r.armyAutonomy.armies.isNull { r.armyAutonomy.armies.delete(aid) }
+            }
         }
-        if !r.world.fleets.isNull && r.world.fleets.isArray {
-            let kept = r.world.fleets.asArray.filter { $0.nationId.optionalString != victim }
-            r.world.fleets = .array(kept)
+        // v11.0.0 修复舰队真实路径 r.navy.fleets（此前误写 r.world.fleets 致亡国幽灵舰队永久残留）
+        if !r.navy.isNull && !r.navy.fleets.isNull && r.navy.fleets.isArray {
+            var deadFleets = [String]()
+            var keptFleets = [JS]()
+            for fl in r.navy.fleets.asArray {
+                if fl.nationId.optionalString == victim { deadFleets.append(fl.id.asString) }
+                else { keptFleets.append(fl) }
+            }
+            r.navy.fleets = .array(keptFleets)
+            for fid in deadFleets {
+                if !r.fleetPositions.isNull && !r.fleetPositions.records.isNull { r.fleetPositions.records.delete(fid) }
+                if !r.maritime.isNull && !r.maritime.hulls.isNull { r.maritime.hulls.delete(fid) }
+            }
         }
+        if !r.occupation.isNull && !r.occupation.sieges.isNull {
+            let keptSieges = r.occupation.sieges.asArray.filter {
+                $0.attacker.optionalString != victim && $0.controller.optionalString != victim && !annexedProvIds.contains($0.provinceId.asString)
+            }
+            r.occupation.sieges = .array(keptSieges)
+        }
+        War26.reconcileForces(r, [])
+        if Naval.sea != nil { Naval.reconcileLandOwners(r) }
         Vassals.reconcileAlliances(r)
         DiplomacyBridge.reconcile(r)
     }
@@ -414,7 +454,6 @@ public enum HistoricalEvents {
         let capProvId = capId.flatMap { cid in r.world.cities.asArray.first(where: { $0.id.asString == cid })?.provinceId.optionalString }
         let targetCount = max(1, min(held.count - 1, Int((Double(held.count) * Double(percent) / 100.0).rounded())))
 
-        // 按地理坐标择优割让（preferEast = true 时优先割最东端如东波兰给苏联；否则割离接收国最近边界如苏台德给德国）
         let toProvs = r.world.provinces.asArray.filter { $0.controller.optionalString == to }
         let toCx = toProvs.isEmpty ? 0 : toProvs.reduce(0.0) { $0 + $1.center.x.asNumber } / Double(toProvs.count)
         let toCy = toProvs.isEmpty ? 0 : toProvs.reduce(0.0) { $0 + $1.center.y.asNumber } / Double(toProvs.count)
@@ -427,9 +466,21 @@ public enum HistoricalEvents {
             let db = hypot(b.center.x.asNumber - toCx, b.center.y.asNumber - toCy)
             return da < db
         }
+        var cededIds = Set<String>()
         for p in sorted.prefix(targetCount) {
             p.controller = JS(to)
             p.legalOwner = JS(to)
+            cededIds.insert(p.id.asString)
+        }
+        // v11.0.0 割地同步更新城池归属、遣返滞留他国军队并更新港口归属
+        if !cededIds.isEmpty {
+            for c in r.world.cities.asArray where cededIds.contains(c.provinceId.asString) {
+                c.nationId = JS(to)
+                c.isCapital = JS(false)
+            }
+            War26.reconcileForces(r, [])
+            if Naval.sea != nil { Naval.reconcileLandOwners(r) }
+            DiplomacyBridge.reconcile(r)
         }
     }
 
@@ -491,11 +542,55 @@ public enum HistoricalEvents {
         if let rel = Wars.relation(r, a, b), rel.status.asString == "war" {
             rel.status = JS("peace")
             rel.sinceDay = r.world.day.clone()
-            DiplomacyBridge.reconcile(r)
+            rel.truceUntilDay = JS(r.world.day.asInt + 30)
         }
+        // v11.0.0 完整关闭双方涉事战役、围城与接触，杜绝停战次日幽灵交火！
+        let sa = Wars.stateNumber(r, a), sb = Wars.stateNumber(r, b)
+        if !r.nativeWars.isNull && !r.nativeWars.campaigns.isNull {
+            for c in r.nativeWars.campaigns.asArray where c.endedTick.isNull {
+                let parts = c.participants.asArray.map(\.stateId.asInt)
+                if parts.contains(sa) && parts.contains(sb) && parts.count <= 2 {
+                    c.endedTick = r.clock.tick.clone()
+                    c.endReason = JS("historical-peace")
+                }
+            }
+            Vassals.bump(r.nativeWars)
+        }
+        if !r.warfare.isNull && !r.warfare.campaigns.isNull {
+            for c in r.warfare.campaigns.asArray where c.endedDay.isNull {
+                let ca = c.attacker.optionalString ?? "", cb = c.defender.optionalString ?? ""
+                if (ca == a && cb == b) || (ca == b && cb == a) {
+                    c.endedDay = r.world.day.clone()
+                }
+            }
+        }
+        if !r.occupation.isNull && !r.occupation.sieges.isNull {
+            let kept = r.occupation.sieges.asArray.filter { s in
+                let att = s.attacker.optionalString ?? "", ctl = s.controller.optionalString ?? ""
+                return !((att == a && ctl == b) || (att == b && ctl == a))
+            }
+            r.occupation.sieges = .array(kept)
+        }
+        War26.reconcileForces(r, [])
+        DiplomacyBridge.reconcile(r)
     }
 
     private static func joinOrCreateHistoricalAlliance(_ r: JS, leader: String, joiner: String, locked: Bool) {
+        guard leader != joiner else { return }
+        // v11.0.0 入新盟前必须先退出旧同盟，杜绝一国同时横跨轴心/同盟两大敌对阵营！
+        if let oldAl = Vassals.allianceOf(r, joiner) {
+            if oldAl.members.asArray.contains(where: { $0.asString == leader }) {
+                if locked { oldAl.unbreakable = JS(true) }
+                return
+            }
+            let remaining = oldAl.members.asArray.filter { $0.asString != joiner }
+            if remaining.count < 2 {
+                oldAl.endedTick = r.clock.tick.clone()
+            } else {
+                oldAl.members = .array(remaining)
+            }
+            Vassals.bump(r.alliances)
+        }
         if let al = Vassals.allianceOf(r, leader) {
             if !al.members.asArray.contains(where: { $0.asString == joiner }) {
                 al.members.push(JS(joiner))

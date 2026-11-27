@@ -471,41 +471,61 @@ public enum Naval {
 
     // MARK: Ports (civilization47-ports)
     static func revise(_ r: JS) { Vassals.bump(r.portControl) }
-    /// reconcilePortLandOwnersOwned47.
+    /// reconcilePortLandOwnersOwned47（v11.0.0 预建省表 O(P + Ports) 替代 O(Ports × P) 线性扫）.
     public static func reconcileLandOwners(_ r: JS) {
         guard let sea, !r.portControl.isNull else { return }
+        var landById = [String: JS]()
+        let provs = r.world.provinces.asArray
+        landById.reserveCapacity(provs.count)
+        for p in provs { landById[p.id.asString] = p }
+        var changed = false
         for port in sea.ports {
             let p = r.portControl.ports[port.provinceId]
-            guard !p.isNull, let land = r.world.provinces.asArray.first(where: { $0.id.asString == port.provinceId }) else { continue }
+            guard !p.isNull, let land = landById[port.provinceId] else { continue }
             if p.landOwnerId.asString != land.controller.asString {
-                p.landOwnerId = land.controller.clone(); p.occupierId = land.controller.clone(); p.value = JS(100); revise(r)
+                p.landOwnerId = land.controller.clone(); p.occupierId = land.controller.clone(); p.value = JS(100); changed = true
             }
         }
+        if changed { revise(r) }
     }
-    /// The port interval of one motion segment from its start presence (settlePortInterval47).
+    /// The port interval of one motion segment from its start presence（v11.0.0 用精确布尔脏标记彻底消灭 r.portControl.json 全表双次序列化！）.
     static func settlePorts(_ r: JS, _ view: Presence, retreating: [String: Double], hulls: [String: Double], from: Double, seconds: Double) {
         guard let sea, seconds > 0, !r.portControl.isNull else { return }
-        let s = r.portControl, original = s.json
+        let s = r.portControl
+        var changed = false
         for port in sea.ports {
             let p = s.ports[port.provinceId]; if p.isNull { continue }
             let present = view.atPort(port.id), land = p.landOwnerId.asString, occ = p.occupierId.asString
+            let prevVal = p.value.asNumber, prevOcc = occ
             portRecovery(p, land, present.contains { $0.fleet.nationId.asString == occ }, present.contains { $0.fleet.nationId.asString != land }, seconds)
+            if p.value.asNumber != prevVal || p.occupierId.asString != prevOcc { changed = true }
         }
+        var cityNameByProv: [String: String]?
         for v in view.fleets {
             let fl = v.fleet, id = fl.id.asString, nation = fl.nationId.asString
             if view.held.contains(fleetKey(id)) || (retreating[id] ?? -.infinity) > from { continue }
             let hull = hulls[id] ?? 0
             for port in sea.ports where view.cells[port.id]?.contains(v.face) == true {
                 let p = s.ports[port.provinceId], enemy = { (x: String) in atWar(r, nation, x) }
-                if !portTarget(p, nation, enemy) || !portAttack(p, nation, hull / (fl.ships.asNumber * 100), seconds, enemy) { continue }
-                let order = s.fleets[id]; order.forwardBaseId = JS(port.provinceId); order.targetId = .null
-                let name = r.world.cities.asArray.first { $0.provinceId.asString == port.provinceId }?.name.asString ?? r.world.provinces.asArray.first { $0.id.asString == port.provinceId }!.name.asString
+                if !portTarget(p, nation, enemy) { continue }
+                let prevVal = p.value.asNumber, prevOcc = p.occupierId.asString
+                let captured = portAttack(p, nation, hull / (fl.ships.asNumber * 100), seconds, enemy)
+                if p.value.asNumber != prevVal || p.occupierId.asString != prevOcc { changed = true }
+                if !captured { continue }
+                let order = s.fleets[id]; order.forwardBaseId = JS(port.provinceId); order.targetId = .null; changed = true
+                if cityNameByProv == nil {
+                    var m = [String: String]()
+                    for pr in r.world.provinces.asArray { m[pr.id.asString] = pr.name.asString }
+                    for ci in r.world.cities.asArray { m[ci.provinceId.asString] = ci.name.asString }
+                    cityNameByProv = m
+                }
+                let name = cityNameByProv?[port.provinceId] ?? port.provinceId
                 let w = r.world, eid = w.nextEventId.asNumber, e = JS.object()
                 e.id = JS(eid); e.day = w.day.clone(); e.kind = JS("system"); e.text = JS("\(fl.name.asString)控制\(name)海港"); e.reason = JS("舰队实际处于港湾内并完成争夺；仅海港控制变化，城市和陆地不随之吞并。")
                 w.nextEventId = JS(eid + 1); w.events.push(e); if w.events.length > 160 { w.events.asArray = Array(w.events.asArray.suffix(160)) }
             }
         }
-        if s.json != original { revise(r) }
+        if changed { revise(r) }
     }
     /// The start state a motion segment's port interval reads.
     struct Segment { let view: Presence; let retreating: [String: Double]; let hulls: [String: Double] }
@@ -529,10 +549,10 @@ public enum Naval {
         for leg in t.leg..<(t.nodes.count - 1) { s.leg = leg; guard let part = g.segment(s) else { break }; if leg != t.leg || !t.crossed { add(part.gate) }; add(part.end) }
         return points
     }
-    static func resolve(_ r: JS, _ id: String, _ action: Command) -> Result<Resolved, ArmyOrders.Refused> {
+    static func resolve(_ r: JS, _ id: String, _ action: Command, heldOverride: Set<String>? = nil, landById: [String: JS]? = nil) -> Result<Resolved, ArmyOrders.Refused> {
         let bridge = Armies.bridge!, g = bridge.graph
         guard let fl = fleets(r).first(where: { $0.id.asString == id && $0.status.asString != "lost" }), fl.crew.asNumber > 0 else { return .failure(.init(reason: "舰队不存在或已经失去战斗力。")) }
-        let held = ContactMotion(graph: g).contacts(bridge.forces(r), bridge.contacts(r), bridge.rules(r)).held
+        let held = heldOverride ?? ContactMotion(graph: g).contacts(bridge.forces(r), bridge.contacts(r), bridge.rules(r)).held
         if held.contains(fleetKey(id)) || (r.maritime.retreating[id].optionalNumber ?? -.infinity) > r.clock.tick.asNumber { return .failure(.init(reason: "舰队正在交锋或脱离战场，普通改令不能取消这段过程。")) }
         let record = r.fleetPositions.records[id], current = bridge.travel(record), at = g.location(current)
         switch action {
@@ -544,12 +564,14 @@ public enum Naval {
             guard let port = sea?.ports.first(where: { $0.id == portId }) else { return .failure(.init(reason: "当前地图不存在这个海港。")) }
             let cellId = port.node * 2 + 1
             guard let cell = g.cell(id: cellId), g.isSea(cell) else { return .failure(.init(reason: "舰队目标必须位于真实海面。")) }
-            let land = r.world.provinces.asArray.first { $0.id.asString == port.provinceId }!, nation = fl.nationId.asString
+            guard let land = landById?[port.provinceId] ?? r.world.provinces.asArray.first(where: { $0.id.asString == port.provinceId }) else { return .failure(.init(reason: "目标海港所属州不存在。")) }
+            let nation = fl.nationId.asString
             if !RunWindow.access(r, nation, land.controller.asString) && !atWar(r, nation, land.controller.asString) { return .failure(.init(reason: "中立国家尚未授予港口通行权。")) }
             let destination = port.center
             if current.status == .moving && current.destination != nil && current.nodes.last == cell && current.destination == destination { return .failure(.init(reason: "舰队正在前往这个精确目标。")) }
             if (current.status == .arrived || current.status == .halted) && at.cell == cell && at.point == destination { return .failure(.init(reason: "舰队已经抵达这个位置。")) }
-            guard let path = g.path(from: at.cell, to: cell, allowSea: true, canEnterProvince: { _ in false }) else { return .failure(.init(reason: "当前海域与目标之间没有相连的水路。")) }
+            let useAStar = !r.regimes.isNull && r.regimes.enabled.isTruthy
+            guard let path = g.path(from: at.cell, to: cell, allowSea: true, canEnterProvince: { _ in false }, aStar: useAStar) else { return .failure(.init(reason: "当前海域与目标之间没有相连的水路。")) }
             let t = JS.object()
             t.version = JS(2); t.armyId = JS(id); t.origin = ForceBridge.json(at.point); t.destination = ForceBridge.json(destination)
             t.nodes = .array(path.nodes.map { JS(Int(g.ids[$0])) }); t.leg = JS(0); t.offset = JS(0); t.crossed = JS(false)
@@ -559,8 +581,8 @@ public enum Naval {
         }
     }
     /// previewFleetCommand47: validity and actual route length.
-    static func preview(_ r: JS, _ id: String, _ action: Command) -> (valid: Bool, distance: Double) {
-        guard case .success(let v) = resolve(r, id, action) else { return (false, 0) }
+    static func preview(_ r: JS, _ id: String, _ action: Command, heldOverride: Set<String>? = nil, landById: [String: JS]? = nil) -> (valid: Bool, distance: Double) {
+        guard case .success(let v) = resolve(r, id, action, heldOverride: heldOverride, landById: landById) else { return (false, 0) }
         var d = 0.0; for i in 1..<max(1, v.points.count) { d = d + jsHypot(v.points[i].x - v.points[i - 1].x, v.points[i].y - v.points[i - 1].y) }
         return (true, d)
     }
@@ -593,7 +615,8 @@ public enum Naval {
         guard let sea, Armies.bridge != nil, !fleets(r).isEmpty else { s.lastTick = JS(now); s.revision = JS(s.revision.asNumber + 1); return }
         let tN = Profile.mark()
         Profile.measure("n.reconcile") { reconcileLandOwners(r) }
-        let view = Profile.measure("n.presence") { presence(r) }, space = Armies.space(r), portBefore = Profile.measure("n.json") { r.portControl.json }
+        let view = Profile.measure("n.presence") { presence(r) }, space = Armies.space(r)
+        var portControlDirty = false
         Profile.since("n.head", tN)
         var landById = [String: JS](), stockById = [String: JS](), portById = [String: Port]()
         for p in r.world.provinces.asArray where landById[p.id.asString] == nil { landById[p.id.asString] = p }
@@ -700,14 +723,15 @@ public enum Naval {
                         let sailD: Double
                         if atAnchor(port) { sailD = 0 }
                         else {
-                            let p = preview(r, id, .sail(port: port.id))
+                            if let cur = intercept, df >= cur.distToFoe { continue }
+                            let p = preview(r, id, .sail(port: port.id), heldOverride: view.held, landById: landById)
                             guard p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood else { continue }
                             sailD = p.distance
                         }
                         if intercept == nil || df < intercept!.distToFoe { intercept = (port, df, sailD) }
                     }
                     guard let intercept else { return false }
-                    order.targetId = enemy(landById[intercept.port.provinceId]?.controller.asString ?? "") ? JS(intercept.port.provinceId) : .null
+                    order.targetId = enemy(landById[intercept.port.provinceId]?.controller.asString ?? "") ? JS(intercept.port.provinceId) : .null; portControlDirty = true
                     if atAnchor(intercept.port) { row.assignedPortId = JS(intercept.port.id); note("attacking", activeMission == .raid ? "破交伏击敌方跨海运兵船队。" : "守株待兔，在敌军渡海登陆口截击。") }
                     else { start(intercept.port.id, "attacking", activeMission == .raid ? "奉破交令全速截杀敌跨海运兵船队。" : "敌军渡海来犯，沿真实海路驰援截击登陆航道。") }
                     return true
@@ -717,35 +741,40 @@ public enum Naval {
                     var escortPick: (port: Port, distToConvoy: Double)?
                     for port in candidates {
                         let df = convoys.reduce(Double.infinity) { min($0, jsHypot(port.center.x - $1.point.x, port.center.y - $1.point.y)) }
+                        if let cur = escortPick, df >= cur.distToConvoy { continue }
                         if atAnchor(port) {
-                            if escortPick == nil || df < escortPick!.distToConvoy { escortPick = (port, df) }
+                            escortPick = (port, df)
                         } else {
-                            let p = preview(r, id, .sail(port: port.id))
+                            let p = preview(r, id, .sail(port: port.id), heldOverride: view.held, landById: landById)
                             if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood {
-                                if escortPick == nil || df < escortPick!.distToConvoy { escortPick = (port, df) }
+                                escortPick = (port, df)
                             }
                         }
                     }
                     guard let escortPick else { return false }
-                    order.targetId = enemy(landById[escortPick.port.provinceId]?.controller.asString ?? "") ? JS(escortPick.port.provinceId) : .null
+                    order.targetId = enemy(landById[escortPick.port.provinceId]?.controller.asString ?? "") ? JS(escortPick.port.provinceId) : .null; portControlDirty = true
                     if atAnchor(escortPick.port) { row.assignedPortId = JS(escortPick.port.id); note("guarding", "在渡海航道锚位护航己方运兵船队与两栖登陆。") }
                     else { start(escortPick.port.id, "guarding", "驰往渡海航道为己方运兵船队护航并提供岸轰支援。") }
                     return true
                 }
                 func tryPortAttack() -> Bool {
                     var best: (port: Port, control: JS, distance: Double)?
-                    for port in candidates {
+                    let rankedPorts = candidates.filter { port in
                         let control = r.portControl.ports[port.provinceId]
                         let isBlockedHome = appNaval && control.landOwnerId.asString == nation && MaritimeWarfare.isPortBlockaded(r, provinceId: port.provinceId, landOwner: nation)
-                        guard isBlockedHome || portTarget(control, nation, enemy) else { continue }
+                        return isBlockedHome || portTarget(control, nation, enemy)
+                    }.sorted {
+                        jsHypot($0.center.x - v.point.x, $0.center.y - v.point.y) < jsHypot($1.center.x - v.point.x, $1.center.y - v.point.y)
+                    }
+                    for port in rankedPorts.prefix(12) {
+                        let control = r.portControl.ports[port.provinceId]
                         var row0: (port: Port, control: JS, distance: Double)?
                         if atAnchor(port) { row0 = (port, control, 0) }
-                        else { let p = preview(r, id, .sail(port: port.id)); if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood { row0 = (port, control, p.distance) } }
+                        else { let p = preview(r, id, .sail(port: port.id), heldOverride: view.held, landById: landById); if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood { row0 = (port, control, p.distance) } }
                         guard let c = row0 else { continue }
                         func rankOf(_ x: (port: Port, control: JS, distance: Double)) -> Int {
                             if x.control.landOwnerId.asString == nation { return activeMission == .blockade ? 1 : 0 }
                             if activeMission == .blockade {
-                                // 封锁指令优先压制尚未被封锁的敌国主力海港
                                 let already = MaritimeWarfare.isPortBlockaded(r, provinceId: x.port.provinceId, landOwner: x.control.landOwnerId.optionalString)
                                 return already ? 2 : 0
                             }
@@ -756,7 +785,7 @@ public enum Naval {
                         if best == nil || rank < bestRank || rank == bestRank && c.distance < best!.distance { best = c }
                     }
                     guard let best else { return false }
-                    order.targetId = JS(best.port.provinceId)
+                    order.targetId = JS(best.port.provinceId); portControlDirty = true
                     if atAnchor(best.port) { row.assignedPortId = JS(best.port.id); note("attacking", activeMission == .blockade ? "死锁敌港外海，切断海运并截夺海贸岁入。" : "在实际敌港等待争夺完成。") }
                     else { start(best.port.id, "attacking", best.control.landOwnerId.asString == nation ? "驰援本国受困海港，破除敌舰封锁。" : (activeMission == .blockade ? "奉封锁令抵近敌港实施海上封锁。" : "前往可在余粮范围内抵达的敌港。")) }
                     return true
@@ -773,36 +802,36 @@ public enum Naval {
                         guard landCtrl == nation || enemy(landCtrl) || RunWindow.access(r, nation, landCtrl) else { continue }
                         let de = enemyFleets.reduce(Double.infinity) { min($0, jsHypot(port.center.x - $1.point.x, port.center.y - $1.point.y)) }
                         guard de <= 130 else { continue }
+                        if let cur = bestPick, de >= cur.distToEnemy { continue }
                         if atAnchor(port) {
-                            if bestPick == nil || de < bestPick!.distToEnemy { bestPick = (port, de) }
+                            bestPick = (port, de)
                         } else {
-                            let p = preview(r, id, .sail(port: port.id))
+                            let p = preview(r, id, .sail(port: port.id), heldOverride: view.held, landById: landById)
                             if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood {
-                                if bestPick == nil || de < bestPick!.distToEnemy { bestPick = (port, de) }
+                                bestPick = (port, de)
                             }
                         }
                     }
                     guard let bestPick else { return false }
-                    order.targetId = enemy(landById[bestPick.port.provinceId]?.controller.asString ?? "") ? JS(bestPick.port.provinceId) : .null
+                    order.targetId = enemy(landById[bestPick.port.provinceId]?.controller.asString ?? "") ? JS(bestPick.port.provinceId) : .null; portControlDirty = true
                     if atAnchor(bestPick.port) { row.assignedPortId = JS(bestPick.port.id); note("attacking", "巡弋战区主动寻歼敌国主力舰队。") }
                     else { start(bestPick.port.id, "attacking", "主动出击猎杀同海域敌国主力舰队，争夺制海权。") }
                     return true
                 }
                 func tryShoreSupport() -> Bool {
                     guard appNaval else { return false }
-                    // 优先驰援正在围攻敌国沿海州郡的己方陆军，提供 +22% 舰炮破城火力！
                     let activeSiegePids = Set(r.occupation.sieges.asArray.filter { $0.attacker.asString == nation }.map(\.provinceId.asString))
                     guard !activeSiegePids.isEmpty else { return false }
                     var bestPort: (port: Port, dist: Double)?
                     for port in candidates where activeSiegePids.contains(port.provinceId) {
                         if atAnchor(port) { bestPort = (port, 0); break }
-                        let p = preview(r, id, .sail(port: port.id))
+                        let p = preview(r, id, .sail(port: port.id), heldOverride: view.held, landById: landById)
                         if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood {
                             if bestPort == nil || p.distance < bestPort!.dist { bestPort = (port, p.distance) }
                         }
                     }
                     guard let bestPort else { return false }
-                    order.targetId = JS(bestPort.port.provinceId)
+                    order.targetId = JS(bestPort.port.provinceId); portControlDirty = true
                     if atAnchor(bestPort.port) { row.assignedPortId = JS(bestPort.port.id); note("attacking", "近海舰炮岸轰，强力支援己方陆军破城！") }
                     else { start(bestPort.port.id, "attacking", "驰赴友军沿海围城战区，实施近海舰炮岸轰支援。") }
                     return true
@@ -817,9 +846,12 @@ public enum Naval {
                 if dispatched { continue }
             }
             var available = [(port: Port, distance: Double)]()
-            for port in safe {
+            let sortedSafe = safe.sorted {
+                jsHypot($0.center.x - v.point.x, $0.center.y - v.point.y) < jsHypot($1.center.x - v.point.x, $1.center.y - v.point.y)
+            }
+            for port in sortedSafe.prefix(low ? 6 : 10) {
                 if atAnchor(port) { available.append((port, 0)); continue }
-                let p = preview(r, id, .sail(port: port.id))
+                let p = preview(r, id, .sail(port: port.id), heldOverride: view.held, landById: landById)
                 if p.valid && (low || food >= rationNow * (days(p.distance) + 3)) { available.append((port, p.distance)) }
             }
             var chosen: (port: Port, distance: Double)?
@@ -836,35 +868,37 @@ public enum Naval {
                 let pick = chooseIdle(rows) { draw(s) }
                 chosen = available.first { $0.port.id == pick?.id }
             }
-            order.targetId = .null
+            if !order.targetId.isNull { order.targetId = .null; portControlDirty = true }
             guard let chosen else { row.assignedPortId = .null; note("no-route", low ? "同一海域没有有余粮且可达的安全本国海港；保留实际位置。" : "当前没有满足海路与余粮条件的敌港或本国驻泊港。"); continue }
             row.nextTick = JS(now + (idleDelay(atWarNow) { draw(s) } * Double(scheduleTicks)).rounded(.up))
             if atAnchor(chosen.port) { row.assignedPortId = JS(chosen.port.id); note(low ? "resupply" : "guarding", low ? "等待实际日粮补给。" : "在本国锚点驻防。") }
             else { start(chosen.port.id, low ? "resupply" : "guarding", low ? "余粮不足，沿真实海路返回最近可补粮港口。" : "按原作港口拥挤权重重新部署。") }
         }
-        if r.portControl.json != portBefore { revise(r) }
+        if portControlDirty { revise(r) }
         s.lastTick = JS(now); s.revision = JS(s.revision.asNumber + 1)
     }
 
-    // MARK: Daily rations (settleFleetFood47)
+    // MARK: Daily rations (settleFleetFood47 — v11.0.0 预建省/粮索引消除 O(F × Ports × P))
     public static func settleFleetFood(_ r: JS) {
         guard let sea, Armies.bridge != nil else { return }
         let all = fleets(r); reconcileLandOwners(r)
         if all.isEmpty { return }
         let view = presence(r), space = Armies.space(r)
+        var landById = [String: JS](), stockById = [String: JS]()
+        for p in r.world.provinces.asArray { landById[p.id.asString] = p }
+        for st in r.world.statecraft.provinces.asArray { stockById[st.provinceId.asString] = st }
         for fl in all where fl.status.asString != "lost" {
             let id = fl.id.asString, nation = fl.nationId.asString, travel = r.fleetPositions.records[id]
             guard let at = view.fleets.first(where: { $0.fleet.id.asString == id }) else { continue }
             var port: Port?
             if ["arrived", "halted"].contains(travel.status.asString) && !view.held.contains(fleetKey(id)) && !((r.maritime.retreating[id].optionalNumber ?? -.infinity) > r.clock.tick.asNumber) {
                 port = sea.ports.first { p in
-                    let land = r.world.provinces.asArray.first { $0.id.asString == p.provinceId }!
+                    guard let land = landById[p.provinceId] else { return false }
                     return at.face == p.node && jsHypot(at.point.x - p.center.x, at.point.y - p.center.y) <= 1e-8 && land.controller.asString == nation && land.legalOwner.asString == nation
                         && r.portControl.ports[p.provinceId].occupierId.optionalString == nation && !landHolders(space, p.provinceId).contains { atWar(r, $0.nationId.asString, nation) }
                 }
             }
-            if let port {
-                let stock = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == port.provinceId }!
+            if let port, let stock = stockById[port.provinceId] {
                 let amount = max(0, min(fl.crew.asNumber * 60 - fl.food.asNumber, stock.grain.asNumber - stock.population.asNumber * 10))
                 stock.grain = JS(stock.grain.asNumber - amount); fl.food = JS(fl.food.asNumber + amount)
             }

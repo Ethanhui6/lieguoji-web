@@ -42,6 +42,10 @@ import LieguojiCore
     private var lastPublish = 0.0, publishPending = false, publishDeferredByGesture = false
     private var cloudConnectInFlight = false
     private var lastEffectsRefreshAt: CFTimeInterval = 0
+    private var lastTelemetryPublishAt: CFTimeInterval = 0
+    private var lastRouteQueryAt: CFTimeInterval = 0
+    private var lastRouteQueryTargetId: String = ""
+    private var streamConfigGen: UInt64 = 0
     private func publishState() {
         // v10.0.0：手势拖屏/双指缩放/惯性滑行期间暂缓 SwiftUI 视图树全量 diff，松手刹那立即补齐一次刷新，彻底杜绝滑屏闪动与卡顿！
         if controller.isInteracting && state != nil {
@@ -231,16 +235,15 @@ import LieguojiCore
         }
     }
 
-    /// 手动或自动切换至指定 ID 的推流专线（`tencent-443` / `tencent-8765` / `tencent-8443` / `lan-udp` / `cf-relay`）。
-    func switchComputeRoute(_ routeId: String) async {
+    /// 手动或自动切换至指定 ID 的推流专线（`tencent-443` / `tencent-8765` / `tencent-8443` / `lan-udp`）。返回是否切换成功。
+    @discardableResult
+    func switchComputeRoute(_ routeId: String) async -> Bool {
         remoteOfflineManual = false
         UserDefaults.standard.set(false, forKey: "remote.offlineManual")
-        UserDefaults.standard.set(true, forKey: "remote.auto")
-        UserDefaults.standard.set(true, forKey: "remote.autoAll")
 
         let target = computeRoutes.first(where: { $0.id == routeId })
             ?? ComputeRouteInfo.builtInRoutes.first(where: { $0.id == routeId })
-        guard let target else { return }
+        guard let target else { return false }
 
         switch routeId {
         case "tencent-443", "tencent-8765", "tencent-8443":
@@ -249,10 +252,12 @@ import LieguojiCore
             let err = await connectRemote(target.address)
             if let err {
                 notice = "切换「\(target.name)」失败：\(err)"
+                return false
             } else {
                 syncActiveRouteState(activeId: routeId, rttMs: remoteRTTMs)
                 let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
                 notice = "已切换至「\(target.name)」\(msText)"
+                return true
             }
         case "lan-udp":
             var lanAddr = await native.cachedLANAddress()
@@ -264,28 +269,32 @@ import LieguojiCore
             }
             guard let lanAddr, !lanAddr.isEmpty else {
                 notice = "当前局域网未发现列国纪计算端"
-                return
+                return false
             }
             await native.setRouteProbeHints(fastestDirect: nil, lanAddress: lanAddr)
             let err = await connectRemote(lanAddr)
             if let err {
                 notice = "局域网直连失败：\(err)"
+                return false
             } else {
                 syncActiveRouteState(activeId: "lan-udp", rttMs: remoteRTTMs)
                 let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
                 notice = "已切换至局域网毫秒直连\(msText)"
+                return true
             }
         case "cf-relay":
             let err = await connectRemote(NativeHost.activeRoomCode)
             if let err {
                 notice = "Cloudflare 边缘推流连接失败：\(err)"
+                return false
             } else {
                 syncActiveRouteState(activeId: "cf-relay", rttMs: remoteRTTMs)
                 let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
                 notice = "已切换至 Cloudflare 全球边缘推流\(msText)"
+                return true
             }
         default:
-            break
+            return false
         }
     }
 
@@ -361,8 +370,6 @@ import LieguojiCore
                 apply(fresh)
             }
             UserDefaults.standard.set(address, forKey: "remote.address")
-            UserDefaults.standard.set(true, forKey: "remote.auto")
-            UserDefaults.standard.set(true, forKey: "remote.autoAll")
             if playing { restartPlayForRemoteHandoff() }
             return nil
         } catch {
@@ -407,9 +414,10 @@ import LieguojiCore
         UserDefaults.standard.set(true, forKey: "remote.offlineManual")
         if playing { restartPlayForRemoteHandoff() }
     }
-    /// 立即取消退避休眠并立刻重连云服（同时清除手动离线标记）。
+    /// v11.0.0 真实有界重连（修复旧版 `reconnectCloudNow -> remoteLost -> fallbackLocal` 越点重连越断开的自我破坏 Bug）：
+    /// 单飞锁保护，最多 3 次退避竞速直连（0s → 1.2s → 2.5s），期间本机 0ms 照常流畅可玩；连上立即无感接管！
     func reconnectCloudNow() {
-        reconnectCloudNow(detail: "正在立即重连云服")
+        reconnectCloudNow(detail: "正在立即重连九州云服")
     }
     private func reconnectCloudNow(detail: String) {
         remoteOfflineManual = false
@@ -423,17 +431,50 @@ import LieguojiCore
                 let ms = await self.refreshRemoteRTT()
                 if ms == nil && self.remoteAddress != nil && !self.appInBackground && !self.remoteOfflineManual {
                     self.remoteConnectionDetail = detail
-                    self.remoteLost(resumePlay: self.playing)
+                    await self.native.fallbackLocal()
+                    self.remoteAddress = nil
+                    self.remoteTransport = ""
+                    self.remoteRTTMs = nil
+                    self.remoteFrameKB = nil
+                    self.remotePushActive = false
+                    self.syncActiveRouteState(activeId: nil)
+                    self.startBoundedCloudReconnect(detail: detail)
                 }
             }
             return
         }
-        let shouldResume = playing || pendingResumePlayAfterReconnect
+        startBoundedCloudReconnect(detail: detail)
+    }
+    private func startBoundedCloudReconnect(detail: String) {
         reconnectTask?.cancel()
-        reconnectTask = nil
-        reconnecting = false
+        reconnecting = true
+        remoteReconnecting = true
+        remoteReconnectAttempt = 1
         remoteConnectionDetail = detail
-        remoteLost(resumePlay: shouldResume)
+        reconnectTask = Task { @MainActor [weak self] in
+            defer {
+                if let self {
+                    self.reconnecting = false
+                    self.remoteReconnecting = false
+                }
+            }
+            let delaysNs: [UInt64] = [0, 1_200_000_000, 2_500_000_000]
+            for (idx, waitNs) in delaysNs.enumerated() {
+                guard let self, !Task.isCancelled, self.phase == .playing, !self.appInBackground, !self.remoteOfflineManual else { return }
+                if waitNs > 0 { try? await Task.sleep(nanoseconds: waitNs) }
+                guard !Task.isCancelled, self.phase == .playing, !self.appInBackground, !self.remoteOfflineManual else { return }
+                if self.remoteAddress != nil { return }
+                self.remoteReconnectAttempt = idx + 1
+                self.remoteConnectionDetail = "\(detail)（第 \(idx + 1)/3 次）"
+                if await self.findComputerNow() {
+                    return
+                }
+            }
+            guard let self, !Task.isCancelled, self.remoteAddress == nil else { return }
+            self.remoteReconnectAttempt = 0
+            self.remoteConnectionDetail = "本机 Apple Silicon 0ms"
+            self.notice = "暂未连上九州云服，已保持本机 0ms 流畅运行"
+        }
     }
     /// 仅由玩家主动触发的离线本地模式切换：取消自动重连，若当前仍在线先无损拉回云端最新进度，再回落本机引擎并按需恢复推演。
     func switchToOfflineLocal() {
@@ -531,8 +572,12 @@ import LieguojiCore
     }
     private func syncRemoteStream(resetEpoch: Bool = true) async {
         guard remoteAddress != nil else { return }
+        streamConfigGen &+= 1
+        let myGen = streamConfigGen
+        let isPlayingNow = playing && phase == .playing && !replayActive
         let p = streamParams()
-        await native.configureRemoteStream(playing: playing && phase == .playing && !replayActive, days: p.days, intervalMs: p.intervalMs, resetEpoch: resetEpoch)
+        guard myGen == streamConfigGen else { return }
+        await native.configureRemoteStream(playing: isPlayingNow, days: p.days, intervalMs: p.intervalMs, resetEpoch: resetEpoch)
     }
     /// 即将失活（锁屏/切换器/下拉控制中心）：先记录在线与推演态，防 iOS 直接挂起漏掉 `.background` 通知。
     func handleAppWillResignActive() async {
@@ -591,11 +636,9 @@ import LieguojiCore
 
         let shouldResumePlay = wasPlayingBeforeBackground
         let nativeActive = await native.isRemoteActiveOrParked
-        let defaultsAuto = UserDefaults.standard.bool(forKey: "remote.auto")
-            || UserDefaults.standard.bool(forKey: "remote.autoAll")
-            || autoRemote
+        // v10.1.0 仅当退入后台前确实连接了云服（或底层远程通道仍挂起）时才触发续连；纯本机游玩切后台回来绝不弹红条重连！
         let shouldReconnect = phase == .playing && !remoteOfflineManual && (
-            defaultsAuto || wasRemoteBeforeBackground || remoteAddress != nil || reconnecting || nativeActive
+            wasRemoteBeforeBackground || remoteAddress != nil || nativeActive
         )
         appInBackground = false
         resignedActive = false
@@ -706,15 +749,26 @@ import LieguojiCore
             guard let self else { return }
             await self.native.fallbackLocal()
             guard self.phase == .playing else { return }
+            // v11.0.0 关键修复：回落本机后先用本机实际天数覆盖 state，彻底杜绝旧版 `next.day < cur.day` 单调日序守卫导致回落后画面永久冻死！
+            if let localState = await self.native.currentLocalState() {
+                let prevDay = self.state?.day ?? localState.day
+                self.state = nil
+                self.controller.snapArmies = true
+                self.apply(localState)
+                if prevDay > localState.day + 2 && !self.remoteOfflineManual {
+                    self.notice = "云服波动，已切回本机第 \(localState.day) 日继续 0ms 推演"
+                } else if !self.remoteOfflineManual {
+                    self.notice = "云服波动，已无缝切回本机 0ms 继续推演"
+                }
+            } else if !self.remoteOfflineManual {
+                self.notice = "云服波动，已无缝切回本机 0ms 继续推演"
+            }
             if wasPlaying {
                 if self.playing {
                     self.restartPlayForRemoteHandoff()
                 } else {
                     self.play()
                 }
-            }
-            if !self.remoteOfflineManual {
-                self.notice = "云服波动，已无缝切回本机 0ms 继续推演"
             }
         }
     }
@@ -762,54 +816,7 @@ import LieguojiCore
     }
 
     func autoConnect() {
-        guard autoTask == nil else { return }
-        autoTask = Task { [weak self] in
-            while let self, !Task.isCancelled {
-                if self.autoRemote, !self.remoteOfflineManual, !self.appInBackground, !self.reconnecting, self.remoteAddress == nil, self.phase == .playing {
-                    if let found = await self.native.connectAuto() {
-                        let pushCapable = await self.native.serverSupportsPush
-                        let routeId = await self.native.activeRouteId
-                        let resumedData = await self.native.consumeResumedState()
-                        self.remoteAddress = found.label
-                        self.remoteTransport = found.transport
-                        self.remoteRTTMs = found.rttMs
-                        self.remotePushActive = pushCapable
-                        self.remoteReconnecting = false
-                        self.remoteReconnectAttempt = 0
-                        self.remoteConnectionDetail = self.connectionDetailForTransport(found.transport)
-                        self.syncActiveRouteState(activeId: routeId.isEmpty ? NativeHost.routeId(forAddress: found.label, transport: found.transport) : routeId, rttMs: found.rttMs)
-                        if let resumedData, let fresh = await Self.decode(GameState.self, from: resumedData) {
-                            self.apply(fresh)
-                        }
-                        let msText = found.rttMs.map { " · \($0)ms" } ?? ""
-                        self.notice = "已接入专属云服（\(found.transport)\(msText)）"
-                        if self.playing { self.restartPlayForRemoteHandoff() }
-                    } else if let saved = UserDefaults.standard.string(forKey: "remote.address"), !saved.isEmpty, UserDefaults.standard.bool(forKey: "remote.auto"),
-                              let a = try? await self.native.connect(saved) {
-                        let transport = await self.native.remoteTransport
-                        let routeId = await self.native.activeRouteId
-                        let liveRtt = self.native.liveRTTMs
-                        let lastRtt = await self.native.lastRTTMs
-                        let pushCapable = await self.native.serverSupportsPush
-                        let resumedData = await self.native.consumeResumedState()
-                        self.remoteAddress = a
-                        self.remoteTransport = transport
-                        self.remoteRTTMs = liveRtt ?? lastRtt
-                        self.remotePushActive = pushCapable
-                        self.remoteReconnecting = false
-                        self.remoteReconnectAttempt = 0
-                        self.remoteConnectionDetail = self.connectionDetailForTransport(transport)
-                        self.syncActiveRouteState(activeId: routeId.isEmpty ? NativeHost.routeId(forAddress: saved, transport: transport) : routeId, rttMs: self.remoteRTTMs)
-                        if let resumedData, let fresh = await Self.decode(GameState.self, from: resumedData) {
-                            self.apply(fresh)
-                        }
-                        self.notice = "已接入在线计算（\(a)）"
-                        if self.playing { self.restartPlayForRemoteHandoff() }
-                    }
-                }
-                try? await Task.sleep(nanoseconds: 10_000_000_000)
-            }
-        }
+        ensureCloudConnectedNow()
     }
     @Published var failure: String?
     @Published var generationNote = ""
@@ -949,14 +956,15 @@ import LieguojiCore
     private(set) var lastFounding: (path: String, seconds: Double)?
 
     init() {
-        // v10.0.0 本机优先 0ms 原生主引擎：手机 Apple Silicon 单核与内存延迟（0.0ms）远优于 3Mbps 公网云服务器（40–80ms），
-        // 默认直开本机 0ms 丝滑满帧，同时保留「算力线路」1 键无缝切换广州云服/局域网电脑；云端断链瞬间 0 暂停切回本机！
-        if !UserDefaults.standard.bool(forKey: "v1000.localFirstDefault") {
+        // v11.0.0：强制本机 0ms 启动无阻塞 + 彻底关闭所有跑马灯/顶部弹报横幅（含从旧版升级的既有偏好）
+        if !UserDefaults.standard.bool(forKey: "v1010.localFirstNoMarquee") {
             UserDefaults.standard.set(false, forKey: "remote.auto")
             UserDefaults.standard.set(false, forKey: "remote.autoAll")
             UserDefaults.standard.set(true, forKey: "remote.offlineManual")
             UserDefaults.standard.set(true, forKey: "v1000.localFirstDefault")
+            UserDefaults.standard.set(true, forKey: "v1010.localFirstNoMarquee")
         }
+        controller.play.showHeralds = false
         if UserDefaults.standard.object(forKey: "remote.auto") == nil {
             UserDefaults.standard.set(false, forKey: "remote.auto")
         }
@@ -1530,6 +1538,8 @@ import LieguojiCore
         routeTask = nil
         lastRouteQueryKey = ""
         pause(); dismissHerald(); save()
+        controller.activeHistoricalEra = ""
+        GameFeel.shared.setHistoricalEra("")
         controller.armies = []; controller.troopTexts = [:]; controller.troopRatios = [:]; controller.troopBarColors = [:]
         phase = .title
     }
@@ -1627,9 +1637,21 @@ import LieguojiCore
                         nilRetries = 0
                         guard self.owns(ticket) else { continue }
                         let stats = self.native.streamBuffer.stats()
-                        if stats.frameKB > 0 { self.remoteFrameKB = stats.frameKB }
+                        let telemetryNow = CACurrentMediaTime()
+                        if stats.frameKB > 0 && !self.controller.isInteracting && (telemetryNow - self.lastTelemetryPublishAt >= 1.0) {
+                            self.lastTelemetryPublishAt = telemetryNow
+                            if abs((self.remoteFrameKB ?? 0) - stats.frameKB) >= 0.05 { self.remoteFrameKB = stats.frameKB }
+                            if let live = self.native.liveRTTMs, self.remoteRTTMs != live { self.remoteRTTMs = live }
+                        }
                         do {
-                            try await self.apply(step: .success(pushed), ticket: ticket)
+                            let packet = NativeHost.StepPacket(
+                                result: .success(pushed),
+                                lost: false,
+                                isRemote: true,
+                                serverSupportsLZ4: true,
+                                rttMs: self.native.liveRTTMs
+                            )
+                            try await self.apply(step: packet, ticket: ticket)
                         } catch {
                             if self.owns(ticket) { self.failure = error.localizedDescription; self.pause() }; return
                         }
@@ -1782,21 +1804,21 @@ import LieguojiCore
     private var stepInterval: Double = 0.095
     private var lastApplied: CFTimeInterval?
     private func apply(step: NativeHost.Step, ticket: AdvanceOwnership.Ticket) async throws {
-        let lost = await native.lost, isRemote = await native.isRemote, lz4Slim = await native.serverSupportsLZ4
+        // v11.0.0 零 await 流水线：状态元信息随 StepPacket 一次性携带，不再发 3 次 `await native.*` 抢占串行 actor 锁死 `ahead` 预取！
         guard owns(ticket) else { return }
-        if lost { remoteLost(); return }
-        // 本机推演直接拿到结构体；远程的 JSON 已在引擎执行器上解码。
-        let next = try step.get()
+        if step.lost { remoteLost(); return }
+        let isRemote = step.isRemote
+        let lz4Slim = step.serverSupportsLZ4
+        let next = try step.result.get()
         guard owns(ticket) else { return }
         // 严格单调日序守卫：推演运行中若收到任何迟到/乱序旧帧，立即静默丢弃，绝不拉回军队或扰动插值节拍！
         if playing, let cur = state, next.day < cur.day { return }
         if remoteAddress != nil, !isRemote { remoteAddress = nil; remoteTransport = ""; remoteRTTMs = nil }
-        if isRemote {
-            if let live = native.liveRTTMs { remoteRTTMs = live }
-            else { remoteRTTMs = await native.lastRTTMs }
-        }
-        guard owns(ticket) else { return }
         let now = CACurrentMediaTime()
+        if isRemote, !controller.isInteracting, now - lastTelemetryPublishAt >= 1.0 {
+            lastTelemetryPublishAt = now
+            if let live = native.liveRTTMs ?? step.rttMs, remoteRTTMs != live { remoteRTTMs = live }
+        }
         if playing, let last = lastApplied {
             let dt = now - last
             if dt > 0.005 && dt < 0.85 { stepInterval = stepInterval * 0.78 + dt * 0.22 }
@@ -1892,11 +1914,13 @@ import LieguojiCore
                 next.removedArmyIds = nil
             }
         }
-        if !next.owners.isEmpty {
-            native.streamBuffer.seedBaselineOwners(next.owners)
+        // v11.0.0：本机推演完全跳过 streamBuffer 基线拷贝；远程主动推流时严禁反向覆写后台解码队列基线！
+        if remoteAddress != nil && !fromSlimStream && !remotePushActive {
+            if !next.owners.isEmpty { native.streamBuffer.seedBaselineOwners(next.owners) }
+            native.streamBuffer.seedBaselineArmies(next.armies)
         }
-        native.streamBuffer.seedBaselineArmies(next.armies)
-        if let hr = next.historicalRoute, !hr.isEmpty {
+        // v11.0.0 关键性能修复：仅值变化时写入 @Published activeHistoricalRoute，根除每步 15–30Hz 无效全屏 SwiftUI diff 击穿节流与滑屏保护！
+        if let hr = next.historicalRoute, !hr.isEmpty, activeHistoricalRoute != hr {
             activeHistoricalRoute = hr
         }
         if let modal = next.pendingHistoricalEvent {
@@ -1934,6 +1958,7 @@ import LieguojiCore
             lastHandledNukeDay = nukeDay
             lastHandledNukeProvince = nukeProv
             controller.nukeFlash = (id: UUID(), province: nukeProv)
+            GameFeel.shared.cannon()
         }
         let dayOfYear = ((max(1, min(12, next.date.month)) - 1) * 30 + max(1, min(30, next.date.day)) - 1) % 360
         controller.seasonPhase = Float(dayOfYear) / 360.0
@@ -1942,6 +1967,9 @@ import LieguojiCore
                 controller.activeHistoricalEra = eraId
             }
             GameFeel.shared.setHistoricalEra(eraId)
+        } else if !controller.activeHistoricalEra.isEmpty {
+            controller.activeHistoricalEra = ""
+            GameFeel.shared.setHistoricalEra("")
         }
         var newEvents: [GameState.Event] = []
         if let previous {
@@ -2091,7 +2119,7 @@ import LieguojiCore
         }
         // 单步全部地图数据（疆域/墨晕/军团/特效/海港/天时）一次性原子合批提交至渲染层，彻底消除多轮重复 sync。
         controller.flushSync()
-        if mapView != .state && mapView != .terrain, !playing || CACurrentMediaTime() - lastViewRefresh > 0.6 {
+        if mapView != .state && mapView != .terrain, !playing || CACurrentMediaTime() - lastViewRefresh > 1.5 {
             lastViewRefresh = CACurrentMediaTime()
             Task { [weak self] in await self?.refreshView() }
         }
@@ -2563,6 +2591,9 @@ import LieguojiCore
                 r: c.0, g: c.1, b: c.2
             ))
         }
+        if playing && (!(state.seaBattles ?? []).isEmpty || e.landings.contains(where: \.hasFire)) {
+            GameFeel.shared.cannon()
+        }
         var flashes = controller.effects.flashes.suffix(6).map { $0 }
         if let previous {
             for (p, owner) in state.owners.enumerated() where p < previous.owners.count && previous.owners[p] != owner && p < map.meta.provinces.count {
@@ -2797,9 +2828,14 @@ import LieguojiCore
             return nil
         }()
         if let id = activeRouteId {
+            let nowRoute = CACurrentMediaTime()
+            let targetChanged = (id != lastRouteQueryTargetId)
             let queryKey = "\(worldEpoch):\(id):\(state.day)"
-            if queryKey != lastRouteQueryKey {
+            // v11.0.0：推演期间把行军路线查询节流至 ≥0.9s，切换选中单位或暂停时立即刷新（根除 25 RPC/s 网络与寻路风暴）
+            if queryKey != lastRouteQueryKey && (targetChanged || !playing || nowRoute - lastRouteQueryAt >= 0.9) {
                 lastRouteQueryKey = queryKey
+                lastRouteQueryTargetId = id
+                lastRouteQueryAt = nowRoute
                 routeTask?.cancel()
                 let expectedEpoch = worldEpoch
                 routeTask = Task { @MainActor [weak self] in
@@ -2816,6 +2852,7 @@ import LieguojiCore
             routeTask?.cancel()
             routeTask = nil
             lastRouteQueryKey = ""
+            lastRouteQueryTargetId = ""
             if !controller.route.isEmpty { controller.route = [] }
         }
     }

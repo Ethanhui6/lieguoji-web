@@ -49,8 +49,23 @@ enum CloudSaveClient {
         URL(string: OnlinePlatform.apiBase + "/api/v1/" + path)
     }
 
+    /// 匿名未登录玩家的本机随机隔离云库码（彻底禁用旧版所有人共享 `ECZV5UL3UV` 公共房间导致的跨玩家串档泄露）。
+    private static var anonymousRoomCode: String {
+        let custom = (UserDefaults.standard.string(forKey: "remote.roomCode") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "-", with: "")
+            .uppercased()
+        if custom.count >= 6 { return custom }
+        let key = "archive.deviceRoomCode.v1"
+        if let existing = UserDefaults.standard.string(forKey: key), existing.count >= 8 { return existing }
+        let chars = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+        let generated = String((0..<10).map { _ in chars.randomElement()! })
+        UserDefaults.standard.set(generated, forKey: key)
+        return generated
+    }
+
     private static func roomURL(_ base: String, path: String) -> URL? {
-        let safeRoom = NativeHost.activeRoomCode.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? NativeHost.activeRoomCode
+        let safeRoom = anonymousRoomCode.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? anonymousRoomCode
         return URL(string: base + "/room/\(safeRoom)/\(path)")
     }
 
@@ -59,11 +74,12 @@ enum CloudSaveClient {
         if let token = OnlinePlatform.currentToken, let url = platformURL("saves") {
             var req = URLRequest(url: url); req.timeoutInterval = 10
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            if let (data, resp) = try? await session.data(for: req),
-               (resp as? HTTPURLResponse)?.statusCode == 200,
-               let decoded = try? JSONDecoder().decode(ListResp.self, from: data), decoded.ok {
-                return decoded.saves ?? []
+            let (data, resp) = try await session.data(for: req)
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            guard code == 200, let decoded = try? JSONDecoder().decode(ListResp.self, from: data), decoded.ok else {
+                throw EngineError.message(code == 401 ? "登录会话已过期，请重新登录后同步云端存档" : "暂无法读取专属云档服务器（\(code)）")
             }
+            return decoded.saves ?? []
         }
         var lastError: Error = EngineError.message("连不上云端存档服务器")
         for base in RelayLink.bases {
@@ -89,7 +105,7 @@ enum CloudSaveClient {
 
         func applySaveHeaders(_ req: inout URLRequest) {
             req.httpMethod = "PUT"
-            req.timeoutInterval = 90
+            req.timeoutInterval = 120
             req.setValue("application/octet-stream", forHTTPHeaderField: "content-type")
             req.setValue(encoding, forHTTPHeaderField: "x-save-encoding")
             req.setValue(enc(title), forHTTPHeaderField: "x-save-title")
@@ -105,21 +121,16 @@ enum CloudSaveClient {
             var req = URLRequest(url: url)
             applySaveHeaders(&req)
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            do {
-                let (data, resp) = try await session.upload(for: req, from: payload)
-                let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
-                if code == 200, let parsed = try? JSONDecoder().decode(PutResp.self, from: data), parsed.ok, let card = parsed.save {
-                    Task { @MainActor in await OnlinePlatform.shared.refreshUserProfile() }
-                    return card
-                }
-                if let parsed = try? JSONDecoder().decode(PutResp.self, from: data), let reason = parsed.reason, !reason.isEmpty {
-                    throw EngineError.message(reason)
-                }
-            } catch let e as EngineError {
-                throw e
-            } catch {
-                // 专属服异常时自动回落备用云库
+            let (data, resp) = try await session.upload(for: req, from: payload)
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if code == 200, let parsed = try? JSONDecoder().decode(PutResp.self, from: data), parsed.ok, let card = parsed.save {
+                Task { @MainActor in await OnlinePlatform.shared.refreshUserProfile() }
+                return card
             }
+            if let parsed = try? JSONDecoder().decode(PutResp.self, from: data), let reason = parsed.reason, !reason.isEmpty {
+                throw EngineError.message(reason)
+            }
+            throw EngineError.message(code == 401 ? "登录会话已过期，请重新登录后再上传云档" : "专属云档上传失败（HTTP \(code)），未写入公共存储")
         }
 
         var lastError: Error = EngineError.message("上传云端存档失败，请检查网络")
@@ -146,15 +157,17 @@ enum CloudSaveClient {
     static func download(id: String) async throws -> Data {
         let safeId = encodedSaveID(id)
         if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(safeId)") {
-            var req = URLRequest(url: url); req.timeoutInterval = 90
+            var req = URLRequest(url: url); req.timeoutInterval = 120
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            if let (data, resp) = try? await session.data(for: req),
-               let http = resp as? HTTPURLResponse, http.statusCode == 200,
-               http.value(forHTTPHeaderField: "content-type")?.lowercased().contains("text/html") != true {
-                let enc = (http.value(forHTTPHeaderField: "x-save-encoding") ?? "raw").lowercased()
-                if enc == "zlib" { return try (data as NSData).decompressed(using: .zlib) as Data }
-                return data
+            let (data, resp) = try await session.data(for: req)
+            guard let http = resp as? HTTPURLResponse, http.statusCode == 200,
+                  http.value(forHTTPHeaderField: "content-type")?.lowercased().contains("text/html") != true else {
+                let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                throw EngineError.message(code == 401 ? "登录会话已过期，请重新登录后下载云档" : "下载专属云档失败（HTTP \(code)）")
             }
+            let enc = (http.value(forHTTPHeaderField: "x-save-encoding") ?? "raw").lowercased()
+            if enc == "zlib" { return try (data as NSData).decompressed(using: .zlib) as Data }
+            return data
         }
         var lastError: Error = EngineError.message("下载云端存档失败")
         for base in RelayLink.bases {
@@ -179,10 +192,13 @@ enum CloudSaveClient {
         if let token = OnlinePlatform.currentToken, let url = platformURL("saves/\(safeId)") {
             var req = URLRequest(url: url); req.httpMethod = "DELETE"; req.timeoutInterval = 15
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            if let (_, resp) = try? await session.data(for: req), (resp as? HTTPURLResponse)?.statusCode == 200 {
-                Task { @MainActor in await OnlinePlatform.shared.refreshUserProfile() }
-                return
+            let (_, resp) = try await session.data(for: req)
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            guard code == 200 else {
+                throw EngineError.message("删除专属云档失败（HTTP \(code)）")
             }
+            Task { @MainActor in await OnlinePlatform.shared.refreshUserProfile() }
+            return
         }
         var lastError: Error = EngineError.message("删除云端存档失败")
         for base in RelayLink.bases {

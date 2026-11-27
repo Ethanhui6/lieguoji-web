@@ -1,4 +1,6 @@
 import Foundation
+import CryptoKit
+import Network
 import Security
 import SwiftUI
 import UIKit
@@ -111,6 +113,7 @@ struct AppUpdateInfo: Codable, Equatable, Sendable {
     let webDownloadUrl: String
     let releaseNotes: [String]
     let ipaMirrors: [String]?
+    let ipaSha256: String?
 
     var preferredExternalURL: URL? {
         if !webDownloadUrl.isEmpty, let u = URL(string: webDownloadUrl) { return u }
@@ -348,6 +351,7 @@ private struct ByteChunk: Sendable {
 }
 
 private struct ChunkResult: Sendable {
+    let chunk: ByteChunk
     let bytes: Int64
     let nodeName: String
     let ok: Bool
@@ -459,6 +463,12 @@ private final class ChunkWorkQueue: @unchecked Sendable {
         let next = chunks[cursor]
         cursor += 1
         return next
+    }
+
+    func requeue(_ chunk: ByteChunk) {
+        lock.lock()
+        defer { lock.unlock() }
+        chunks.append(chunk)
     }
 }
 
@@ -584,6 +594,22 @@ private final class SessionLifecycleBox: @unchecked Sendable {
     private var ipaDownloadSession: URLSession?
     private var singleDownloadSession: URLSession?
     private var singleDownloadTask: URLSessionDownloadTask?
+    private var pathMonitor: NWPathMonitor?
+
+    func startPathMonitor(onSatisfied: @escaping @Sendable () -> Void) {
+        lock.lock()
+        guard pathMonitor == nil else { lock.unlock(); return }
+        let mon = NWPathMonitor()
+        pathMonitor = mon
+        lock.unlock()
+        let q = DispatchQueue(label: "com.lieguoji.platform.netpath", qos: .utility)
+        mon.pathUpdateHandler = { path in
+            if path.status == .satisfied {
+                onSatisfied()
+            }
+        }
+        mon.start(queue: q)
+    }
 
     func hasHeartbeat() -> Bool {
         lock.lock()
@@ -669,12 +695,14 @@ private final class SessionLifecycleBox: @unchecked Sendable {
         let s1 = ipaDownloadSession; ipaDownloadSession = nil
         let t2 = singleDownloadTask; singleDownloadTask = nil
         let s2 = singleDownloadSession; singleDownloadSession = nil
+        let mon = pathMonitor; pathMonitor = nil
         lock.unlock()
         hb?.cancel()
         t1?.cancel()
         s1?.invalidateAndCancel()
         t2?.cancel()
         s2?.invalidateAndCancel()
+        mon?.cancel()
     }
 }
 
@@ -682,14 +710,17 @@ private final class IPADownloadDelegate: NSObject, URLSessionDownloadDelegate, @
     let onProgress: @Sendable (Double, Int64, Int64, Double) -> Void
     let onFinish: @Sendable (Result<URL, Error>) -> Void
     private let destination: URL
+    private let expectedSha256: String?
     private let startTime = CFAbsoluteTimeGetCurrent()
     private let finishLock = NSLock()
     private var finished = false
 
     init(destination: URL,
+         expectedSha256: String? = nil,
          onProgress: @escaping @Sendable (Double, Int64, Int64, Double) -> Void,
          onFinish: @escaping @Sendable (Result<URL, Error>) -> Void) {
         self.destination = destination
+        self.expectedSha256 = expectedSha256?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         self.onProgress = onProgress
         self.onFinish = onFinish
     }
@@ -717,6 +748,22 @@ private final class IPADownloadDelegate: NSObject, URLSessionDownloadDelegate, @
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         do {
+            if let http = downloadTask.response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+                throw NSError(domain: "OnlinePlatform.Download", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "镜像返回 HTTP \(http.statusCode)"])
+            }
+            if let fh = try? FileHandle(forReadingFrom: location) {
+                let hdr = (try? fh.read(upToCount: 4)) ?? Data()
+                try? fh.close()
+                guard hdr.count >= 2, hdr[hdr.startIndex] == 0x50, hdr[hdr.index(after: hdr.startIndex)] == 0x4B else {
+                    throw NSError(domain: "OnlinePlatform.Download", code: 4, userInfo: [NSLocalizedDescriptionKey: "下载文件非有效 IPA 压缩包"])
+                }
+            }
+            if let expected = expectedSha256, !expected.isEmpty {
+                let actual = OnlinePlatform.sha256OfFile(at: location)
+                guard actual == expected else {
+                    throw NSError(domain: "OnlinePlatform.Download", code: 5, userInfo: [NSLocalizedDescriptionKey: "安装包 SHA256 校验未通过"])
+                }
+            }
             let fm = FileManager.default
             try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
             if fm.fileExists(atPath: destination.path) { try fm.removeItem(at: destination) }
@@ -833,10 +880,10 @@ private final class TokenBox: @unchecked Sendable {
     }()
 
     static var currentVersionString: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "6.0.0"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "11.0.0"
     }
     static var currentBuildNumber: Int {
-        Int((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "189") ?? 189
+        Int((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "196") ?? 196
     }
     private static var deviceUUID: String {
         let k = "online.deviceId.v1"
@@ -860,6 +907,13 @@ private final class TokenBox: @unchecked Sendable {
         if let rawUser = UserDefaults.standard.data(forKey: "online.cachedUser.v1"),
            let decoded = try? JSONDecoder().decode(OnlineUser.self, from: rawUser) {
             self.user = decoded
+        }
+        // 离线冷启动恢复联网后自动触发一次云端引导与更新检测（仅在尚未成功引导时执行）
+        lifecycleBox.startPathMonitor { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self, !self.bootstrappedOnce, !self.checkingUpdate else { return }
+                _ = await self.bootstrap(manual: false, autoPrompt: true)
+            }
         }
     }
 
@@ -899,18 +953,26 @@ private final class TokenBox: @unchecked Sendable {
     @discardableResult
     func bootstrap(manual: Bool = false, autoPrompt: Bool = true) async -> Bool {
         if !manual && bootstrappedOnce { return false }
-        bootstrappedOnce = true
+        if checkingUpdate { return false }
         checkingUpdate = true
         defer { checkingUpdate = false }
 
-        let ver = Self.currentVersionString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "5.3.0"
+        let ver = Self.currentVersionString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "11.0.0"
         let build = Self.currentBuildNumber
         let path = "/api/v1/bootstrap?version=\(ver)&build=\(build)&patch=\(hotpatchVersion)"
         guard let req = makeRequest(path, method: "GET", timeout: 8) else { return false }
 
         let t0 = Date().timeIntervalSinceReferenceDate
         do {
-            let (data, resp) = try await session.data(for: req)
+            // v11.0.0 冷启动单次自动重试 + 仅在 HTTP 200 成功后锁定 bootstrappedOnce（离线冷启动稍后联网自动恢复）
+            let data: Data
+            let resp: URLResponse
+            do {
+                (data, resp) = try await session.data(for: req)
+            } catch {
+                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                (data, resp) = try await session.data(for: req)
+            }
             guard (resp as? HTTPURLResponse)?.statusCode == 200 else { return false }
             let ms = max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
             apiRTTMs = ms
@@ -918,6 +980,7 @@ private final class TokenBox: @unchecked Sendable {
 
             guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   (root["ok"] as? Bool) == true else { return false }
+            bootstrappedOnce = true
 
             let dec = JSONDecoder()
 
@@ -943,9 +1006,13 @@ private final class TokenBox: @unchecked Sendable {
                let uData = try? JSONSerialization.data(withJSONObject: userObj),
                let u = try? dec.decode(OnlineUser.self, from: uData) {
                 persistSession(token: self.token, user: u)
-            } else if self.token != nil && (root["user"] == nil || root["user"] is NSNull) {
-                // Token 已失效或被服务端清理
+            } else if self.token != nil && (root["authExpired"] as? Bool) == true {
+                // 仅当服务端明确返回 authExpired == true 时才清理过期令牌；游客账号自动静默续签
+                let wasGuest = (self.user?.isGuest == true)
                 persistSession(token: nil, user: nil)
+                if wasGuest {
+                    _ = await self.loginAsGuest()
+                }
             }
 
             var hotpatchApplied = false
@@ -1296,7 +1363,8 @@ private final class TokenBox: @unchecked Sendable {
     }
 
     nonisolated private static func isBrokenMirrorURL(_ urlString: String) -> Bool {
-        urlString.lowercased().contains("lieguoji-web.pages.dev")
+        let lower = urlString.lowercased()
+        return lower.contains("lieguoji-web.pages.dev") || lower.contains("lieguoji-edge.pages.dev")
     }
 
     nonisolated private static func buildMirrorCandidates(
@@ -1340,10 +1408,9 @@ private final class TokenBox: @unchecked Sendable {
 
             appendUnique(id: "cdn-gh-proxy-org", name: "国内高速主线 A", url: "https://cdn.gh-proxy.org/\(ghAsset)")
             appendUnique(id: "edgeone-gh-proxy", name: "腾讯云 EdgeOne 专线", url: "https://edgeone.gh-proxy.com/\(ghAsset)")
-            appendUnique(id: "gh-proxy-org", name: "国内高速主线 B", url: "https://gh-proxy.org/\(ghAsset)")
             appendUnique(id: "gh-proxy-com", name: "国内加速节点 C", url: "https://gh-proxy.com/\(ghAsset)")
+            appendUnique(id: "gh-proxy-org", name: "国内高速主线 B", url: "https://gh-proxy.org/\(ghAsset)")
             appendUnique(id: "ghfast-top", name: "极速镜像节点 D", url: "https://ghfast.top/\(ghAsset)")
-            appendUnique(id: "cf-edge", name: "Cloudflare 海外边缘", url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/\(tag)/\(fname)")
             if let extras = info.ipaMirrors {
                 for (idx, raw) in extras.enumerated() {
                     appendUnique(id: "mirror-\(idx)", url: raw)
@@ -1364,12 +1431,9 @@ private final class TokenBox: @unchecked Sendable {
                     appendUnique(id: "direct-ipa", url: info.directIpaUrl)
                 }
             }
-            appendUnique(id: "cf-edge-latest", name: "Cloudflare 海外边缘", url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/latest")
         }
 
-        if includeLatestFallback {
-            appendUnique(id: "cf-edge-latest", name: "Cloudflare 海外边缘", url: "https://lieguoji-edge.pages.dev/api/cdn/ipa/latest")
-        }
+        _ = includeLatestFallback
 
         let originBase = OnlinePlatform.apiBase
         appendUnique(id: "tencent-origin", name: "腾讯云源站兜底", url: "\(originBase)/downloads/lieguoji-latest.ipa")
@@ -1386,6 +1450,32 @@ private final class TokenBox: @unchecked Sendable {
         let suffix = header[header.index(after: slash)...].trimmingCharacters(in: .whitespacesAndNewlines)
         guard let total = Int64(suffix), total > 0 else { return nil }
         return total
+    }
+
+    nonisolated static func sha256OfFile(at url: URL) -> String? {
+        guard let fh = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? fh.close() }
+        var hasher = SHA256()
+        while true {
+            do {
+                guard let chunk = try fh.read(upToCount: 262_144), !chunk.isEmpty else { break }
+                hasher.update(data: chunk)
+            } catch {
+                return nil
+            }
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    nonisolated private static func cleanupOldIPAs(in dir: URL, keeping keepName: String) {
+        let fm = FileManager.default
+        guard let items = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return }
+        for item in items {
+            let name = item.lastPathComponent
+            if name != keepName && (name.hasSuffix(".ipa") || name.hasSuffix(".ipa.part")) {
+                try? fm.removeItem(at: item)
+            }
+        }
     }
 
     nonisolated private static func isLikelyZipHeader(_ data: Data) -> Bool {
@@ -1518,12 +1608,12 @@ private final class TokenBox: @unchecked Sendable {
         let maxAttempts = max(4, pool.totalCount * 2)
         var tried = Set<String>()
         for _ in 0..<maxAttempts {
-            if Task.isCancelled { return ChunkResult(bytes: 0, nodeName: "", ok: false) }
+            if Task.isCancelled { return ChunkResult(chunk: chunk, bytes: 0, nodeName: "", ok: false) }
             if tried.count >= pool.totalCount {
                 tried.removeAll()
             }
             guard let entry = pool.nextMirror(excluding: tried) else {
-                return ChunkResult(bytes: 0, nodeName: "", ok: false)
+                return ChunkResult(chunk: chunk, bytes: 0, nodeName: "", ok: false)
             }
             let mirror = entry.candidate
             tried.insert(mirror.url)
@@ -1555,14 +1645,14 @@ private final class TokenBox: @unchecked Sendable {
                 }
                 try writer.write(data, at: chunk.start)
                 pool.reportSuccess(url: mirror.url)
-                return ChunkResult(bytes: chunk.length, nodeName: mirror.name, ok: true)
+                return ChunkResult(chunk: chunk, bytes: chunk.length, nodeName: mirror.name, ok: true)
             } catch {
-                if Task.isCancelled { return ChunkResult(bytes: 0, nodeName: mirror.name, ok: false) }
+                if Task.isCancelled { return ChunkResult(chunk: chunk, bytes: 0, nodeName: mirror.name, ok: false) }
                 pool.reportFailure(url: mirror.url)
                 try? await Task.sleep(nanoseconds: 120_000_000)
             }
         }
-        return ChunkResult(bytes: 0, nodeName: "", ok: false)
+        return ChunkResult(chunk: chunk, bytes: 0, nodeName: "", ok: false)
     }
 
     func probeMirrors() async {
@@ -1614,11 +1704,14 @@ private final class TokenBox: @unchecked Sendable {
         )
         let ver = infoSnapshot?.latestVersion ?? Self.currentVersionString
         let build = infoSnapshot?.latestBuild ?? Self.currentBuildNumber
-        let fallbackSizeMB = infoSnapshot?.ipaSizeMB ?? 42.7
+        let fallbackSizeMB = infoSnapshot?.ipaSizeMB ?? 44.5
+        let expectedSha256 = infoSnapshot?.ipaSha256?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
-        let dest = caches.appendingPathComponent("Updates/lieguoji-\(ver)-b\(build).ipa")
-        let partDest = caches.appendingPathComponent("Updates/lieguoji-\(ver)-b\(build).ipa.part")
+        let updatesDir = caches.appendingPathComponent("Updates", isDirectory: true)
+        let dest = updatesDir.appendingPathComponent("lieguoji-\(ver)-b\(build).ipa")
+        let partDest = updatesDir.appendingPathComponent("lieguoji-\(ver)-b\(build).ipa.part")
+        Self.cleanupOldIPAs(in: updatesDir, keeping: dest.lastPathComponent)
 
         let dlTask = Task { [weak self] in
             guard let self else { return }
@@ -1714,21 +1807,24 @@ private final class TokenBox: @unchecked Sendable {
                 dlCfg.httpMaximumConnectionsPerHost = 12
                 dlCfg.timeoutIntervalForRequest = 16
                 dlCfg.timeoutIntervalForResource = 300
-                dlCfg.waitsForConnectivity = true
+                dlCfg.waitsForConnectivity = false
                 let dlSession = URLSession(configuration: dlCfg)
                 self.lifecycleBox.replaceIPASession(dlSession)
                 defer {
                     self.lifecycleBox.clearIPASession(ifMatches: dlSession)
                 }
 
+                let fallbackList = healthy.map { IPAMirrorCandidate(id: $0.id, name: $0.name, url: $0.url) }
                 let writer: ChunkFileWriter
                 do {
                     writer = try ChunkFileWriter(fileURL: partDest, totalSize: totalBytes)
                 } catch {
                     self.startSingleStreamIPADownload(
-                        candidate: IPAMirrorCandidate(id: winner.id, name: winner.name, url: winner.url),
+                        candidates: fallbackList,
+                        index: 0,
                         dest: dest,
-                        fallbackSizeMB: fallbackSizeMB
+                        fallbackSizeMB: fallbackSizeMB,
+                        expectedSha256: expectedSha256
                     )
                     return
                 }
@@ -1753,6 +1849,7 @@ private final class TokenBox: @unchecked Sendable {
                 let startTime = CFAbsoluteTimeGetCurrent()
                 var bytesDone: Int64 = 0
                 var failedChunks = 0
+                var chunkRetries: [Int: Int] = [:]
                 let workerCount = min(8, chunks.count)
                 var samples: [(Double, Int64)] = [(startTime, 0)]
 
@@ -1793,8 +1890,15 @@ private final class TokenBox: @unchecked Sendable {
                                 smoothMBs
                             )
                         } else {
-                            failedChunks += 1
-                            group.cancelAll()
+                            // v10.1.0 单块失败自动回队列跨镜像重试（最多 2 轮额外机会），绝不因单块网络抖动直接废弃已下完的 90% 数据！
+                            let used = chunkRetries[res.chunk.index] ?? 0
+                            if used < 2 && !Task.isCancelled {
+                                chunkRetries[res.chunk.index] = used + 1
+                                workQueue.requeue(res.chunk)
+                            } else {
+                                failedChunks += 1
+                                group.cancelAll()
+                            }
                         }
                         if failedChunks == 0 && !Task.isCancelled, let nextChunk = workQueue.popNext() {
                             group.addTask {
@@ -1821,6 +1925,15 @@ private final class TokenBox: @unchecked Sendable {
                         guard diskSize == totalBytes else {
                             throw NSError(domain: "OnlinePlatform.Download", code: 3, userInfo: [NSLocalizedDescriptionKey: "安装包校验体积不一致"])
                         }
+                        if let expectedSha256, !expectedSha256.isEmpty {
+                            self.downloadDetail = "正在校验安装包 SHA256 完整性…"
+                            let actualSha = await Task.detached(priority: .userInitiated) {
+                                Self.sha256OfFile(at: partDest)
+                            }.value
+                            guard actualSha == expectedSha256 else {
+                                throw NSError(domain: "OnlinePlatform.Download", code: 5, userInfo: [NSLocalizedDescriptionKey: "安装包 SHA256 校验不一致，已自动拦截损坏文件"])
+                            }
+                        }
                         if fm.fileExists(atPath: dest.path) {
                             try fm.removeItem(at: dest)
                         }
@@ -1843,29 +1956,45 @@ private final class TokenBox: @unchecked Sendable {
 
                 try? FileManager.default.removeItem(at: partDest)
                 self.startSingleStreamIPADownload(
-                    candidate: IPAMirrorCandidate(id: winner.id, name: winner.name, url: winner.url),
+                    candidates: fallbackList,
+                    index: 0,
                     dest: dest,
-                    fallbackSizeMB: fallbackSizeMB
+                    fallbackSizeMB: fallbackSizeMB,
+                    expectedSha256: expectedSha256
                 )
             } else {
+                let fallbackList = healthy.map { IPAMirrorCandidate(id: $0.id, name: $0.name, url: $0.url) }
                 self.startSingleStreamIPADownload(
-                    candidate: IPAMirrorCandidate(id: winner.id, name: winner.name, url: winner.url),
+                    candidates: fallbackList,
+                    index: 0,
                     dest: dest,
-                    fallbackSizeMB: fallbackSizeMB
+                    fallbackSizeMB: fallbackSizeMB,
+                    expectedSha256: expectedSha256
                 )
             }
         }
         lifecycleBox.replaceIPATask(dlTask)
     }
 
-    private func startSingleStreamIPADownload(candidate: IPAMirrorCandidate, dest: URL, fallbackSizeMB: Double) {
+    private func startSingleStreamIPADownload(
+        candidates: [IPAMirrorCandidate],
+        index: Int,
+        dest: URL,
+        fallbackSizeMB: Double,
+        expectedSha256: String?
+    ) {
         lifecycleBox.clearSingleDownload(ifMatches: nil)
 
-        guard let url = URL(string: candidate.url) else {
+        guard candidates.indices.contains(index) else {
             downloadingIPA = false
             downloadSpeedMBs = 0
-            downloadDetail = "下载链接无效"
+            downloadDetail = "全部镜像下载均失败，请点击「浏览器下载」或稍后重试"
             GameFeel.shared.notify(.error)
+            return
+        }
+        let candidate = candidates[index]
+        guard let url = URL(string: candidate.url) else {
+            startSingleStreamIPADownload(candidates: candidates, index: index + 1, dest: dest, fallbackSizeMB: fallbackSizeMB, expectedSha256: expectedSha256)
             return
         }
         activeDownloadNode = candidate.name
@@ -1874,6 +2003,7 @@ private final class TokenBox: @unchecked Sendable {
 
         let delegate = IPADownloadDelegate(
             destination: dest,
+            expectedSha256: expectedSha256,
             onProgress: { [weak self] frac, got, total, speedMBs in
                 Task { @MainActor in
                     guard let self else { return }
@@ -1888,9 +2018,9 @@ private final class TokenBox: @unchecked Sendable {
                 Task { @MainActor in
                     guard let self else { return }
                     self.lifecycleBox.clearSingleDownload(ifMatches: nil)
-                    self.downloadingIPA = false
                     switch result {
                     case .success(let fileURL):
+                        self.downloadingIPA = false
                         self.downloadProgress = 1.0
                         self.downloadDetail = "安装包已就绪，请选择巨魔 / AltStore / SideStore 安装"
                         self.downloadedIPAURL = fileURL
@@ -1898,8 +2028,19 @@ private final class TokenBox: @unchecked Sendable {
                     case .failure(let err):
                         self.downloadSpeedMBs = 0
                         if (err as? URLError)?.code == .cancelled {
+                            self.downloadingIPA = false
                             self.downloadDetail = "已取消下载"
+                        } else if index + 1 < candidates.count {
+                            self.downloadDetail = "「\(nodeName)」失败，自动切换下一加速节点…"
+                            self.startSingleStreamIPADownload(
+                                candidates: candidates,
+                                index: index + 1,
+                                dest: dest,
+                                fallbackSizeMB: fallbackSizeMB,
+                                expectedSha256: expectedSha256
+                            )
                         } else {
+                            self.downloadingIPA = false
                             self.downloadDetail = "下载中止：\(err.localizedDescription)"
                             GameFeel.shared.notify(.error)
                         }
@@ -1910,6 +2051,7 @@ private final class TokenBox: @unchecked Sendable {
         let cfg = URLSessionConfiguration.ephemeral
         cfg.timeoutIntervalForRequest = 25
         cfg.timeoutIntervalForResource = 300
+        cfg.waitsForConnectivity = false
         let s = URLSession(configuration: cfg, delegate: delegate, delegateQueue: nil)
         let task = s.downloadTask(with: url)
         lifecycleBox.replaceSingleDownload(session: s, task: task)

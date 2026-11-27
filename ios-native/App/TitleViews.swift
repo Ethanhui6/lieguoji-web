@@ -182,13 +182,8 @@ struct TitleView: View {
     /// A line of the classics under the title, changing each launch (merges hot-updated mottos).
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
     @State private var motto = (TitleView.mottos + HotPackManager.shared.extraMottos).randomElement() ?? "天下大势，分久必合，合久必分"
-    @ObservedObject private var cloud = CloudConfig.shared
     @ObservedObject private var platform = OnlinePlatform.shared
     @ObservedObject private var hotPack = HotPackManager.shared
-    @AppStorage("title.dismissedNoticeSig") private var dismissedNoticeSig = ""
-    private var currentNoticeSig: String {
-        "\(AppVersion.text)|v\(cloud.version)|\(cloud.notice ?? "")"
-    }
     var body: some View {
         ZStack {
             // Ink at the top, paper at the bottom: the title and the actions read over any world.
@@ -259,52 +254,6 @@ struct TitleView: View {
                 Spacer()
                 VStack(spacing: 12) {
                     HotpatchSyncBanner(platform: platform, hotPack: hotPack)
-                    if let notice = cloud.notice, !notice.isEmpty, dismissedNoticeSig != currentNoticeSig {
-                        HStack(spacing: 6) {
-                            Button {
-                                GameFeel.shared.tap()
-                                withAnimation(Motion.panel) {
-                                    dismissedNoticeSig = currentNoticeSig
-                                }
-                                hubTab = "notices"
-                                hubOpen = true
-                            } label: {
-                                HStack(spacing: 6) {
-                                    InkIcon(glyph: .edict, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
-                                    Text(notice)
-                                        .font(Theme.kai(13))
-                                        .foregroundStyle(Theme.ink)
-                                        .lineLimit(2)
-                                        .multilineTextAlignment(.leading)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Spacer(minLength: 2)
-                                    PhosphorIcon(glyph: .chevronRight, size: 10, weight: .light).foregroundStyle(Theme.ink2)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            Rectangle()
-                                .fill(Theme.hairline)
-                                .frame(width: 0.75, height: 14)
-                            Button {
-                                GameFeel.shared.tap()
-                                withAnimation(Motion.panel) {
-                                    dismissedNoticeSig = currentNoticeSig
-                                }
-                            } label: {
-                                InkIcon(glyph: .close, size: 10, weight: 1.9)
-                                    .foregroundStyle(Theme.ink2)
-                                    .frame(width: 22, height: 22)
-                                    .contentShape(Circle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("关闭公告")
-                        }
-                        .padding(.leading, 12).padding(.trailing, 8).padding(.vertical, 7)
-                        .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.seal.opacity(0.3), lineWidth: 0.75))
-                        .transition(.opacity.combined(with: .scale(scale: 0.94)))
-                        .rise(shown, 0)
-                    }
                     Text("架空世界 · 列国兴衰").font(Theme.body).tracking(6).foregroundStyle(Theme.ink2)
                     Button { creating = true } label: {
                         HeroAction(title: "开创新世界", detail: "生成山河 · 分封列国 · 自观兴衰", symbol: "globe.asia.australia")

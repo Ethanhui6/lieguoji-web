@@ -1,5 +1,49 @@
 # 更新日志
 
+## 11.0.0 (Build 196)
+
+### 终极双模丝滑引擎（本机 0ms 瞬开 + 九州云服 v15 1s 秒连）× Metal Early-Z 与主线程微顿清零 × 全 12 历史剧本港口舰队与 7,289 座纯简体中文城市 × 真实史实锁盟与学说实装 × 全面去跑马灯与多复音纯净音频 × 2.06GB 分片断点续传热更包 v11
+- **彻底解决卡顿、微顿与发热（`MapRenderer.swift`、`Ink.swift`、`Wash.swift`、`MapView.swift`、`MapTileStreamer.swift`、`MapEffects.swift`、`GameModel.swift`、`LieguojiApp.swift`）**：
+  - **消除 15–30Hz SwiftUI 重绘风暴**：修复每步无条件改写 `@Published activeHistoricalRoute`、每帧写 `remoteFrameKB / remoteRTTMs` 绕过手势保护的问题；`activeHistoricalRoute` 变更守护，网络仪表限频至 1Hz 且手势拖拽期跳过；移除 `WarCount` 永久 `.repeatForever` 脉冲动画与多余的 `willEnterForegroundNotification` 重复重连；
+  - **解锁 `ahead` 真并行预取**：升级 `NativeHost.Step` 为携带完整状态快照的 `StepPacket`，`apply(step:)` 零 `await` 直出，消除每帧 3 次跨 actor 串行阻塞；
+  - **Metal GPU 片上 Early-Z 深度零过绘**：启用 `.depth16Unorm` 暂态片上深度缓冲（`storeAction = .dontCare` 零 DRAM 写回），陆地先绘写深度 `z=0`，海面后绘做 `< 1.0` 硬件早剔，跳过 **60–80%** 陆下无效 `seaFragment` 片元运算；
+  - **渲染与标签零分配重构**：`rebuildArmies()` 原地复用 `armyRoleBuffers` 消除 `O(K²)` CoW 拷贝（每步省 7MB+）；`reliefTilePipeline` 提至瓦片循环外单次绑定；移除废弃卷轴管线与 `reveal >= 1` 时的 2MB `shadedTerrain` 复制；`Wash.sweepMesh` 改走双缓冲池；`MapTileStreamer` 改为 `UInt64` 位打包键 + 单调戳 LRU；`MapLabelsView` 合并为单次 `CATransaction` 并对国名与城名统一执行 8/帧光栅预算；`TroopLabelsView` 缓存 `CGColor`、去 `shouldRasterize` 离屏阴改用纯硬件暗底胶囊；
+  - **混合同步拖拽呈现**：仅在双指缩放/单指拖拽活跃期启用 `presentsWithTransaction = true` 锁定底图与地名同 VSync 零左右摆动，滑行/飞行恢复异步呈现。
+- **九州云服 v15 架构革命与全链路网络稳态（`LieguojiServer/main.swift`、`Service.swift`、`NativeHost.swift`、`GameModel.swift`、`OnlinePlatform.swift`、`WorldArchive.swift`、`CloudConfig.swift`、`server.py`、`functions/api/relay/[[path]].ts`）**：
+  - **本机 Apple Silicon 0ms 瞬开 + 云服 ~1s 秒连双模并强**：所有远端 `open` 均传 `withoutMap: true, withoutState: true`（将 2–30MB 无用回传压至 40B，3 Mbps 带宽下 1 秒内完成云端握手），远端 `command()` 传 `slim: true`；
+  - **`lieguoji-server/v15` 纯有序 TCP MUX + 独立高优异步写线程**：`DirectClient` 引入 `highQueue`（`MUX_PONG` 永远插队先发，绝不被帧发送阻塞读线程）；默认关闭不可靠 UDP 8767 有状态差量推流（`LGJ_ENABLE_UDP=1` 可按需开启），杜绝丢包导致 `LGB2` 疆域/兵力状态永久错位；`park(syncDisk: false)` 异步落盘；新增 32 并发连接上限、8 秒握手超时与有效业务回复后才提升活跃连接（外网端口扫描无法再踢掉在线玩家）；
+  - **根治云服重连自杀与断流冻屏**：重写 `reconnectCloudNow()` 为单飞有界 3 次重连（彻底移除调用 `remoteLost()` 导致自己踢自己的致命 Bug）；`remoteLost()` 回落本机前自动拉取 `currentLocalState()` 防止日期锁死；全链路 `NWConnection` / `RelayWSLink` 接入 `withTaskCancellationHandler` 与硬超时、`viabilityUpdateHandler` 2.5 秒感知断网、`LANDiscovery` 改非阻塞 `poll()` 切片；
+  - **平台服务器 `server.py` 并发与安全加固**：全部 `send_json` 移出 `_db_lock` 锁外；`authenticate_token` 的 `last_seen_at / last_used_at` 改为 60 秒内存节流批量落库；云存档 `PUT` 改为 256KB 流式落盘（消除 24MB 内存尖峰）；创意工坊上限提升至 `100 国 / 2,400 州`；剔除失效 `lieguoji-edge.pages.dev` 与 `ghfast.top`；新增 `ipaSha256` 全链路签名校验与离线冷启动联网自动 `bootstrap` 恢复。
+- **核心模拟引擎、地图港口、7,289 座纯简体地名与史实系统深度修复（`SeaGraph.swift`、`CreationMap.swift`、`MapLayers.swift`、`HistoricalScenarios.swift`、`HistoricalRoster.swift`、`HistoricalEvents.swift`、`HistoricalGeography.swift`、`DiplomacyBridge.swift`、`Alliances.swift`、`PeaceBridge.swift`、`Uprisings.swift`、`War26.swift`、`CombatReader.swift`、`Naval.swift`、`MaritimeWarfare.swift`、`Travel.swift`、`RunWindow.swift`、`BinaryWire.swift`、`Preview.swift`、`HistoricalWorkshopViews.swift`）**：
+  - **修复局部剧本港口与舰队全灭**：`SeaGraph.harbors()` 正确放行非禁航内海单元格，11 套局部历史战区（含 1939 欧陆、1941 亚太、1560 日本战国等）全部港口与史实舰队完整回归；
+  - **修复地图外缘伪海岸线、真大河细分与真实缩略图预览**：`CreationMap.coast()` 跳过 `b < 0` 虚拟外框；`HistoricalGeography` 将 73 条真实大江大河细分至 `≤ 0.25°` 并优化入海口衔接；`MapLayers` 按拓扑哈希缓存海岸线并新增无人之地边界线；剧本选择页缩略图改为直接渲染真实烘焙 `scenarios_gis.bin` 历史疆域与无人区；
+  - **7,289 座 100% 简体纯中文城市大典**：彻底清除 825 条繁体字、7 条单字残片与 74 条连字符截断地名（0 `iso=="XX"`、0 拉丁字母、0 繁体），日本战国词典扩充至 360+ 真实城下町；古代中国剧本禁止回落现代城市表；修正 1914 比利时配色冲突、1931 新疆金树仁/盛世才、1936 英国鲍德温内阁与西班牙第二共和国人民阵线、1950 不结盟运动（铁托/贝尔格莱德）；
+  - **史实事件、学说、国力与引擎性能全面闭环**：移除 `HistoricalEvents` 90 天强制绕过门控后门并修复 `annexNation` 残留舰队/城池；史实路线严格锁定 AI 随机宣战、自主退盟与总力战过早白和；架空路线真正解锁玩家多分支抉择；修复 `War26.compositePower` 同盟/核武零分 Bug 并将军事学说攻城、补给消耗、寒冬减员与名将专属战术真正接入战斗演算；`Travel` 引入代际复用 `PathScratch` 池、`JSValue` 去空值堆分配、`Naval` 预索引与 `A*` 提速。
+- **全面移除跑马灯 × 顶层 0 抖动历史弹窗 × 多复音纯净音频引擎 × 2.06GB 真实断点续传热更 v11（`GameView.swift`、`TitleViews.swift`、`MenuSheets.swift`、`OnlineAdminViews.swift`、`WorldSheets.swift`、`Feel.swift`、`HotPackManager.swift`、`CloudUpdateView.swift`、`scripts/build-hotpack-v7.mjs`）**：
+  - 彻底清除全端残留跑马灯、快讯横幅、管理员跑马灯表单与传报开关，并将历史重大抉择弹窗提至顶层独立叠层；
+  - 默认切换为经典纯净原声（老版本一次性平滑迁移），音效底层重写为 `AVAudioEngine` + 预解码 `AVAudioPCMBuffer` 缓存 + 6 声部多复音轮转池（支持音量实时生效、绝不咔哒截断），接入核爆/海战/两栖登陆炮声，并用真相位积分重制 7 条无杂音内置音效；
+  - 2.06GB 热更新升级至 `packVersion: 11`：大文件并发精准收敛至 `2 文件 × 4 分片 = 8 连接`（严守连接上限不拥塞）、实装 `.part + .meta` 真实分片断点续传、新增磁盘空间预检与 `isExcludedFromBackup` 防 iCloud 爆满、移除 404 回源、支持单模块勾选下载即时独立挂载。
+
+## 10.1.0 (Build 195)
+
+### 彻底根治拖屏左右摆动 × 清除 2,146 条机翻乱码地名与首帧国名精排 × 全面关闭跑马灯 × 修复云服 5.4s 心跳自杀与国内高速多源镜像
+- **彻底根治拖屏左右摆动，拖到哪就稳稳停在哪（`MapView.swift`、`MapLayers.swift`）**：
+  - **原子同 VSync 提交**：修复 `syncPresentCameraFrame` 中 `mtk.presentsWithTransaction = false` 导致 Metal 地图领先 UIKit 地名/国名/箭头 1 帧、左右来回拖动时文字明显左右摆动的根因；现将 `applyOverlays` 与 `mtk.draw()`（`presentsWithTransaction = true`，仅等待 ~0.2ms `waitUntilScheduled`）锁入同一 `CATransaction` 原子提交，底图与文字 100% 同步上屏；
+  - **稳固拖拽无漂移**：手势 `.began/.changed/.ended` 立即裁剪 `pendingCamera` 杜绝触边过冲回弹；普通拖动松手即刻稳稳停在当前位置（仅 >220 pt/s 快速甩屏保留极短 `0.988` 阻尼惯性）；
+  - **零松手左右跳字**：移除 `MapLabelsView` 落定避让中的水平左右位移（`tightShifts` 仅保留原位微缩与极小垂直避让），国名松手后绝不再左右跳动；同步收紧远景城名分级阈值（普通城 `10.5pt`、首都 `9.5pt`）并精细化国界/省界层级。
+- **彻底清除 2,146 条机翻错乱地名 × 地图边界精准对齐 × 建世第 0 帧境内国名精排（`cities_zh.json`、`HistoricalBasemaps.swift`、`HistoricalScenarios.swift`、`CreationMap.swift`、`NativeView.swift`、`HotPackManager.swift`、`NativeHost.swift`）**：
+  - 查明并剔除 `build-hotpack-v7.mjs` 重复载入无中文/无 ISO 的 `ne_10m_cities.geojson` 所产生的 2,146 条机翻乱码（如「什阿恩哈」「贝伊吉恩」「古阿恩日」「卡瓦萨基」「比尔米恩」），从 `ne_10m_populated_places.geojson` + 180+ 真实中日欧历史城邦重建 **7,399 座 100% 纯正中文城市库**（0 条 `iso == "XX"`、0 英文字母、0 乱码）；同步升级 HotPack 至 `packVersion: 10`；
+  - `assignProvinceNames` 升级为**全局最近对优先分配** + 区域距离上限 + 日本战国 `JP` 严格 ISO 隔离（彻底根绝日本地图出现「釜山」「清津」与邻州抢名）；扩充日本战国令制国与支城词典至 240+ 真实城下町；
+  - `CreationMap.build` 建世第 0 帧直接复用 `NativeEngine.computeStateLabelBoxes`（连通域 + 8 邻域不可达极点 + 15 点境内校验），开局瞬间全部大小国家（含卢森堡/低地三国/日本 24 大名）国名稳居本国腹地不落海、不漂移、不丢失；
+  - `HistoricalBasemaps` 新增权威经纬度与剧本国家数兼容性守卫，拦截旧版热更包错位 `60K/120K` 底图与旧版 `ReliefTiles` 海岸重影。
+- **全面关闭跑马灯（`TitleViews.swift`、`CloudUpdateView.swift`、`GameView.swift`、`MapView.swift`、`GameModel.swift`、`server.py`）**：
+  - 移除标题页公告跑马灯卡片、热更完成横幅浮条与战局底部横竖屏滚动 `EventTicker` 跑马灯（所有历史纪事保留在底栏「纪事」页随点随看）；默认关闭顶部传报弹窗 `showHeralds = false` 并清空云端 `notice`。
+- **彻底修复云服 5.4s 心跳误杀与全链路网络稳定性（`NativeHost.swift`、`LieguojiApp.swift`、`GameModel.swift`、`OnlinePlatform.swift`、`HotPackManager.swift`、`server.py`）**：
+  - **修复真机日志证实的 5.4s 心跳自杀 Bug**：`RemoteLink.call` 在执行 `open / save / catalogs` 大包体上传期间标记 `activeLargeRPCs` 并将超时放宽至 `45s`，`startMuxHeartbeat` 检测到大型上传在途时跳过探针与失答累计（空闲心跳调整为 `4.0s / 2.5s × 4 ≈ 16s`），彻底根治云服刚连上发开局大档 5.4 秒就被自己踢断的顽疾；
+  - 移除开机 `.task { model.prewarmCloudRoutes() }` 静默局域网广播与多路空连探测，消除 iOS 局域网权限弹窗与开机带宽争抢；
+  - 全链路剔除返回 `HTTP 403` 的失效 `lieguoji-edge.pages.dev` 节点与已下线 `cf-relay`，按广州实测速度将 `cdn.gh-proxy.org` 与 `edgeone.gh-proxy.com` 置顶；修复 `OnlinePlatform.startIPADownload` 单个分块失败即取消整包下载的 Bug（改为单块自动跨节点重试），并为冷启动 `bootstrap()` 增加自动重试；
+  - 修正前台切回重连判定：纯本机游玩切后台返回绝不再弹出红色重连条。
+
 ## 10.0.0 (Build 194)
 
 ### 本机 Apple Silicon 0ms 零延迟架构重构 × 十大流畅度与网络硬核进步 × 打破死板州数与非均匀地理精绘 × AoH3 级日本战国 24 大名 × 真实开局兵力编制 × 五维综合国力排行 × 政权王权党派全考据

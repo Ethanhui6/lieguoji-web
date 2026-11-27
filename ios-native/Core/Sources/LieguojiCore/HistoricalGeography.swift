@@ -327,17 +327,14 @@ public enum HistoricalGeography {
             let cx = max(0, min(cols - 1, Int((x / max(1.0, w)) * Double(cols))))
             let cy = max(0, min(rows - 1, Int((y / max(1.0, hh)) * Double(rows))))
             let idx = cy * cols + cx
-            if idx >= 0 && idx < h.count {
-                if h[idx] >= 20 { return true }
-                // 检查周围 3×3 邻格防止窄河谷或河口误判
-                for dy in -1...1 {
-                    for dx in -1...1 {
-                        let nx = cx + dx, ny = cy + dy
-                        if nx >= 0 && nx < cols && ny >= 0 && ny < rows {
-                            let ni = ny * cols + nx
-                            if ni >= 0 && ni < h.count && h[ni] >= 20 { return true }
-                        }
-                    }
+            guard idx >= 0 && idx < h.count else { return false }
+            if h[idx] >= 20 { return true }
+            // 仅检查紧邻四邻格（缩小 3×3 溢出范围防止河道伸入海面）
+            for (dx, dy) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+                let nx = cx + dx, ny = cy + dy
+                if nx >= 0 && nx < cols && ny >= 0 && ny < rows {
+                    let ni = ny * cols + nx
+                    if ni >= 0 && ni < h.count && h[ni] >= 20 { return true }
                 }
             }
             return false
@@ -356,7 +353,6 @@ public enum HistoricalGeography {
         out.reserveCapacity(16_000)
 
         for river in realRivers {
-            // 仅处理穿过当前战区视野的河流
             var touchesRegion = false
             for pt in river.points {
                 if pt.lon >= lonMin && pt.lon <= lonMax && pt.lat >= latMin && pt.lat <= latMax {
@@ -364,26 +360,42 @@ public enum HistoricalGeography {
                     break
                 }
             }
-            guard touchesRegion else { continue }
+            guard touchesRegion, river.points.count >= 2 else { continue }
 
-            // 投影并切分为落在当前战区画布陆域内的连续河段
-            var segments = [[(Double, Double)]]()
-            var current = [(Double, Double)]()
-            for pt in river.points {
+            // v11.0.0 先以 ≤ 0.25° 细步长细分整条河道并保留全河进度 t∈[0,1]，实现精确海岸线截断与下游入图自然河宽！
+            var densePts = [(lon: Double, lat: Double, t: Double)]()
+            let totalVerts = river.points.count
+            for i in 0..<(totalVerts - 1) {
+                let a = river.points[i], b = river.points[i + 1]
+                let segDeg = hypot(b.lon - a.lon, b.lat - a.lat)
+                let steps = max(1, Int((segDeg / 0.25).rounded(.up)))
+                for s in 0..<steps {
+                    let u = Double(s) / Double(steps)
+                    let tGlobal = (Double(i) + u) / Double(max(1, totalVerts - 1))
+                    densePts.append((a.lon + (b.lon - a.lon) * u, a.lat + (b.lat - a.lat) * u, tGlobal))
+                }
+            }
+            let lastPt = river.points[totalVerts - 1]
+            densePts.append((lastPt.lon, lastPt.lat, 1.0))
+
+            var segments = [[(x: Double, y: Double, t: Double)]]()
+            var current = [(x: Double, y: Double, t: Double)]()
+            for pt in densePts {
                 let xy = HistoricalBasemaps.project(lon: pt.lon, lat: pt.lat, region: region, width: w, height: hh)
                 let inFrame = xy.x >= minX && xy.x <= maxX && xy.y >= minY && xy.y <= maxY
                 if inFrame && isLandAt(xy.x, xy.y) {
                     if let prev = current.last {
-                        let d = hypot(xy.x - prev.0, xy.y - prev.1)
-                        if d > 2.5 { current.append((xy.x, xy.y)) }
+                        if hypot(xy.x - prev.x, xy.y - prev.y) > 2.2 { current.append((xy.x, xy.y, pt.t)) }
                     } else {
-                        current.append((xy.x, xy.y))
+                        current.append((xy.x, xy.y, pt.t))
                     }
                 } else {
                     if inFrame && !current.isEmpty {
-                        // 入海口终点：顺滑延伸半步入海避免悬空截断
+                        // 在真实海岸线精确收尾（极短 0.15 贴岸，绝不穿海伸入公海！）
                         let prev = current[current.count - 1]
-                        current.append((prev.0 + (xy.x - prev.0) * 0.55, prev.1 + (xy.y - prev.1) * 0.55))
+                        let ex = prev.x + (xy.x - prev.x) * 0.15
+                        let ey = prev.y + (xy.y - prev.y) * 0.15
+                        current.append((ex, ey, pt.t))
                     }
                     if current.count >= 2 { segments.append(current) }
                     current.removeAll(keepingCapacity: true)
@@ -393,14 +405,17 @@ public enum HistoricalGeography {
 
             let tierScale: Double = river.tier >= 3 ? 1.32 : (river.tier == 2 ? 0.96 : 0.68)
             for seg in segments {
-                let smooth = CreationMap.riverPath(seg)
-                appendScaledRiverRibbon(smooth, widthScale: tierScale * regionWidthScale, into: &out)
+                let rawXY = seg.map { ($0.x, $0.y) }
+                let smooth = CreationMap.riverPath(rawXY)
+                let tStart = seg.first?.t ?? 0.0
+                let tEnd = seg.last?.t ?? 1.0
+                appendScaledRiverRibbon(smooth, tStart: tStart, tEnd: tEnd, widthScale: tierScale * regionWidthScale, into: &out)
             }
         }
         return out
     }
 
-    private static func appendScaledRiverRibbon(_ path: [(Double, Double)], widthScale: Double, into out: inout [Float]) {
+    private static func appendScaledRiverRibbon(_ path: [(Double, Double)], tStart: Double, tEnd: Double, widthScale: Double, into out: inout [Float]) {
         let n = path.count
         guard n >= 2 else { return }
         let baseWidth = (Native.fr(0.125) / CreationMap.worldPerMap) * widthScale
@@ -412,7 +427,8 @@ public enum HistoricalGeography {
             let a = path[max(0, i - 1)]
             let b = path[min(n - 1, i + 1)]
             let d = hypot(b.0 - a.0, b.1 - a.1)
-            let progress = Double(i) / Double(max(1, n - 1))
+            let localFrac = Double(i) / Double(max(1, n - 1))
+            let progress = max(0.0, min(1.0, tStart + (tEnd - tStart) * localFrac))
             let thickness = (0.58 + progress * 0.92) * 1.42
             let r = thickness * baseWidth * 0.5
             let nx = d > 1e-6 ? -(b.1 - a.1) / d * r : 0

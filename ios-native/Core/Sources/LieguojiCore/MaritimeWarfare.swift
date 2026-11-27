@@ -349,6 +349,7 @@ public enum MaritimeWarfare {
 
         // 3. 逐军更新登船、护航、敌舰海上截杀、两栖抢滩登陆与海外封锁断补、以及天时恶劣天气损耗
         var liveArmyIds = Set<String>()
+        var blockadeCache = [String: (ports: Int, held: Int)]()
         for v in space {
             let a = v.army
             let aid = a.id.asString
@@ -425,10 +426,15 @@ public enum MaritimeWarfare {
                     if rem <= 1 { r.regimes.landingDays.delete(aid) } else { r.regimes.landingDays[aid] = JS(rem - 1) }
                 }
 
-                // 港口全封锁导致的海外补给线切断（在敌国或海外孤立作战且本国海港全被封锁）
+                // 港口全封锁导致的海外补给线切断（v11.0.0 按国缓存 Naval.blockade 消除 O(Armies × Ports)）
                 if let p = v.province {
-                    let blk = Naval.blockade(r, nation)
-                    let overseas = p.controller.asString != nation && blk.ports > 0 && blk.held >= blk.ports
+                    let blk = blockadeCache[nation] ?? {
+                        let b = Naval.blockade(r, nation)
+                        blockadeCache[nation] = b
+                        return b
+                    }()
+                    let pCtrl = p.controller.asString
+                    let overseas = pCtrl != nation && blk.ports > 0 && blk.held >= blk.ports
                     if overseas {
                         r.regimes.seaSupplyCut[aid] = JS(true)
                         a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - 8))
@@ -437,10 +443,21 @@ public enum MaritimeWarfare {
                         r.regimes.seaSupplyCut.delete(aid)
                     }
 
-                    // 天时天气联动：暴雪与大旱对滞留战区军队造成真实补给消耗
+                    // v11.0.0 军事学说实装：敌方领土持久游击/焦土后勤消耗（enemySupplyDrainMult）+ 寒冬减耗（winterAttritionMult）
+                    let docSelf = MilitaryDoctrines.doctrine(r, nationId: nation)
+                    if pCtrl != nation && Wars.relation(r, nation, pCtrl)?.status.asString == "war" {
+                        let enemyDoc = MilitaryDoctrines.doctrine(r, nationId: pCtrl)
+                        if enemyDoc.enemySupplyDrainMult > 1.05 {
+                            let extraDrain = (enemyDoc.enemySupplyDrainMult - 1.0) * 3.5
+                            a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - extraDrain))
+                        }
+                    }
+
+                    // 天时天气联动：暴雪与大旱对滞留战区军队造成真实补给消耗（大纵深/严寒适应学说减免寒冬损耗）
                     if let dis = Regimes.disasterAt(r, p.id.asString) {
                         if dis == "snow" {
-                            a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - 3))
+                            let snowLoss = 3.0 * max(0.35, min(1.5, docSelf.winterAttritionMult))
+                            a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - snowLoss))
                         } else if dis == "drought" {
                             a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - 4))
                         }

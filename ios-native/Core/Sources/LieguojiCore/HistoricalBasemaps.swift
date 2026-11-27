@@ -171,6 +171,13 @@ public enum HistoricalBasemaps {
         let heights: [UInt8]
     }
 
+    private static func isCompatibleBounds(_ bm: BakedBasemap, for region: HistoricalRegion) -> Bool {
+        abs(bm.lonMin - region.lonMin) <= 0.06
+            && abs(bm.lonMax - region.lonMax) <= 0.06
+            && abs(bm.latMin - region.latMin) <= 0.06
+            && abs(bm.latMax - region.latMax) <= 0.06
+    }
+
     private final class AtlasStore: @unchecked Sendable {
         private let lock = NSLock()
         private var basemaps: [String: BakedBasemap] = [:]
@@ -180,6 +187,9 @@ public enum HistoricalBasemaps {
         func mergeBasemaps(_ map: [String: BakedBasemap]) {
             lock.lock(); defer { lock.unlock() }
             for (k, v) in map {
+                if let reg = HistoricalRegion(rawValue: k), !HistoricalBasemaps.isCompatibleBounds(v, for: reg) {
+                    continue
+                }
                 basemaps["\(k)@\(v.heights.count)"] = v
                 if basemaps[k] == nil || v.heights.count == 19_928 { basemaps[k] = v }
             }
@@ -189,6 +199,11 @@ public enum HistoricalBasemaps {
             lock.lock(); defer { lock.unlock() }
             for (k, v) in map {
                 let cnt = cellCount ?? v.ownerMask.count
+                // 若存在权威剧本定义且国家数不符（如旧版 v8 热更包中的 14 国日本战国），直接丢弃旧掩膜，杜绝边界错位！
+                if let spec = HistoricalScenarios.scenario(id: k) {
+                    if v.nationCount != spec.nations.count { continue }
+                    if cnt != 19_928 && basemaps["\(spec.region.rawValue)@\(cnt)"] == nil { continue }
+                }
                 scenarios["\(k)@\(cnt)"] = v
                 if scenarios[k] == nil || cnt == 19_928 { scenarios[k] = v }
             }
@@ -197,6 +212,9 @@ public enum HistoricalBasemaps {
         func setBasemaps(_ map: [String: BakedBasemap]) {
             lock.lock(); defer { lock.unlock() }
             for (k, v) in map {
+                if let reg = HistoricalRegion(rawValue: k), !HistoricalBasemaps.isCompatibleBounds(v, for: reg) {
+                    continue
+                }
                 basemaps["\(k)@\(v.heights.count)"] = v
                 basemaps[k] = v
             }
@@ -205,14 +223,49 @@ public enum HistoricalBasemaps {
         func setScenarios(_ map: [String: BakedScenarioGIS]) {
             lock.lock(); defer { lock.unlock() }
             for (k, v) in map {
+                if let spec = HistoricalScenarios.scenario(id: k), v.nationCount != spec.nations.count {
+                    continue
+                }
                 scenarios["\(k)@\(v.ownerMask.count)"] = v
                 scenarios[k] = v
             }
         }
 
-        func setCities(_ list: [GazetteerCity]) {
+        func mergeCleanCities(_ list: [GazetteerCity]) {
+            guard !list.isEmpty else { return }
             lock.lock(); defer { lock.unlock() }
-            if list.count >= cities.count { cities = list }
+            if cities.isEmpty {
+                cities = list
+                return
+            }
+            var seen = Set<String>()
+            seen.reserveCapacity(cities.count + list.count)
+            for c in cities {
+                seen.insert("\(Int((c.lon * 20).rounded()))_\(Int((c.lat * 20).rounded()))_\(c.n)")
+            }
+            for c in list {
+                let key = "\(Int((c.lon * 20).rounded()))_\(Int((c.lat * 20).rounded()))_\(c.n)"
+                if seen.insert(key).inserted {
+                    cities.append(c)
+                }
+            }
+        }
+
+        func hasCompatibleResolution(_ expectedCount: Int) -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            for reg in [HistoricalRegion.japanDetail, .eastAsiaJapan, .europe, .china] {
+                guard let bm = basemaps["\(reg.rawValue)@\(expectedCount)"],
+                      HistoricalBasemaps.isCompatibleBounds(bm, for: reg) else {
+                    return false
+                }
+            }
+            if let sengoku = HistoricalScenarios.scenario(id: "sengoku_1560") {
+                guard let sc = scenarios["sengoku_1560@\(expectedCount)"],
+                      sc.nationCount == sengoku.nations.count else {
+                    return false
+                }
+            }
+            return true
         }
 
         func basemap(for key: String, expectedCount: Int? = nil) -> BakedBasemap? {
@@ -223,7 +276,7 @@ public enum HistoricalBasemaps {
 
         func scenario(for id: String, expectedCount: Int? = nil) -> BakedScenarioGIS? {
             lock.lock(); defer { lock.unlock() }
-            if let expectedCount, let exact = scenarios["\(id)@\(expectedCount)"] { return exact }
+            if let expectedCount { return scenarios["\(id)@\(expectedCount)"] }
             return scenarios[id]
         }
 
@@ -240,7 +293,26 @@ public enum HistoricalBasemaps {
 
     private static let store = AtlasStore()
 
-    /// 安全读取 `HistoricalAtlas` / `HDMeshes` / `Encyclopedia` 目录下的多分辨率底图、剧本 GIS 与 50,000+ 真实城市地名库。
+    /// 校验已载入的某档位（如 60K / 120K）热更底图与剧本掩膜是否与当前版本权威经纬度边界和国家数一致，杜绝旧版热更包错位。
+    public static func hasCompatibleAtlas(expectedCellCount: Int) -> Bool {
+        store.hasCompatibleResolution(expectedCellCount)
+    }
+
+    /// 过滤旧版热更包中由机械音译生成的 `iso == "XX"` 乱码地名（如 `什阿恩哈`/`贝伊吉恩`/`卡瓦萨基`）。
+    private static func isCleanGazetteerCity(_ c: GazetteerCity) -> Bool {
+        let iso = c.iso.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard !iso.isEmpty && iso != "XX" && iso != "-99" else { return false }
+        let name = c.n.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return false }
+        for scalar in name.unicodeScalars {
+            if (scalar.value >= 0x41 && scalar.value <= 0x5A) || (scalar.value >= 0x61 && scalar.value <= 0x7A) {
+                return false
+            }
+        }
+        return true
+    }
+
+    /// 安全读取 `HistoricalAtlas` / `HDMeshes` / `Encyclopedia` 目录下的多分辨率底图、剧本 GIS 与 7,400+ 纯正中文真实城市地名库。
     public static func loadAtlasDirectory(_ dirURL: URL) {
         for bmFile in ["basemaps.bin", "basemaps_60k.bin", "basemaps_120k.bin"] {
             let url = dirURL.appendingPathComponent(bmFile)
@@ -254,19 +326,25 @@ public enum HistoricalBasemaps {
                 store.mergeScenarios(parsed)
             }
         }
-        for cityFile in ["cities_50k_zh.json", "cities_zh.json"] {
+        for cityFile in ["cities_zh.json", "cities_50k_zh.json"] {
             let citiesURL = dirURL.appendingPathComponent(cityFile)
             if let data = try? Data(contentsOf: citiesURL),
                let decoded = try? JSONDecoder().decode([GazetteerCity].self, from: data),
                !decoded.isEmpty {
-                // v8.0.0 严格保证加载的每一座城市名均为 100% 纯中文，彻底拦截外文残留
-                let cleaned = decoded.map { c in
-                    GazetteerCity(
-                        n: NamingCatalog.enforceChinesePlaceName(c.n),
-                        lon: c.lon, lat: c.lat, pop: c.pop, cap: c.cap, iso: c.iso
+                // v10.1.0 严格剔除旧热更包中的 iso=="XX" 机械音译乱码并合并纯正中文城市库，绝不以脏数据覆盖内置权威库！
+                let cleaned = decoded.compactMap { c -> GazetteerCity? in
+                    guard isCleanGazetteerCity(c) else { return nil }
+                    let pure = NamingCatalog.enforceChinesePlaceName(c.n)
+                    guard !pure.isEmpty else { return nil }
+                    return GazetteerCity(
+                        n: pure,
+                        lon: c.lon, lat: c.lat, pop: c.pop, cap: c.cap,
+                        iso: c.iso.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
                     )
                 }
-                store.setCities(cleaned)
+                if !cleaned.isEmpty {
+                    store.mergeCleanCities(cleaned)
+                }
             }
         }
     }
@@ -548,12 +626,12 @@ public enum HistoricalBasemaps {
     private static func frame(region: HistoricalRegion, width: Double, height: Double) -> ProjectionFrame {
         let w = max(1.0, width)
         let h = max(1.0, height)
-        let baked = store.basemap(for: region.rawValue)
-        let lonMin = baked?.lonMin ?? region.lonMin
-        let lonMax = baked?.lonMax ?? region.lonMax
-        let latMin = baked?.latMin ?? region.latMin
-        let latMax = baked?.latMax ?? region.latMax
-        let pad = baked?.pad ?? region.pad
+        // v10.1.0 始终以权威 HistoricalRegion 经纬度画幅为唯一真相，杜绝任何旧热更底图边界偏差导致全图地名与国界整体偏移！
+        let lonMin = region.lonMin
+        let lonMax = region.lonMax
+        let latMin = region.latMin
+        let latMax = region.latMax
+        let pad = region.pad
         let cosScale: Double
         if region == .custom {
             cosScale = 1.0

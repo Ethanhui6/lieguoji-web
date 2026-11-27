@@ -145,12 +145,13 @@ public enum CreationMap {
         }
         return result
     }
-    /// originalCoast：一侧在海平面下的格网边连成链、平滑后的线段。
+    /// originalCoast：一侧在海平面下的格网边连成链、平滑后的线段（跳过 b < 0 地图矩形外框边，杜绝大洋四边画出假黑岸线与浅滩光晕）。
     static func coast(_ x: Inputs, elevations h: [Int]) -> [Segment] {
         var raw = [Segment]()
         for k in x.edges.a.indices {
             let a = x.edges.a[k], b = x.edges.b[k]
-            let sa = h[a] < 20, sb = b >= 0 && b < h.count ? h[b] < 20 : false
+            guard a >= 0 && a < h.count && b >= 0 && b < h.count else { continue }
+            let sa = h[a] < 20, sb = h[b] < 20
             if sa != sb { raw.append(x.edges.segments[k]) }
         }
         var out = [Segment]()
@@ -403,8 +404,41 @@ public enum CreationMap {
         var nationIndex = [String: Int](); for (i, n) in nations.enumerated() { nationIndex[n.id.asString] = i }
         var provinceIndex = [String: Int](); for (i, p) in provinces.enumerated() { provinceIndex[p.id.asString] = i }
         let owners = provinces.map(\.controller.asString)
-        var singles = [String: Int](); for o in owners { singles[o, default: 0] += 1 }
-        let boxes = labelBoxes(g, { c in h[c] >= 20 && province[c] >= 0 ? owners[province[c]] : nil }, hidden: { key, count in singles[key] == 1 && count < 30 })
+        let ownerIndices = owners.map { nationIndex[$0] ?? -1 }
+        let useFitLabels = historicalRegion != nil || r.regimes.enabled.isTruthy
+        let labelsJS: JS
+        if useFitLabels {
+            // v10.1.0 建世第 0 帧即采用连通域 + 8 邻域不可达极点 + 15 点境内框解算器，彻底根除开局国名落海、漂移邻国与小国丢失！
+            var flatPoints = [Double]()
+            flatPoints.reserveCapacity(g.points.count * 2)
+            for p in g.points { flatPoints.append(p.0); flatPoints.append(p.1) }
+            let landCells = province.indices.map { h[$0] >= 20 && province[$0] >= 0 ? province[$0] : -1 }
+            let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
+            var cityPosById = [String: (Double, Double)]()
+            for c in cities {
+                if let cid = c.id.optionalString, !c.position.isNull {
+                    cityPosById[cid] = (c.position.x.asNumber / safeScale, c.position.y.asNumber / safeScale)
+                }
+            }
+            var capPos = [Int: (Double, Double)]()
+            for (i, n) in nations.enumerated() {
+                if let cid = n.capitalId.optionalString, let pos = cityPosById[cid] { capPos[i] = pos }
+            }
+            labelsJS = NativeEngine.computeStateLabelBoxes(
+                cellsX: g.cellsX,
+                points: flatPoints,
+                cells: landCells,
+                owners: ownerIndices,
+                fit: true,
+                nameOf: { k in k >= 0 && k < nations.count ? nations[k].name.asString : "" },
+                capitalPos: capPos
+            )
+        } else {
+            var singles = [String: Int](); for o in owners { singles[o, default: 0] += 1 }
+            let boxes = labelBoxes(g, { c in h[c] >= 20 && province[c] >= 0 ? owners[province[c]] : nil }, hidden: { key, count in singles[key] == 1 && count < 30 })
+            labelsJS = .array(boxes.map { b in CreationForces.object([("nation", JS(nationIndex[b.key] ?? -1)), ("x", JS(b.x)), ("y", JS(b.y)), ("width", JS(b.width)), ("height", JS(b.height)),
+                                                                      ("fontMax", JS(b.fontMax)), ("fontMin", JS(b.fontMin))]) })
+        }
         func object(_ pairs: [(String, JS)]) -> JS { CreationForces.object(pairs) }
         let meta = object([
             ("format", JS("lieguoji-native-world")), ("version", JS(1)), ("seed", JS(seed)), ("template", JS(template)), ("grid", JS("20k")),
@@ -415,8 +449,7 @@ public enum CreationMap {
                 return object([("id", n.id.clone()), ("name", n.name.clone()), ("color", JS(color)), ("line", JS(NativeEngine.stateLineColor(color))),
                                ("capital", JS(cities.firstIndex { $0.id.asString == n.capitalId.asString } ?? -1)), ("culture", civ.cultureId.clone()), ("polity", civ.polity.clone()),
                                ("religion", civ.religionId.clone())]) })),
-            ("labels", .array(boxes.map { b in object([("nation", JS(nationIndex[b.key] ?? -1)), ("x", JS(b.x)), ("y", JS(b.y)), ("width", JS(b.width)), ("height", JS(b.height)),
-                                                       ("fontMax", JS(b.fontMax)), ("fontMin", JS(b.fontMin))]) })),
+            ("labels", labelsJS),
             ("parchment", { let pw = 249.3 / worldPerMap, ph = 137.2 / worldPerMap
                 return object([("x", JS(g.width / 2 - pw / 2)), ("y", JS(g.height / 2 - ph / 2)), ("width", JS(pw)), ("height", JS(ph))]) }()),
             ("events", .array(r.chronicle.entries.asArray.prefix(12).map { e in object([("day", e.day.clone()), ("text", e.text.clone()), ("reason", e.reason.clone())]) })),

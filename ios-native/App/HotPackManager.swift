@@ -58,7 +58,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
 @MainActor final class HotPackManager: ObservableObject {
     static let shared = HotPackManager()
 
-    /// 持久化热更资源目录（位于 Application Support/LieguojiHotPack，系统永不自动清理）
+    /// 持久化热更资源目录（位于 Application Support/LieguojiHotPack，系统永不自动清理，并自动标记不纳入 iCloud 备份）
     nonisolated static var rootURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
@@ -66,14 +66,35 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return base.appendingPathComponent("LieguojiHotPack", isDirectory: true)
     }
 
-    /// 经中国大陆实测验证的高速 RAW 镜像池（剔除超时失效站点，实测 5–15 MB/s 优先）
+    nonisolated private static func excludeRootFromBackup() {
+        var dir = rootURL
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? dir.setResourceValues(values)
+    }
+
+    nonisolated private static func availableDiskSpaceBytes() -> Int64? {
+        let probe = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory())
+        if let vals = try? probe.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
+           let avail = vals.volumeAvailableCapacityForImportantUsage {
+            return avail
+        }
+        if let attrs = try? FileManager.default.attributesOfFileSystem(forPath: probe.path),
+           let free = (attrs[.systemFreeSize] as? NSNumber)?.int64Value {
+            return free
+        }
+        return nil
+    }
+
+    /// 经广州实测验证的中国大陆高速镜像池（已剔除 HTTP 403 失效 Cloudflare 节点，最快节点优先）
     nonisolated static let cdnMirrors: [(name: String, baseURL: String)] = [
-        ("国内高速主线 A", "https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
         ("国内极速 CDN", "https://cdn.gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
-        ("国内高速主线 B", "https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
         ("腾讯云 EdgeOne 专线", "https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("国内高速主线 A", "https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("国内高速主线 B", "https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
         ("Gcore 全球加速", "https://gcore.jsdelivr.net/gh/Ethanhui6/lieguoji-web@main"),
-        ("Cloudflare 边缘节点", "https://lieguoji-edge.pages.dev/api/cdn/raw")
     ]
 
     /// 优先查找已热更落地的最新资源文件，不存在时自动回落至安装包 Bundle，实现全量资源免换包热更。
@@ -161,15 +182,23 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
-    /// 大文件流式随机偏移落盘句柄（用于 228MB GIS 图集多路并发 Range 写入，内存占用恒定 < 10 MB）。
+    /// 大文件流式随机偏移落盘句柄（支持 `.part` 真实断点续传写入，内存占用恒定 < 10 MB）。
     private final class StreamingDiskWriter: @unchecked Sendable {
         private let lock = NSLock()
         private var handle: FileHandle?
         private var closed = false
 
-        init(fileURL: URL, totalSize: Int64) throws {
+        init(fileURL: URL, totalSize: Int64, resume: Bool = false) throws {
             let fm = FileManager.default
             try fm.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if resume,
+               fm.fileExists(atPath: fileURL.path),
+               let attrs = try? fm.attributesOfItem(atPath: fileURL.path),
+               let curSize = (attrs[.size] as? NSNumber)?.int64Value,
+               curSize == totalSize {
+                self.handle = try FileHandle(forUpdating: fileURL)
+                return
+            }
             if fm.fileExists(atPath: fileURL.path) { try fm.removeItem(at: fileURL) }
             guard fm.createFile(atPath: fileURL.path, contents: nil) else {
                 throw NSError(domain: "HotPackManager.DiskWriter", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法创建热更临时文件"])
@@ -704,7 +733,13 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             }
         }
 
-        // 2) 纳入清单下发的多镜像 `cdnUrls`（按实时测速胜出主机排序，剔除超时死节点）
+        let topDir = file.path.split(separator: "/").first.map { String($0).lowercased() } ?? ""
+        let isExternalReleaseAsset = [
+            "hdmeshes", "relieftiles", "encyclopedia", "eraunits",
+            "eventscrolls", "generalportraits", "audiohd", "eras45"
+        ].contains(topDir) && !(file.cdnUrls?.isEmpty ?? true)
+
+        // 2) 纳入清单下发的多镜像 `cdnUrls`（按实时测速胜出主机排序，剔除超时死节点与 VPS 404 回源）
         if let manifestURLs = file.cdnUrls {
             let rankedHosts = nodes.compactMap { URL(string: $0.prefix)?.host?.lowercased() }
             let sortedRaw = manifestURLs.enumerated().sorted { a, b in
@@ -719,24 +754,27 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                 let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard let u = URL(string: trimmed) else { continue }
                 let host = (u.host ?? "").lowercased()
-                if host.contains("ghfast.top") { continue }
+                if host.contains("ghfast.top") || host.contains("lieguoji-edge.pages.dev") || host.contains("lieguoji-web.pages.dev") { continue }
                 let isOrigin = host.contains("111.230.153.235") || trimmed.contains("/api/v1/hotpack/")
+                if isExternalReleaseAsset && isOrigin { continue }
                 let label = OnlinePlatform.mirrorLabel(for: trimmed)
                 append("manifest-\(idx)-\(host)", label, u, isOrigin: isOrigin, supportsRange: true)
             }
         }
 
-        // 3) 源站双路径兜底（/download/ 与 /file/ 均支持 Accept-Ranges: bytes + Content-Length）
-        let cleanBase = originBase.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let encodedPath = file.path
-            .split(separator: "/")
-            .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
-            .joined(separator: "/")
-        if let dl = URL(string: "\(cleanBase)/api/v1/hotpack/download/\(encodedPath)") {
-            append("tencent-origin-dl", "腾讯云源站专线", dl, isOrigin: true, supportsRange: true)
-        }
-        if let legacy = URL(string: "\(cleanBase)/api/v1/hotpack/file/\(encodedPath)") {
-            append("tencent-origin-file", "腾讯云源站兜底", legacy, isOrigin: true, supportsRange: true)
+        // 3) 源站双路径兜底（仅用于托管在 VPS 磁盘的轻量动态资源；2GB GitHub Release 大包不落 VPS 磁盘，避免无意义的 404 回源重试）
+        if !isExternalReleaseAsset {
+            let cleanBase = originBase.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            let encodedPath = file.path
+                .split(separator: "/")
+                .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+                .joined(separator: "/")
+            if let dl = URL(string: "\(cleanBase)/api/v1/hotpack/download/\(encodedPath)") {
+                append("tencent-origin-dl", "腾讯云源站专线", dl, isOrigin: true, supportsRange: true)
+            }
+            if let legacy = URL(string: "\(cleanBase)/api/v1/hotpack/file/\(encodedPath)") {
+                append("tencent-origin-file", "腾讯云源站兜底", legacy, isOrigin: true, supportsRange: true)
+            }
         }
         return out + originDeferred
     }
@@ -830,7 +868,58 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return (fastTop3, backups)
     }
 
-    /// 中大文件（≥ 1 MB，含 229MB Hotpack v5 GIS/45纪元/百科包与配乐）多镜像 6 路并发 HTTP Range 流式写盘 + 流式 SHA256 校验（进度条秒动、零内存尖峰）。
+    private struct ResumePartMeta: Codable, Sendable {
+        let sha256: String
+        let size: Int64
+        let chunkBytes: Int64
+        var done: [Int]
+    }
+
+    private final class ResumeMetaStore: @unchecked Sendable {
+        private let lock = NSLock()
+        private let metaURL: URL
+        private let sha256: String
+        private let size: Int64
+        private let chunkBytes: Int64
+        private var doneSet: Set<Int>
+        private var dirtyCount = 0
+
+        init(metaURL: URL, sha256: String, size: Int64, chunkBytes: Int64, initialDone: Set<Int>) {
+            self.metaURL = metaURL
+            self.sha256 = sha256
+            self.size = size
+            self.chunkBytes = chunkBytes
+            self.doneSet = initialDone
+        }
+
+        func markDone(_ idx: Int) {
+            var snapshot: ResumePartMeta?
+            lock.lock()
+            doneSet.insert(idx)
+            dirtyCount += 1
+            if dirtyCount >= 8 {
+                dirtyCount = 0
+                snapshot = ResumePartMeta(sha256: sha256, size: size, chunkBytes: chunkBytes, done: Array(doneSet).sorted())
+            }
+            lock.unlock()
+            if let snapshot, let data = try? JSONEncoder().encode(snapshot) {
+                try? data.write(to: metaURL, options: .atomic)
+            }
+        }
+
+        func flush() {
+            lock.lock()
+            let shouldWrite = dirtyCount > 0 || !doneSet.isEmpty
+            dirtyCount = 0
+            let snapshot = ResumePartMeta(sha256: sha256, size: size, chunkBytes: chunkBytes, done: Array(doneSet).sorted())
+            lock.unlock()
+            if shouldWrite, let data = try? JSONEncoder().encode(snapshot) {
+                try? data.write(to: metaURL, options: .atomic)
+            }
+        }
+    }
+
+    /// 中大文件（≥ 1 MB）多镜像 4 路并发 HTTP Range 真实断点续传（`.part` + `.meta` 分片位图持久化）+ 流式 SHA256 校验。
     nonisolated private static func downloadLargeFileRangeStreaming(
         file: HotPackFile,
         candidates: [(nodeId: String, name: String, url: URL, isOrigin: Bool, supportsRange: Bool)],
@@ -844,137 +933,184 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         guard !rangeCandidates.isEmpty else { return nil }
 
         let dst = rootURL.appendingPathComponent(file.path)
-        let tmp = dst.deletingLastPathComponent().appendingPathComponent(".\(dst.lastPathComponent).tmp.\(UUID().uuidString)")
-        let writer: StreamingDiskWriter
-        do {
-            writer = try StreamingDiskWriter(fileURL: tmp, totalSize: expectedSize)
-        } catch {
-            return nil
-        }
+        let dir = dst.deletingLastPathComponent()
+        let partURL = dir.appendingPathComponent(".\(dst.lastPathComponent).part")
+        let metaURL = dir.appendingPathComponent(".\(dst.lastPathComponent).meta")
 
-        // 1–8 MB 文件用 512 KB 分片，≥ 8 MB 大图集用 1 MB 分片（最多 6 路并发窃取），进度条每秒实时跳动且单文件内存 < 8 MB
+        // 1–8 MB 文件用 512 KB 分片，≥ 8 MB 大图集用 1 MB 分片（每文件最多 4 路并发，配合 2 文件并发 = 8 连接 ≤ 12 宿主上限，告别连接池饥饿）
         let chunkBytes: Int64 = expectedSize >= 8_000_000 ? 1_048_576 : 524_288
-        var slices: [(idx: Int, start: Int64, end: Int64)] = []
+        var allSlices: [(idx: Int, start: Int64, end: Int64)] = []
         var offset: Int64 = 0
         var sIdx = 0
         while offset < expectedSize {
             let end = min(expectedSize - 1, offset + chunkBytes - 1)
-            slices.append((sIdx, offset, end))
+            allSlices.append((sIdx, offset, end))
             offset = end + 1
             sIdx += 1
         }
-        guard slices.count >= 2 else {
-            writer.close()
-            try? FileManager.default.removeItem(at: tmp)
+        guard allSlices.count >= 2 else { return nil }
+
+        let fm = FileManager.default
+        var resumedDone = Set<Int>()
+        var canResume = false
+        if fm.fileExists(atPath: partURL.path),
+           let attrs = try? fm.attributesOfItem(atPath: partURL.path),
+           let diskSz = (attrs[.size] as? NSNumber)?.int64Value,
+           diskSz == expectedSize,
+           let rawMeta = try? Data(contentsOf: metaURL),
+           let parsed = try? JSONDecoder().decode(ResumePartMeta.self, from: rawMeta),
+           parsed.sha256 == file.sha256,
+           parsed.size == expectedSize,
+           parsed.chunkBytes == chunkBytes {
+            resumedDone = Set(parsed.done.filter { $0 >= 0 && $0 < allSlices.count })
+            canResume = true
+        } else {
+            try? fm.removeItem(at: metaURL)
+        }
+
+        let writer: StreamingDiskWriter
+        do {
+            writer = try StreamingDiskWriter(fileURL: partURL, totalSize: expectedSize, resume: canResume)
+        } catch {
             return nil
         }
 
-        final class SliceCursor: @unchecked Sendable {
-            private let lock = NSLock()
-            private let items: [(idx: Int, start: Int64, end: Int64)]
-            private var pos = 0
-            init(_ items: [(idx: Int, start: Int64, end: Int64)]) { self.items = items }
-            func next() -> (idx: Int, start: Int64, end: Int64)? {
-                lock.lock(); defer { lock.unlock() }
-                guard pos < items.count else { return nil }
-                let item = items[pos]; pos += 1; return item
+        let metaStore = ResumeMetaStore(
+            metaURL: metaURL,
+            sha256: file.sha256,
+            size: expectedSize,
+            chunkBytes: chunkBytes,
+            initialDone: resumedDone
+        )
+
+        var alreadyBytes: Int64 = 0
+        var missingSlices: [(idx: Int, start: Int64, end: Int64)] = []
+        for s in allSlices {
+            if resumedDone.contains(s.idx) {
+                alreadyBytes += (s.end - s.start + 1)
+            } else {
+                missingSlices.append(s)
             }
         }
-        let cursor = SliceCursor(slices)
+        if alreadyBytes > 0 {
+            onBytes(alreadyBytes)
+        }
+
         var usedNodeName = rangeCandidates[0].name
-        var reportedBytes: Int64 = 0
-        let workers = min(6, slices.count)
+        var reportedBytes: Int64 = alreadyBytes
 
-        let okAll = await withTaskGroup(of: (Bool, String?, Int64).self, returning: Bool.self) { group in
-            for w in 0..<workers {
-                group.addTask {
-                    var workerLastName: String? = nil
-                    var workerBytes: Int64 = 0
-                    while let slice = cursor.next() {
-                        if Task.isCancelled { return (false, workerLastName, workerBytes) }
-                        let wantLen = Int(slice.end - slice.start + 1)
-                        // 优先将健康的外镜排在前面、冷却中的节点与源站自动沉底，并尝试全部可用镜像
-                        let healthyExternal = rangeCandidates.filter { !$0.isOrigin && !pool.isCoolingDown(nodeID: $0.nodeId) }
-                        let coolingExternal = rangeCandidates.filter { !$0.isOrigin && pool.isCoolingDown(nodeID: $0.nodeId) }
-                        let origins = rangeCandidates.filter(\.isOrigin)
-                        var ordered: [(nodeId: String, name: String, url: URL, isOrigin: Bool, supportsRange: Bool)] = []
-                        if !healthyExternal.isEmpty {
-                            let rot = (slice.idx + w) % healthyExternal.count
-                            for k in 0..<healthyExternal.count {
-                                ordered.append(healthyExternal[(rot + k) % healthyExternal.count])
-                            }
-                        }
-                        ordered.append(contentsOf: origins)
-                        ordered.append(contentsOf: coolingExternal)
-                        var sliceDone = false
-                        for cand in ordered {
+        if !missingSlices.isEmpty {
+            final class SliceCursor: @unchecked Sendable {
+                private let lock = NSLock()
+                private let items: [(idx: Int, start: Int64, end: Int64)]
+                private var pos = 0
+                init(_ items: [(idx: Int, start: Int64, end: Int64)]) { self.items = items }
+                func next() -> (idx: Int, start: Int64, end: Int64)? {
+                    lock.lock(); defer { lock.unlock() }
+                    guard pos < items.count else { return nil }
+                    let item = items[pos]; pos += 1; return item
+                }
+            }
+            let cursor = SliceCursor(missingSlices)
+            let workers = min(4, missingSlices.count)
+
+            let okAll = await withTaskGroup(of: (Bool, String?, Int64).self, returning: Bool.self) { group in
+                for w in 0..<workers {
+                    group.addTask {
+                        var workerLastName: String? = nil
+                        var workerBytes: Int64 = 0
+                        while let slice = cursor.next() {
                             if Task.isCancelled { return (false, workerLastName, workerBytes) }
-                            var req = URLRequest(url: cand.url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: cand.isOrigin ? 28 : 10)
-                            req.setValue("bytes=\(slice.start)-\(slice.end)", forHTTPHeaderField: "Range")
-                            req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
-                            do {
-                                let (data, resp) = try await session.data(for: req)
-                                guard let http = resp as? HTTPURLResponse,
-                                      http.statusCode == 206,
-                                      data.count == wantLen else {
-                                    pool.reportFailure(nodeID: cand.nodeId)
-                                    continue
+                            let wantLen = Int(slice.end - slice.start + 1)
+                            let healthyExternal = rangeCandidates.filter { !$0.isOrigin && !pool.isCoolingDown(nodeID: $0.nodeId) }
+                            let coolingExternal = rangeCandidates.filter { !$0.isOrigin && pool.isCoolingDown(nodeID: $0.nodeId) }
+                            let origins = rangeCandidates.filter(\.isOrigin)
+                            var ordered: [(nodeId: String, name: String, url: URL, isOrigin: Bool, supportsRange: Bool)] = []
+                            if !healthyExternal.isEmpty {
+                                let rot = (slice.idx + w) % healthyExternal.count
+                                for k in 0..<healthyExternal.count {
+                                    ordered.append(healthyExternal[(rot + k) % healthyExternal.count])
                                 }
-                                let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
-                                if ct.contains("text/html") {
-                                    pool.reportFailure(nodeID: cand.nodeId)
-                                    continue
-                                }
-                                try writer.write(data, at: slice.start)
-                                pool.reportSuccess(nodeID: cand.nodeId)
-                                workerLastName = cand.name
-                                workerBytes += Int64(wantLen)
-                                onBytes(Int64(wantLen))
-                                sliceDone = true
-                                break
-                            } catch {
+                            }
+                            ordered.append(contentsOf: origins)
+                            ordered.append(contentsOf: coolingExternal)
+                            var sliceDone = false
+                            for cand in ordered {
                                 if Task.isCancelled { return (false, workerLastName, workerBytes) }
-                                pool.reportFailure(nodeID: cand.nodeId)
+                                var req = URLRequest(url: cand.url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: cand.isOrigin ? 28 : 12)
+                                req.setValue("bytes=\(slice.start)-\(slice.end)", forHTTPHeaderField: "Range")
+                                req.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+                                do {
+                                    let (data, resp) = try await session.data(for: req)
+                                    guard let http = resp as? HTTPURLResponse,
+                                          http.statusCode == 206,
+                                          data.count == wantLen else {
+                                        pool.reportFailure(nodeID: cand.nodeId)
+                                        continue
+                                    }
+                                    let ct = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+                                    if ct.contains("text/html") {
+                                        pool.reportFailure(nodeID: cand.nodeId)
+                                        continue
+                                    }
+                                    try writer.write(data, at: slice.start)
+                                    metaStore.markDone(slice.idx)
+                                    pool.reportSuccess(nodeID: cand.nodeId)
+                                    workerLastName = cand.name
+                                    workerBytes += Int64(wantLen)
+                                    onBytes(Int64(wantLen))
+                                    sliceDone = true
+                                    break
+                                } catch {
+                                    if Task.isCancelled { return (false, workerLastName, workerBytes) }
+                                    pool.reportFailure(nodeID: cand.nodeId)
+                                }
+                            }
+                            if !sliceDone {
+                                return (false, workerLastName, workerBytes)
                             }
                         }
-                        if !sliceDone {
-                            return (false, workerLastName, workerBytes)
-                        }
+                        return (true, workerLastName, workerBytes)
                     }
-                    return (true, workerLastName, workerBytes)
                 }
-            }
-            var success = true
-            for await (ok, name, got) in group {
-                reportedBytes += got
-                if let name { usedNodeName = name }
-                if !ok {
-                    success = false
-                    group.cancelAll()
+                var success = true
+                for await (ok, name, got) in group {
+                    reportedBytes += got
+                    if let name { usedNodeName = name }
+                    if !ok {
+                        success = false
+                        group.cancelAll()
+                    }
                 }
+                return success
             }
-            return success
+
+            metaStore.flush()
+            writer.close()
+            if !okAll || Task.isCancelled {
+                // 保留 .part 与 .meta 供下次一键秒级断点续传（绝不清空已下完的数百 MB 数据！）
+                if !Task.isCancelled && reportedBytes > 0 { onBytes(-reportedBytes) }
+                return nil
+            }
+        } else {
+            writer.close()
         }
 
-        writer.close()
-        if !okAll || Task.isCancelled {
-            if reportedBytes > 0 { onBytes(-reportedBytes) }
-            try? FileManager.default.removeItem(at: tmp)
-            return nil
-        }
-
-        let digest = Self.sha256OfFile(at: tmp)
+        let digest = Self.sha256OfFile(at: partURL)
         guard digest == file.sha256 else {
             if reportedBytes > 0 { onBytes(-reportedBytes) }
-            try? FileManager.default.removeItem(at: tmp)
+            try? fm.removeItem(at: partURL)
+            try? fm.removeItem(at: metaURL)
             return nil
         }
         do {
-            try Self.atomicMoveTemp(tmp, to: dst)
+            try Self.atomicMoveTemp(partURL, to: dst)
+            try? fm.removeItem(at: metaURL)
             return usedNodeName
         } catch {
             if reportedBytes > 0 { onBytes(-reportedBytes) }
-            try? FileManager.default.removeItem(at: tmp)
+            try? fm.removeItem(at: partURL)
+            try? fm.removeItem(at: metaURL)
             return nil
         }
     }
@@ -992,7 +1128,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         let candidates = Self.candidateURLs(for: file, nodes: nodes, originBase: originBase)
         let dst = rootURL.appendingPathComponent(file.path)
 
-        // 中大文件（≥ 1 MB）优先走多镜像 6 路并发 HTTP Range 流式写盘 + 流式 SHA256 校验
+        // 中大文件（≥ 1 MB）优先走多镜像 4 路并发 HTTP Range 真实断点续传 + 流式 SHA256 校验
         if isLargeFile {
             if let usedName = await Self.downloadLargeFileRangeStreaming(
                 file: file,
@@ -1003,6 +1139,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             ) {
                 return (file, true, usedName)
             }
+            if Task.isCancelled { return (file, false, nil) }
         }
 
         for cand in candidates {
@@ -1078,6 +1215,15 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             return pendingFiles.filter { filter.contains($0.module) }
         }()
         guard !updating, let m = manifest, !targetFiles.isEmpty else { return }
+        let targetBytes = targetFiles.reduce(Int64(0)) { $0 + $1.size }
+        let total = max(1, targetBytes)
+        Self.excludeRootFromBackup()
+        if let freeBytes = Self.availableDiskSpaceBytes(), freeBytes < total + 200_000_000 {
+            errorMessage = "设备可用存储空间不足（剩余 \(Self.formatBytes(freeBytes))，本次同步需预留约 \(Self.formatBytes(total + 200_000_000))），请清理空间后重试"
+            statusMessage = "存储空间不足，已取消下载"
+            GameFeel.shared.notify(.warning)
+            return
+        }
         updating = true
         errorMessage = nil
         progress = 0
@@ -1100,8 +1246,6 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             if pa != pb { return pa < pb }
             return $0.size < $1.size
         }
-        let targetBytes = targetFiles.reduce(Int64(0)) { $0 + $1.size }
-        let total = max(1, targetBytes)
         let moduleNames = Dictionary(uniqueKeysWithValues: m.modules.map { ($0.id, $0.name) })
         let base = OnlinePlatform.apiBase
         let hasVeryLargeFiles = queue.contains { $0.size >= 10_000_000 }
@@ -1134,8 +1278,9 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                 routeBanner = fastNodes.first?.name ?? backupNodes.first?.name ?? "腾讯云源站专线"
             }
             self.activeCDNName = routeBanner
-            let maxWorkers = hasVeryLargeFiles ? 6 : 12
-            self.statusMessage = "已锁定「\(routeBanner)」，正在 \(maxWorkers) 路并发流式下载（\(Self.formatBytes(total))）…"
+            // 2 个大文件 × 4 路分片 = 8 并发连接（严守 httpMaximumConnectionsPerHost = 12 上限，彻底告别连接池排队与超时雪崩）
+            let maxWorkers = hasVeryLargeFiles ? 2 : 8
+            self.statusMessage = "已锁定「\(routeBanner)」，正在 \(maxWorkers) 路并发断点续传（\(Self.formatBytes(total))）…"
 
             final class ProgressAccumulator: @unchecked Sendable {
                 private let lock = NSLock()
@@ -1256,6 +1401,17 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             self.pendingFiles = remain
             self.pendingBytes = remainBytes
 
+            // 按模块记录已完整同步的包版本，解决「仅勾选部分模块下载后 installedVersion 不升级导致瓦片/百科无法挂载」的陷阱！
+            for mod in m.modules {
+                let modFiles = m.files.filter { $0.module == mod.id }
+                if !modFiles.isEmpty && modFiles.allSatisfy({ f in
+                    let dst = Self.rootURL.appendingPathComponent(f.path)
+                    return self.installedHashes[f.path] == f.sha256 && fm.fileExists(atPath: dst.path)
+                }) {
+                    UserDefaults.standard.set(m.packVersion, forKey: "hotpack.moduleVersion.\(mod.id)")
+                }
+            }
+
             if failed == 0 {
                 self.progress = 1.0
                 if remain.isEmpty {
@@ -1265,15 +1421,15 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                     UserDefaults.standard.set(m.packVersion, forKey: "hotpack.installedVersion")
                     UserDefaults.standard.set(m.releaseTag, forKey: "hotpack.installedTag")
                     UserDefaults.standard.set(Int(min(Int64(Int.max), m.totalBytes)), forKey: "hotpack.installedBytes")
-                    self.statusMessage = "热更新已完成（\(m.releaseTag) · \(Self.formatBytes(m.totalBytes))），高精网格、8K–16K 卫星地貌瓦片、45 纪元与时代音画已全部实时挂载生效"
+                    self.statusMessage = "热更新已完成（\(m.releaseTag) · \(Self.formatBytes(m.totalBytes))），高精网格、25.6K 卫星地貌瓦片、纯净中文城市大典与时代音画已全部实时挂载生效"
                 } else {
-                    self.statusMessage = "所选模块已同步完成（尚余 \(remain.count) 项未选模块 · \(Self.formatBytes(remainBytes))）"
+                    self.statusMessage = "所选模块已同步完成并实时挂载生效（尚余 \(remain.count) 项未选模块 · \(Self.formatBytes(remainBytes))）"
                 }
                 self.reloadHotContent()
                 await onApplied?()
                 GameFeel.shared.notify(.success)
             } else {
-                self.errorMessage = "有 \(failed) 项资源校验未通过，可点击继续补全（已完成部分无需重下）"
+                self.errorMessage = "有 \(failed) 项资源校验未通过，可点击继续补全（已完成分片已自动保留，随时续传）"
                 _ = await self.checkManifest(autoPrompt: false)
                 GameFeel.shared.notify(.warning)
             }
@@ -1283,7 +1439,9 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
 
     func cancelHotUpdate() {
         taskBox.cancel()
-        Self.cleanupOrphanTempFiles()
+        DispatchQueue.global(qos: .utility).async {
+            Self.cleanupOrphanTempFiles()
+        }
     }
 
     /// 清除本地热更缓存（排错或释放空间用）
@@ -1303,6 +1461,8 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         UserDefaults.standard.removeObject(forKey: "hotpack.installedVersion")
         UserDefaults.standard.removeObject(forKey: "hotpack.installedTag")
         UserDefaults.standard.removeObject(forKey: "hotpack.installedBytes")
+        UserDefaults.standard.removeObject(forKey: "hotpack.moduleVersion.relief-tiles")
+        UserDefaults.standard.removeObject(forKey: "hotpack.moduleVersion.encyclopedia")
         statusMessage = "已清理本地热更资源缓存"
     }
 
@@ -1350,13 +1510,21 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         NativeHost.invalidateCatalogCache()
         NativeHost.invalidateCreationInputsCache()
 
-        // 3. 后台无阻塞挂载：8K–16K GPU 卫星瓦片金字塔 + 60K/120K GIS 底图 + 45 纪元国界库 + 50,000+ 城市百科
+        // 3. 后台无阻塞挂载：8K–16K GPU 卫星瓦片金字塔 + 60K/120K GIS 底图 + 45 纪元国界库 + 纯正中文城市百科
+        // 支持单模块勾选下载后独立挂载生效（同时仍拦截旧版 v6–v8 错位瓦片与旧版乱码城市表）
         let root = Self.rootURL
         let atlasFallback = Self.bestAtlasDirectoryURL()
+        let activePackVer = installedVersion
+        let reliefModVer = UserDefaults.standard.integer(forKey: "hotpack.moduleVersion.relief-tiles")
+        let encModVer = UserDefaults.standard.integer(forKey: "hotpack.moduleVersion.encyclopedia")
+        let allowRelief = (activePackVer >= 9 || reliefModVer >= 9)
+        let allowEncyclopedia = (activePackVer >= 10 || encModVer >= 10)
         DispatchQueue.global(qos: .userInitiated).async {
             let tilesDir = root.appendingPathComponent("ReliefTiles", isDirectory: true)
-            if fm.fileExists(atPath: tilesDir.path) {
+            if allowRelief && fm.fileExists(atPath: tilesDir.path) {
                 MapTileStreamer.shared.mountDirectory(tilesDir)
+            } else {
+                MapTileStreamer.shared.clearGPUCache()
             }
             if let atlasURL = atlasFallback {
                 HistoricalBasemaps.loadAtlasDirectory(atlasURL)
@@ -1366,7 +1534,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                 HistoricalBasemaps.loadAtlasDirectory(hdMeshDir)
             }
             let encDir = root.appendingPathComponent("Encyclopedia", isDirectory: true)
-            if fm.fileExists(atPath: encDir.path) {
+            if allowEncyclopedia && fm.fileExists(atPath: encDir.path) {
                 HistoricalBasemaps.loadAtlasDirectory(encDir)
             }
             let erasDir = root.appendingPathComponent("Eras45", isDirectory: true)

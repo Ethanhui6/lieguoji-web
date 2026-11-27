@@ -191,8 +191,14 @@ extension MapRenderer {
                 indexCount += 3
             }
         }
-        guard indexCount > 0, let vb = device.makeBuffer(bytes: data, length: vertexCount * 8 * 4, options: .storageModeShared),
-              let ib = device.makeBuffer(bytes: index, length: indexCount * 4, options: .storageModeShared) else { sweepMeshCache = nil; return nil }
+        guard indexCount > 0 else { sweepMeshCache = nil; return nil }
+        let vBytes = vertexCount * 8 * MemoryLayout<Float>.stride
+        let iBytes = indexCount * MemoryLayout<UInt32>.stride
+        guard let vb = sweepVertexPool.write(device: device, length: vBytes, capacity: max(256, vBytes * 3 / 2), { buf in
+            data.withUnsafeBytes { if let p = $0.baseAddress { memcpy(buf.contents(), p, vBytes) } }
+        }), let ib = sweepIndexPool.write(device: device, length: iBytes, capacity: max(256, iBytes * 3 / 2), { buf in
+            index.withUnsafeBytes { if let p = $0.baseAddress { memcpy(buf.contents(), p, iBytes) } }
+        }) else { sweepMeshCache = nil; return nil }
         sweepMeshCache = (sweep.revision, vb, ib, indexCount)
         return (vb, ib, indexCount)
     }
@@ -211,6 +217,8 @@ extension MapRenderer {
                 encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
                 encoder.setFragmentBytes(w, length: w.count * MemoryLayout<Float>.stride, index: 0)
                 encoder.drawIndexedPrimitives(type: .triangle, indexCount: mesh.count, indexType: .uint32, indexBuffer: mesh.indices, indexBufferOffset: 0)
+                sweepVertexPool.recordRead(in: command)
+                sweepIndexPool.recordRead(in: command)
             }
         }
         drawInk(encoder, &u, command: command)

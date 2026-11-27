@@ -243,20 +243,30 @@ final class V10OverhaulTests: XCTestCase {
         XCTAssertTrue(grPm.contains("梅塔克萨斯"), "1939 希腊王国首相应为梅塔克萨斯，实际 \(grPm)")
 
         // 王权实权阶梯（君主专制 > 二元君主 > 虚君立宪）
-        let ukInfo = NationInfo.detail(r, ukId)
-        let itInfo = NationInfo.detail(r, itId)
-        let romInfo = NationInfo.detail(r, romId)
-        let ukAuth = ukInfo.polityDetail.royalAuthority.asInt
-        let itAuth = itInfo.polityDetail.royalAuthority.asInt
-        let romAuth = romInfo.polityDetail.royalAuthority.asInt
+        func royalInfo(_ nid: String) -> (Int, String) {
+            guard let idx = r.world.nations.asArray.firstIndex(where: { $0.id.asString == nid }),
+                  let data = eu.nationInfo(idx),
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let pd = obj["polityDetail"] as? [String: Any] else {
+                return (0, "")
+            }
+            let auth = (pd["royalAuthority"] as? NSNumber)?.intValue ?? 0
+            let lbl = pd["royalAuthorityLabel"] as? String ?? ""
+            return (auth, lbl)
+        }
+        let (ukAuth, ukAuthLbl) = royalInfo(ukId)
+        let (itAuth, _) = royalInfo(itId)
+        let (romAuth, _) = royalInfo(romId)
         XCTAssertGreaterThan(romAuth, itAuth, "君主专制王权（罗马尼亚 \(romAuth)）应高于二元君主制（意大利 \(itAuth)）")
         XCTAssertGreaterThan(itAuth, ukAuth, "二元君主制王权（意大利 \(itAuth)）应高于虚君立宪（英国 \(ukAuth)）")
-        XCTAssertFalse((ukInfo.polityDetail.royalAuthorityLabel.optionalString ?? "").isEmpty)
+        XCTAssertFalse(ukAuthLbl.isEmpty)
 
         // 一党制国家（德意志第三帝国）不因定期选举丢失 100% 执政党席位或更换终身领袖
         let beforeParty = r.regimes.nations[gerId].parties[0].seats.asInt
         XCTAssertEqual(beforeParty, 100)
-        Regimes.election(r, gerId)
+        if let gerNation = r.world.nations.asArray.first(where: { $0.id.asString == gerId }) {
+            Regimes.election(r, gerNation, gerId, 1)
+        }
         XCTAssertEqual(r.regimes.nations[gerId].parties[0].seats.asInt, 100, "一党制政权严禁虚构多党席位洗牌")
         XCTAssertEqual(r.regimes.nations[gerId].parties.length, 1)
     }

@@ -466,7 +466,88 @@ public enum NamingCatalog {
         if let fixed = exact[s] { return fixed }
         if s.hasSuffix("行省") && s.count > 2 { return String(s.dropLast(2)) }
         if s.hasSuffix("草原") && s.count > 2 { return String(s.dropLast(2)) }
-        return s
+        return enforceChinesePlaceName(s)
+    }
+
+    /// 100% 纯中文地名防线（v8.0.0）：绝不允许任何拉丁字母/外文缩写泄漏到游戏地图州城名称上。
+    /// 若输入已含中文则清洗尾随拉丁缩写（如「金斯顿 SE」→「金斯顿」）；若为纯外文则按标准汉语译音表即时转写为自然中文地名。
+    public static func enforceChinesePlaceName(_ raw: String, fallbackSeed: String = "") -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        var hasLatin = false
+        var hasCJK = false
+        for sc in trimmed.unicodeScalars {
+            let v = sc.value
+            if (v >= 0x41 && v <= 0x5A) || (v >= 0x61 && v <= 0x7A) || (v >= 0x00C0 && v <= 0x024F) || (v >= 0x1E00 && v <= 0x1EFF) {
+                hasLatin = true
+            } else if v >= 0x4E00 && v <= 0x9FFF {
+                hasCJK = true
+            }
+        }
+        guard hasLatin else { return trimmed }
+        if hasCJK {
+            // 保留中文主体与分隔中点，剔除夹杂的英文后缀（如「科爾查K」「金斯顿 SE」）
+            let kept = String(trimmed.unicodeScalars.filter { sc in
+                let v = sc.value
+                return (v >= 0x4E00 && v <= 0x9FFF) || v == 0x00B7
+            })
+            if kept.count >= 2 { return kept }
+        }
+        // 剥离重音符号并按常见音节转写为标准汉语地名音译（最多 4 字，清爽易读）
+        let folded = trimmed.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+        let letters = String(folded.unicodeScalars.filter { $0.value >= 97 && $0.value <= 122 })
+        guard !letters.isEmpty else { return "新城" }
+        let syllables: [(String, String)] = [
+            ("burg", "堡"), ("berg", "贝格"), ("grad", "格勒"), ("stad", "施塔特"), ("land", "兰"),
+            ("port", "港"), ("fort", "堡"), ("ville", "维尔"), ("ton", "顿"), ("ham", "汉"),
+            ("stan", "斯坦"), ("abad", "阿巴德"), ("pur", "布尔"), ("san", "圣"), ("sao", "圣"),
+            ("new", "新"), ("saint", "圣"), ("los", "洛斯"), ("las", "拉斯"), ("del", "德尔"),
+            ("sch", "施"), ("tch", "奇"), ("ch", "查"), ("sh", "沙"), ("th", "萨"), ("ph", "菲"),
+            ("ck", "克"), ("qu", "奎"), ("zh", "扎"), ("kh", "哈"), ("gh", "加"), ("ng", "恩"),
+            ("ba", "巴"), ("be", "贝"), ("bi", "比"), ("bo", "博"), ("bu", "布"),
+            ("ca", "卡"), ("ce", "塞"), ("ci", "西"), ("co", "科"), ("cu", "库"),
+            ("da", "达"), ("de", "德"), ("di", "迪"), ("do", "多"), ("du", "杜"),
+            ("fa", "法"), ("fe", "费"), ("fi", "菲"), ("fo", "福"), ("fu", "富"),
+            ("ga", "加"), ("ge", "格"), ("gi", "吉"), ("go", "戈"), ("gu", "古"),
+            ("ha", "哈"), ("he", "赫"), ("hi", "希"), ("ho", "霍"), ("hu", "胡"),
+            ("ja", "贾"), ("je", "耶"), ("ji", "吉"), ("jo", "乔"), ("ju", "朱"),
+            ("ka", "卡"), ("ke", "克"), ("ki", "基"), ("ko", "科"), ("ku", "库"),
+            ("la", "拉"), ("le", "莱"), ("li", "利"), ("lo", "洛"), ("lu", "卢"),
+            ("ma", "马"), ("me", "梅"), ("mi", "米"), ("mo", "莫"), ("mu", "穆"),
+            ("na", "纳"), ("ne", "内"), ("ni", "尼"), ("no", "诺"), ("nu", "努"),
+            ("pa", "帕"), ("pe", "佩"), ("pi", "皮"), ("po", "波"), ("pu", "普"),
+            ("ra", "拉"), ("re", "雷"), ("ri", "里"), ("ro", "罗"), ("ru", "鲁"),
+            ("sa", "萨"), ("se", "塞"), ("si", "西"), ("so", "索"), ("su", "苏"),
+            ("ta", "塔"), ("te", "特"), ("ti", "蒂"), ("to", "托"), ("tu", "图"),
+            ("va", "瓦"), ("ve", "韦"), ("vi", "维"), ("vo", "沃"), ("vu", "武"),
+            ("wa", "瓦"), ("we", "韦"), ("wi", "威"), ("wo", "沃"), ("wu", "乌"),
+            ("ya", "亚"), ("ye", "叶"), ("yi", "伊"), ("yo", "约"), ("yu", "尤"),
+            ("za", "扎"), ("ze", "泽"), ("zi", "齐"), ("zo", "佐"), ("zu", "祖"),
+            ("a", "阿"), ("e", "埃"), ("i", "伊"), ("o", "奥"), ("u", "乌"),
+            ("b", "布"), ("c", "克"), ("d", "德"), ("f", "夫"), ("g", "格"),
+            ("h", "赫"), ("j", "杰"), ("k", "克"), ("l", "尔"), ("m", "姆"),
+            ("n", "恩"), ("p", "普"), ("q", "克"), ("r", "尔"), ("s", "斯"),
+            ("t", "特"), ("v", "夫"), ("w", "沃"), ("x", "克斯"), ("y", "伊"), ("z", "茨"),
+        ]
+        var result = ""
+        var idx = letters.startIndex
+        while idx < letters.endIndex && result.count < 4 {
+            let rem = letters[idx...]
+            var matched = false
+            for (pat, zh) in syllables {
+                if rem.hasPrefix(pat) {
+                    result.append(zh)
+                    idx = letters.index(idx, offsetBy: pat.count)
+                    matched = true
+                    break
+                }
+            }
+            if !matched {
+                idx = letters.index(after: idx)
+            }
+        }
+        return result.count >= 2 ? result : (result + "城")
     }
 
     /// 去掉国名里的政体后缀与单字朝代冠字「大」，用于地图简洁国名或剥离基名。

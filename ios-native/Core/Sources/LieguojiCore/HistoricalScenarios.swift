@@ -145,6 +145,8 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
     public var rebelMode: String?
     /// 显式锁定历史时代：`"antiquity"` / `"medieval"` / `"gunpowder"` / `"ww1"` / `"ww2"` / `"modern"`。
     public var eraOverride: String?
+    /// v8.0.0 历史剧本推演路线：`"historical"`（严格史实事件+锁盟，默认）或 `"sandbox"`（多分支架空推演）。
+    public var historicalRoute: String?
 
     public init(
         id: String,
@@ -165,7 +167,8 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
         openingVassals: [HistoricalVassalSpec]? = nil,
         tags: [String] = [],
         rebelMode: String? = nil,
-        eraOverride: String? = nil
+        eraOverride: String? = nil,
+        historicalRoute: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -186,6 +189,7 @@ public struct HistoricalScenario: Codable, Equatable, Sendable, Identifiable {
         self.tags = tags
         self.rebelMode = rebelMode
         self.eraOverride = eraOverride
+        self.historicalRoute = historicalRoute
     }
 
     public var yearDisplayText: String {
@@ -965,20 +969,23 @@ public enum HistoricalScenarios {
         r.regimes.replay = .null
     }
 
-    /// 缔结历史剧本的开局同盟与开局战事（须在 `CreationStatics.build` 与引擎 `install()` 完成后调用）。
+    /// 缔结历史剧本的开局同盟、宗属与开局战事，并初始化 v8.0.0 历史路线/事件链/军事学说与实装将领。
     public static func applyDiplomacy(
         run r: JS,
         scenario: HistoricalScenario,
-        engine: DeclarationEngine?
+        engine: DeclarationEngine?,
+        route: String = "historical"
     ) {
         let nations = r.world.nations.asArray
         var specIdToNationId = [String: String]()
         for (i, n) in nations.enumerated() where i < scenario.nations.count {
             specIdToNationId[scenario.nations[i].id] = n.id.asString
         }
-        applyOpeningAlliances(run: r, scenario: scenario, specIdToNationId: specIdToNationId)
+        HistoricalEvents.initScenario(r, scenario: scenario, route: route, specIdToNationId: specIdToNationId)
+        applyOpeningAlliances(run: r, scenario: scenario, specIdToNationId: specIdToNationId, locked: route != "sandbox")
         applyOpeningVassals(run: r, scenario: scenario, specIdToNationId: specIdToNationId)
         applyOpeningWars(run: r, scenario: scenario, specIdToNationId: specIdToNationId, engine: engine ?? Session.engine)
+        MilitaryDoctrines.assignHistoricalCommanders(r)
     }
 
     private static func applyOpeningVassals(
@@ -1232,7 +1239,8 @@ public enum HistoricalScenarios {
     private static func applyOpeningAlliances(
         run r: JS,
         scenario: HistoricalScenario,
-        specIdToNationId: [String: String]
+        specIdToNationId: [String: String],
+        locked: Bool = true
     ) {
         guard !scenario.openingAlliances.isEmpty else { return }
         if r.alliances.isNull {
@@ -1266,7 +1274,7 @@ public enum HistoricalScenarios {
             rec.joinedTime = JS(-100)
             rec.startedTick = r.clock.tick.clone()
             rec.endedTick = .null
-            rec.unbreakable = JS(false)
+            rec.unbreakable = JS(locked)
             r.alliances.records.push(rec)
             for m in members { r.alliances.lastAction[m] = now.clone() }
             Vassals.bump(r.alliances)
@@ -1340,7 +1348,7 @@ public enum HistoricalScenarios {
     }
 
     @discardableResult
-    private static func registerHistoricalWarDirectly(
+    static func registerHistoricalWarDirectly(
         _ r: JS,
         attacker aNid: String,
         defender dNid: String,
@@ -1410,7 +1418,7 @@ public enum HistoricalScenarios {
         return true
     }
 
-    // MARK: - 3. 官方精选 10 大真实历史剧本库（与 scenarios_gis.bin 严格逐位对齐）
+    // MARK: - 3. 官方精选 12 大真实历史剧本库（含 1936 战云密布、1931 九一八抗战与 27 国细化欧洲）
 
     public static let officialScenarios: [HistoricalScenario] = [
         zhanguo260BCE,
@@ -1420,6 +1428,8 @@ public enum HistoricalScenarios {
         sengoku1560,
         napoleon1812,
         ww1_1914,
+        china1931,
+        ww2Eve1936,
         ww2Europe1939,
         ww2Asia1941,
         coldwar1950,
@@ -1436,7 +1446,7 @@ public enum HistoricalScenarios {
         description: "公元前260年，秦昭襄王远交近攻、白起陈兵上党，与赵国爆发决定天下命运的长平之战。三晋合纵岌岌可危，齐楚燕虎视关东，漠北匈奴、岭南百越与西陲羌戎各据一方。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 125,
+        provinceCount: 200,
         nations: [
             HistoricalNationSpec(
                 id: "qin", name: "秦国", shortName: "秦", color: "#363E4A",
@@ -1612,7 +1622,7 @@ public enum HistoricalScenarios {
         description: "建安十三年，曹操平定河北后挥师南下荆州，舳舻千里直指江东。孙权、刘备结盟于柴桑，赤壁烈火一触即发；益州刘璋、西凉马腾、汉中张鲁、辽东公孙、塞北鲜卑与交州士燮各守一方。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 125,
+        provinceCount: 210,
         nations: [
             HistoricalNationSpec(
                 id: "caowei", name: "曹魏", shortName: "魏", color: "#2D64A8",
@@ -1772,7 +1782,7 @@ public enum HistoricalScenarios {
         description: "公元755年，开元天宝盛世已臻极盛，大唐西域安西四镇远播葱岭，然吐蕃强盛于青藏、南诏崛起于滇中、黑衣大食虎视西域、回纥雄踞漠北、渤海与新罗拱卫海东。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 135,
+        provinceCount: 220,
         nations: [
             HistoricalNationSpec(
                 id: "tang", name: "大唐", shortName: "唐", color: "#D49B2A",
@@ -1906,7 +1916,7 @@ public enum HistoricalScenarios {
         description: "公元1142年，宋金绍兴和议初定，大金铁骑雄踞中原燕云，南宋偏安临安坐拥江南巴蜀富庶之地；西夏雄守河西、大理据守西南、蒙古诸部兴起于漠北草原，高丽、吐蕃诸部与大越环峙四方。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 125,
+        provinceCount: 200,
         nations: [
             HistoricalNationSpec(
                 id: "jin", name: "金朝", shortName: "金", color: "#C99327",
@@ -2042,7 +2052,7 @@ public enum HistoricalScenarios {
         description: "永禄三年五月，东海道第一弓取今川义元统率大军上洛，织田信长于尾张清洲孤注一掷奇袭桶狭间。甲斐武田与越后上杉激战川中岛，关东北条、中国毛利、畿内三好、美浓斋藤、九州岛津大友龙造寺与奥羽伊达十四强雄踞扶桑。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 110,
+        provinceCount: 190,
         nations: [
             HistoricalNationSpec(
                 id: "oda", name: "织田家", shortName: "织田", color: "#C6444B",
@@ -2244,7 +2254,7 @@ public enum HistoricalScenarios {
         description: "1812年夏，拿破仑率六十万大军强渡涅曼河远征莫斯科。法兰西第一帝国及其莱茵邦联、华沙大公国与意大利诸邦雄踞欧陆，大英帝国以制海权与西班牙半岛战线牵制法军，俄、奥、普、奥斯曼与北欧诸王各自博弈。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 145,
+        provinceCount: 220,
         nations: [
             HistoricalNationSpec(
                 id: "france", name: "法兰西第一帝国", shortName: "法", color: "#2557A7",
@@ -2416,30 +2426,32 @@ public enum HistoricalScenarios {
         eraOverride: "gunpowder"
     )
 
-    // 剧本 7：第一次世界大战 · 八月炮火（公元 1914 年 · 世界全图 · 14 国）
+    // 剧本 7：第一次世界大战 · 欧陆炮火（公元 1914 年 8 月 · 欧洲精图 · 20 国细化）
     private static let ww1_1914 = HistoricalScenario(
         id: "ww1_1914",
-        title: "第一次世界大战 · 八月炮火",
-        subtitle: "同盟国 vs 协约国 · 全球殖民帝国",
-        region: .world,
+        title: "第一次世界大战 · 欧陆炮火",
+        subtitle: "1914年8月 · 同盟国 vs 协约国 · 20国欧洲精图",
+        region: .europe,
         year: 1914,
-        eraName: "一战风云",
-        description: "1914年八月，萨拉热窝枪声引爆全球大战。德意志、奥匈与奥斯曼组成同盟国，对抗横跨五大洲的英、法、俄协约国；大洋彼岸的美利坚、远东的大日本帝国与中华民国亦被卷入时代漩涡。",
+        eraName: "一战欧洲",
+        description: "1914年8月，萨拉热窝枪声引爆欧陆大战。德军按施里芬计划经低地三国突击法国，奥匈挥师塞尔维亚与俄国，奥斯曼封锁海峡；20国细化局部欧洲战区，告别粗略世界大地图，精准呈现西线堑壕、东线坦能堡、巴尔干与阿尔卑斯山脉防线。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 190,
+        provinceCount: 230,
         nations: [
             HistoricalNationSpec(
                 id: "germany", name: "德意志帝国", shortName: "德", color: "#4A5568",
                 culture: "german", religion: "protestant", polity: "Empire", style: "dualMonarchy",
                 capitalLon: 13.4, capitalLat: 52.5, capitalName: "柏林",
                 anchors: [
-                    HistoricalAnchor(lon: 11.6, lat: 48.1, provinceName: "慕尼黑", weight: 1.0),
-                    HistoricalAnchor(lon: 10.0, lat: 53.5, provinceName: "汉堡", weight: 1.0),
-                    HistoricalAnchor(lon: 20.5, lat: 54.7, provinceName: "柯尼斯堡", weight: 1.0),
-                    HistoricalAnchor(lon: 11.5, lat: 3.9, provinceName: "雅温得", weight: 1.15),
-                    HistoricalAnchor(lon: 39.3, lat: -6.8, provinceName: "达累斯萨拉姆", weight: 1.2),
-                    HistoricalAnchor(lon: 17.1, lat: -22.6, provinceName: "温得和克", weight: 1.25),
+                    HistoricalAnchor(lon: 11.6, lat: 48.1, provinceName: "慕尼黑", weight: 1.05),
+                    HistoricalAnchor(lon: 10.0, lat: 53.5, provinceName: "汉堡", weight: 1.05),
+                    HistoricalAnchor(lon: 7.0, lat: 50.9, provinceName: "科隆", weight: 1.0),
+                    HistoricalAnchor(lon: 7.75, lat: 48.58, provinceName: "斯特拉斯堡", weight: 0.9),
+                    HistoricalAnchor(lon: 20.5, lat: 54.7, provinceName: "柯尼斯堡", weight: 1.05),
+                    HistoricalAnchor(lon: 17.0, lat: 51.1, provinceName: "布雷斯劳", weight: 1.0),
+                    HistoricalAnchor(lon: 16.9, lat: 52.4, provinceName: "波森", weight: 0.95),
+                    HistoricalAnchor(lon: 18.6, lat: 54.3, provinceName: "但泽", weight: 0.95),
                 ],
                 rulerName: "威廉二世", rulerTitle: "德皇",
                 rulerMilitary: 84, rulerAdmin: 82, rulerDiplo: 66, rulerCharisma: 80,
@@ -2450,8 +2462,14 @@ public enum HistoricalScenarios {
                 culture: "german", religion: "catholic", polity: "Empire", style: "dualMonarchy",
                 capitalLon: 16.4, capitalLat: 48.2, capitalName: "维也纳",
                 anchors: [
-                    HistoricalAnchor(lon: 19.0, lat: 47.5, provinceName: "布达佩斯", weight: 1.05),
-                    HistoricalAnchor(lon: 18.4, lat: 43.9, provinceName: "萨拉热窝", weight: 1.0),
+                    HistoricalAnchor(lon: 19.0, lat: 47.5, provinceName: "布达佩斯", weight: 1.15),
+                    HistoricalAnchor(lon: 14.4, lat: 50.1, provinceName: "布拉格", weight: 1.05),
+                    HistoricalAnchor(lon: 19.9, lat: 50.1, provinceName: "克拉科夫", weight: 1.0),
+                    HistoricalAnchor(lon: 24.0, lat: 49.8, provinceName: "伦贝格", weight: 1.0),
+                    HistoricalAnchor(lon: 16.0, lat: 45.8, provinceName: "萨格勒布", weight: 0.95),
+                    HistoricalAnchor(lon: 18.4, lat: 43.9, provinceName: "萨拉热窝", weight: 0.95),
+                    HistoricalAnchor(lon: 23.6, lat: 46.8, provinceName: "克卢日", weight: 1.0),
+                    HistoricalAnchor(lon: 13.8, lat: 45.65, provinceName: "的里雅斯特", weight: 0.9),
                 ],
                 rulerName: "弗朗茨·约瑟夫", rulerTitle: "皇帝",
                 rulerMilitary: 72, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 78,
@@ -2463,10 +2481,10 @@ public enum HistoricalScenarios {
                 capitalLon: 28.9, capitalLat: 41.0, capitalName: "君士坦丁堡",
                 anchors: [
                     HistoricalAnchor(lon: 32.9, lat: 39.9, provinceName: "安卡拉", weight: 1.25),
+                    HistoricalAnchor(lon: 27.1, lat: 38.4, provinceName: "伊兹密尔", weight: 1.15),
+                    HistoricalAnchor(lon: 35.3, lat: 37.0, provinceName: "阿达纳", weight: 1.2),
+                    HistoricalAnchor(lon: 41.3, lat: 39.9, provinceName: "埃尔祖鲁姆", weight: 1.3),
                     HistoricalAnchor(lon: 36.3, lat: 33.5, provinceName: "大马士革", weight: 1.2),
-                    HistoricalAnchor(lon: 44.4, lat: 33.3, provinceName: "巴格达", weight: 1.4),
-                    HistoricalAnchor(lon: 39.8, lat: 21.4, provinceName: "麦加", weight: 1.45),
-                    HistoricalAnchor(lon: 51.4, lat: 35.7, provinceName: "德黑兰", weight: 1.45),
                 ],
                 rulerName: "穆罕默德五世", rulerTitle: "苏丹",
                 rulerMilitary: 68, rulerAdmin: 66, rulerDiplo: 68, rulerCharisma: 70,
@@ -2477,19 +2495,11 @@ public enum HistoricalScenarios {
                 culture: "english", religion: "protestant", polity: "Federation", style: "union",
                 capitalLon: -0.1, capitalLat: 51.5, capitalName: "伦敦",
                 anchors: [
-                    HistoricalAnchor(lon: -3.2, lat: 55.9, provinceName: "爱丁堡", weight: 1.1),
-                    HistoricalAnchor(lon: -75.7, lat: 45.4, provinceName: "渥太华", weight: 1.7),
-                    HistoricalAnchor(lon: -114.1, lat: 51.0, provinceName: "卡尔加里", weight: 2.0),
-                    HistoricalAnchor(lon: 31.2, lat: 30.0, provinceName: "开罗", weight: 1.45),
-                    HistoricalAnchor(lon: 32.5, lat: 15.6, provinceName: "喀土穆", weight: 1.4),
-                    HistoricalAnchor(lon: 18.4, lat: -33.9, provinceName: "开普敦", weight: 1.65),
-                    HistoricalAnchor(lon: 77.2, lat: 28.6, provinceName: "德里", weight: 1.7),
-                    HistoricalAnchor(lon: 80.3, lat: 13.1, provinceName: "马德拉斯", weight: 1.5),
-                    HistoricalAnchor(lon: 96.2, lat: 16.8, provinceName: "仰光", weight: 1.35),
-                    HistoricalAnchor(lon: 103.8, lat: 1.3, provinceName: "新加坡", weight: 1.65),
-                    HistoricalAnchor(lon: 151.2, lat: -33.9, provinceName: "悉尼", weight: 1.9),
-                    HistoricalAnchor(lon: 115.9, lat: -32.0, provinceName: "珀斯", weight: 1.9),
-                    HistoricalAnchor(lon: 174.8, lat: -41.3, provinceName: "惠灵顿", weight: 1.6),
+                    HistoricalAnchor(lon: -3.2, lat: 55.9, provinceName: "爱丁堡", weight: 1.25),
+                    HistoricalAnchor(lon: -2.2, lat: 53.5, provinceName: "曼彻斯特", weight: 1.15),
+                    HistoricalAnchor(lon: -6.26, lat: 53.35, provinceName: "都柏林", weight: 1.25),
+                    HistoricalAnchor(lon: -5.9, lat: 54.6, provinceName: "贝尔法斯特", weight: 1.0),
+                    HistoricalAnchor(lon: 33.4, lat: 35.2, provinceName: "尼科西亚", weight: 1.0),
                 ],
                 rulerName: "乔治五世", rulerTitle: "国王",
                 rulerMilitary: 82, rulerAdmin: 88, rulerDiplo: 90, rulerCharisma: 86,
@@ -2500,12 +2510,13 @@ public enum HistoricalScenarios {
                 culture: "french", religion: "catholic", polity: "Republic", style: "parliamentary",
                 capitalLon: 2.3, capitalLat: 48.9, capitalName: "巴黎",
                 anchors: [
-                    HistoricalAnchor(lon: 5.4, lat: 43.3, provinceName: "马赛", weight: 1.05),
-                    HistoricalAnchor(lon: 3.0, lat: 36.7, provinceName: "阿尔及尔", weight: 1.35),
-                    HistoricalAnchor(lon: -17.4, lat: 14.7, provinceName: "达喀尔", weight: 1.8),
-                    HistoricalAnchor(lon: 15.3, lat: -4.3, provinceName: "布拉柴维尔", weight: 1.6),
-                    HistoricalAnchor(lon: 47.5, lat: -18.9, provinceName: "塔那那利佛", weight: 1.45),
-                    HistoricalAnchor(lon: 106.7, lat: 10.8, provinceName: "西贡", weight: 1.35),
+                    HistoricalAnchor(lon: 4.8, lat: 45.8, provinceName: "里昂", weight: 1.15),
+                    HistoricalAnchor(lon: 5.4, lat: 43.3, provinceName: "马赛", weight: 1.15),
+                    HistoricalAnchor(lon: -0.6, lat: 44.8, provinceName: "波尔多", weight: 1.2),
+                    HistoricalAnchor(lon: 3.1, lat: 50.6, provinceName: "里尔", weight: 0.9),
+                    HistoricalAnchor(lon: 5.4, lat: 49.16, provinceName: "凡尔登", weight: 0.9),
+                    HistoricalAnchor(lon: 3.0, lat: 36.7, provinceName: "阿尔及尔", weight: 1.4),
+                    HistoricalAnchor(lon: 10.2, lat: 36.8, provinceName: "突尼斯", weight: 1.25),
                 ],
                 rulerName: "雷蒙·普恩加莱", rulerTitle: "总统",
                 rulerMilitary: 78, rulerAdmin: 82, rulerDiplo: 84, rulerCharisma: 80,
@@ -2516,159 +2527,771 @@ public enum HistoricalScenarios {
                 culture: "slavic", religion: "orthodox", polity: "Empire", style: "tsardom",
                 capitalLon: 30.3, capitalLat: 59.9, capitalName: "圣彼得堡",
                 anchors: [
-                    HistoricalAnchor(lon: 37.6, lat: 55.8, provinceName: "莫斯科", weight: 1.65),
-                    HistoricalAnchor(lon: 30.5, lat: 50.4, provinceName: "基辅", weight: 1.4),
-                    HistoricalAnchor(lon: 60.6, lat: 56.8, provinceName: "叶卡捷琳堡", weight: 1.85),
-                    HistoricalAnchor(lon: 82.9, lat: 55.0, provinceName: "新西伯利亚", weight: 2.0),
-                    HistoricalAnchor(lon: 104.3, lat: 52.3, provinceName: "伊尔库茨克", weight: 2.0),
-                    HistoricalAnchor(lon: 131.9, lat: 43.1, provinceName: "海参崴", weight: 1.75),
-                    HistoricalAnchor(lon: 158.6, lat: 53.0, provinceName: "彼得罗巴甫洛夫斯克", weight: 2.0),
-                    HistoricalAnchor(lon: 69.2, lat: 41.3, provinceName: "塔什干", weight: 1.65),
+                    HistoricalAnchor(lon: 37.6, lat: 55.8, provinceName: "莫斯科", weight: 1.5),
+                    HistoricalAnchor(lon: 21.0, lat: 52.2, provinceName: "华沙", weight: 1.1),
+                    HistoricalAnchor(lon: 25.0, lat: 60.2, provinceName: "赫尔辛基", weight: 1.3),
+                    HistoricalAnchor(lon: 24.1, lat: 56.9, provinceName: "里加", weight: 1.1),
+                    HistoricalAnchor(lon: 27.6, lat: 53.9, provinceName: "明斯克", weight: 1.2),
+                    HistoricalAnchor(lon: 30.5, lat: 50.4, provinceName: "基辅", weight: 1.3),
+                    HistoricalAnchor(lon: 30.7, lat: 46.5, provinceName: "敖德萨", weight: 1.2),
+                    HistoricalAnchor(lon: 44.5, lat: 48.7, provinceName: "察里津", weight: 1.55),
+                    HistoricalAnchor(lon: 44.8, lat: 41.7, provinceName: "第比利斯", weight: 1.4),
+                    HistoricalAnchor(lon: 40.5, lat: 64.5, provinceName: "阿尔汉格尔斯克", weight: 1.6),
                 ],
                 rulerName: "尼古拉二世", rulerTitle: "沙皇",
                 rulerMilitary: 68, rulerAdmin: 64, rulerDiplo: 72, rulerCharisma: 74,
                 rulerTraits: ["Stubborn", "Just"]
             ),
             HistoricalNationSpec(
-                id: "usa", name: "美利坚合众国", shortName: "美", color: "#3B82C4",
-                culture: "english", religion: "protestant", polity: "Federation", style: "federal",
-                capitalLon: -77.0, capitalLat: 38.9, capitalName: "华盛顿",
-                anchors: [
-                    HistoricalAnchor(lon: -74.0, lat: 40.7, provinceName: "纽约", weight: 1.35),
-                    HistoricalAnchor(lon: -87.6, lat: 41.9, provinceName: "芝加哥", weight: 1.55),
-                    HistoricalAnchor(lon: -96.8, lat: 32.8, provinceName: "达拉斯", weight: 1.55),
-                    HistoricalAnchor(lon: -122.4, lat: 37.8, provinceName: "旧金山", weight: 1.65),
-                    HistoricalAnchor(lon: -149.9, lat: 61.2, provinceName: "安克雷奇", weight: 1.75),
-                    HistoricalAnchor(lon: 121.0, lat: 14.6, provinceName: "马尼拉", weight: 1.3),
-                    HistoricalAnchor(lon: -82.4, lat: 23.1, provinceName: "哈瓦那", weight: 1.2),
-                ],
-                rulerName: "伍德罗·威尔逊", rulerTitle: "总统",
-                rulerMilitary: 74, rulerAdmin: 88, rulerDiplo: 92, rulerCharisma: 86,
-                rulerTraits: ["Scholar", "MasterDiplomat", "Visionary"]
-            ),
-            HistoricalNationSpec(
-                id: "japan", name: "大日本帝国", shortName: "日", color: "#B83227",
-                culture: "japanese", religion: "shinto", polity: "Empire", style: "dualMonarchy",
-                capitalLon: 139.7, capitalLat: 35.7, capitalName: "东京",
-                anchors: [
-                    HistoricalAnchor(lon: 135.5, lat: 34.7, provinceName: "大阪", weight: 1.15),
-                    HistoricalAnchor(lon: 141.3, lat: 43.1, provinceName: "札幌", weight: 1.15),
-                    HistoricalAnchor(lon: 127.0, lat: 37.6, provinceName: "汉城", weight: 1.15),
-                    HistoricalAnchor(lon: 121.5, lat: 25.0, provinceName: "台北", weight: 1.05),
-                ],
-                rulerName: "大正天皇", rulerTitle: "天皇",
-                rulerMilitary: 80, rulerAdmin: 82, rulerDiplo: 78, rulerCharisma: 82,
-                rulerTraits: ["NavalMastery", "Reformer"]
-            ),
-            HistoricalNationSpec(
-                id: "china", name: "中华民国", shortName: "华", color: "#D99B26",
-                culture: "chinese", religion: "confucian", polity: "Republic", style: "presidential",
-                capitalLon: 116.4, capitalLat: 39.9, capitalName: "北京",
-                anchors: [
-                    HistoricalAnchor(lon: 121.5, lat: 31.2, provinceName: "上海", weight: 1.35),
-                    HistoricalAnchor(lon: 113.3, lat: 23.1, provinceName: "广州", weight: 1.35),
-                    HistoricalAnchor(lon: 104.1, lat: 30.7, provinceName: "成都", weight: 1.45),
-                    HistoricalAnchor(lon: 87.6, lat: 43.8, provinceName: "乌鲁木齐", weight: 1.65),
-                    HistoricalAnchor(lon: 91.1, lat: 29.7, provinceName: "拉萨", weight: 1.5),
-                    HistoricalAnchor(lon: 123.4, lat: 41.8, provinceName: "沈阳", weight: 1.3),
-                    HistoricalAnchor(lon: 106.9, lat: 47.9, provinceName: "乌兰巴托", weight: 1.4),
-                ],
-                rulerName: "袁世凯", rulerTitle: "大总统",
-                rulerMilitary: 80, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 76,
-                rulerTraits: ["Ambitious", "IronFist"]
-            ),
-            HistoricalNationSpec(
                 id: "italy", name: "意大利王国", shortName: "意", color: "#3E8E41",
                 culture: "italian", religion: "catholic", polity: "Kingdom", style: "constitutional",
                 capitalLon: 12.5, capitalLat: 41.9, capitalName: "罗马",
                 anchors: [
-                    HistoricalAnchor(lon: 9.2, lat: 45.5, provinceName: "米兰", weight: 1.0),
-                    HistoricalAnchor(lon: 13.2, lat: 32.9, provinceName: "的黎波里", weight: 1.35),
-                    HistoricalAnchor(lon: 45.3, lat: 2.0, provinceName: "摩加迪沙", weight: 1.25),
+                    HistoricalAnchor(lon: 9.2, lat: 45.5, provinceName: "米兰", weight: 1.05),
+                    HistoricalAnchor(lon: 12.3, lat: 45.4, provinceName: "威尼斯", weight: 0.95),
+                    HistoricalAnchor(lon: 14.3, lat: 40.8, provinceName: "那不勒斯", weight: 1.1),
+                    HistoricalAnchor(lon: 13.4, lat: 38.1, provinceName: "巴勒莫", weight: 1.15),
                 ],
                 rulerName: "维托里奥·埃马努埃莱三世", rulerTitle: "国王",
                 rulerMilitary: 70, rulerAdmin: 74, rulerDiplo: 78, rulerCharisma: 74,
                 rulerTraits: ["Diplomatic", "Patient"]
             ),
             HistoricalNationSpec(
+                id: "serbia", name: "塞尔维亚王国", shortName: "塞", color: "#6A5ACD",
+                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "constitutional",
+                capitalLon: 20.46, capitalLat: 44.82, capitalName: "贝尔格莱德",
+                anchors: [
+                    HistoricalAnchor(lon: 21.9, lat: 43.3, provinceName: "尼什", weight: 0.85),
+                    HistoricalAnchor(lon: 21.4, lat: 42.0, provinceName: "斯科普里", weight: 0.85),
+                ],
+                rulerName: "彼得一世", rulerTitle: "国王",
+                rulerMilitary: 82, rulerAdmin: 76, rulerDiplo: 78, rulerCharisma: 86,
+                rulerTraits: ["Brave", "BattleHardened", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "belgium", name: "比利时王国", shortName: "比", color: "#D4A017",
+                culture: "french", religion: "catholic", polity: "Kingdom", style: "constitutional",
+                capitalLon: 4.35, capitalLat: 50.85, capitalName: "布鲁塞尔",
+                anchors: [
+                    HistoricalAnchor(lon: 4.4, lat: 51.2, provinceName: "安特卫普", weight: 0.72),
+                    HistoricalAnchor(lon: 5.57, lat: 50.63, provinceName: "列日", weight: 0.72),
+                ],
+                rulerName: "阿尔贝一世", rulerTitle: "国王",
+                rulerMilitary: 84, rulerAdmin: 80, rulerDiplo: 82, rulerCharisma: 88,
+                rulerTraits: ["Brave", "Beloved", "Just"]
+            ),
+            HistoricalNationSpec(
+                id: "netherlands", name: "荷兰王国", shortName: "荷", color: "#E67E22",
+                culture: "dutch", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 4.9, capitalLat: 52.4, capitalName: "阿姆斯特丹",
+                anchors: [
+                    HistoricalAnchor(lon: 4.5, lat: 51.9, provinceName: "鹿特丹", weight: 0.78),
+                    HistoricalAnchor(lon: 6.6, lat: 53.2, provinceName: "格罗宁根", weight: 0.78),
+                ],
+                rulerName: "威廉明娜", rulerTitle: "女王",
+                rulerMilitary: 64, rulerAdmin: 86, rulerDiplo: 84, rulerCharisma: 88,
+                rulerTraits: ["Financier", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "luxembourg", name: "卢森堡大公国", shortName: "卢", color: "#5DADE2",
+                culture: "french", religion: "catholic", polity: "Kingdom", style: "principality",
+                capitalLon: 6.13, capitalLat: 49.61, capitalName: "卢森堡",
+                anchors: [],
+                rulerName: "玛丽-阿德莱德", rulerTitle: "女大公",
+                rulerMilitary: 50, rulerAdmin: 76, rulerDiplo: 80, rulerCharisma: 80,
+                rulerTraits: ["Dovish", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "switzerland", name: "瑞士联邦", shortName: "瑞士", color: "#D93838",
+                culture: "german", religion: "protestant", polity: "Federation", style: "confederation",
+                capitalLon: 7.45, capitalLat: 46.95, capitalName: "伯尔尼",
+                anchors: [
+                    HistoricalAnchor(lon: 8.54, lat: 47.37, provinceName: "苏黎世", weight: 0.72),
+                    HistoricalAnchor(lon: 6.14, lat: 46.20, provinceName: "日内瓦", weight: 0.72),
+                ],
+                rulerName: "乌尔里希·维勒", rulerTitle: "联邦总司令",
+                rulerMilitary: 84, rulerAdmin: 86, rulerDiplo: 86, rulerCharisma: 84,
+                rulerTraits: ["Patient", "Veteran"]
+            ),
+            HistoricalNationSpec(
                 id: "spain", name: "西班牙王国", shortName: "西", color: "#E2B13C",
                 culture: "spanish", religion: "catholic", polity: "Kingdom", style: "constitutional",
                 capitalLon: -3.7, capitalLat: 40.4, capitalName: "马德里",
                 anchors: [
-                    HistoricalAnchor(lon: -9.1, lat: 38.7, provinceName: "里斯本", weight: 1.05),
-                    HistoricalAnchor(lon: 2.2, lat: 41.4, provinceName: "巴塞罗那", weight: 1.15),
+                    HistoricalAnchor(lon: 2.2, lat: 41.4, provinceName: "巴塞罗那", weight: 1.1),
+                    HistoricalAnchor(lon: -6.0, lat: 37.4, provinceName: "塞维利亚", weight: 1.15),
+                    HistoricalAnchor(lon: -0.4, lat: 39.5, provinceName: "瓦伦西亚", weight: 1.05),
                 ],
                 rulerName: "阿方索十三世", rulerTitle: "国王",
                 rulerMilitary: 66, rulerAdmin: 72, rulerDiplo: 78, rulerCharisma: 76,
                 rulerTraits: ["Dovish", "Diplomatic"]
             ),
             HistoricalNationSpec(
-                id: "brazil", name: "巴西联邦共和国", shortName: "巴", color: "#229954",
-                culture: "portuguese", religion: "catholic", polity: "Federation", style: "federal",
-                capitalLon: -43.2, capitalLat: -22.9, capitalName: "里约热内卢",
+                id: "portugal", name: "葡萄牙共和国", shortName: "葡", color: "#2D7A4F",
+                culture: "portuguese", religion: "catholic", polity: "Republic", style: "presidential",
+                capitalLon: -9.14, capitalLat: 38.72, capitalName: "里斯本",
                 anchors: [
-                    HistoricalAnchor(lon: -60.0, lat: -3.1, provinceName: "马瑙斯", weight: 1.8),
-                    HistoricalAnchor(lon: -38.5, lat: -12.9, provinceName: "萨尔瓦多", weight: 1.65),
-                    HistoricalAnchor(lon: -74.1, lat: 4.6, provinceName: "波哥大", weight: 1.55),
-                    HistoricalAnchor(lon: -77.0, lat: -12.0, provinceName: "利马", weight: 1.5),
+                    HistoricalAnchor(lon: -8.61, lat: 41.15, provinceName: "波尔图", weight: 0.85),
                 ],
-                rulerName: "赫尔梅斯·达·丰塞卡", rulerTitle: "总统",
-                rulerMilitary: 70, rulerAdmin: 72, rulerDiplo: 76, rulerCharisma: 74,
-                rulerTraits: ["Administrator", "Just"]
+                rulerName: "曼努埃尔·德·阿里亚加", rulerTitle: "总统",
+                rulerMilitary: 64, rulerAdmin: 74, rulerDiplo: 78, rulerCharisma: 74,
+                rulerTraits: ["Diplomatic", "Patient"]
             ),
             HistoricalNationSpec(
-                id: "argentina", name: "阿根廷共和国", shortName: "阿", color: "#5DADE2",
-                culture: "spanish", religion: "catholic", polity: "Republic", style: "presidential",
-                capitalLon: -58.4, capitalLat: -34.6, capitalName: "布宜诺斯艾利斯",
+                id: "sweden", name: "瑞典王国", shortName: "瑞", color: "#2E75B6",
+                culture: "norse", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 18.1, capitalLat: 59.3, capitalName: "斯德哥尔摩",
                 anchors: [
-                    HistoricalAnchor(lon: -70.7, lat: -33.4, provinceName: "圣地亚哥", weight: 1.45),
-                    HistoricalAnchor(lon: -67.5, lat: -45.9, provinceName: "里瓦达维亚海军准将城", weight: 1.55),
-                    HistoricalAnchor(lon: -68.1, lat: -16.5, provinceName: "拉巴斯", weight: 1.35),
+                    HistoricalAnchor(lon: 12.0, lat: 57.7, provinceName: "哥德堡", weight: 1.05),
+                    HistoricalAnchor(lon: 20.3, lat: 63.8, provinceName: "于默奥", weight: 1.25),
                 ],
-                rulerName: "维克托里诺·德·拉·普拉萨", rulerTitle: "总统",
-                rulerMilitary: 66, rulerAdmin: 78, rulerDiplo: 78, rulerCharisma: 74,
-                rulerTraits: ["Financier", "Dovish"]
+                rulerName: "古斯塔夫五世", rulerTitle: "国王",
+                rulerMilitary: 64, rulerAdmin: 82, rulerDiplo: 84, rulerCharisma: 80,
+                rulerTraits: ["Dovish", "Financier"]
             ),
             HistoricalNationSpec(
-                id: "mexico", name: "墨西哥合众国", shortName: "墨", color: "#1E8449",
-                culture: "spanish", religion: "catholic", polity: "Republic", style: "presidential",
-                capitalLon: -99.1, capitalLat: 19.4, capitalName: "墨西哥城",
+                id: "norway", name: "挪威王国", shortName: "挪", color: "#9E3B3B",
+                culture: "norse", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 10.7, capitalLat: 59.9, capitalName: "奥斯陆",
                 anchors: [
-                    HistoricalAnchor(lon: -100.3, lat: 25.7, provinceName: "蒙特雷", weight: 1.35),
-                    HistoricalAnchor(lon: -90.5, lat: 14.6, provinceName: "危地马拉城", weight: 1.35),
+                    HistoricalAnchor(lon: 5.3, lat: 60.4, provinceName: "卑尔根", weight: 1.1),
+                    HistoricalAnchor(lon: 10.4, lat: 63.4, provinceName: "特隆赫姆", weight: 1.2),
                 ],
-                rulerName: "贝努斯蒂亚诺·卡兰萨", rulerTitle: "总统",
-                rulerMilitary: 74, rulerAdmin: 74, rulerDiplo: 72, rulerCharisma: 76,
-                rulerTraits: ["Reformer", "BattleHardened"]
+                rulerName: "哈康七世", rulerTitle: "国王",
+                rulerMilitary: 68, rulerAdmin: 78, rulerDiplo: 80, rulerCharisma: 84,
+                rulerTraits: ["Just", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "denmark", name: "丹麦王国", shortName: "丹", color: "#B83B4B",
+                culture: "norse", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 12.57, capitalLat: 55.68, capitalName: "哥本哈根",
+                anchors: [
+                    HistoricalAnchor(lon: 10.21, lat: 56.16, provinceName: "奥胡斯", weight: 0.78),
+                ],
+                rulerName: "克里斯蒂安十世", rulerTitle: "国王",
+                rulerMilitary: 62, rulerAdmin: 80, rulerDiplo: 82, rulerCharisma: 84,
+                rulerTraits: ["Dovish", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "romania", name: "罗马尼亚王国", shortName: "罗", color: "#C9A227",
+                culture: "roman", religion: "orthodox", polity: "Kingdom", style: "constitutional",
+                capitalLon: 26.1, capitalLat: 44.4, capitalName: "布加勒斯特",
+                anchors: [
+                    HistoricalAnchor(lon: 28.6, lat: 44.2, provinceName: "康斯坦察", weight: 0.9),
+                    HistoricalAnchor(lon: 27.6, lat: 47.2, provinceName: "雅西", weight: 0.9),
+                ],
+                rulerName: "卡罗尔一世", rulerTitle: "国王",
+                rulerMilitary: 74, rulerAdmin: 80, rulerDiplo: 80, rulerCharisma: 78,
+                rulerTraits: ["Veteran", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "bulgaria", name: "保加利亚王国", shortName: "保", color: "#4E8B63",
+                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                capitalLon: 23.32, capitalLat: 42.70, capitalName: "索菲亚",
+                anchors: [
+                    HistoricalAnchor(lon: 24.75, lat: 42.14, provinceName: "普罗夫迪夫", weight: 0.85),
+                    HistoricalAnchor(lon: 27.91, lat: 43.21, provinceName: "瓦尔纳", weight: 0.82),
+                ],
+                rulerName: "斐迪南一世", rulerTitle: "沙皇",
+                rulerMilitary: 72, rulerAdmin: 76, rulerDiplo: 78, rulerCharisma: 74,
+                rulerTraits: ["Ambitious", "Hawkish"]
+            ),
+            HistoricalNationSpec(
+                id: "greece", name: "希腊王国", shortName: "希", color: "#4DA6E0",
+                culture: "greek", religion: "orthodox", polity: "Kingdom", style: "constitutional",
+                capitalLon: 23.7, capitalLat: 38.0, capitalName: "雅典",
+                anchors: [
+                    HistoricalAnchor(lon: 22.9, lat: 40.6, provinceName: "塞萨洛尼基", weight: 0.95),
+                    HistoricalAnchor(lon: 25.1, lat: 35.3, provinceName: "伊拉克利翁", weight: 1.05),
+                ],
+                rulerName: "康斯坦丁一世", rulerTitle: "国王",
+                rulerMilitary: 78, rulerAdmin: 74, rulerDiplo: 76, rulerCharisma: 80,
+                rulerTraits: ["Veteran", "BattleHardened"]
             ),
         ],
         openingWars: [
             HistoricalWarSpec(attackerId: "germany", defenderId: "france", casusBelli: "施里芬计划 · 西线决战"),
+            HistoricalWarSpec(attackerId: "germany", defenderId: "belgium", casusBelli: "借道比利时 · 进攻列日"),
             HistoricalWarSpec(attackerId: "germany", defenderId: "russia", casusBelli: "八月炮火 · 东线宣战"),
-            HistoricalWarSpec(attackerId: "austria_hungary", defenderId: "russia", casusBelli: "七月危机 · 巴尔干战火"),
+            HistoricalWarSpec(attackerId: "austria_hungary", defenderId: "serbia", casusBelli: "七月危机 · 巴尔干战火"),
+            HistoricalWarSpec(attackerId: "austria_hungary", defenderId: "russia", casusBelli: "东线总动员宣战"),
             HistoricalWarSpec(attackerId: "germany", defenderId: "britain", casusBelli: "比利时中立遭破坏"),
         ],
         openingAlliances: [
             HistoricalAllianceSpec(name: "同盟国", memberIds: ["germany", "austria_hungary", "ottoman"]),
-            HistoricalAllianceSpec(name: "协约国", memberIds: ["britain", "france", "russia"]),
+            HistoricalAllianceSpec(name: "协约国", memberIds: ["britain", "france", "russia", "serbia", "belgium"]),
         ],
-        tags: ["一战", "世界全图", "全球大战", "近代"],
+        tags: ["一战", "欧洲精图", "20国细化", "堑壕战"],
         rebelMode: "historical",
         eraOverride: "ww1"
     )
 
-    // 剧本 8：二战欧洲战场 · 欧陆烽烟（公元 1939 年 9 月 · 欧洲全图 · 16 国）
+    // 剧本 8：民国危局 · 九一八事变（公元 1931 年 9 月 · 中国全图 · 11 势力精绘）
+    private static let china1931 = HistoricalScenario(
+        id: "china_1931",
+        title: "民国危局 · 九一八事变",
+        subtitle: "1931年9月 · 柳条湖风雷与全民族觉醒",
+        region: .china,
+        year: 1931,
+        eraName: "民国二十年",
+        description: "1931年9月，日本关东军蓄谋制造柳条湖事件，铁蹄踏碎白山黑水。南京国民政府、张学良东北军、瑞金红军与晋绥、新桂、川军、西北马家军及新疆各据一方；遵循史实路线可亲历九一八、伪满洲国、西安事变与七七全面抗战，或走架空路线东北军就地决战！",
+        author: "列国纪官方",
+        isOfficial: true,
+        provinceCount: 220,
+        nations: [
+            HistoricalNationSpec(
+                id: "roc", name: "中华民国国民政府", shortName: "国", color: "#2B6CB0",
+                culture: "chinese", religion: "confucian", polity: "Republic", style: "presidential",
+                capitalLon: 118.8, capitalLat: 32.1, capitalName: "南京",
+                anchors: [
+                    HistoricalAnchor(lon: 121.5, lat: 31.2, provinceName: "上海", weight: 1.15),
+                    HistoricalAnchor(lon: 120.2, lat: 30.3, provinceName: "杭州", weight: 1.05),
+                    HistoricalAnchor(lon: 114.3, lat: 30.6, provinceName: "武汉", weight: 1.2),
+                    HistoricalAnchor(lon: 113.0, lat: 28.2, provinceName: "长沙", weight: 1.15),
+                    HistoricalAnchor(lon: 113.65, lat: 34.76, provinceName: "郑州", weight: 1.15),
+                    HistoricalAnchor(lon: 117.0, lat: 36.67, provinceName: "济南", weight: 1.15),
+                    HistoricalAnchor(lon: 108.94, lat: 34.27, provinceName: "西安", weight: 1.15),
+                    HistoricalAnchor(lon: 119.3, lat: 26.07, provinceName: "福州", weight: 1.1),
+                    HistoricalAnchor(lon: 113.26, lat: 23.13, provinceName: "广州", weight: 1.25),
+                ],
+                rulerName: "蒋中正", rulerTitle: "国民政府主席",
+                rulerMilitary: 82, rulerAdmin: 80, rulerDiplo: 84, rulerCharisma: 84,
+                rulerTraits: ["Stubborn", "IronFist", "Diplomatic"]
+            ),
+            HistoricalNationSpec(
+                id: "northeast", name: "东北边防军", shortName: "奉", color: "#5C7BA6",
+                culture: "chinese", religion: "confucian", polity: "Empire", style: "warlord",
+                capitalLon: 123.43, capitalLat: 41.80, capitalName: "沈阳",
+                anchors: [
+                    HistoricalAnchor(lon: 125.3, lat: 43.9, provinceName: "长春", weight: 1.15),
+                    HistoricalAnchor(lon: 126.6, lat: 45.8, provinceName: "哈尔滨", weight: 1.25),
+                    HistoricalAnchor(lon: 123.9, lat: 47.3, provinceName: "齐齐哈尔", weight: 1.2),
+                    HistoricalAnchor(lon: 121.1, lat: 41.1, provinceName: "锦州", weight: 1.05),
+                    HistoricalAnchor(lon: 117.9, lat: 41.0, provinceName: "承德", weight: 1.05),
+                    HistoricalAnchor(lon: 116.4, lat: 39.9, provinceName: "北平", weight: 1.1),
+                    HistoricalAnchor(lon: 117.2, lat: 39.1, provinceName: "天津", weight: 1.0),
+                ],
+                rulerName: "张学良", rulerTitle: "东北边防军司令长官",
+                rulerMilitary: 76, rulerAdmin: 74, rulerDiplo: 78, rulerCharisma: 84,
+                rulerTraits: ["Charismatic", "Brave", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "cpc", name: "中华苏维埃根据地", shortName: "红", color: "#C82829",
+                culture: "chinese", religion: "chineseFolk", polity: "Republic", style: "communist",
+                capitalLon: 116.03, capitalLat: 25.88, capitalName: "瑞金",
+                anchors: [
+                    HistoricalAnchor(lon: 114.93, lat: 25.85, provinceName: "赣州", weight: 0.85),
+                    HistoricalAnchor(lon: 116.36, lat: 25.83, provinceName: "长汀", weight: 0.85),
+                    HistoricalAnchor(lon: 114.99, lat: 27.11, provinceName: "吉安", weight: 0.85),
+                ],
+                rulerName: "毛泽东", rulerTitle: "主席",
+                rulerMilitary: 95, rulerAdmin: 92, rulerDiplo: 88, rulerCharisma: 96,
+                rulerTraits: ["Genius", "Strategist", "Visionary", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "japan", name: "大日本帝国·关东军", shortName: "日", color: "#A92B2B",
+                culture: "japanese", religion: "shinto", polity: "Empire", style: "dualMonarchy",
+                capitalLon: 127.0, capitalLat: 37.6, capitalName: "汉城",
+                anchors: [
+                    HistoricalAnchor(lon: 125.75, lat: 39.02, provinceName: "平壤", weight: 1.15),
+                    HistoricalAnchor(lon: 129.0, lat: 35.18, provinceName: "釜山", weight: 1.15),
+                    HistoricalAnchor(lon: 121.6, lat: 38.9, provinceName: "旅大", weight: 0.72),
+                    HistoricalAnchor(lon: 121.5, lat: 25.0, provinceName: "台北", weight: 1.2),
+                    HistoricalAnchor(lon: 130.4, lat: 33.6, provinceName: "福冈", weight: 1.25),
+                ],
+                rulerName: "裕仁", rulerTitle: "天皇",
+                rulerMilitary: 74, rulerAdmin: 78, rulerDiplo: 74, rulerCharisma: 82,
+                rulerTraits: ["Stubborn", "Patient", "NaturalLeader"]
+            ),
+            HistoricalNationSpec(
+                id: "shanxi", name: "晋绥军政府", shortName: "晋", color: "#8B6C42",
+                culture: "chinese", religion: "confucian", polity: "Empire", style: "warlord",
+                capitalLon: 112.55, capitalLat: 37.87, capitalName: "太原",
+                anchors: [
+                    HistoricalAnchor(lon: 113.3, lat: 40.08, provinceName: "大同", weight: 1.0),
+                    HistoricalAnchor(lon: 111.67, lat: 40.84, provinceName: "归绥", weight: 1.05),
+                    HistoricalAnchor(lon: 109.84, lat: 40.66, provinceName: "包头", weight: 1.0),
+                ],
+                rulerName: "阎锡山", rulerTitle: "太原绥靖公署主任",
+                rulerMilitary: 80, rulerAdmin: 86, rulerDiplo: 84, rulerCharisma: 78,
+                rulerTraits: ["Financier", "Administrator", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "guangxi", name: "新桂系军团", shortName: "桂", color: "#2D8A68",
+                culture: "chinese", religion: "confucian", polity: "Empire", style: "warlord",
+                capitalLon: 110.29, capitalLat: 25.27, capitalName: "桂林",
+                anchors: [
+                    HistoricalAnchor(lon: 108.37, lat: 22.82, provinceName: "南宁", weight: 1.05),
+                    HistoricalAnchor(lon: 109.41, lat: 24.33, provinceName: "柳州", weight: 1.0),
+                ],
+                rulerName: "李宗仁", rulerTitle: "第四集团军总司令",
+                rulerMilitary: 91, rulerAdmin: 82, rulerDiplo: 82, rulerCharisma: 88,
+                rulerTraits: ["Tactician", "BattleHardened", "NaturalLeader"]
+            ),
+            HistoricalNationSpec(
+                id: "sichuan", name: "川军与西南", shortName: "川", color: "#D4A017",
+                culture: "chinese", religion: "confucian", polity: "Empire", style: "warlord",
+                capitalLon: 104.07, capitalLat: 30.67, capitalName: "成都",
+                anchors: [
+                    HistoricalAnchor(lon: 106.55, lat: 29.56, provinceName: "重庆", weight: 1.15),
+                    HistoricalAnchor(lon: 102.71, lat: 25.04, provinceName: "昆明", weight: 1.3),
+                    HistoricalAnchor(lon: 106.71, lat: 26.57, provinceName: "贵阳", weight: 1.15),
+                    HistoricalAnchor(lon: 91.13, lat: 29.65, provinceName: "拉萨", weight: 1.45),
+                ],
+                rulerName: "刘湘", rulerTitle: "川军总司令",
+                rulerMilitary: 82, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 82,
+                rulerTraits: ["BattleHardened", "Veteran", "Brave"]
+            ),
+            HistoricalNationSpec(
+                id: "ma_clique", name: "西北马家军", shortName: "马", color: "#A85632",
+                culture: "chinese", religion: "islam", polity: "Empire", style: "warlord",
+                capitalLon: 103.83, capitalLat: 36.06, capitalName: "兰州",
+                anchors: [
+                    HistoricalAnchor(lon: 101.78, lat: 36.62, provinceName: "西宁", weight: 1.2),
+                    HistoricalAnchor(lon: 106.27, lat: 38.47, provinceName: "银川", weight: 1.15),
+                    HistoricalAnchor(lon: 98.49, lat: 39.73, provinceName: "酒泉", weight: 1.25),
+                ],
+                rulerName: "马鸿逵", rulerTitle: "宁夏省主席",
+                rulerMilitary: 80, rulerAdmin: 72, rulerDiplo: 72, rulerCharisma: 76,
+                rulerTraits: ["BattleHardened", "IronFist"]
+            ),
+            HistoricalNationSpec(
+                id: "xinjiang", name: "新疆省政府", shortName: "新", color: "#8E5A9E",
+                culture: "chinese", religion: "islam", polity: "Empire", style: "warlord",
+                capitalLon: 87.62, capitalLat: 43.82, capitalName: "迪化",
+                anchors: [
+                    HistoricalAnchor(lon: 75.99, lat: 39.47, provinceName: "喀什", weight: 1.35),
+                    HistoricalAnchor(lon: 81.33, lat: 43.92, provinceName: "伊犁", weight: 1.25),
+                    HistoricalAnchor(lon: 93.51, lat: 42.82, provinceName: "哈密", weight: 1.25),
+                ],
+                rulerName: "盛世才", rulerTitle: "新疆边防督办",
+                rulerMilitary: 78, rulerAdmin: 76, rulerDiplo: 76, rulerCharisma: 74,
+                rulerTraits: ["Ambitious", "IronFist"]
+            ),
+            HistoricalNationSpec(
+                id: "ussr_fe", name: "苏联远东", shortName: "苏", color: "#9B1C1C",
+                culture: "slavic", religion: "orthodox", polity: "Republic", style: "communist",
+                capitalLon: 131.9, capitalLat: 43.1, capitalName: "海参崴",
+                anchors: [
+                    HistoricalAnchor(lon: 135.1, lat: 48.5, provinceName: "伯力", weight: 1.4),
+                    HistoricalAnchor(lon: 113.5, lat: 52.0, provinceName: "赤塔", weight: 1.6),
+                    HistoricalAnchor(lon: 104.3, lat: 52.3, provinceName: "伊尔库茨克", weight: 1.6),
+                ],
+                rulerName: "瓦西里·布柳赫尔", rulerTitle: "远东特别集团军元帅",
+                rulerMilitary: 92, rulerAdmin: 80, rulerDiplo: 76, rulerCharisma: 88,
+                rulerTraits: ["BattleHardened", "Strategist", "Veteran"]
+            ),
+            HistoricalNationSpec(
+                id: "mongolia", name: "外蒙古", shortName: "蒙", color: "#B7950B",
+                culture: "mongol", religion: "buddhism", polity: "Republic", style: "communist",
+                capitalLon: 106.91, capitalLat: 47.92, capitalName: "乌兰巴托",
+                anchors: [
+                    HistoricalAnchor(lon: 91.64, lat: 48.0, provinceName: "科布多", weight: 1.4),
+                    HistoricalAnchor(lon: 114.5, lat: 48.07, provinceName: "乔巴山", weight: 1.4),
+                ],
+                rulerName: "霍尔洛·乔巴山", rulerTitle: "元帅",
+                rulerMilitary: 82, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 80,
+                rulerTraits: ["IronFist", "Veteran"]
+            ),
+        ],
+        openingWars: [],
+        openingAlliances: [
+            HistoricalAllianceSpec(name: "国民政府国防协定", memberIds: ["roc", "northeast", "shanxi", "sichuan", "ma_clique"]),
+            HistoricalAllianceSpec(name: "苏蒙互助协定", memberIds: ["ussr_fe", "mongolia"]),
+        ],
+        tags: ["民国", "九一八事变", "抗战史实链", "11势力精绘"],
+        rebelMode: "historical",
+        eraOverride: "ww2"
+    )
+
+    // 剧本 9：二战前夜 · 欧陆风云（公元 1936 年 · 欧洲精图 · 28 国完整还原奥地利/捷克斯洛伐克/低地三国）
+    private static let ww2Eve1936 = HistoricalScenario(
+        id: "ww2_eve_1936",
+        title: "二战前夜 · 欧陆风云",
+        subtitle: "1936年 · 德奥合并·慕尼黑·闪击波兰全史实链",
+        region: .europe,
+        year: 1936,
+        eraName: "大战前夜",
+        description: "1936年，凡尔赛体系摇摇欲坠：莱茵兰非军事区、西班牙内战、德奥合并、慕尼黑协定、苏德密约、白色方案闪击波兰、威瑟演习、黄色方案绕道低地三国直至巴巴罗萨全面爆发——28国细化欧洲局部地图，支持严格史实路线或自由架空推演！",
+        author: "列国纪官方",
+        isOfficial: true,
+        provinceCount: 240,
+        nations: [
+            HistoricalNationSpec(
+                id: "germany", name: "德意志第三帝国", shortName: "德", color: "#3D454F",
+                culture: "german", religion: "protestant", polity: "Republic", style: "nazi",
+                capitalLon: 13.4, capitalLat: 52.5, capitalName: "柏林",
+                anchors: [
+                    HistoricalAnchor(lon: 11.6, lat: 48.1, provinceName: "慕尼黑", weight: 1.05),
+                    HistoricalAnchor(lon: 10.0, lat: 53.5, provinceName: "汉堡", weight: 1.05),
+                    HistoricalAnchor(lon: 7.0, lat: 50.9, provinceName: "科隆", weight: 1.05),
+                    HistoricalAnchor(lon: 20.5, lat: 54.7, provinceName: "柯尼斯堡", weight: 0.95),
+                    HistoricalAnchor(lon: 17.0, lat: 51.1, provinceName: "布雷斯劳", weight: 0.95),
+                ],
+                rulerName: "阿道夫·希特勒", rulerTitle: "元首",
+                rulerMilitary: 84, rulerAdmin: 80, rulerDiplo: 70, rulerCharisma: 90,
+                rulerTraits: ["Hawkish", "Conqueror", "Tyrant", "Ambitious"]
+            ),
+            HistoricalNationSpec(
+                id: "ussr", name: "苏联", shortName: "苏", color: "#B92B27",
+                culture: "slavic", religion: "orthodox", polity: "Republic", style: "communist",
+                capitalLon: 37.6, capitalLat: 55.8, capitalName: "莫斯科",
+                anchors: [
+                    HistoricalAnchor(lon: 30.3, lat: 59.9, provinceName: "列宁格勒", weight: 1.35),
+                    HistoricalAnchor(lon: 30.5, lat: 50.4, provinceName: "基辅", weight: 1.3),
+                    HistoricalAnchor(lon: 27.6, lat: 53.9, provinceName: "明斯克", weight: 1.15),
+                    HistoricalAnchor(lon: 44.5, lat: 48.7, provinceName: "斯大林格勒", weight: 1.55),
+                    HistoricalAnchor(lon: 36.2, lat: 50.0, provinceName: "哈尔科夫", weight: 1.35),
+                    HistoricalAnchor(lon: 30.7, lat: 46.5, provinceName: "敖德萨", weight: 1.2),
+                    HistoricalAnchor(lon: 44.8, lat: 41.7, provinceName: "第比利斯", weight: 1.45),
+                    HistoricalAnchor(lon: 33.1, lat: 68.9, provinceName: "摩尔曼斯克", weight: 1.4),
+                    HistoricalAnchor(lon: 40.5, lat: 64.5, provinceName: "阿尔汉格尔斯克", weight: 1.6),
+                ],
+                rulerName: "约瑟夫·斯大林", rulerTitle: "总书记",
+                rulerMilitary: 86, rulerAdmin: 88, rulerDiplo: 80, rulerCharisma: 84,
+                rulerTraits: ["IronFist", "Paranoid", "BattleHardened"]
+            ),
+            HistoricalNationSpec(
+                id: "uk", name: "大英帝国", shortName: "英", color: "#D34848",
+                culture: "english", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: -0.1, capitalLat: 51.5, capitalName: "伦敦",
+                anchors: [
+                    HistoricalAnchor(lon: -3.2, lat: 55.9, provinceName: "爱丁堡", weight: 1.25),
+                    HistoricalAnchor(lon: -2.2, lat: 53.5, provinceName: "曼彻斯特", weight: 1.15),
+                    HistoricalAnchor(lon: -5.9, lat: 54.6, provinceName: "贝尔法斯特", weight: 0.85),
+                    HistoricalAnchor(lon: 33.4, lat: 35.2, provinceName: "尼科西亚", weight: 1.1),
+                ],
+                rulerName: "乔治六世", rulerTitle: "国王",
+                rulerMilitary: 74, rulerAdmin: 82, rulerDiplo: 86, rulerCharisma: 90,
+                rulerTraits: ["Brave", "Just", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "france", name: "法兰西第三共和国", shortName: "法", color: "#265DA6",
+                culture: "french", religion: "catholic", polity: "Republic", style: "parliamentary",
+                capitalLon: 2.3, capitalLat: 48.9, capitalName: "巴黎",
+                anchors: [
+                    HistoricalAnchor(lon: 4.8, lat: 45.8, provinceName: "里昂", weight: 1.15),
+                    HistoricalAnchor(lon: 5.4, lat: 43.3, provinceName: "马赛", weight: 1.15),
+                    HistoricalAnchor(lon: -0.6, lat: 44.8, provinceName: "波尔多", weight: 1.2),
+                    HistoricalAnchor(lon: 7.7, lat: 48.6, provinceName: "斯特拉斯堡", weight: 0.95),
+                    HistoricalAnchor(lon: 3.0, lat: 36.7, provinceName: "阿尔及尔", weight: 1.45),
+                    HistoricalAnchor(lon: 10.2, lat: 36.8, provinceName: "突尼斯", weight: 1.3),
+                    HistoricalAnchor(lon: -6.8, lat: 34.0, provinceName: "拉巴特", weight: 1.35),
+                ],
+                rulerName: "莱昂·布鲁姆", rulerTitle: "总理",
+                rulerMilitary: 66, rulerAdmin: 78, rulerDiplo: 80, rulerCharisma: 78,
+                rulerTraits: ["Patient", "Diplomatic", "Reformer"]
+            ),
+            HistoricalNationSpec(
+                id: "poland", name: "波兰第二共和国", shortName: "波", color: "#E06D7E",
+                culture: "polish", religion: "catholic", polity: "Republic", style: "presidential",
+                capitalLon: 21.0, capitalLat: 52.2, capitalName: "华沙",
+                anchors: [
+                    HistoricalAnchor(lon: 19.9, lat: 50.1, provinceName: "克拉科夫", weight: 0.95),
+                    HistoricalAnchor(lon: 16.9, lat: 52.4, provinceName: "波兹南", weight: 0.9),
+                    HistoricalAnchor(lon: 18.6, lat: 54.3, provinceName: "格但斯克", weight: 0.9),
+                    HistoricalAnchor(lon: 24.0, lat: 49.8, provinceName: "利沃夫", weight: 0.95),
+                ],
+                rulerName: "爱德华·希米格维", rulerTitle: "元帅",
+                rulerMilitary: 80, rulerAdmin: 76, rulerDiplo: 72, rulerCharisma: 82,
+                rulerTraits: ["Brave", "Hawkish", "Veteran"]
+            ),
+            HistoricalNationSpec(
+                id: "italy", name: "意大利王国", shortName: "意", color: "#3C8D40",
+                culture: "italian", religion: "catholic", polity: "Kingdom", style: "fascist",
+                capitalLon: 12.5, capitalLat: 41.9, capitalName: "罗马",
+                anchors: [
+                    HistoricalAnchor(lon: 9.2, lat: 45.5, provinceName: "米兰", weight: 1.05),
+                    HistoricalAnchor(lon: 12.3, lat: 45.4, provinceName: "威尼斯", weight: 0.95),
+                    HistoricalAnchor(lon: 14.3, lat: 40.8, provinceName: "那不勒斯", weight: 1.1),
+                    HistoricalAnchor(lon: 13.4, lat: 38.1, provinceName: "巴勒莫", weight: 1.15),
+                ],
+                rulerName: "维托里奥·埃马努埃莱三世", rulerTitle: "国王",
+                rulerMilitary: 62, rulerAdmin: 72, rulerDiplo: 74, rulerCharisma: 72,
+                rulerTraits: ["Patient", "Stubborn"]
+            ),
+            HistoricalNationSpec(
+                id: "spain", name: "西班牙第二共和国", shortName: "西", color: "#E0A426",
+                culture: "spanish", religion: "catholic", polity: "Republic", style: "parliamentary",
+                capitalLon: -3.7, capitalLat: 40.4, capitalName: "马德里",
+                anchors: [
+                    HistoricalAnchor(lon: 2.2, lat: 41.4, provinceName: "巴塞罗那", weight: 1.1),
+                    HistoricalAnchor(lon: -6.0, lat: 37.4, provinceName: "塞维利亚", weight: 1.15),
+                    HistoricalAnchor(lon: -0.4, lat: 39.5, provinceName: "瓦伦西亚", weight: 1.05),
+                ],
+                rulerName: "曼努埃尔·阿萨尼亚", rulerTitle: "总统",
+                rulerMilitary: 66, rulerAdmin: 78, rulerDiplo: 78, rulerCharisma: 80,
+                rulerTraits: ["Scholar", "Reformer", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "finland", name: "芬兰共和国", shortName: "芬", color: "#76A5AF",
+                culture: "norse", religion: "protestant", polity: "Republic", style: "presidential",
+                capitalLon: 25.0, capitalLat: 60.2, capitalName: "赫尔辛基",
+                anchors: [
+                    HistoricalAnchor(lon: 23.8, lat: 61.5, provinceName: "坦佩雷", weight: 1.05),
+                    HistoricalAnchor(lon: 25.5, lat: 65.0, provinceName: "奥卢", weight: 1.25),
+                    HistoricalAnchor(lon: 28.7, lat: 60.7, provinceName: "维堡", weight: 0.9),
+                ],
+                rulerName: "曼纳海姆", rulerTitle: "元帅",
+                rulerMilitary: 92, rulerAdmin: 80, rulerDiplo: 82, rulerCharisma: 88,
+                rulerTraits: ["Tactician", "Veteran", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "sweden", name: "瑞典王国", shortName: "瑞", color: "#2E75B6",
+                culture: "norse", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 18.1, capitalLat: 59.3, capitalName: "斯德哥尔摩",
+                anchors: [
+                    HistoricalAnchor(lon: 12.0, lat: 57.7, provinceName: "哥德堡", weight: 1.05),
+                    HistoricalAnchor(lon: 20.3, lat: 63.8, provinceName: "于默奥", weight: 1.2),
+                ],
+                rulerName: "古斯塔夫五世", rulerTitle: "国王",
+                rulerMilitary: 64, rulerAdmin: 82, rulerDiplo: 86, rulerCharisma: 80,
+                rulerTraits: ["Dovish", "Financier"]
+            ),
+            HistoricalNationSpec(
+                id: "norway", name: "挪威王国", shortName: "挪", color: "#9E3B3B",
+                culture: "norse", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 10.7, capitalLat: 59.9, capitalName: "奥斯陆",
+                anchors: [
+                    HistoricalAnchor(lon: 5.3, lat: 60.4, provinceName: "卑尔根", weight: 1.1),
+                    HistoricalAnchor(lon: 10.4, lat: 63.4, provinceName: "特隆赫姆", weight: 1.2),
+                    HistoricalAnchor(lon: 17.4, lat: 68.4, provinceName: "纳尔维克", weight: 1.25),
+                ],
+                rulerName: "哈康七世", rulerTitle: "国王",
+                rulerMilitary: 68, rulerAdmin: 78, rulerDiplo: 80, rulerCharisma: 84,
+                rulerTraits: ["Just", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "netherlands", name: "荷兰王国", shortName: "荷", color: "#E67E22",
+                culture: "dutch", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 4.9, capitalLat: 52.4, capitalName: "阿姆斯特丹",
+                anchors: [
+                    HistoricalAnchor(lon: 4.5, lat: 51.9, provinceName: "鹿特丹", weight: 0.78),
+                    HistoricalAnchor(lon: 6.6, lat: 53.2, provinceName: "格罗宁根", weight: 0.78),
+                ],
+                rulerName: "威廉明娜", rulerTitle: "女王",
+                rulerMilitary: 64, rulerAdmin: 86, rulerDiplo: 84, rulerCharisma: 88,
+                rulerTraits: ["Financier", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "romania", name: "罗马尼亚王国", shortName: "罗", color: "#C9A227",
+                culture: "roman", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                capitalLon: 26.1, capitalLat: 44.4, capitalName: "布加勒斯特",
+                anchors: [
+                    HistoricalAnchor(lon: 23.6, lat: 46.8, provinceName: "克卢日", weight: 1.0),
+                    HistoricalAnchor(lon: 28.6, lat: 44.2, provinceName: "康斯坦察", weight: 0.95),
+                    HistoricalAnchor(lon: 27.6, lat: 47.2, provinceName: "雅西", weight: 0.95),
+                ],
+                rulerName: "卡罗尔二世", rulerTitle: "国王",
+                rulerMilitary: 68, rulerAdmin: 70, rulerDiplo: 72, rulerCharisma: 70,
+                rulerTraits: ["Ambitious", "Greedy"]
+            ),
+            HistoricalNationSpec(
+                id: "hungary", name: "匈牙利王国", shortName: "匈", color: "#8D5A38",
+                culture: "hungarian", religion: "catholic", polity: "Kingdom", style: "regency",
+                capitalLon: 19.0, capitalLat: 47.5, capitalName: "布达佩斯",
+                anchors: [
+                    HistoricalAnchor(lon: 21.6, lat: 47.5, provinceName: "德布勒森", weight: 0.88),
+                    HistoricalAnchor(lon: 20.1, lat: 46.3, provinceName: "塞格德", weight: 0.85),
+                ],
+                rulerName: "米克洛什·霍尔蒂", rulerTitle: "摄政王",
+                rulerMilitary: 76, rulerAdmin: 74, rulerDiplo: 74, rulerCharisma: 76,
+                rulerTraits: ["NavalMastery", "Veteran"]
+            ),
+            HistoricalNationSpec(
+                id: "yugoslavia", name: "南斯拉夫王国", shortName: "南", color: "#5B6ABF",
+                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                capitalLon: 20.5, capitalLat: 44.8, capitalName: "贝尔格莱德",
+                anchors: [
+                    HistoricalAnchor(lon: 16.0, lat: 45.8, provinceName: "萨格勒布", weight: 0.95),
+                    HistoricalAnchor(lon: 18.4, lat: 43.9, provinceName: "萨拉热窝", weight: 0.95),
+                    HistoricalAnchor(lon: 21.4, lat: 42.0, provinceName: "斯科普里", weight: 0.9),
+                ],
+                rulerName: "保罗亲王", rulerTitle: "摄政王",
+                rulerMilitary: 70, rulerAdmin: 72, rulerDiplo: 76, rulerCharisma: 74,
+                rulerTraits: ["Diplomatic", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "greece", name: "希腊王国", shortName: "希", color: "#4DA6E0",
+                culture: "greek", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                capitalLon: 23.7, capitalLat: 38.0, capitalName: "雅典",
+                anchors: [
+                    HistoricalAnchor(lon: 22.9, lat: 40.6, provinceName: "塞萨洛尼基", weight: 0.95),
+                    HistoricalAnchor(lon: 25.1, lat: 35.3, provinceName: "伊拉克利翁", weight: 1.1),
+                ],
+                rulerName: "扬尼斯·梅塔克萨斯", rulerTitle: "首相",
+                rulerMilitary: 80, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 78,
+                rulerTraits: ["BattleHardened", "Veteran"]
+            ),
+            HistoricalNationSpec(
+                id: "turkey", name: "土耳其共和国", shortName: "土", color: "#C0392B",
+                culture: "turkic", religion: "islam", polity: "Republic", style: "presidential",
+                capitalLon: 32.9, capitalLat: 39.9, capitalName: "安卡拉",
+                anchors: [
+                    HistoricalAnchor(lon: 28.9, lat: 41.0, provinceName: "伊斯坦布尔", weight: 1.15),
+                    HistoricalAnchor(lon: 27.1, lat: 38.4, provinceName: "伊兹密尔", weight: 1.15),
+                    HistoricalAnchor(lon: 41.3, lat: 39.9, provinceName: "埃尔祖鲁姆", weight: 1.3),
+                    HistoricalAnchor(lon: 35.3, lat: 37.0, provinceName: "阿达纳", weight: 1.2),
+                ],
+                rulerName: "穆斯塔法·凯末尔", rulerTitle: "国父总统",
+                rulerMilitary: 95, rulerAdmin: 94, rulerDiplo: 92, rulerCharisma: 96,
+                rulerTraits: ["Genius", "Reformer", "Unifier", "Visionary"]
+            ),
+            HistoricalNationSpec(
+                id: "belgium", name: "比利时王国", shortName: "比", color: "#D4A017",
+                culture: "french", religion: "catholic", polity: "Kingdom", style: "constitutional",
+                capitalLon: 4.35, capitalLat: 50.85, capitalName: "布鲁塞尔",
+                anchors: [
+                    HistoricalAnchor(lon: 4.4, lat: 51.2, provinceName: "安特卫普", weight: 0.72),
+                    HistoricalAnchor(lon: 5.57, lat: 50.63, provinceName: "列日", weight: 0.70),
+                ],
+                rulerName: "利奥波德三世", rulerTitle: "国王",
+                rulerMilitary: 72, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 78,
+                rulerTraits: ["Stubborn", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "luxembourg", name: "卢森堡大公国", shortName: "卢", color: "#5DADE2",
+                culture: "french", religion: "catholic", polity: "Kingdom", style: "principality",
+                capitalLon: 6.13, capitalLat: 49.61, capitalName: "卢森堡",
+                anchors: [],
+                rulerName: "夏洛特女大公", rulerTitle: "大公",
+                rulerMilitary: 52, rulerAdmin: 82, rulerDiplo: 84, rulerCharisma: 86,
+                rulerTraits: ["Dovish", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "switzerland", name: "瑞士联邦", shortName: "瑞士", color: "#D93838",
+                culture: "german", religion: "protestant", polity: "Federation", style: "confederation",
+                capitalLon: 7.45, capitalLat: 46.95, capitalName: "伯尔尼",
+                anchors: [
+                    HistoricalAnchor(lon: 8.54, lat: 47.37, provinceName: "苏黎世", weight: 0.72),
+                    HistoricalAnchor(lon: 6.14, lat: 46.20, provinceName: "日内瓦", weight: 0.72),
+                ],
+                rulerName: "亨利·吉桑", rulerTitle: "联邦总司令",
+                rulerMilitary: 86, rulerAdmin: 88, rulerDiplo: 88, rulerCharisma: 88,
+                rulerTraits: ["Patient", "Strategist", "Just"]
+            ),
+            HistoricalNationSpec(
+                id: "denmark", name: "丹麦王国", shortName: "丹", color: "#B83B4B",
+                culture: "norse", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 12.57, capitalLat: 55.68, capitalName: "哥本哈根",
+                anchors: [
+                    HistoricalAnchor(lon: 10.21, lat: 56.16, provinceName: "奥胡斯", weight: 0.78),
+                ],
+                rulerName: "克里斯蒂安十世", rulerTitle: "国王",
+                rulerMilitary: 62, rulerAdmin: 80, rulerDiplo: 82, rulerCharisma: 86,
+                rulerTraits: ["Dovish", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "portugal", name: "葡萄牙共和国", shortName: "葡", color: "#2D7A4F",
+                culture: "portuguese", religion: "catholic", polity: "Republic", style: "dictatorship",
+                capitalLon: -9.14, capitalLat: 38.72, capitalName: "里斯本",
+                anchors: [
+                    HistoricalAnchor(lon: -8.61, lat: 41.15, provinceName: "波尔图", weight: 0.85),
+                ],
+                rulerName: "安东尼奥·萨拉查", rulerTitle: "总理",
+                rulerMilitary: 66, rulerAdmin: 84, rulerDiplo: 84, rulerCharisma: 76,
+                rulerTraits: ["Financier", "Patient", "Administrator"]
+            ),
+            HistoricalNationSpec(
+                id: "ireland", name: "爱尔兰自由邦", shortName: "爱", color: "#3CB371",
+                culture: "english", religion: "catholic", polity: "Republic", style: "parliamentary",
+                capitalLon: -6.26, capitalLat: 53.35, capitalName: "都柏林",
+                anchors: [
+                    HistoricalAnchor(lon: -8.47, lat: 51.90, provinceName: "科克", weight: 0.85),
+                ],
+                rulerName: "埃蒙·德瓦莱拉", rulerTitle: "总理",
+                rulerMilitary: 68, rulerAdmin: 80, rulerDiplo: 84, rulerCharisma: 82,
+                rulerTraits: ["Stubborn", "Diplomatic"]
+            ),
+            HistoricalNationSpec(
+                id: "bulgaria", name: "保加利亚王国", shortName: "保", color: "#4E8B63",
+                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                capitalLon: 23.32, capitalLat: 42.70, capitalName: "索菲亚",
+                anchors: [
+                    HistoricalAnchor(lon: 24.75, lat: 42.14, provinceName: "普罗夫迪夫", weight: 0.85),
+                    HistoricalAnchor(lon: 27.91, lat: 43.21, provinceName: "瓦尔纳", weight: 0.82),
+                ],
+                rulerName: "鲍里斯三世", rulerTitle: "沙皇",
+                rulerMilitary: 72, rulerAdmin: 78, rulerDiplo: 84, rulerCharisma: 82,
+                rulerTraits: ["Diplomatic", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "austria", name: "奥地利联邦国", shortName: "奥", color: "#E5C158",
+                culture: "german", religion: "catholic", polity: "Republic", style: "presidential",
+                capitalLon: 16.37, capitalLat: 48.21, capitalName: "维也纳",
+                anchors: [
+                    HistoricalAnchor(lon: 15.44, lat: 47.07, provinceName: "格拉茨", weight: 0.78),
+                    HistoricalAnchor(lon: 11.40, lat: 47.26, provinceName: "因斯布鲁克", weight: 0.78),
+                ],
+                rulerName: "库尔特·许士尼格", rulerTitle: "联邦总理",
+                rulerMilitary: 64, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 74,
+                rulerTraits: ["Patient", "Dovish", "Administrator"]
+            ),
+            HistoricalNationSpec(
+                id: "czechoslovakia", name: "捷克斯洛伐克", shortName: "捷", color: "#5482B8",
+                culture: "slavic", religion: "catholic", polity: "Republic", style: "parliamentary",
+                capitalLon: 14.42, capitalLat: 50.08, capitalName: "布拉格",
+                anchors: [
+                    HistoricalAnchor(lon: 16.61, lat: 49.19, provinceName: "布尔诺", weight: 0.82),
+                    HistoricalAnchor(lon: 17.11, lat: 48.15, provinceName: "布拉迪斯拉发", weight: 0.85),
+                    HistoricalAnchor(lon: 21.26, lat: 48.72, provinceName: "科希策", weight: 0.82),
+                ],
+                rulerName: "爱德华·贝奈斯", rulerTitle: "总统",
+                rulerMilitary: 74, rulerAdmin: 86, rulerDiplo: 86, rulerCharisma: 82,
+                rulerTraits: ["Diplomatic", "Administrator", "Scholar"]
+            ),
+            HistoricalNationSpec(
+                id: "lithuania", name: "立陶宛共和国", shortName: "立", color: "#A58A3C",
+                culture: "polish", religion: "catholic", polity: "Republic", style: "presidential",
+                capitalLon: 25.28, capitalLat: 54.69, capitalName: "维尔纽斯",
+                anchors: [
+                    HistoricalAnchor(lon: 23.90, lat: 54.90, provinceName: "考纳斯", weight: 0.78),
+                ],
+                rulerName: "安塔纳斯·斯梅托纳", rulerTitle: "总统",
+                rulerMilitary: 64, rulerAdmin: 74, rulerDiplo: 74, rulerCharisma: 72,
+                rulerTraits: ["Patient", "Stubborn"]
+            ),
+            HistoricalNationSpec(
+                id: "latvia", name: "拉脱维亚共和国", shortName: "拉", color: "#8C3B4A",
+                culture: "polish", religion: "protestant", polity: "Republic", style: "presidential",
+                capitalLon: 24.11, capitalLat: 56.95, capitalName: "里加",
+                anchors: [],
+                rulerName: "卡尔利斯·乌尔马尼斯", rulerTitle: "总统",
+                rulerMilitary: 64, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 76,
+                rulerTraits: ["Administrator", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "estonia", name: "爱沙尼亚共和国", shortName: "爱沙", color: "#4D82B8",
+                culture: "norse", religion: "protestant", polity: "Republic", style: "presidential",
+                capitalLon: 24.75, capitalLat: 59.44, capitalName: "塔林",
+                anchors: [],
+                rulerName: "康斯坦丁·帕茨", rulerTitle: "总统",
+                rulerMilitary: 64, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 74,
+                rulerTraits: ["Administrator", "Patient"]
+            ),
+        ],
+        openingWars: [],
+        openingAlliances: [
+            HistoricalAllianceSpec(name: "英法协约同盟", memberIds: ["uk", "france"]),
+            HistoricalAllianceSpec(name: "小协约国", memberIds: ["czechoslovakia", "romania", "yugoslavia"]),
+        ],
+        tags: ["1936", "德奥合并", "慕尼黑", "28国细化"],
+        rebelMode: "historical",
+        eraOverride: "ww2"
+    )
+
+    // 剧本 10：二战欧洲战场 · 欧陆烽烟（公元 1939 年 9 月 · 欧洲精图 · 27 国细化）
     private static let ww2Europe1939 = HistoricalScenario(
         id: "ww2_europe_1939",
         title: "二战欧洲战场 · 欧陆烽烟",
-        subtitle: "1939年9月 · 闪电战降临",
+        subtitle: "1939年9月 · 闪电战降临 · 27国细化欧洲",
         region: .europe,
         year: 1939,
         eraName: "二战欧洲",
-        description: "1939年9月1日，德军闪击波兰，英法对德宣战，第二次世界大战欧洲战场全面爆发。欧陆十六国政体光谱分明——纳粹极权、法西斯、苏维埃、议会民主与君主立宪在战火中激烈碰撞。",
+        description: "1939年9月1日，德军闪击波兰，英法对德宣战，第二次世界大战欧洲战场全面爆发。欧陆二十七国完整拆分（荷兰/比利时/卢森堡/瑞士/丹麦/葡萄牙/爱尔兰/保加利亚/斯洛伐克/波罗的海三国），真实还原苏德瓜分波兰、威瑟演习、黄色方案绕道低地三国与巴巴罗萨！",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 155,
+        provinceCount: 240,
         nations: [
             HistoricalNationSpec(
                 id: "germany", name: "德意志第三帝国", shortName: "德", color: "#3D454F",
@@ -2700,7 +3323,6 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 30.7, lat: 46.5, provinceName: "敖德萨", weight: 1.2),
                     HistoricalAnchor(lon: 44.8, lat: 41.7, provinceName: "第比利斯", weight: 1.45),
                     HistoricalAnchor(lon: 33.1, lat: 68.9, provinceName: "摩尔曼斯克", weight: 1.4),
-                    HistoricalAnchor(lon: 24.1, lat: 56.9, provinceName: "里加", weight: 1.1),
                     HistoricalAnchor(lon: 40.5, lat: 64.5, provinceName: "阿尔汉格尔斯克", weight: 1.6),
                 ],
                 rulerName: "约瑟夫·斯大林", rulerTitle: "总书记",
@@ -2714,7 +3336,7 @@ public enum HistoricalScenarios {
                 anchors: [
                     HistoricalAnchor(lon: -3.2, lat: 55.9, provinceName: "爱丁堡", weight: 1.25),
                     HistoricalAnchor(lon: -2.2, lat: 53.5, provinceName: "曼彻斯特", weight: 1.15),
-                    HistoricalAnchor(lon: -6.3, lat: 53.3, provinceName: "都柏林", weight: 1.25),
+                    HistoricalAnchor(lon: -5.9, lat: 54.6, provinceName: "贝尔法斯特", weight: 0.85),
                     HistoricalAnchor(lon: 33.4, lat: 35.2, provinceName: "尼科西亚", weight: 1.1),
                 ],
                 rulerName: "乔治六世", rulerTitle: "国王",
@@ -2747,7 +3369,7 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 16.9, lat: 52.4, provinceName: "波兹南", weight: 0.9),
                     HistoricalAnchor(lon: 18.6, lat: 54.3, provinceName: "格但斯克", weight: 0.9),
                     HistoricalAnchor(lon: 24.0, lat: 49.8, provinceName: "利沃夫", weight: 1.0),
-                    HistoricalAnchor(lon: 25.3, lat: 54.7, provinceName: "维尔纽斯", weight: 1.0),
+                    HistoricalAnchor(lon: 23.7, lat: 52.1, provinceName: "布列斯特", weight: 0.95),
                 ],
                 rulerName: "爱德华·希米格维", rulerTitle: "元帅",
                 rulerMilitary: 76, rulerAdmin: 68, rulerDiplo: 70, rulerCharisma: 76,
@@ -2776,9 +3398,9 @@ public enum HistoricalScenarios {
                 capitalLon: -3.7, capitalLat: 40.4, capitalName: "马德里",
                 anchors: [
                     HistoricalAnchor(lon: 2.2, lat: 41.4, provinceName: "巴塞罗那", weight: 1.1),
-                    HistoricalAnchor(lon: -6.0, lat: 37.4, provinceName: "塞维利亚", weight: 1.2),
-                    HistoricalAnchor(lon: -9.1, lat: 38.7, provinceName: "里斯本", weight: 1.15),
-                    HistoricalAnchor(lon: -2.9, lat: 43.3, provinceName: "毕尔巴鄂", weight: 1.1),
+                    HistoricalAnchor(lon: -6.0, lat: 37.4, provinceName: "塞维利亚", weight: 1.15),
+                    HistoricalAnchor(lon: -2.9, lat: 43.3, provinceName: "毕尔巴鄂", weight: 1.05),
+                    HistoricalAnchor(lon: -0.4, lat: 39.5, provinceName: "瓦伦西亚", weight: 1.05),
                 ],
                 rulerName: "弗朗西斯科·佛朗哥", rulerTitle: "考迪罗",
                 rulerMilitary: 78, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 72,
@@ -2817,22 +3439,21 @@ public enum HistoricalScenarios {
                     HistoricalAnchor(lon: 5.3, lat: 60.4, provinceName: "卑尔根", weight: 1.1),
                     HistoricalAnchor(lon: 10.4, lat: 63.4, provinceName: "特隆赫姆", weight: 1.2),
                     HistoricalAnchor(lon: 17.4, lat: 68.4, provinceName: "纳尔维克", weight: 1.25),
-                    HistoricalAnchor(lon: 12.6, lat: 55.7, provinceName: "哥本哈根", weight: 1.05),
                 ],
                 rulerName: "哈康七世", rulerTitle: "国王",
                 rulerMilitary: 68, rulerAdmin: 78, rulerDiplo: 80, rulerCharisma: 84,
                 rulerTraits: ["Just", "Beloved"]
             ),
             HistoricalNationSpec(
-                id: "benelux", name: "低地联盟", shortName: "低地", color: "#E67E22",
+                id: "netherlands", name: "荷兰王国", shortName: "荷", color: "#E67E22",
                 culture: "dutch", religion: "protestant", polity: "Kingdom", style: "constitutional",
                 capitalLon: 4.9, capitalLat: 52.4, capitalName: "阿姆斯特丹",
                 anchors: [
-                    HistoricalAnchor(lon: 4.4, lat: 50.8, provinceName: "布鲁塞尔", weight: 0.9),
-                    HistoricalAnchor(lon: 6.1, lat: 49.6, provinceName: "卢森堡", weight: 0.85),
+                    HistoricalAnchor(lon: 4.5, lat: 51.9, provinceName: "鹿特丹", weight: 0.78),
+                    HistoricalAnchor(lon: 6.6, lat: 53.2, provinceName: "格罗宁根", weight: 0.78),
                 ],
                 rulerName: "威廉明娜", rulerTitle: "女王",
-                rulerMilitary: 64, rulerAdmin: 84, rulerDiplo: 82, rulerCharisma: 84,
+                rulerMilitary: 64, rulerAdmin: 86, rulerDiplo: 84, rulerCharisma: 88,
                 rulerTraits: ["Financier", "Beloved"]
             ),
             HistoricalNationSpec(
@@ -2841,8 +3462,8 @@ public enum HistoricalScenarios {
                 capitalLon: 26.1, capitalLat: 44.4, capitalName: "布加勒斯特",
                 anchors: [
                     HistoricalAnchor(lon: 23.6, lat: 46.8, provinceName: "克卢日", weight: 1.0),
-                    HistoricalAnchor(lon: 23.3, lat: 42.7, provinceName: "索菲亚", weight: 1.05),
                     HistoricalAnchor(lon: 28.6, lat: 44.2, provinceName: "康斯坦察", weight: 0.95),
+                    HistoricalAnchor(lon: 27.6, lat: 47.2, provinceName: "雅西", weight: 0.95),
                 ],
                 rulerName: "卡罗尔二世", rulerTitle: "国王",
                 rulerMilitary: 68, rulerAdmin: 70, rulerDiplo: 72, rulerCharisma: 70,
@@ -2853,8 +3474,8 @@ public enum HistoricalScenarios {
                 culture: "hungarian", religion: "catholic", polity: "Kingdom", style: "regency",
                 capitalLon: 19.0, capitalLat: 47.5, capitalName: "布达佩斯",
                 anchors: [
-                    HistoricalAnchor(lon: 21.6, lat: 47.5, provinceName: "德布勒森", weight: 0.9),
-                    HistoricalAnchor(lon: 17.1, lat: 48.1, provinceName: "布拉迪斯拉发", weight: 0.85),
+                    HistoricalAnchor(lon: 21.6, lat: 47.5, provinceName: "德布勒森", weight: 0.88),
+                    HistoricalAnchor(lon: 20.1, lat: 46.3, provinceName: "塞格德", weight: 0.85),
                 ],
                 rulerName: "米克洛什·霍尔蒂", rulerTitle: "摄政王",
                 rulerMilitary: 76, rulerAdmin: 74, rulerDiplo: 74, rulerCharisma: 76,
@@ -2899,6 +3520,125 @@ public enum HistoricalScenarios {
                 rulerMilitary: 80, rulerAdmin: 84, rulerDiplo: 90, rulerCharisma: 82,
                 rulerTraits: ["MasterDiplomat", "Reformer", "Patient"]
             ),
+            // v8.0.0 彻底细化拆分：比利时、卢森堡、瑞士、丹麦、葡萄牙、爱尔兰、保加利亚、斯洛伐克、波罗的海三国（共 27 国！）
+            HistoricalNationSpec(
+                id: "belgium", name: "比利时王国", shortName: "比", color: "#D4A017",
+                culture: "french", religion: "catholic", polity: "Kingdom", style: "constitutional",
+                capitalLon: 4.35, capitalLat: 50.85, capitalName: "布鲁塞尔",
+                anchors: [
+                    HistoricalAnchor(lon: 4.4, lat: 51.2, provinceName: "安特卫普", weight: 0.72),
+                    HistoricalAnchor(lon: 5.57, lat: 50.63, provinceName: "列日", weight: 0.70),
+                ],
+                rulerName: "利奥波德三世", rulerTitle: "国王",
+                rulerMilitary: 72, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 78,
+                rulerTraits: ["Stubborn", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "luxembourg", name: "卢森堡大公国", shortName: "卢", color: "#5DADE2",
+                culture: "french", religion: "catholic", polity: "Kingdom", style: "principality",
+                capitalLon: 6.13, capitalLat: 49.61, capitalName: "卢森堡",
+                anchors: [],
+                rulerName: "夏洛特女大公", rulerTitle: "大公",
+                rulerMilitary: 52, rulerAdmin: 82, rulerDiplo: 84, rulerCharisma: 86,
+                rulerTraits: ["Dovish", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "switzerland", name: "瑞士联邦", shortName: "瑞士", color: "#D93838",
+                culture: "german", religion: "protestant", polity: "Federation", style: "confederation",
+                capitalLon: 7.45, capitalLat: 46.95, capitalName: "伯尔尼",
+                anchors: [
+                    HistoricalAnchor(lon: 8.54, lat: 47.37, provinceName: "苏黎世", weight: 0.72),
+                    HistoricalAnchor(lon: 6.14, lat: 46.20, provinceName: "日内瓦", weight: 0.72),
+                ],
+                rulerName: "亨利·吉桑", rulerTitle: "联邦总司令",
+                rulerMilitary: 86, rulerAdmin: 88, rulerDiplo: 88, rulerCharisma: 88,
+                rulerTraits: ["Patient", "Strategist", "Just"]
+            ),
+            HistoricalNationSpec(
+                id: "denmark", name: "丹麦王国", shortName: "丹", color: "#B83B4B",
+                culture: "norse", religion: "protestant", polity: "Kingdom", style: "constitutional",
+                capitalLon: 12.57, capitalLat: 55.68, capitalName: "哥本哈根",
+                anchors: [
+                    HistoricalAnchor(lon: 10.21, lat: 56.16, provinceName: "奥胡斯", weight: 0.78),
+                ],
+                rulerName: "克里斯蒂安十世", rulerTitle: "国王",
+                rulerMilitary: 62, rulerAdmin: 80, rulerDiplo: 82, rulerCharisma: 86,
+                rulerTraits: ["Dovish", "Beloved"]
+            ),
+            HistoricalNationSpec(
+                id: "portugal", name: "葡萄牙共和国", shortName: "葡", color: "#2D7A4F",
+                culture: "portuguese", religion: "catholic", polity: "Republic", style: "dictatorship",
+                capitalLon: -9.14, capitalLat: 38.72, capitalName: "里斯本",
+                anchors: [
+                    HistoricalAnchor(lon: -8.61, lat: 41.15, provinceName: "波尔图", weight: 0.85),
+                ],
+                rulerName: "安东尼奥·萨拉查", rulerTitle: "总理",
+                rulerMilitary: 66, rulerAdmin: 84, rulerDiplo: 84, rulerCharisma: 76,
+                rulerTraits: ["Financier", "Patient", "Administrator"]
+            ),
+            HistoricalNationSpec(
+                id: "ireland", name: "爱尔兰自由邦", shortName: "爱", color: "#3CB371",
+                culture: "english", religion: "catholic", polity: "Republic", style: "parliamentary",
+                capitalLon: -6.26, capitalLat: 53.35, capitalName: "都柏林",
+                anchors: [
+                    HistoricalAnchor(lon: -8.47, lat: 51.90, provinceName: "科克", weight: 0.85),
+                ],
+                rulerName: "埃蒙·德瓦莱拉", rulerTitle: "总理",
+                rulerMilitary: 68, rulerAdmin: 80, rulerDiplo: 84, rulerCharisma: 82,
+                rulerTraits: ["Stubborn", "Diplomatic"]
+            ),
+            HistoricalNationSpec(
+                id: "bulgaria", name: "保加利亚王国", shortName: "保", color: "#4E8B63",
+                culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
+                capitalLon: 23.32, capitalLat: 42.70, capitalName: "索菲亚",
+                anchors: [
+                    HistoricalAnchor(lon: 24.75, lat: 42.14, provinceName: "普罗夫迪夫", weight: 0.85),
+                    HistoricalAnchor(lon: 27.91, lat: 43.21, provinceName: "瓦尔纳", weight: 0.82),
+                ],
+                rulerName: "鲍里斯三世", rulerTitle: "沙皇",
+                rulerMilitary: 72, rulerAdmin: 78, rulerDiplo: 84, rulerCharisma: 82,
+                rulerTraits: ["Diplomatic", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "slovakia", name: "斯洛伐克共和国", shortName: "斯", color: "#6E88B8",
+                culture: "slavic", religion: "catholic", polity: "Republic", style: "dictatorship",
+                capitalLon: 17.11, capitalLat: 48.15, capitalName: "布拉迪斯拉发",
+                anchors: [
+                    HistoricalAnchor(lon: 21.26, lat: 48.72, provinceName: "科希策", weight: 0.72),
+                ],
+                rulerName: "约瑟夫·蒂索", rulerTitle: "总统",
+                rulerMilitary: 60, rulerAdmin: 70, rulerDiplo: 68, rulerCharisma: 68,
+                rulerTraits: ["Dovish", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "lithuania", name: "立陶宛共和国", shortName: "立", color: "#A58A3C",
+                culture: "polish", religion: "catholic", polity: "Republic", style: "presidential",
+                capitalLon: 25.28, capitalLat: 54.69, capitalName: "维尔纽斯",
+                anchors: [
+                    HistoricalAnchor(lon: 23.90, lat: 54.90, provinceName: "考纳斯", weight: 0.78),
+                ],
+                rulerName: "安塔纳斯·斯梅托纳", rulerTitle: "总统",
+                rulerMilitary: 64, rulerAdmin: 74, rulerDiplo: 74, rulerCharisma: 72,
+                rulerTraits: ["Patient", "Stubborn"]
+            ),
+            HistoricalNationSpec(
+                id: "latvia", name: "拉脱维亚共和国", shortName: "拉", color: "#8C3B4A",
+                culture: "polish", religion: "protestant", polity: "Republic", style: "presidential",
+                capitalLon: 24.11, capitalLat: 56.95, capitalName: "里加",
+                anchors: [],
+                rulerName: "卡尔利斯·乌尔马尼斯", rulerTitle: "总统",
+                rulerMilitary: 64, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 76,
+                rulerTraits: ["Administrator", "Patient"]
+            ),
+            HistoricalNationSpec(
+                id: "estonia", name: "爱沙尼亚共和国", shortName: "爱沙", color: "#4D82B8",
+                culture: "norse", religion: "protestant", polity: "Republic", style: "presidential",
+                capitalLon: 24.75, capitalLat: 59.44, capitalName: "塔林",
+                anchors: [],
+                rulerName: "康斯坦丁·帕茨", rulerTitle: "总统",
+                rulerMilitary: 64, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 74,
+                rulerTraits: ["Administrator", "Patient"]
+            ),
         ],
         openingWars: [
             HistoricalWarSpec(attackerId: "germany", defenderId: "poland", casusBelli: "白色方案 · 闪击波兰"),
@@ -2906,26 +3646,29 @@ public enum HistoricalScenarios {
             HistoricalWarSpec(attackerId: "germany", defenderId: "france", casusBelli: "西线对峙 · 法德宣战"),
         ],
         openingAlliances: [
-            HistoricalAllianceSpec(name: "反法西斯盟国", memberIds: ["uk", "france", "poland"]),
-            HistoricalAllianceSpec(name: "轴心国", memberIds: ["germany", "italy"]),
+            HistoricalAllianceSpec(name: "反法西斯同盟国", memberIds: ["uk", "france", "poland"]),
+            HistoricalAllianceSpec(name: "轴心国", memberIds: ["germany", "italy", "slovakia"]),
         ],
-        tags: ["二战", "欧洲战场", "闪电战", "现代"],
+        openingVassals: [
+            HistoricalVassalSpec(overlordId: "germany", vassalId: "slovakia", tributeRate: 0.15),
+        ],
+        tags: ["二战", "欧洲战场", "闪电战", "27国细化"],
         rebelMode: "historical",
         eraOverride: "ww2"
     )
 
-    // 剧本 9：二战亚洲太平洋 · 太平洋风暴（公元 1941 年 12 月 · 东亚与太平洋 · 9 国）
+    // 剧本 11：二战亚洲太平洋 · 太平洋风暴（公元 1941 年 12 月 · 东亚与太平洋 · 13 国细化）
     private static let ww2Asia1941 = HistoricalScenario(
         id: "ww2_asia_1941",
         title: "二战亚洲太平洋 · 太平洋风暴",
-        subtitle: "1941年12月 · 全民族抗战与太平洋战火",
+        subtitle: "1941年12月 · 全民族抗战与太平洋战火 · 13国细化",
         region: .eastAsiaJapan,
         year: 1941,
         eraName: "二战亚太",
-        description: "1941年12月，太平洋战争爆发，日军南下香港、菲律宾与东南亚，正面战场中华民国国民政府死守西南大后方，延安抗日根据地深入敌后牵制华北，关东军与苏联远东方面军陈兵百万隔江对峙。",
+        description: "1941年12月，太平洋战争爆发，日军南下香港、马来、新加坡、荷属东印度与菲律宾；正面战场国民政府死守西南大后方，延安抗日根据地深入敌后牵制华北，关东军与苏联远东、外蒙古陈兵百万对峙，美军太平洋舰队严阵以待！",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 140,
+        provinceCount: 230,
         nations: [
             HistoricalNationSpec(
                 id: "roc", name: "中华民国国民政府", shortName: "国", color: "#2B6CB0",
@@ -3063,37 +3806,92 @@ public enum HistoricalScenarios {
                 rulerMilitary: 74, rulerAdmin: 74, rulerDiplo: 78, rulerCharisma: 76,
                 rulerTraits: ["Ambitious", "Diplomatic"]
             ),
+            // v8.0.0 细化拆分亚太战区：英属马来新加坡、荷属东印度、蒙古人民共和国、美军太平洋前哨（共 13 国）
+            HistoricalNationSpec(
+                id: "uk_malaya", name: "英属马来与新加坡", shortName: "马来", color: "#E06D7E",
+                culture: "english", religion: "protestant", polity: "Republic", style: "protectorate",
+                capitalLon: 103.82, capitalLat: 1.35, capitalName: "新加坡",
+                anchors: [
+                    HistoricalAnchor(lon: 101.69, lat: 3.14, provinceName: "吉隆坡", weight: 1.0),
+                    HistoricalAnchor(lon: 110.35, lat: 1.55, provinceName: "古晋", weight: 1.05),
+                    HistoricalAnchor(lon: 116.07, lat: 5.98, provinceName: "亚庇", weight: 1.05),
+                ],
+                rulerName: "亚瑟·帕西瓦尔", rulerTitle: "马来亚总司令",
+                rulerMilitary: 72, rulerAdmin: 76, rulerDiplo: 74, rulerCharisma: 74,
+                rulerTraits: ["Patient", "Veteran"]
+            ),
+            HistoricalNationSpec(
+                id: "dutch_ei", name: "荷属东印度", shortName: "东印", color: "#E67E22",
+                culture: "dutch", religion: "protestant", polity: "Republic", style: "protectorate",
+                capitalLon: 106.85, capitalLat: -6.21, capitalName: "巴达维亚",
+                anchors: [
+                    HistoricalAnchor(lon: 112.75, lat: -7.25, provinceName: "泗水", weight: 1.05),
+                    HistoricalAnchor(lon: 98.67, lat: 3.59, provinceName: "棉兰", weight: 1.1),
+                    HistoricalAnchor(lon: 116.85, lat: -1.27, provinceName: "巴厘巴板", weight: 1.1),
+                ],
+                rulerName: "海因·特·波尔滕", rulerTitle: "荷印陆军总司令",
+                rulerMilitary: 76, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 76,
+                rulerTraits: ["NavalMastery", "Brave"]
+            ),
+            HistoricalNationSpec(
+                id: "mongolia", name: "蒙古人民共和国", shortName: "蒙", color: "#A88B2E",
+                culture: "mongol", religion: "buddhism", polity: "Republic", style: "communist",
+                capitalLon: 106.91, capitalLat: 47.92, capitalName: "乌兰巴托",
+                anchors: [
+                    HistoricalAnchor(lon: 97.0, lat: 46.5, provinceName: "科布多", weight: 1.25),
+                    HistoricalAnchor(lon: 114.5, lat: 48.0, provinceName: "乔巴山", weight: 1.2),
+                ],
+                rulerName: "霍尔洛·乔巴山", rulerTitle: "元帅",
+                rulerMilitary: 84, rulerAdmin: 78, rulerDiplo: 76, rulerCharisma: 82,
+                rulerTraits: ["IronFist", "BattleHardened"]
+            ),
+            HistoricalNationSpec(
+                id: "usa_pacific", name: "美军太平洋舰队", shortName: "美太", color: "#1F5EA8",
+                culture: "english", religion: "protestant", polity: "Federation", style: "federal",
+                capitalLon: 144.79, capitalLat: 13.44, capitalName: "关岛",
+                anchors: [
+                    HistoricalAnchor(lon: 145.75, lat: 15.18, provinceName: "塞班", weight: 1.0),
+                    HistoricalAnchor(lon: 142.2, lat: 27.1, provinceName: "小笠原前哨", weight: 0.9),
+                ],
+                rulerName: "切斯特·尼米兹", rulerTitle: "太平洋舰队总司令",
+                rulerMilitary: 97, rulerAdmin: 90, rulerDiplo: 84, rulerCharisma: 92,
+                rulerTraits: ["Genius", "NavalMastery", "Strategist"]
+            ),
         ],
         openingWars: [
             HistoricalWarSpec(attackerId: "japan", defenderId: "roc", casusBelli: "全面抗日战争"),
             HistoricalWarSpec(attackerId: "japan", defenderId: "yanan", casusBelli: "华北敌后抗战"),
             HistoricalWarSpec(attackerId: "japan", defenderId: "philippines", casusBelli: "太平洋战争 · 吕宋战役"),
             HistoricalWarSpec(attackerId: "japan", defenderId: "uk_burma", casusBelli: "香港与缅甸战役"),
+            HistoricalWarSpec(attackerId: "japan", defenderId: "uk_malaya", casusBelli: "马来亚与新加坡战役"),
+            HistoricalWarSpec(attackerId: "japan", defenderId: "dutch_ei", casusBelli: "南进石油 · 荷印战役"),
+            HistoricalWarSpec(attackerId: "japan", defenderId: "usa_pacific", casusBelli: "偷袭珍珠港 · 太平洋决战"),
         ],
         openingAlliances: [
-            HistoricalAllianceSpec(name: "世界反法西斯同盟", memberIds: ["roc", "yanan", "uk_burma", "philippines"]),
+            HistoricalAllianceSpec(name: "世界反法西斯同盟", memberIds: ["roc", "yanan", "uk_burma", "uk_malaya", "dutch_ei", "philippines", "usa_pacific"]),
             HistoricalAllianceSpec(name: "东亚轴心", memberIds: ["japan", "manchukuo", "thailand"]),
+            HistoricalAllianceSpec(name: "苏蒙互助同盟", memberIds: ["ussr_fe", "mongolia"]),
         ],
         openingVassals: [
             HistoricalVassalSpec(overlordId: "japan", vassalId: "manchukuo", tributeRate: 0.20),
         ],
-        tags: ["二战", "亚太战场", "抗战", "太平洋"],
+        tags: ["二战", "亚太战场", "抗战", "13国细化"],
         rebelMode: "historical",
         eraOverride: "ww2"
     )
 
-    // 剧本 10：冷战铁幕 · 1950（公元 1950 年 · 世界全图 · 12 大阵营/强国）
+    // 剧本 12：冷战铁幕 · 1950（公元 1950 年 · 世界全图 · 12 大阵营/强国）
     private static let coldwar1950 = HistoricalScenario(
         id: "coldwar_1950",
         title: "冷战铁幕 · 1950",
-        subtitle: "两大阵营 · 核威慑时代",
+        subtitle: "两大阵营 · 核威慑时代（全球总图）",
         region: .world,
         year: 1950,
         eraName: "冷战时代",
         description: "1950年，铁幕横贯欧陆、新中国屹立东方，美苏两大超级大国进入原子弹与战略导弹威慑时代。北大西洋公约组织与东方阵营剑拔弩张，印度、不结盟国家与拉美各国在两极格局中寻求自立。",
         author: "列国纪官方",
         isOfficial: true,
-        provinceCount: 190,
+        provinceCount: 260,
         nations: [
             HistoricalNationSpec(
                 id: "usa", name: "美利坚合众国", shortName: "美", color: "#2B6CB0",

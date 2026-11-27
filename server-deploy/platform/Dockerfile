@@ -1,6 +1,7 @@
 FROM python:3.12-slim
 WORKDIR /app
 COPY server.py /app/server.py
+COPY hotpack-v7-manifest.json /app/hotpack-v7-manifest.json
 COPY hotpack-v6-manifest.json /app/hotpack-v6-manifest.json
 RUN mkdir -p /data/saves /data/downloads
 ENV LGJ_PLATFORM_PORT=8080 \

@@ -126,6 +126,11 @@ public enum CreationGeography {
                 guard !old.paired && old.cell.id != cell.id else { return nil }
                 edges[k] = (old.cell, true)
                 if !old.cell.land && !cell.land && !sea.nodes[old.cell.face]!.links.contains(where: { $0.to == cell.face }) { continue }
+                // v8.0.0 区域历史剧本外缘禁航边界：严禁陆地格与边缘禁航水域相连，彻底杜绝从地图边缘假海岸下海偷渡！
+                if old.cell.land != cell.land && !sea.blockedSeaIds.isEmpty {
+                    let seaFace = old.cell.land ? cell.face : old.cell.face
+                    if sea.blockedSeaIds.contains(seaFace) { continue }
+                }
                 let gate = TravelPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
                 let left = jsHypot(old.cell.center.x - gate.x, old.cell.center.y - gate.y), right = jsHypot(cell.center.x - gate.x, cell.center.y - gate.y)
                 old.cell.links.append(Link(to: cell.id, gate: gate, distance: left + right, toGate: left))

@@ -353,7 +353,7 @@ public enum RunWindow {
             let id = a.id.asString
             entry[id] = (a.nationId.asString, anchors ? index[a.provinceId.asString].map { controllers[$0] } : nil, a.status.asString == "retreating",
                          r.reorganization.active[id].isNull, r.forceSpeed.armies[id].base.optionalNumber ?? 0,
-                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * Regimes.unitSpeed(r, a.nationId.asString, r.units[id].optionalString ?? "") * Regimes.armySpeed(r, id, nation: a.nationId.asString) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1))
+                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * Regimes.unitSpeed(r, a.nationId.asString, r.units[id].optionalString ?? "") * Regimes.armySpeed(r, id, nation: a.nationId.asString) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch * MilitaryDoctrines.marchSpeedMultiplier(r, nationId: a.nationId.asString) : 1))
         }
         _ = armies
         Profile.since("m.entry", tEntry)

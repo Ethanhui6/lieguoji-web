@@ -183,8 +183,8 @@ struct HistoricalAtlasBrowserView: View {
     @State private var filter: AtlasRegionFilter = .all
     @State private var expandedId: String? = nil
     @State private var rebelMode: String = "historical"
+    @State private var historicalRoute: String = "historical"
     @State private var selectedTier: MapResolutionTier = NativeHost.selectedResolutionTier
-    @State private var showAll45Eras = false
     @ObservedObject private var hotPack = HotPackManager.shared
 
     private var filteredScenarios: [HistoricalScenario] {
@@ -194,11 +194,12 @@ struct HistoricalAtlasBrowserView: View {
     private func scenarioWithRebelMode(_ sc: HistoricalScenario) -> HistoricalScenario {
         var copy = sc
         copy.rebelMode = rebelMode
+        copy.historicalRoute = historicalRoute
         // 高精 60K/120K 网格下按比例放大州郡粒度，获得钢铁雄心4 / 历史时代3 级细密版图
-        if selectedTier == .high60K && copy.provinceCount < 320 {
-            copy.provinceCount = min(1200, max(copy.provinceCount * 2, 320))
-        } else if selectedTier == .ultra120K && copy.provinceCount < 540 {
-            copy.provinceCount = min(2400, max(copy.provinceCount * 3, 540))
+        if selectedTier == .high60K && copy.provinceCount < 420 {
+            copy.provinceCount = min(1200, max(copy.provinceCount * 2, 420))
+        } else if selectedTier == .ultra120K && copy.provinceCount < 720 {
+            copy.provinceCount = min(2400, max(copy.provinceCount * 3, 720))
         }
         return copy
     }
@@ -285,6 +286,47 @@ struct HistoricalAtlasBrowserView: View {
             .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
             .padding(.horizontal, Theme.Layout.pageInset)
 
+            // v8.0.0 历史推演路线选择（严格史实事件+锁盟 vs 自由架空推演）
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 6) {
+                    InkIcon(glyph: .chronicle, size: 13.5, weight: 1.7)
+                        .foregroundStyle(Theme.seal)
+                        .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                    Text("历史推演路线")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink)
+                    Spacer(minLength: 4)
+                    Text(historicalRoute == "historical" ? "按史实触发事件与锁盟（德奥合并·九一八·闪击波兰）" : "架空自由演化 · 允许改写联盟与事件走向")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                HStack(spacing: 6) {
+                    ForEach([("historical", "史实路线 · 锁盟+全事件"), ("sandbox", "架空路线 · 自由改写")], id: \.0) { item in
+                        let on = historicalRoute == item.0
+                        Button {
+                            GameFeel.shared.tap()
+                            historicalRoute = item.0
+                        } label: {
+                            Text(item.1)
+                                .font(Theme.caption)
+                                .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 30)
+                                .background(on ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.65))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
+            .padding(.horizontal, Theme.Layout.pageInset)
+
             // 开局叛乱规则一键切换条（默认历史拟真，零开局内爆；亦可一键关闭叛乱）
             VStack(alignment: .leading, spacing: 7) {
                 HStack(spacing: 6) {
@@ -310,10 +352,10 @@ struct HistoricalAtlasBrowserView: View {
             .padding(.horizontal, Theme.Layout.pageInset)
 
             HStack {
-                SectionLabel("官方真实历史剧本（\(filteredScenarios.count) 套）", inset: false)
+                SectionLabel("官方精绘真实历史剧本（\(filteredScenarios.count) 套 · 局部细化）", inset: false)
                     .monospacedDigit()
                 Spacer()
-                Text("点击卡片预览列国与君主")
+                Text("真实地形河流 · 拒绝粗略凑数")
                     .font(Theme.caption)
                     .foregroundStyle(Theme.ink2)
                     .lineLimit(1)
@@ -345,84 +387,6 @@ struct HistoricalAtlasBrowserView: View {
                 )
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
-
-            // 五千年 45 纪元自由开局（挂载 HotPack v6 Eras45/ 后全部 45 个真实历史时间切面均可一键启世）
-            let eras = HistoricalErasCatalog.mountedEras()
-            let erasReady = HistoricalErasCatalog.isPackMounted
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    SectionLabel("五千年 45 纪元自由开局（\(eras.count) 纪元）", inset: false)
-                        .monospacedDigit()
-                    Spacer()
-                    PaperTag(text: erasReady ? "已挂载可玩" : "热更解锁", color: erasReady ? Theme.jade : Theme.seal, size: 10.5)
-                }
-                .padding(.horizontal, Theme.Layout.sectionInset)
-
-                let shownEras = showAll45Eras ? eras : Array(eras.suffix(8).reversed())
-                Group2 {
-                    ForEach(Array(shownEras.enumerated()), id: \.element.id) { idx, era in
-                        if idx > 0 { Divider2() }
-                        HStack(spacing: 10) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
-                                    Text(era.yearDisplayText)
-                                        .font(Theme.caption)
-                                        .monospacedDigit()
-                                        .foregroundStyle(Theme.seal)
-                                    Text(era.title)
-                                        .font(Theme.serif(14.5))
-                                        .foregroundStyle(Theme.ink)
-                                        .lineLimit(1)
-                                }
-                                Text(era.subtitle)
-                                    .font(Theme.caption)
-                                    .foregroundStyle(Theme.ink2)
-                                    .lineLimit(1)
-                            }
-                            Spacer(minLength: 6)
-                            Button {
-                                GameFeel.shared.tap()
-                                if let sc = HistoricalErasCatalog.buildPlayableScenario(
-                                    eraId: era.id,
-                                    provinceCount: selectedTier.defaultHistoricalProvinces,
-                                    rebelMode: rebelMode
-                                ) {
-                                    onPlayScenario(sc)
-                                } else {
-                                    hotPack.showHotUpdateSheet = true
-                                }
-                            } label: {
-                                Text(erasReady && era.nationCount > 0 ? "开局(\(era.nationCount)国)" : "下载包")
-                                    .font(Theme.caption)
-                                    .foregroundStyle(erasReady ? Theme.paperLight : Theme.seal)
-                                    .padding(.horizontal, 10)
-                                    .frame(height: 28)
-                                    .background(erasReady ? Theme.seal : Theme.seal.opacity(0.10), in: Capsule())
-                            }
-                            .buttonStyle(PressStyle())
-                        }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 8)
-                    }
-                }
-                .padding(.horizontal, Theme.Layout.pageInset)
-
-                Button {
-                    GameFeel.shared.tap()
-                    withAnimation(Motion.panel) { showAll45Eras.toggle() }
-                } label: {
-                    Text(showAll45Eras ? "收起 45 纪元年表" : "展开全部 45 个历史纪元（公元前3000年–1994年）")
-                        .font(Theme.caption)
-                        .foregroundStyle(Theme.seal)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, Theme.Layout.pageInset)
-            }
-            .padding(.top, 6)
         }
     }
 }

@@ -25,7 +25,7 @@ import Darwin
 //    以及服务端每 60 秒自动双写热备（`autosave.lgj` + 最多 10 份 `world-<id>.lgj`）与 SIGTERM/SIGINT 优雅落盘退出。
 
 setvbuf(stdout, nil, _IONBF, 0)
-let serverVersionTag = "lieguoji-server/v13"
+let serverVersionTag = "lieguoji-server/v14"
 let env = ProcessInfo.processInfo.environment
 let udpPushPort: UInt16 = UInt16(env["LGJ_UDP_PORT"] ?? "") ?? 8767
 /// 出向带宽整形上限（默认 2480 kbps = 310 KB/s，专为 3 Mbps 腾讯云轻量云服留出 17% 防拥塞余量，杜绝 policer 丢包抖动；高带宽服可通过 `LGJ_MAX_KBPS` 调高）。
@@ -527,6 +527,7 @@ final class SimStreamer {
     private var lastClientActivity = Date()
     private var lastDiskSave = Date.distantPast
     private var pushedCount = 0
+    private var pushedUDPCount = 0
     private var pushedBytes = 0
     private var statStarted = Date()
     private var avgStepMs: Double = 0
@@ -779,8 +780,9 @@ final class SimStreamer {
                             if tickStart.timeIntervalSince(self.statStarted) >= 30 {
                                 let avgKB = Double(self.pushedBytes) / Double(max(1, self.pushedCount)) / 1024.0
                                 let kbps = Double(self.pushedBytes) * 8.0 / 30.0 / 1000.0
-                                print(String(format: "（v13 %@ 推流）近30秒 %d 帧 · %.2f KB/帧（%.0f kbps）· 步进 %.0f ms（%.1f ms/日）", useBinary ? "LGB1+UDP" : "LZ4", self.pushedCount, avgKB, kbps, self.avgStepMs, self.avgDayMs))
-                                self.pushedCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
+                                let udpPct = self.pushedCount > 0 ? Int((Double(self.pushedUDPCount) * 100.0 / Double(self.pushedCount)).rounded()) : 0
+                                print(String(format: "（v14 %@ 推流）近30秒 %d 帧（UDP %d%%）· %.2f KB/帧（%.0f kbps）· 步进 %.0f ms（%.1f ms/日）", useBinary ? "LGB2+UDP" : "LZ4", self.pushedCount, udpPct, avgKB, kbps, self.avgStepMs, self.avgDayMs))
+                                self.pushedCount = 0; self.pushedUDPCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
                             }
                         }
                         self.cond.unlock()
@@ -788,7 +790,11 @@ final class SimStreamer {
                         if stillValid {
                             // 优先经 UDP 单包推送（0 队头阻塞）；超大关键帧或 UDP 未注册时自动走 TCP MUX
                             let sentUDP = useBinary && udpGateway.trySend(tag: tag, compressedBody: compressed)
-                            if !sentUDP {
+                            if sentUDP {
+                                self.cond.lock()
+                                self.pushedUDPCount += 1
+                                self.cond.unlock()
+                            } else {
                                 clientLock.lock()
                                 let direct = activeDirect
                                 clientLock.unlock()
@@ -962,7 +968,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
     if call == "enableMux" {
         let tok = udpGateway.issueToken()
         let uPort = udpGateway.boundPort
-        var r = EngineService.Reply(ok: true, reason: "mux-v13")
+        var r = EngineService.Reply(ok: true, reason: "mux-v14")
         if uPort > 0 { r.text = "udp:\(uPort)|tok:\(tok)" }
         return r
     }
@@ -1020,7 +1026,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         "regime", "posts", "postCandidates", "officeCandidates", "allianceList", "districtList",
         "familyList", "placeNames", "mapExtras", "extraUnits", "unitProfile", "catalogEdits",
         "mapLabels", "throneCandidates", "nationProvinces", "profileReport", "worldInfo",
-        "nuclearInfo", "eraMilitaryInfo"
+        "nuclearInfo", "eraMilitaryInfo", "doctrineInfo"
     ]
     if !readOnly.contains(call) { streamer.invalidatePending() }
 

@@ -66,6 +66,21 @@ extension DiplomacyBridge {
         let s = r.nativeDiplomacy
         s.rng = JS(Double(w.rng)); s.draws = JS(w.draws); s.nations[nationId].pools.power = JS(w.nations[i].pools.power)
         guard let action else { return nil }
+        // v8.0.0 历史剧本「史实路线」严格锁盟保护：AI 不可随意解散、退出或跨阵营背刺历史同盟（轴心/同盟/抗日统一战线等）
+        if UnitKinds.enabled && HistoricalEvents.isHistoricalRoute(r) {
+            switch action {
+            case .destroy(let k):
+                let recs = r.alliances.records.asArray
+                if recs.indices.contains(k), recs[k].unbreakable.isTruthy {
+                    return nil
+                }
+            case .join, .create:
+                // 史实路线下已属锁定历史阵营的国家不得随意改换门庭，新阵营加入交由历史事件链按史实触发
+                if let cur = current, cur.unbreakable.isTruthy {
+                    return nil
+                }
+            }
+        }
         let records = r.alliances.records.asArray, now = JS(f(r.life.gameTime.asNumber))
         let result: String
         switch action {
@@ -88,5 +103,30 @@ extension DiplomacyBridge {
         }
         Vassals.bump(r.alliances); Vassals.bump(s)
         return result
+    }
+}
+
+/// v8.0.0 历史同盟快捷查询与锁盟保护入口（封装 Vassals 底层记录）。
+public enum Alliances {
+    public static func areAllies(_ r: JS, _ a: String, _ b: String) -> Bool {
+        guard a != b, let al = Vassals.allianceOf(r, a) else { return false }
+        return al.members.asArray.contains { $0.asString == b }
+    }
+
+    public static func isLockedHistorical(_ r: JS, _ nationId: String) -> Bool {
+        guard HistoricalEvents.isHistoricalRoute(r), let al = Vassals.allianceOf(r, nationId) else { return false }
+        return al.unbreakable.isTruthy
+    }
+
+    @discardableResult
+    public static func leave(_ r: JS, _ nationId: String, force: Bool = false) -> (ok: Bool, reason: String) {
+        guard let al = Vassals.allianceOf(r, nationId) else {
+            return (false, "当前未加入任何同盟")
+        }
+        if !force && al.unbreakable.isTruthy && HistoricalEvents.isHistoricalRoute(r) {
+            return (false, "史实路线下【\(al.name.asString)】为锁定历史阵营，不可随意退盟")
+        }
+        let ok = Vassals.leaveAlliance(r, nationId, force: force)
+        return ok ? (true, "已退出【\(al.name.asString)】") : (false, "当前无法退出该同盟")
     }
 }

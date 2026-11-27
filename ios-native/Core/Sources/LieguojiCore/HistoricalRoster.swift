@@ -191,7 +191,7 @@ public struct HistoricalNationRoster: Codable, Sendable {
 // MARK: - 十大官方历史剧本真实名录与引擎接入
 
 public enum HistoricalRoster {
-    /// 全部 10 个官方历史剧本（共 109 个国家）的真实历史名录与国力设定。
+    /// 全部 12 个官方历史剧本的真实历史名录与国力设定（含 1936 战云密布、1931 九一八抗战与 27/28 国细化欧洲）。
     public static let scenarios: [String: [HistoricalNationRoster]] = [
         "zhanguo_260bce": zhanguo260bce,
         "sanguo_208": sanguo208,
@@ -200,6 +200,8 @@ public enum HistoricalRoster {
         "sengoku_1560": sengoku1560,
         "napoleon_1812": napoleon1812,
         "ww1_1914": ww1_1914,
+        "china_1931": china1931,
+        "ww2_eve_1936": ww2Eve1936,
         "ww2_europe_1939": ww2Europe1939,
         "ww2_asia_1941": ww2Asia1941,
         "coldwar_1950": coldwar1950,
@@ -2843,168 +2845,369 @@ public enum HistoricalRoster {
           power: pw(ind: 1.15, mp: 2.15, mil: 3, eco: 3, sta: 3, nav: 3, fleets: 3, ships: 5, navBonus: 0.14,
                     traits: ["HomelandDefense", "CoreDefense"], lifetime: true, term: 40, warSupport: 70)
         ),
-        // 6 美国
+        // 6 意大利（一战欧洲 20 国细化）
         n(6,
-          founder: p("伍德罗·威尔逊", "威尔逊", "伍德罗", "美利坚合众国总统", 57, 68, 88, 92, 88, ["Scholar", "Visionary", "MasterDiplomat", "Reformer"], "Ruler", "十四点和平原则提出者"),
-          successors: [
-              p("沃伦·哈定", "哈定", "沃伦", "美国总统", 48, 56, 72, 76, 80, ["Charismatic", "Dovish"], "Successor", "第29任总统"),
-              p("卡尔文·柯立芝", "柯立芝", "卡尔文", "美国总统", 42, 60, 86, 78, 76, ["Financier", "Patient", "Administrator"], "Successor", "柯立芝繁荣"),
-          ],
-          notables: [
-              p("约翰·潘兴", "潘兴", "约翰", "美国远征军总司令·特级上将", 53, 91, 84, 76, 88, ["BattleHardened", "Veteran", "Administrator", "NaturalLeader"], "WarCommander", "黑杰克潘兴"),
-              p("威廉·西姆斯", "西姆斯", "威廉", "驻欧海军司令·上将", 55, 89, 82, 78, 84, ["NavalMastery", "ShipMaster", "Reformer"], "Admiral", "美国近代海军改革家"),
-              p("罗伯特·兰辛", "兰辛", "罗伯特", "国务卿", 49, 54, 84, 88, 78, ["Diplomatic", "Lawgiver"], "Diplomat", "美国国务卿"),
-              p("威廉·麦卡杜", "麦卡杜", "威廉", "财政部长", 50, 56, 90, 78, 80, ["Financier", "Administrator"], "Treasurer", "自由公债战时财长"),
-          ],
-          families: [
-              f("罗斯福", "罗斯福政治世家", 78, 74, ruling: true),
-              f("摩根", "华尔街金融财团", 78, 78),
-              f("洛克菲勒", "石油工业世家", 74, 76),
-          ],
-          parties: [pt("民主党", 52), pt("共和党", 36), pt("进步党", 12)],
-          power: pw(ind: 3.50, mp: 1.85, mil: 5, eco: 6, sta: 6, nav: 5, fleets: 5, ships: 9, navBonus: 0.34,
-                    traits: ["StrengthenCore", "WellTrained", "ManifestDestiny"], lifetime: false, term: 4, warSupport: 64)
-        ),
-        // 7 日本（大正天皇在位，大隈重信任内阁总理大臣）
-        n(7,
-          founder: p("嘉仁", "", "嘉仁", "天皇", 35, 62, 70, 74, 76, ["Patient", "Scholar"], "Ruler", "大正天皇"),
-          successors: [
-              p("裕仁", "", "裕仁", "天皇", 18, 72, 76, 74, 80, ["Patient", "Stubborn"], "Successor", "皇太子·昭和天皇"),
-          ],
-          notables: [
-              p("大隈重信", "大隈", "重信", "内阁总理大臣", 62, 66, 88, 86, 86, ["Reformer", "Scholar", "Diplomatic", "Visionary"], "Chancellor", "大正宪政首相"),
-              p("东乡平八郎", "东乡", "平八郎", "元帅海军大将", 62, 95, 78, 74, 92, ["Genius", "NavalMastery", "ShipMaster", "Veteran"], "Admiral", "东方纳尔逊·联合舰队之魂"),
-              p("加藤友三郎", "加藤", "友三郎", "海军大臣·大将", 53, 88, 90, 86, 84, ["NavalMastery", "Administrator", "Diplomatic"], "Admiral", "华盛顿会议首席代表"),
-              p("山县有朋", "山县", "有朋", "元老·陆军元帅", 64, 86, 86, 74, 80, ["IronFist", "Veteran", "Administrator"], "WarCommander", "日本陆军之父"),
-          ],
-          families: [
-              f("", "日本皇室", 92, 85, ruling: true),
-              f("山县", "长州陆军藩阀", 80, 76),
-              f("东乡", "萨摩海军藩阀", 78, 78),
-              f("三井", "三井物产财阀", 76, 78),
-              f("三菱", "三菱重工财阀", 76, 78),
-          ],
-          parties: [pt("立宪政友会", 44), pt("立宪同志会", 36), pt("藩阀军部派", 20)],
-          power: pw(ind: 2.10, mp: 1.40, mil: 5, eco: 5, sta: 5, nav: 5, fleets: 4, ships: 8, navBonus: 0.34,
-                    traits: ["WellTrained", "FightToTheEnd", "FieldCombatElite"], lifetime: true, term: 40, warSupport: 82),
-          familyRelations: [fr("山县", "东乡", -32), fr("三井", "三菱", -18)],
-          fixedEraName: "大正"
-        ),
-        // 8 中华民国
-        n(8,
-          founder: p("袁世凯", "袁", "世凯", "中华民国大总统", 55, 82, 86, 82, 82, ["Ambitious", "IronFist", "Administrator", "Veteran"], "Ruler", "北洋领袖·大总统"),
-          successors: [
-              p("黎元洪", "黎", "元洪", "大总统", 50, 70, 74, 76, 78, ["Benevolent", "Patient"], "Successor", "副总统继任"),
-              p("孙中山", "孙", "文", "临时大总统·国父", 48, 76, 88, 92, 96, ["Visionary", "Reformer", "Charismatic", "Unifier", "Beloved"], "Successor", "民主革命先行者"),
-          ],
-          notables: [
-              p("段祺瑞", "段", "祺瑞", "陆军总长·总理", 49, 86, 82, 74, 82, ["Stubborn", "Veteran", "Administrator"], "Chancellor", "北洋之虎·皖系领袖"),
-              p("冯国璋", "冯", "国璋", "江苏督军·副总统", 55, 82, 80, 78, 80, ["Patient", "Veteran", "Financier"], "WarCommander", "北洋之狗·直系领袖"),
-              p("蔡锷", "蔡", "锷", "护国军总司令", 32, 93, 86, 82, 92, ["Genius", "Brave", "Just", "Tactician"], "WarCommander", "再造共和名将"),
-              p("顾维钧", "顾", "维钧", "外交官", 26, 52, 84, 95, 86, ["MasterDiplomat", "Scholar", "Lawgiver"], "Diplomat", "民国第一外交家"),
-          ],
-          families: [
-              f("袁", "项城袁氏北洋系", 82, 80, ruling: true),
-              f("段", "合肥皖系", 72, 66),
-              f("冯", "河间直系", 70, 64),
-          ],
-          parties: [pt("北洋军人派", 44), pt("中国国民党", 34), pt("进步党", 22)],
-          power: pw(ind: 1.15, mp: 2.00, mil: 3, eco: 3, sta: 3, nav: 2, fleets: 1, ships: 4, navBonus: 0.08,
-                    traits: ["HomelandDefense", "CoreDefense"], lifetime: false, term: 5, warSupport: 62)
-        ),
-        // 9 意大利
-        n(9,
           founder: p("维托里奥·埃马努埃莱三世", "萨伏伊", "维托里奥", "意大利国王", 44, 68, 76, 78, 76, ["Patient", "Stubborn", "Diplomatic"], "Ruler", "萨伏伊君主"),
-          successors: [
-              p("翁贝托二世", "萨伏伊", "翁贝托", "王储", 20, 66, 74, 76, 78, ["Diplomatic", "Charismatic"], "Successor", "王太子"),
-          ],
+          successors: [p("翁贝托二世", "萨伏伊", "翁贝托", "王储", 20, 66, 74, 76, 78, ["Diplomatic", "Charismatic"], "Successor", "王太子")],
           notables: [
-              p("路易吉·卡多尔纳", "卡多尔纳", "路易吉", "总参谋长", 62, 74, 74, 60, 68, ["Stubborn", "IronFist"], "WarCommander", "意军初期总司令"),
-              p("阿尔曼多·迪亚兹", "迪亚兹", "阿尔曼多", "陆军元帅", 52, 88, 82, 76, 86, ["Tactician", "Benevolent", "BattleHardened"], "WarCommander", "维托里奥·威尼托胜帅"),
               p("安东尼奥·萨兰德拉", "萨兰德拉", "安东尼奥", "王国首相", 60, 56, 80, 78, 76, ["Administrator", "Diplomatic"], "Chancellor", "意大利首相"),
+              p("阿尔曼多·迪亚兹", "迪亚兹", "阿尔曼多", "陆军元帅", 52, 88, 82, 76, 86, ["Tactician", "Benevolent", "BattleHardened"], "WarCommander", "维托里奥·威尼托胜帅"),
+              p("路易吉·卡多尔纳", "卡多尔纳", "路易吉", "总参谋长", 62, 76, 74, 60, 68, ["Stubborn", "IronFist"], "WarCommander", "意军初期总司令"),
           ],
-          families: [
-              f("萨伏伊", "萨伏伊王室", 86, 80, ruling: true),
-              f("阿涅利", "都灵工业世家", 70, 74),
-          ],
+          families: [f("萨伏伊", "萨伏伊王室", 86, 80, ruling: true), f("阿涅利", "都灵工业世家", 70, 74)],
           parties: [pt("自由联盟", 48), pt("意大利社会党", 30), pt("民族主义协会", 22)],
           power: pw(ind: 1.65, mp: 1.35, mil: 4, eco: 4, sta: 4, nav: 4, fleets: 3, ships: 6, navBonus: 0.22,
                     traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 66)
         ),
-        // 10 西班牙
-        n(10,
-          founder: p("阿方索十三世", "波旁", "阿方索", "西班牙国王", 28, 66, 74, 80, 80, ["Diplomatic", "Dovish", "Charismatic"], "Ruler", "中立国王"),
-          successors: [
-              p("胡安·德·波旁", "波旁", "胡安", "巴塞罗那伯爵", 22, 66, 74, 78, 76, ["Patient", "Diplomatic"], "Successor", "王位继承人"),
+        // 7 塞尔维亚王国
+        n(7,
+          founder: p("彼得一世", "卡拉乔尔杰维奇", "彼得", "塞尔维亚国王", 64, 80, 80, 80, 88, ["Brave", "Just", "Beloved"], "Ruler", "塞尔维亚立宪老国王"),
+          successors: [p("亚历山大一世", "卡拉乔尔杰维奇", "亚历山大", "摄政王储", 26, 82, 80, 82, 84, ["Brave", "BattleHardened"], "Successor", "战时摄政王储")],
+          notables: [
+              p("拉多米尔·普特尼克", "普特尼克", "拉多米尔", "塞尔维亚大元帅", 64, 93, 82, 74, 90, ["Genius", "Strategist", "BattleHardened"], "WarCommander", "塞尔维亚战神元帅"),
+              p("尼古拉·帕希奇", "帕希奇", "尼古拉", "王国首相", 64, 62, 86, 88, 82, ["MasterDiplomat", "Stubborn"], "Chancellor", "巴尔干政坛铁腕"),
           ],
+          families: [f("卡拉乔尔杰维奇", "塞尔维亚王室", 86, 80, ruling: true), f("普特尼克", "塞尔维亚将门", 76, 82)],
+          parties: [pt("人民激进党", 58), pt("独立激进党", 42)],
+          power: pw(ind: 0.90, mp: 1.05, mil: 4, eco: 3, sta: 4, nav: 1, fleets: 0, ships: 2, navBonus: 0.0,
+                    traits: ["HomelandDefense", "FightToTheEnd", "DefyTheStrong"], lifetime: true, term: 40, warSupport: 94)
+        ),
+        // 8 比利时王国
+        n(8,
+          founder: p("阿尔贝一世", "萨克森-科堡", "阿尔贝", "比利时国王", 39, 86, 82, 84, 90, ["Brave", "BattleHardened", "Beloved"], "Ruler", "骑士国王·伊塞尔河守将"),
+          successors: [p("利奥波德三世", "萨克森-科堡", "利奥波德", "王储", 18, 72, 78, 76, 78, ["Stubborn", "Patient"], "Successor", "比利时王储")],
+          notables: [
+              p("热拉尔·莱曼", "莱曼", "热拉尔", "列日要塞司令", 62, 88, 76, 68, 84, ["Stubborn", "Brave", "Veteran"], "WarCommander", "列日死守名将"),
+              p("夏尔·德·布罗克维尔", "布罗克维尔", "夏尔", "王国首相", 53, 62, 84, 82, 80, ["Administrator", "Diplomatic"], "Chancellor", "战时首相"),
+          ],
+          families: [f("萨克森-科堡", "比利时王室", 86, 82, ruling: true), f("索尔维", "布鲁塞尔工业财阀", 74, 78)],
+          parties: [pt("天主教党", 48), pt("比利时工党", 30), pt("自由党", 22)],
+          power: pw(ind: 1.75, mp: 0.85, mil: 4, eco: 6, sta: 5, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
+                    traits: ["HomelandDefense", "FightToTheEnd", "CoreDefense"], lifetime: true, term: 40, warSupport: 90)
+        ),
+        // 9 荷兰王国
+        n(9,
+          founder: p("威廉明娜", "奥兰治-拿骚", "威廉明娜", "荷兰女王", 34, 68, 86, 88, 90, ["Stubborn", "Financier", "Beloved"], "Ruler", "荷兰女王", gender: 1),
+          successors: [p("朱丽安娜", "奥兰治-拿骚", "朱丽安娜", "王储", 18, 60, 82, 86, 86, ["Benevolent", "Diplomatic"], "Successor", "荷兰公主", gender: 1)],
+          notables: [
+              p("科内利斯·斯奈德斯", "斯奈德斯", "科内利斯", "荷军总司令", 62, 82, 80, 74, 78, ["Patient", "Veteran"], "WarCommander", "荷兰武装中立总司令"),
+              p("彼得·科特·范·德·林登", "林登", "彼得", "王国首相", 64, 58, 86, 88, 80, ["MasterDiplomat", "Patient"], "Chancellor", "一战中立首相"),
+          ],
+          families: [f("奥兰治-拿骚", "荷兰王室", 88, 84, ruling: true), f("菲利普", "荷兰工业商贸世家", 74, 78)],
+          parties: [pt("自由党", 40), pt("天主教党", 35), pt("社民工党", 25)],
+          power: pw(ind: 1.70, mp: 0.80, mil: 4, eco: 6, sta: 5, nav: 4, fleets: 2, ships: 5, navBonus: 0.20,
+                    traits: ["CoreDefense", "StrengthenCore"], lifetime: true, term: 40, warSupport: 60)
+        ),
+        // 10 卢森堡大公国
+        n(10,
+          founder: p("玛丽-阿德莱德", "拿骚-魏尔堡", "玛丽-阿德莱德", "卢森堡女大公", 20, 52, 76, 80, 82, ["Dovish", "Patient"], "Ruler", "卢森堡女大公", gender: 1),
+          successors: [p("夏洛特女大公", "拿骚-魏尔堡", "夏洛特", "女大公", 18, 56, 82, 84, 86, ["Beloved", "Dovish"], "Successor", "王妹", gender: 1)],
+          notables: [p("保罗·艾申", "艾申", "保罗", "国务大臣", 64, 52, 84, 86, 78, ["Diplomatic", "Administrator"], "Chancellor", "卢森堡老首相")],
+          families: [f("拿骚-魏尔堡", "卢森堡大公家族", 82, 80, ruling: true)],
+          parties: [pt("右翼党", 52), pt("自由联盟", 48)],
+          power: pw(ind: 0.75, mp: 0.40, mil: 3, eco: 5, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 50)
+        ),
+        // 11 瑞士联邦
+        n(11,
+          founder: p("乌尔里希·维勒", "维勒", "乌尔里希", "联邦总司令", 64, 86, 84, 84, 84, ["Patient", "Veteran", "Strategist"], "Ruler", "武装中立总司令"),
+          successors: [p("亨利·吉桑", "吉桑", "亨利", "上将", 40, 88, 86, 86, 88, ["Strategist", "Just"], "Successor", "阿尔卑斯防务名将")],
+          notables: [p("阿图尔·霍夫曼", "霍夫曼", "阿图尔", "联邦主席", 57, 56, 88, 88, 80, ["Financier", "MasterDiplomat"], "Chancellor", "瑞士联邦主席")],
+          families: [f("维勒", "联邦国防军", 82, 82, ruling: true), f("霍夫曼", "苏黎世银行业世家", 78, 80)],
+          parties: [pt("自由民主党", 54), pt("保守人民党", 26), pt("社会民主党", 20)],
+          power: pw(ind: 1.75, mp: 0.75, mil: 5, eco: 6, sta: 6, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["HomelandDefense", "CoreDefense", "WellTrained"], lifetime: false, term: 4, warSupport: 74)
+        ),
+        // 12 西班牙王国
+        n(12,
+          founder: p("阿方索十三世", "波旁", "阿方索", "西班牙国王", 28, 66, 74, 80, 80, ["Diplomatic", "Dovish", "Charismatic"], "Ruler", "中立国王"),
+          successors: [p("胡安·德·波旁", "波旁", "胡安", "巴塞罗那伯爵", 22, 66, 74, 78, 76, ["Patient", "Diplomatic"], "Successor", "王位继承人")],
           notables: [
               p("爱德华多·达托", "达托", "爱德华多", "首相", 57, 56, 84, 86, 80, ["Dovish", "Administrator", "Diplomatic"], "Chancellor", "坚持中立首相"),
               p("米格尔·普里莫·德·里维拉", "里维拉", "米格尔", "上将", 44, 80, 76, 70, 78, ["IronFist", "Veteran"], "WarCommander", "西班牙军界强人"),
           ],
-          families: [
-              f("波旁", "西班牙波旁王室", 84, 80, ruling: true),
-              f("阿尔巴", "西班牙贵族院", 66, 72),
-          ],
+          families: [f("波旁", "西班牙波旁王室", 84, 80, ruling: true), f("阿尔巴", "西班牙贵族院", 66, 72)],
           parties: [pt("保守党", 44), pt("自由党", 36), pt("西班牙工人社会党", 20)],
           power: pw(ind: 1.25, mp: 1.05, mil: 3, eco: 4, sta: 4, nav: 3, fleets: 2, ships: 4, navBonus: 0.14,
                     traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 52)
         ),
-        // 11 巴西（1914年8月在任总统赫尔梅斯·达·丰塞卡，下任接班文塞斯劳·布拉斯）
-        n(11,
-          founder: p("赫尔梅斯·达·丰塞卡", "丰塞卡", "赫尔梅斯", "巴西总统·元帅", 59, 76, 78, 76, 78, ["Veteran", "Administrator", "Just"], "Ruler", "1914年巴西总统"),
-          successors: [
-              p("文塞斯劳·布拉斯", "布拉斯", "文塞斯劳", "巴西总统", 46, 62, 82, 80, 78, ["Administrator", "Patient", "Financier"], "Successor", "第9任巴西总统"),
-              p("埃皮塔西奥·佩索阿", "佩索阿", "埃皮塔西奥", "巴西总统", 49, 60, 82, 84, 80, ["Lawgiver", "Diplomatic"], "Successor", "第11任总统"),
-          ],
-          notables: [
-              p("佩德罗·弗龙廷", "弗龙廷", "佩德罗", "海军少将", 47, 82, 74, 74, 78, ["NavalMastery", "Brave"], "Admiral", "巴西大西洋巡逻舰队司令"),
-              p("劳罗·穆勒", "穆勒", "劳罗", "外交部长", 50, 58, 80, 84, 78, ["Diplomatic", "Administrator"], "Diplomat", "巴西外交部长"),
-          ],
-          families: [
-              f("布拉斯", "米纳斯政治世家", 78, 80, ruling: true),
-              f("普拉多", "圣保罗咖啡工业世家", 74, 74),
-          ],
-          parties: [pt("圣保罗共和党", 44), pt("米纳斯共和党", 40), pt("军官改革派", 16)],
-          power: pw(ind: 1.15, mp: 1.15, mil: 3, eco: 4, sta: 4, nav: 3, fleets: 2, ships: 5, navBonus: 0.14,
-                    traits: ["CoreDefense", "StrengthenCore"], lifetime: false, term: 4, warSupport: 56)
-        ),
-        // 12 阿根廷
-        n(12,
-          founder: p("维克托里诺·德拉普拉萨", "德拉普拉萨", "维克托里诺", "阿根廷总统", 62, 58, 84, 84, 78, ["Financier", "Dovish", "Lawgiver"], "Ruler", "阿根廷总统"),
-          successors: [
-              p("伊波利托·伊里戈延", "伊里戈延", "伊波利托", "阿根廷总统", 60, 62, 84, 82, 88, ["Reformer", "Beloved", "Just"], "Successor", "激进党领袖"),
-          ],
-          notables: [
-              p("巴勃罗·里凯里", "里凯里", "巴勃罗", "陆军中将", 54, 82, 80, 72, 78, ["Reformer", "Veteran"], "WarCommander", "阿根廷近代军制之父"),
-              p("胡安·萨恩斯·瓦连特", "瓦连特", "胡安", "海军部长", 52, 80, 76, 72, 76, ["NavalMastery", "Administrator"], "Admiral", "南美无畏舰队统帅"),
-          ],
-          families: [
-              f("罗卡", "布宜诺斯艾利斯世家", 78, 80, ruling: true),
-              f("伊里戈延", "激进改革派", 72, 68),
-          ],
-          parties: [pt("全国自治党", 44), pt("激进公民联盟", 38), pt("阿根廷社会党", 18)],
-          power: pw(ind: 1.35, mp: 0.95, mil: 3, eco: 5, sta: 4, nav: 3, fleets: 2, ships: 5, navBonus: 0.16,
-                    traits: ["StrengthenCore", "CoreDefense"], lifetime: false, term: 6, warSupport: 52)
-        ),
-        // 13 墨西哥
+        // 13 葡萄牙共和国
         n(13,
-          founder: p("贝努斯蒂亚诺·卡兰萨", "卡兰萨", "贝努斯蒂亚诺", "宪政军第一首领", 54, 78, 84, 80, 82, ["Stubborn", "Lawgiver", "Reformer"], "Ruler", "墨西哥革命宪政领袖"),
-          successors: [
-              p("阿尔瓦罗·奥夫雷贡", "奥夫雷贡", "阿尔瓦罗", "总统·常胜将军", 34, 91, 82, 78, 88, ["Tactician", "BattleHardened", "NaturalLeader"], "Successor", "革命名将"),
-          ],
+          founder: p("曼努埃尔·德·阿里亚加", "阿里亚加", "曼努埃尔", "共和国总统", 64, 60, 76, 80, 78, ["Scholar", "Diplomatic"], "Ruler", "第一共和国首任总统"),
+          successors: [p("贝尔纳迪诺·马沙多", "马沙多", "贝尔纳迪诺", "总统", 63, 62, 78, 82, 78, ["Diplomatic", "Patient"], "Successor", "协约派总统")],
+          notables: [p("费尔南多·塔马尼尼", "塔马尼尼", "费尔南多", "远征军司令", 58, 82, 76, 72, 78, ["Veteran", "Brave"], "WarCommander", "葡萄牙远征军统帅")],
+          families: [f("阿里亚加", "里斯本共和派", 76, 80, ruling: true)],
+          parties: [pt("民主党", 56), pt("进化党", 24), pt("联合党", 20)],
+          power: pw(ind: 0.90, mp: 0.75, mil: 3, eco: 3, sta: 4, nav: 3, fleets: 2, ships: 4, navBonus: 0.14,
+                    traits: ["CoreDefense"], lifetime: false, term: 4, warSupport: 60)
+        ),
+        // 14 瑞典王国
+        n(14,
+          founder: p("古斯塔夫五世", "贝尔纳多特", "古斯塔夫", "瑞典国王", 56, 62, 82, 86, 82, ["Dovish", "Patient"], "Ruler", "瑞典国王"),
+          successors: [p("古斯塔夫六世", "贝尔纳多特", "古斯塔夫·阿道夫", "王储", 32, 62, 84, 84, 84, ["Scholar", "Just"], "Successor", "瑞典王储")],
+          notables: [p("亚尔马·哈马舍尔德", "哈马舍尔德", "亚尔马", "瑞典首相", 52, 60, 86, 86, 78, ["Lawgiver", "Patient"], "Chancellor", "中立首相")],
+          families: [f("贝尔纳多特", "瑞典王室", 84, 82, ruling: true), f("瓦伦堡", "斯德哥尔摩金融世家", 78, 80)],
+          parties: [pt("社会民主党", 42), pt("保守党", 34), pt("自由党", 24)],
+          power: pw(ind: 1.70, mp: 0.85, mil: 4, eco: 5, sta: 5, nav: 3, fleets: 2, ships: 5, navBonus: 0.16,
+                    traits: ["WellTrained", "CoreDefense"], lifetime: true, term: 40, warSupport: 58)
+        ),
+        // 15 挪威王国
+        n(15,
+          founder: p("哈康七世", "格吕克斯堡", "哈康", "挪威国王", 42, 70, 80, 86, 90, ["Just", "Brave", "Beloved"], "Ruler", "挪威国王"),
+          successors: [p("奥拉夫五世", "格吕克斯堡", "奥拉夫", "王储", 18, 72, 80, 84, 88, ["Brave", "Beloved"], "Successor", "挪威王储")],
+          notables: [p("贡纳尔·克努森", "克努森", "贡纳尔", "挪威首相", 64, 58, 84, 84, 80, ["Financier", "Patient"], "Chancellor", "中立商船首相")],
+          families: [f("格吕克斯堡", "挪威王室", 86, 82, ruling: true)],
+          parties: [pt("自由党", 50), pt("工党", 30), pt("保守党", 20)],
+          power: pw(ind: 1.25, mp: 0.70, mil: 3, eco: 5, sta: 5, nav: 4, fleets: 2, ships: 5, navBonus: 0.18,
+                    traits: ["HomelandDefense"], lifetime: true, term: 40, warSupport: 60)
+        ),
+        // 16 丹麦王国
+        n(16,
+          founder: p("克里斯蒂安十世", "格吕克斯堡", "克里斯蒂安", "丹麦国王", 44, 66, 80, 82, 86, ["Just", "Beloved"], "Ruler", "丹麦国王"),
+          successors: [p("腓特烈九世", "格吕克斯堡", "腓特烈", "王储", 18, 66, 80, 82, 84, ["NavalMastery", "Beloved"], "Successor", "丹麦王储")],
+          notables: [p("卡尔·特奥多尔·扎勒", "扎勒", "卡尔", "丹麦首相", 48, 56, 84, 86, 78, ["Dovish", "Diplomatic"], "Chancellor", "丹麦中立首相")],
+          families: [f("格吕克斯堡", "丹麦王室", 84, 82, ruling: true)],
+          parties: [pt("激进自由党", 42), pt("社会民主党", 36), pt("保守党", 22)],
+          power: pw(ind: 1.25, mp: 0.65, mil: 3, eco: 5, sta: 5, nav: 3, fleets: 2, ships: 4, navBonus: 0.14,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 58)
+        ),
+        // 17 罗马尼亚王国
+        n(17,
+          founder: p("卡罗尔一世", "霍亨索伦-锡格马林根", "卡罗尔", "罗马尼亚国王", 64, 76, 82, 80, 80, ["Veteran", "Patient"], "Ruler", "罗马尼亚开国君主"),
+          successors: [p("斐迪南一世", "霍亨索伦-锡格马林根", "斐迪南", "国王", 49, 72, 80, 82, 82, ["Unifier", "Just"], "Successor", "大罗马尼亚君主")],
           notables: [
-              p("阿尔瓦罗·奥夫雷贡", "奥夫雷贡", "阿尔瓦罗", "西北军司令", 34, 91, 82, 78, 88, ["Tactician", "BattleHardened", "Brave"], "WarCommander", "墨西哥革命第一名将"),
-              p("潘乔·比利亚", "比利亚", "弗朗西斯科", "北方师师长", 36, 88, 60, 62, 90, ["Brave", "BattleHardened", "Charismatic"], "WarCommander", "草原骑兵传奇"),
+              p("扬·布勒蒂亚努", "布勒蒂亚努", "扬", "王国首相", 50, 62, 86, 88, 82, ["MasterDiplomat", "Administrator"], "Chancellor", "罗马尼亚大首相"),
+              p("亚历山德鲁·阿韦雷斯库", "阿韦雷斯库", "亚历山德鲁", "陆军元帅", 55, 88, 76, 70, 84, ["Tactician", "BattleHardened"], "WarCommander", "默勒什蒂胜帅"),
           ],
-          families: [
-              f("卡兰萨", "科阿韦拉宪政派", 80, 80, ruling: true),
-              f("奥夫雷贡", "索诺拉革命军团", 74, 72),
+          families: [f("霍亨索伦-锡格马林根", "罗马尼亚王室", 84, 80, ruling: true), f("布勒蒂亚努", "国家自由党世家", 76, 78)],
+          parties: [pt("国家自由党", 58), pt("保守党", 42)],
+          power: pw(ind: 1.25, mp: 1.05, mil: 4, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
+                    traits: ["HomelandDefense"], lifetime: true, term: 40, warSupport: 72)
+        ),
+        // 18 保加利亚王国
+        n(18,
+          founder: p("斐迪南一世", "萨克森-科堡", "斐迪南", "保加利亚沙皇", 53, 74, 78, 80, 76, ["Ambitious", "Hawkish"], "Ruler", "巴尔干之狐"),
+          successors: [p("鲍里斯三世", "萨克森-科堡", "鲍里斯", "王储", 20, 74, 80, 84, 84, ["Diplomatic", "Patient"], "Successor", "王储")],
+          notables: [p("尼古拉·热科夫", "热科夫", "尼古拉", "陆军总司令", 50, 86, 76, 70, 82, ["BattleHardened", "Tactician"], "WarCommander", "巴尔干虎将")],
+          families: [f("萨克森-科堡", "保加利亚王室", 84, 80, ruling: true)],
+          parties: [pt("自由联盟", 54), pt("农民联盟", 46)],
+          power: pw(ind: 1.05, mp: 1.00, mil: 4, eco: 3, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.06,
+                    traits: ["FieldCombatElite", "WellTrained"], lifetime: true, term: 40, warSupport: 80)
+        ),
+        // 19 希腊王国
+        n(19,
+          founder: p("康斯坦丁一世", "格吕克斯堡", "康斯坦丁", "希腊国王", 46, 80, 74, 74, 80, ["Veteran", "Stubborn"], "Ruler", "巴尔干战争统帅"),
+          successors: [p("乔治二世", "格吕克斯堡", "乔治", "王储", 24, 68, 76, 80, 78, ["Patient", "Diplomatic"], "Successor", "希腊王储")],
+          notables: [
+              p("埃莱夫塞里奥斯·韦尼泽洛斯", "韦尼泽洛斯", "埃莱夫塞里奥斯", "王国首相", 50, 72, 90, 92, 90, ["MasterDiplomat", "Visionary", "Reformer"], "Chancellor", "现代希腊缔造者"),
+              p("帕夫洛斯·孔图里奥蒂斯", "孔图里奥蒂斯", "帕夫洛斯", "海军上将", 59, 88, 78, 76, 86, ["NavalMastery", "Brave"], "Admiral", "爱琴海战神"),
           ],
-          parties: [pt("宪政军派", 46), pt("农民革命派", 30), pt("北方军阀派", 24)],
-          power: pw(ind: 0.95, mp: 1.10, mil: 3, eco: 3, sta: 3, nav: 2, fleets: 1, ships: 3, navBonus: 0.06,
-                    traits: ["CavalryTradition", "HomelandDefense", "FightToTheEnd"], lifetime: false, term: 4, warSupport: 76)
+          families: [f("格吕克斯堡", "希腊王室", 82, 80, ruling: true), f("韦尼泽洛斯", "自由党革新派", 78, 56)],
+          parties: [pt("希腊自由党", 58), pt("王室保守派", 42)],
+          power: pw(ind: 1.05, mp: 0.90, mil: 4, eco: 4, sta: 4, nav: 4, fleets: 2, ships: 5, navBonus: 0.20,
+                    traits: ["HomelandDefense", "CoreDefense"], lifetime: true, term: 40, warSupport: 74),
+          familyRelations: [fr("格吕克斯堡", "韦尼泽洛斯", -34)]
         ),
     ]
+
+    // MARK: - 剧本 8：民国危局 · 九一八事变（公元 1931 年 9 月 · 中国全图 · 11 势力）
+
+    private static let china1931: [HistoricalNationRoster] = [
+        // 0 南京国民政府
+        n(0,
+          founder: p("蒋中正", "蒋", "中正", "国民政府主席", 44, 82, 84, 86, 86, ["Stubborn", "IronFist", "Diplomatic"], "Ruler", "南京国民政府主席"),
+          successors: [
+              p("林森", "林", "森", "国民政府主席", 63, 56, 82, 84, 84, ["Benevolent", "Patient"], "Successor", "国府元老"),
+              p("李宗仁", "李", "宗仁", "一级上将", 40, 91, 82, 82, 88, ["Tactician", "BattleHardened"], "Successor", "桂系名将"),
+          ],
+          notables: [
+              p("何应钦", "何", "应钦", "军政部长", 41, 82, 84, 78, 78, ["Administrator", "Veteran"], "Chancellor", "中央军总长"),
+              p("蔡廷锴", "蔡", "廷锴", "第十九路军军长", 39, 90, 76, 74, 88, ["Brave", "BattleHardened", "Tactician"], "WarCommander", "一二八淞沪抗战名将"),
+              p("薛岳", "薛", "岳", "陆军中将", 35, 93, 76, 72, 88, ["Brave", "Tactician", "BattleHardened"], "WarCommander", "华南猛将"),
+              p("张治中", "张", "治中", "第五军军长", 41, 86, 82, 82, 84, ["Diplomatic", "Veteran"], "WarCommander", "淞沪抗战主力将领"),
+              p("陈绍宽", "陈", "绍宽", "海军部长·上将", 42, 82, 80, 76, 80, ["NavalMastery", "Patient"], "Admiral", "民国海军总长"),
+          ],
+          families: [f("蒋", "黄埔中央系", 88, 84, ruling: true), f("宋", "江浙财政系", 76, 80), f("陈", "CC系政学系", 72, 76)],
+          parties: [pt("中国国民党中央派", 74), pt("国民党改组派", 26)],
+          power: pw(ind: 0.72, mp: 1.90, mil: 3, eco: 3, sta: 3, nav: 2, fleets: 1, ships: 3, navBonus: 0.04,
+                    traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 70)
+        ),
+        // 1 东北边防军（张学良）
+        n(1,
+          founder: p("张学良", "张", "学良", "东北边防军司令长官", 30, 78, 76, 80, 86, ["Charismatic", "Brave", "Patient"], "Ruler", "少帅·陆海空军副总司令"),
+          successors: [p("杨虎城", "杨", "虎城", "第十七路军总指挥", 38, 84, 78, 76, 84, ["Brave", "Stubborn"], "Successor", "西北军名将")],
+          notables: [
+              p("马占山", "马", "占山", "黑龙江省代主席", 46, 89, 74, 72, 88, ["Brave", "BattleHardened", "DefyTheStrong"], "WarCommander", "江桥抗战第一枪英雄"),
+              p("王以哲", "王", "以哲", "东北军第七旅旅长", 35, 86, 76, 74, 82, ["Tactician", "Brave"], "WarCommander", "北大营抗战名将"),
+              p("沈鸿烈", "沈", "鸿烈", "东北海军总司令", 49, 82, 80, 76, 80, ["NavalMastery", "Administrator"], "Admiral", "东北海军缔造者"),
+          ],
+          families: [f("张", "奉系帅府", 88, 84, ruling: true), f("于", "东北军老帅将门", 74, 78)],
+          parties: [pt("奉系东北军", 78), pt("东北抗日义勇军派", 22)],
+          power: pw(ind: 0.88, mp: 1.35, mil: 3, eco: 3, sta: 3, nav: 2, fleets: 1, ships: 4, navBonus: 0.06,
+                    traits: ["HomelandDefense", "CoreDefense"], lifetime: true, term: 40, warSupport: 82)
+        ),
+        // 2 中华苏维埃（瑞金红军）
+        n(2,
+          founder: p("毛泽东", "毛", "泽东", "中华苏维埃主席", 38, 96, 94, 90, 96, ["Genius", "Strategist", "Visionary", "Beloved"], "Ruler", "中央苏区领袖"),
+          successors: [p("周恩来", "周", "恩来", "军委副主席", 33, 84, 96, 98, 96, ["Genius", "MasterDiplomat", "Administrator"], "Successor", "红军总政委")],
+          notables: [
+              p("朱德", "朱", "德", "中国工农红军总司令", 45, 95, 84, 80, 94, ["Veteran", "BattleHardened", "NaturalLeader"], "WarCommander", "红军之父"),
+              p("彭德怀", "彭", "德怀", "红三军团军团长", 33, 96, 80, 72, 90, ["Brave", "BattleHardened", "IronFist"], "WarCommander", "横刀立马彭大将军"),
+              p("林彪", "林", "彪", "红一军团军团长", 24, 96, 76, 68, 84, ["Genius", "Tactician", "Strategist"], "WarCommander", "反围剿奇袭名将"),
+              p("粟裕", "粟", "裕", "红四军参谋长", 24, 95, 80, 72, 86, ["Genius", "Tactician"], "WarCommander", "机动战天才"),
+          ],
+          families: [f("毛", "中央苏区执委会", 92, 88, ruling: true), f("朱", "红一方面军总部", 84, 90)],
+          parties: [pt("中国共产党", 100)],
+          power: pw(ind: 0.30, mp: 1.25, mil: 2, eco: 2, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["HomelandDefense", "FightToTheEnd"], lifetime: true, term: 40, warSupport: 96)
+        ),
+        // 3 大日本帝国·关东军（1931 昭和天皇裕仁 + 若槻礼次郎首相 + 本庄繁关东军司令）
+        n(3,
+          founder: p("裕仁", "", "裕仁", "天皇", 30, 74, 78, 74, 82, ["Stubborn", "Patient", "NaturalLeader"], "Ruler", "昭和天皇（日本皇室无姓氏）"),
+          successors: [p("明仁", "", "明仁", "皇太子", 18, 58, 80, 86, 84, ["Benevolent", "Dovish"], "Successor", "皇太子")],
+          notables: [
+              p("本庄繁", "本庄", "繁", "关东军司令官", 55, 86, 78, 66, 80, ["Hawkish", "IronFist", "Veteran"], "Chancellor", "九一八关东军司令"),
+              p("石原莞尔", "石原", "莞尔", "关东军作战主任参谋", 42, 90, 82, 68, 80, ["Strategist", "Ambitious", "Tactician"], "WarCommander", "柳条湖事件策划者"),
+              p("板垣征四郎", "板垣", "征四郎", "关东军高级参谋", 46, 86, 76, 66, 78, ["Hawkish", "BattleHardened"], "WarCommander", "关东军激进派主将"),
+              p("山本五十六", "山本", "五十六", "海军航空本部技术部长", 47, 96, 86, 82, 92, ["Genius", "NavalMastery", "ShipMaster"], "Admiral", "帝国海军航空先驱"),
+          ],
+          families: [
+              f("", "日本皇室", 94, 88, ruling: true),
+              f("本庄", "关东军少壮派", 86, 60),
+              f("山本", "帝国海军舰队派", 82, 74),
+              f("三井", "满铁与财阀团", 78, 76),
+          ],
+          parties: [pt("立宪民政党", 48), pt("立宪政友会", 32), pt("军部统制派", 20)],
+          power: pw(ind: 3.30, mp: 1.45, mil: 6, eco: 6, sta: 5, nav: 6, fleets: 5, ships: 10, navBonus: 0.50,
+                    traits: ["FieldCombatElite", "WellTrained", "Conqueror", "SiegeCapture"], lifetime: true, term: 40, warSupport: 88),
+          familyRelations: [fr("本庄", "山本", -42)],
+          fixedEraName: "昭和"
+        ),
+        // 4 晋绥军政府
+        n(4,
+          founder: p("阎锡山", "阎", "锡山", "太原绥靖公署主任", 48, 80, 88, 84, 80, ["Financier", "Administrator", "Patient"], "Ruler", "山西王·晋绥领袖"),
+          successors: [p("傅作义", "傅", "作义", "第三十五军军长", 36, 92, 82, 78, 88, ["Tactician", "BattleHardened", "Brave"], "Successor", "绥远抗战英雄")],
+          notables: [
+              p("傅作义", "傅", "作义", "第三十五军军长", 36, 92, 82, 78, 88, ["Tactician", "BattleHardened", "Brave"], "WarCommander", "百灵庙大捷名将"),
+              p("徐永昌", "徐", "永昌", "山西省主席", 44, 82, 84, 80, 82, ["Patient", "Administrator"], "Chancellor", "晋绥重臣"),
+          ],
+          families: [f("阎", "晋绥实业军政系", 88, 84, ruling: true), f("傅", "绥远守边将门", 76, 80)],
+          parties: [pt("晋绥军政系", 100)],
+          power: pw(ind: 0.78, mp: 1.05, mil: 3, eco: 4, sta: 4, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 78)
+        ),
+        // 5 新桂系
+        n(5,
+          founder: p("李宗仁", "李", "宗仁", "第四集团军总司令", 40, 91, 82, 82, 88, ["Tactician", "BattleHardened", "NaturalLeader"], "Ruler", "新桂系领袖"),
+          successors: [p("白崇禧", "白", "崇禧", "副总司令", 38, 94, 84, 82, 86, ["Genius", "Strategist", "Tactician"], "Successor", "小诸葛")],
+          notables: [p("白崇禧", "白", "崇禧", "第四集团军副总司令", 38, 94, 84, 82, 86, ["Genius", "Strategist", "Tactician"], "WarCommander", "桂军大脑")],
+          families: [f("李", "新桂系军团", 88, 86, ruling: true), f("白", "桂系参谋将门", 84, 90)],
+          parties: [pt("新桂系", 100)],
+          power: pw(ind: 0.62, mp: 1.15, mil: 4, eco: 3, sta: 4, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["FieldCombatElite", "FightToTheEnd"], lifetime: true, term: 40, warSupport: 86)
+        ),
+        // 6 川军与西南
+        n(6,
+          founder: p("刘湘", "刘", "湘", "川军总司令", 43, 84, 80, 76, 84, ["BattleHardened", "Brave", "Veteran"], "Ruler", "四川王·出川抗日名将"),
+          successors: [p("龙云", "龙", "云", "云南省主席", 47, 82, 80, 78, 82, ["Patient", "Veteran"], "Successor", "云南王")],
+          notables: [
+              p("王铭章", "王", "铭章", "川军师长", 38, 90, 74, 70, 88, ["Brave", "BattleHardened", "Stubborn"], "WarCommander", "滕县血战忠魂"),
+              p("龙云", "龙", "云", "滇军总司令", 47, 82, 80, 78, 82, ["Veteran", "Administrator"], "Chancellor", "云南主政者"),
+          ],
+          families: [f("刘", "川军速成系", 84, 82, ruling: true), f("龙", "滇军将门", 76, 76)],
+          parties: [pt("川军各防区", 68), pt("滇军系", 32)],
+          power: pw(ind: 0.60, mp: 1.55, mil: 2, eco: 3, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["HomelandDefense", "FightToTheEnd"], lifetime: true, term: 40, warSupport: 84)
+        ),
+        // 7 西北马家军
+        n(7,
+          founder: p("马鸿逵", "马", "鸿逵", "宁夏省主席", 39, 80, 74, 72, 78, ["IronFist", "BattleHardened"], "Ruler", "宁夏马家军首领"),
+          successors: [p("马步芳", "马", "步芳", "青海省主席", 28, 82, 70, 68, 76, ["Hawkish", "IronFist"], "Successor", "青马骑兵统领")],
+          notables: [p("马步芳", "马", "步芳", "骑兵旅长", 28, 82, 70, 68, 76, ["BattleHardened", "Brave"], "WarCommander", "西北骑兵主将")],
+          families: [f("马", "西北马氏将门", 88, 84, ruling: true)],
+          parties: [pt("西北马家军", 100)],
+          power: pw(ind: 0.45, mp: 0.95, mil: 3, eco: 2, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["CavalryTradition", "HomelandDefense"], lifetime: true, term: 40, warSupport: 78)
+        ),
+        // 8 新疆省政府
+        n(8,
+          founder: p("盛世才", "盛", "世才", "新疆边防督办", 36, 80, 78, 76, 74, ["Ambitious", "IronFist"], "Ruler", "新疆督办"),
+          successors: [p("金树仁", "金", "树仁", "省主席", 52, 64, 68, 68, 66, ["Stubborn", "Paranoid"], "Successor", "前省主席")],
+          notables: [p("张培元", "张", "培元", "伊犁屯垦使", 37, 80, 72, 70, 76, ["Brave", "Veteran"], "WarCommander", "伊犁守将")],
+          families: [f("盛", "迪化督办署", 82, 80, ruling: true)],
+          parties: [pt("新疆边防督办署", 100)],
+          power: pw(ind: 0.42, mp: 0.75, mil: 2, eco: 2, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["HomelandDefense"], lifetime: true, term: 40, warSupport: 68)
+        ),
+        // 9 苏联远东
+        n(9,
+          founder: p("瓦西里·布柳赫尔", "布柳赫尔", "瓦西里", "远东特别集团军元帅", 41, 93, 82, 76, 90, ["Strategist", "BattleHardened", "NaturalLeader"], "Ruler", "苏联元帅·远东统帅"),
+          successors: [p("格奥尔基·朱可夫", "朱可夫", "格奥尔基", "苏联元帅", 35, 97, 84, 74, 92, ["Genius", "BattleHardened", "Strategist"], "Successor", "诺门罕胜帅")],
+          notables: [p("格奥尔基·朱可夫", "朱可夫", "格奥尔基", "装甲军军长", 35, 97, 84, 74, 92, ["Genius", "BattleHardened", "Strategist"], "WarCommander", "未来胜利元帅")],
+          families: [f("布柳赫尔", "远东红旗集团军", 88, 82, ruling: true)],
+          parties: [pt("苏联共产党", 100)],
+          power: pw(ind: 1.65, mp: 1.40, mil: 5, eco: 4, sta: 5, nav: 3, fleets: 2, ships: 5, navBonus: 0.16,
+                    traits: ["HomelandDefense", "WellTrained"], lifetime: true, term: 40, warSupport: 84)
+        ),
+        // 10 外蒙古
+        n(10,
+          founder: p("霍尔洛·乔巴山", "乔巴山", "霍尔洛", "蒙古元帅", 36, 84, 78, 76, 82, ["IronFist", "Veteran"], "Ruler", "蒙古人民军元帅"),
+          successors: [p("尤睦佳·泽登巴尔", "泽登巴尔", "尤睦佳", "总书记", 20, 66, 80, 78, 76, ["Administrator", "Patient"], "Successor", "接班人")],
+          notables: [p("格勒格道尔吉·德米德", "德米德", "格勒格道尔吉", "骑兵元帅", 31, 86, 74, 70, 82, ["Brave", "BattleHardened"], "WarCommander", "草原骑兵名将")],
+          families: [f("乔巴山", "蒙古人民革命党", 84, 82, ruling: true)],
+          parties: [pt("蒙古人民革命党", 100)],
+          power: pw(ind: 0.45, mp: 0.70, mil: 3, eco: 2, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["CavalryTradition", "HomelandDefense"], lifetime: true, term: 40, warSupport: 78)
+        ),
+    ]
+
+    // MARK: - 剧本 9：二战前夜 · 欧陆风云（公元 1936 年 · 28 国完整还原奥地利/捷克斯洛伐克/低地三国）
+
+    private static let ww2Eve1936: [HistoricalNationRoster] = {
+        // 复用 1939 欧洲 27 国高精名录基座，精准替换为 1936 真实领袖并加入独立奥地利(23)与捷克斯洛伐克(24)
+        var list = ww2Europe1939.map { item -> HistoricalNationRoster in
+            var copy = item
+            if item.nationIndex >= 24 { copy.nationIndex = item.nationIndex + 1 }
+            return copy
+        }
+        // 替换 3 法国 1936 人民阵线总理莱昂·布鲁姆
+        if let idx = list.firstIndex(where: { $0.nationIndex == 3 }) {
+            list[idx].founder = p("莱昂·布鲁姆", "布鲁姆", "莱昂", "法兰西总理", 64, 64, 80, 82, 80, ["Reformer", "Scholar", "Diplomatic"], "Ruler", "人民阵线总理")
+        }
+        // 替换 6 西班牙第二共和国总统阿萨尼亚
+        if let idx = list.firstIndex(where: { $0.nationIndex == 6 }) {
+            list[idx].founder = p("曼努埃尔·阿萨尼亚", "阿萨尼亚", "曼努埃尔", "西班牙共和国总统", 56, 66, 80, 80, 82, ["Scholar", "Reformer", "Patient"], "Ruler", "第二共和国总统")
+        }
+        // 替换 15 土耳其国父凯末尔（1936 在世）
+        if let idx = list.firstIndex(where: { $0.nationIndex == 15 }) {
+            list[idx].founder = p("穆斯塔法·凯末尔", "阿塔图尔克", "穆斯塔法·凯末尔", "土耳其国父·总统", 55, 95, 94, 92, 96, ["Genius", "Reformer", "Unifier", "Visionary"], "Ruler", "土耳其国父")
+        }
+        // 替换 23 为独立奥地利联邦国
+        list.removeAll { $0.nationIndex == 23 }
+        list.append(n(23,
+          founder: p("库尔特·许士尼格", "许士尼格", "库尔特", "奥地利联邦总理", 38, 66, 80, 78, 76, ["Patient", "Dovish", "Administrator"], "Ruler", "奥地利末任独立总理"),
+          successors: [p("威廉·米克拉斯", "米克拉斯", "威廉", "联邦总统", 64, 58, 78, 80, 76, ["Patient", "Just"], "Successor", "奥地利总统")],
+          notables: [p("阿尔弗雷德·扬萨", "扬萨", "阿尔弗雷德", "总参谋长", 52, 84, 78, 72, 78, ["Strategist", "Veteran"], "WarCommander", "奥地利国防军参谋长")],
+          families: [f("许士尼格", "维也纳祖国阵线", 80, 80, ruling: true), f("哈布斯堡", "奥地利旧皇室", 68, 70)],
+          parties: [pt("祖国阵线", 72), pt("社会民主党", 28)],
+          power: pw(ind: 1.30, mp: 0.78, mil: 4, eco: 5, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["CoreDefense", "HomelandDefense"], lifetime: false, term: 4, warSupport: 64)
+        ))
+        // 插入 24 捷克斯洛伐克（军工强国斯柯达+苏台德堡垒）
+        list.append(n(24,
+          founder: p("爱德华·贝奈斯", "贝奈斯", "爱德华", "捷克斯洛伐克总统", 52, 74, 88, 88, 84, ["MasterDiplomat", "Administrator", "Scholar"], "Ruler", "捷克斯洛伐克总统"),
+          successors: [p("扬·西罗维", "西罗维", "扬", "陆军上将·总理", 48, 86, 80, 74, 84, ["BattleHardened", "Brave"], "Successor", "独眼战神总理")],
+          notables: [
+              p("扬·西罗维", "西罗维", "扬", "总督察·上将", 48, 86, 80, 74, 84, ["BattleHardened", "Brave", "Veteran"], "WarCommander", "捷克陆军名将"),
+              p("卢德维克·克雷伊奇", "克雷伊奇", "卢德维克", "总参谋长", 46, 88, 82, 72, 80, ["Strategist", "Tactician"], "WarCommander", "苏台德防线设计师"),
+          ],
+          families: [f("贝奈斯", "布拉格共和派", 84, 82, ruling: true), f("斯柯达", "比尔森重工军工集团", 80, 82)],
+          parties: [pt("农业党", 36), pt("国家社会党", 34), pt("社会民主党", 30)],
+          power: pw(ind: 2.15, mp: 1.05, mil: 5, eco: 6, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["WellTrained", "CoreDefense", "HomelandDefense"], lifetime: false, term: 7, warSupport: 86)
+        ))
+        return list.sorted { $0.nationIndex < $1.nationIndex }
+    }()
 
     // MARK: - 剧本 8：第二次世界大战 · 欧洲风暴（公元 1939 年，16 国）
 
@@ -3230,11 +3433,10 @@ public enum HistoricalRoster {
           power: pw(ind: 1.35, mp: 0.75, mil: 3, eco: 5, sta: 5, nav: 4, fleets: 2, ships: 5, navBonus: 0.18,
                     traits: ["HomelandDefense", "CoreDefense"], lifetime: true, term: 40, warSupport: 72)
         ),
-        // 10 低地联盟
+        // 10 荷兰王国（v8.0.0 与比利时/卢森堡彻底分立！）
         n(10,
           founder: p("威廉明娜", "奥兰治-拿骚", "威廉明娜", "荷兰女王", 59, 72, 86, 88, 90, ["Stubborn", "Brave", "Beloved", "NaturalLeader"], "Ruler", "流亡抵抗象征女王", gender: 1),
           successors: [
-              p("利奥波德三世", "萨克森-科堡", "利奥波德", "比利时国王", 38, 72, 78, 76, 78, ["Stubborn", "Patient"], "Successor", "比利时国王"),
               p("朱丽安娜", "奥兰治-拿骚", "朱丽安娜", "荷兰女王", 30, 60, 84, 86, 86, ["Benevolent", "Diplomatic", "Beloved"], "Successor", "王储", gender: 1),
           ],
           notables: [
@@ -3242,11 +3444,11 @@ public enum HistoricalRoster {
               p("卡雷尔·多尔曼", "多尔曼", "卡雷尔", "海军少将", 50, 86, 74, 70, 84, ["NavalMastery", "Brave", "ShipMaster"], "Admiral", "爪哇海舰队司令"),
           ],
           families: [
-              f("奥兰治-拿骚", "荷兰王室", 88, 80, ruling: true),
-              f("萨克森-科堡", "比利时王室", 76, 76),
+              f("奥兰治-拿骚", "荷兰王室", 88, 84, ruling: true),
+              f("德海尔", "海牙内阁派", 74, 78),
           ],
-          parties: [pt("天主教国家党", 38), pt("社会民主工党", 34), pt("自由国家党", 28)],
-          power: pw(ind: 2.05, mp: 1.00, mil: 4, eco: 6, sta: 5, nav: 4, fleets: 3, ships: 6, navBonus: 0.22,
+          parties: [pt("天主教国家党", 38), pt("社会民主工党", 34), pt("反革命党", 28)],
+          power: pw(ind: 1.65, mp: 0.78, mil: 4, eco: 6, sta: 5, nav: 4, fleets: 3, ships: 6, navBonus: 0.22,
                     traits: ["CoreDefense", "StrengthenCore"], lifetime: true, term: 40, warSupport: 70)
         ),
         // 11 罗马尼亚
@@ -3339,6 +3541,119 @@ public enum HistoricalRoster {
           parties: [pt("共和人民党", 76), pt("独立民主派", 24)],
           power: pw(ind: 1.25, mp: 1.20, mil: 4, eco: 4, sta: 5, nav: 2, fleets: 1, ships: 4, navBonus: 0.10,
                     traits: ["HomelandDefense", "CoreDefense"], lifetime: false, term: 4, warSupport: 72)
+        ),
+        // 16 比利时王国
+        n(16,
+          founder: p("利奥波德三世", "萨克森-科堡", "利奥波德", "比利时国王", 38, 74, 78, 76, 78, ["Stubborn", "Patient"], "Ruler", "比利时国王"),
+          successors: [p("博杜安", "萨克森-科堡", "博杜安", "王储", 18, 66, 80, 84, 84, ["Benevolent", "Just"], "Successor", "比利时王储")],
+          notables: [
+              p("于贝尔·皮埃洛", "皮埃洛", "于贝尔", "比利时首相", 55, 62, 82, 80, 78, ["Administrator", "Stubborn"], "Chancellor", "战时流亡首相"),
+              p("拉乌尔·范·奥弗斯特拉滕", "奥弗斯特拉滕", "拉乌尔", "军事顾问·少将", 54, 82, 78, 72, 76, ["Strategist", "Veteran"], "WarCommander", "比军参谋主将"),
+          ],
+          families: [f("萨克森-科堡", "比利时王室", 84, 80, ruling: true)],
+          parties: [pt("天主教联盟", 42), pt("比利时工党", 36), pt("自由党", 22)],
+          power: pw(ind: 1.65, mp: 0.80, mil: 4, eco: 6, sta: 5, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
+                    traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 76)
+        ),
+        // 17 卢森堡大公国
+        n(17,
+          founder: p("夏洛特女大公", "拿骚-魏尔堡", "夏洛特", "卢森堡女大公", 43, 56, 82, 86, 88, ["Dovish", "Beloved"], "Ruler", "卢森堡抵抗象征", gender: 1),
+          successors: [p("让大公", "拿骚-魏尔堡", "让", "王储", 18, 66, 82, 84, 84, ["Brave", "Just"], "Successor", "卢森堡储君")],
+          notables: [p("皮埃尔·迪蓬", "迪蓬", "皮埃尔", "卢森堡首相", 54, 56, 84, 84, 80, ["Administrator", "Diplomatic"], "Chancellor", "流亡政府首相")],
+          families: [f("拿骚-魏尔堡", "卢森堡大公室", 84, 84, ruling: true)],
+          parties: [pt("右翼党", 52), pt("工人党", 48)],
+          power: pw(ind: 0.72, mp: 0.38, mil: 3, eco: 5, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 60)
+        ),
+        // 18 瑞士联邦
+        n(18,
+          founder: p("亨利·吉桑", "吉桑", "亨利", "瑞士联邦总司令", 64, 88, 88, 88, 90, ["Strategist", "Patient", "Just", "Beloved"], "Ruler", "阿尔卑斯堡垒总司令"),
+          successors: [p("马塞尔·皮莱-戈拉兹", "皮莱-戈拉兹", "马塞尔", "联邦主席", 50, 58, 86, 88, 80, ["MasterDiplomat", "Financier"], "Successor", "联邦主席")],
+          notables: [p("恩斯特·诺布斯", "诺布斯", "恩斯特", "联邦委员", 53, 58, 86, 84, 80, ["Financier", "Administrator"], "Chancellor", "瑞士战时财长")],
+          families: [f("吉桑", "联邦武装中立派", 84, 84, ruling: true)],
+          parties: [pt("自由民主党", 42), pt("社会民主党", 32), pt("天主教保守党", 26)],
+          power: pw(ind: 1.95, mp: 0.78, mil: 5, eco: 6, sta: 6, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["HomelandDefense", "CoreDefense", "WellTrained"], lifetime: false, term: 4, warSupport: 84)
+        ),
+        // 19 丹麦王国
+        n(19,
+          founder: p("克里斯蒂安十世", "格吕克斯堡", "克里斯蒂安", "丹麦国王", 64, 66, 82, 84, 90, ["Just", "Beloved", "Patient"], "Ruler", "哥本哈根骑马国王"),
+          successors: [p("腓特烈九世", "格吕克斯堡", "腓特烈", "王储", 40, 68, 80, 82, 84, ["NavalMastery", "Beloved"], "Successor", "丹麦王储")],
+          notables: [p("索瓦尔·斯陶宁", "斯陶宁", "索瓦尔", "丹麦首相", 64, 58, 86, 84, 84, ["Benevolent", "Administrator"], "Chancellor", "社会民主党首相")],
+          families: [f("格吕克斯堡", "丹麦王室", 86, 84, ruling: true)],
+          parties: [pt("社会民主党", 52), pt("自由党", 28), pt("保守人民党", 20)],
+          power: pw(ind: 1.35, mp: 0.65, mil: 3, eco: 5, sta: 5, nav: 3, fleets: 2, ships: 4, navBonus: 0.14,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 64)
+        ),
+        // 20 葡萄牙共和国
+        n(20,
+          founder: p("安东尼奥·萨拉查", "萨拉查", "安东尼奥", "部长会议主席", 50, 66, 88, 86, 78, ["Financier", "Patient", "Administrator"], "Ruler", "新国家体制总理"),
+          successors: [p("奥斯卡·卡尔莫纳", "卡尔莫纳", "奥斯卡", "总统·元帅", 64, 74, 78, 78, 78, ["Veteran", "Patient"], "Successor", "共和国总统")],
+          notables: [p("费尔南多·桑托斯·科斯塔", "科斯塔", "费尔南多", "陆军部长", 40, 80, 80, 74, 76, ["Administrator", "Veteran"], "WarCommander", "葡军重整大臣")],
+          families: [f("萨拉查", "里斯本新国家派", 84, 82, ruling: true)],
+          parties: [pt("国民联盟", 100)],
+          power: pw(ind: 1.05, mp: 0.78, mil: 3, eco: 4, sta: 5, nav: 3, fleets: 2, ships: 4, navBonus: 0.14,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 60)
+        ),
+        // 21 爱尔兰自由邦
+        n(21,
+          founder: p("埃蒙·德瓦莱拉", "德瓦莱拉", "埃蒙", "爱尔兰总理", 56, 70, 84, 86, 84, ["Stubborn", "Diplomatic", "Scholar"], "Ruler", "爱尔兰战时中立总理"),
+          successors: [p("肖恩·勒马斯", "勒马斯", "肖恩", "副总理", 40, 68, 86, 82, 82, ["Financier", "Reformer"], "Successor", "爱尔兰经济改革家")],
+          notables: [p("丹尼尔·麦肯纳", "麦肯纳", "丹尼尔", "总参谋长", 47, 80, 78, 72, 78, ["Veteran", "Patient"], "WarCommander", "爱尔兰国防军参谋长")],
+          families: [f("德瓦莱拉", "共和党执政系", 82, 82, ruling: true)],
+          parties: [pt("共和党", 56), pt("统一党", 30), pt("工党", 14)],
+          power: pw(ind: 0.95, mp: 0.62, mil: 3, eco: 4, sta: 5, nav: 2, fleets: 1, ships: 2, navBonus: 0.06,
+                    traits: ["HomelandDefense"], lifetime: false, term: 5, warSupport: 68)
+        ),
+        // 22 保加利亚王国
+        n(22,
+          founder: p("鲍里斯三世", "萨克森-科堡", "鲍里斯", "保加利亚沙皇", 45, 74, 80, 86, 84, ["MasterDiplomat", "Patient", "Beloved"], "Ruler", "务实沙皇"),
+          successors: [p("西美昂二世", "萨克森-科堡", "西美昂", "王储", 18, 60, 76, 80, 80, ["Patient", "Diplomatic"], "Successor", "幼主")],
+          notables: [p("尼古拉·米霍夫", "米霍夫", "尼古拉", "陆军中将", 48, 82, 76, 70, 78, ["Veteran", "BattleHardened"], "WarCommander", "保军战争部长")],
+          families: [f("萨克森-科堡", "保加利亚王室", 84, 82, ruling: true)],
+          parties: [pt("王室保守派", 70), pt("农民联盟", 30)],
+          power: pw(ind: 1.05, mp: 0.92, mil: 4, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.06,
+                    traits: ["CoreDefense", "WellTrained"], lifetime: true, term: 40, warSupport: 70)
+        ),
+        // 23 斯洛伐克共和国（1939 德国附庸）
+        n(23,
+          founder: p("约瑟夫·蒂索", "蒂索", "约瑟夫", "斯洛伐克总统", 51, 60, 74, 70, 72, ["Dovish", "Patient"], "Ruler", "布拉迪斯拉发总统"),
+          successors: [p("沃伊捷赫·图卡", "图卡", "沃伊捷赫", "总理", 59, 60, 70, 68, 66, ["IronFist", "Stubborn"], "Successor", "斯洛伐克总理")],
+          notables: [p("费迪南德·恰特洛什", "恰特洛什", "费迪南德", "国防部长", 44, 78, 74, 68, 74, ["Veteran"], "WarCommander", "斯洛伐克机动师司令")],
+          families: [f("蒂索", "斯洛伐克人民党", 76, 80, ruling: true)],
+          parties: [pt("斯洛伐克人民党", 100)],
+          power: pw(ind: 0.95, mp: 0.65, mil: 3, eco: 4, sta: 4, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 58)
+        ),
+        // 24 立陶宛共和国
+        n(24,
+          founder: p("安塔纳斯·斯梅托纳", "斯梅托纳", "安塔纳斯", "立陶宛总统", 64, 66, 78, 76, 76, ["Stubborn", "Patient"], "Ruler", "立陶宛总统"),
+          successors: [p("斯塔西斯·拉什蒂基斯", "拉什蒂基斯", "斯塔西斯", "陆军总司令", 43, 82, 76, 72, 78, ["Veteran", "Brave"], "Successor", "立军总司令")],
+          notables: [p("斯塔西斯·拉什蒂基斯", "拉什蒂基斯", "斯塔西斯", "总司令", 43, 82, 76, 72, 78, ["Veteran", "Brave"], "WarCommander", "波罗的海守军将领")],
+          families: [f("斯梅托纳", "立陶宛民族联盟", 78, 80, ruling: true)],
+          parties: [pt("立陶宛民族联盟", 100)],
+          power: pw(ind: 0.78, mp: 0.60, mil: 3, eco: 4, sta: 4, nav: 1, fleets: 0, ships: 2, navBonus: 0.04,
+                    traits: ["HomelandDefense"], lifetime: true, term: 40, warSupport: 70)
+        ),
+        // 25 拉脱维亚共和国
+        n(25,
+          founder: p("卡尔利斯·乌尔马尼斯", "乌尔马尼斯", "卡尔利斯", "拉脱维亚总统", 62, 66, 80, 76, 80, ["Administrator", "Patient"], "Ruler", "拉脱维亚国父总统"),
+          successors: [p("克里斯亚尼斯·贝尔基斯", "贝尔基斯", "克里斯亚尼斯", "陆军上将", 55, 80, 76, 70, 78, ["Veteran", "Brave"], "Successor", "拉脱维亚陆军总司令")],
+          notables: [p("克里斯亚尼斯·贝尔基斯", "贝尔基斯", "克里斯亚尼斯", "总司令", 55, 80, 76, 70, 78, ["Veteran", "Brave"], "WarCommander", "里加守将")],
+          families: [f("乌尔马尼斯", "农民联盟派", 80, 82, ruling: true)],
+          parties: [pt("拉脱维亚农民联盟", 100)],
+          power: pw(ind: 0.78, mp: 0.55, mil: 3, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 2, navBonus: 0.06,
+                    traits: ["HomelandDefense"], lifetime: true, term: 40, warSupport: 70)
+        ),
+        // 26 爱沙尼亚共和国
+        n(26,
+          founder: p("康斯坦丁·帕茨", "帕茨", "康斯坦丁", "爱沙尼亚总统", 64, 66, 80, 78, 78, ["Administrator", "Lawgiver"], "Ruler", "爱沙尼亚总统"),
+          successors: [p("约翰·莱多内尔", "莱多内尔", "约翰", "陆军总司令", 55, 84, 78, 74, 82, ["Tactician", "Veteran"], "Successor", "独立战争英雄")],
+          notables: [p("约翰·莱多内尔", "莱多内尔", "约翰", "总司令", 55, 84, 78, 74, 82, ["Tactician", "Veteran"], "WarCommander", "爱沙尼亚名将")],
+          families: [f("帕茨", "塔林爱国阵线", 78, 80, ruling: true)],
+          parties: [pt("爱国联盟", 100)],
+          power: pw(ind: 0.75, mp: 0.50, mil: 3, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 2, navBonus: 0.06,
+                    traits: ["HomelandDefense"], lifetime: true, term: 40, warSupport: 70)
         ),
     ]
 
@@ -3552,6 +3867,49 @@ public enum HistoricalRoster {
           parties: [pt("人民党军人派", 62), pt("自由泰派", 38)],
           power: pw(ind: 0.95, mp: 0.95, mil: 3, eco: 3, sta: 4, nav: 2, fleets: 1, ships: 4, navBonus: 0.10,
                     traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 64)
+        ),
+        // 9 英属马来与新加坡
+        n(9,
+          founder: p("亚瑟·帕西瓦尔", "帕西瓦尔", "亚瑟", "马来亚总司令·中将", 54, 74, 78, 74, 76, ["Patient", "Veteran"], "Ruler", "新加坡要塞司令"),
+          successors: [p("托马斯·菲利普斯", "菲利普斯", "托马斯", "Z舰队司令·上将", 53, 84, 76, 72, 82, ["NavalMastery", "Brave"], "Successor", "远东舰队司令")],
+          notables: [p("托马斯·菲利普斯", "菲利普斯", "托马斯", "Z舰队司令", 53, 84, 76, 72, 82, ["NavalMastery", "Brave"], "Admiral", "威尔士亲王号司令")],
+          families: [f("帕西瓦尔", "新加坡远东司令部", 78, 80, ruling: true)],
+          parties: [pt("海峡殖民地总督府", 100)],
+          power: pw(ind: 1.15, mp: 0.85, mil: 4, eco: 5, sta: 4, nav: 5, fleets: 2, ships: 6, navBonus: 0.28,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 72)
+        ),
+        // 10 荷属东印度
+        n(10,
+          founder: p("海因·特·波尔滕", "波尔滕", "海因", "荷印陆军总司令", 56, 78, 78, 76, 78, ["Brave", "Veteran"], "Ruler", "巴达维亚守将"),
+          successors: [p("康拉德·赫尔弗里希", "赫尔弗里希", "康拉德", "海军中将", 55, 86, 78, 74, 82, ["NavalMastery", "Tactician"], "Successor", "荷印海军司令")],
+          notables: [p("卡雷尔·多尔曼", "多尔曼", "卡雷尔", "联合舰队司令", 52, 88, 74, 72, 86, ["NavalMastery", "Brave"], "Admiral", "爪哇海海战名将")],
+          families: [f("奥兰治-拿骚", "荷属东印度总督府", 80, 82, ruling: true)],
+          parties: [pt("巴达维亚总督府", 100)],
+          power: pw(ind: 1.25, mp: 1.10, mil: 3, eco: 5, sta: 4, nav: 4, fleets: 2, ships: 5, navBonus: 0.22,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 70)
+        ),
+        // 11 蒙古人民共和国
+        n(11,
+          founder: p("霍尔洛·乔巴山", "乔巴山", "霍尔洛", "蒙古元帅", 46, 84, 78, 76, 82, ["IronFist", "BattleHardened"], "Ruler", "蒙古人民军最高统帅"),
+          successors: [p("尤睦佳·泽登巴尔", "泽登巴尔", "尤睦佳", "总书记", 25, 68, 82, 78, 76, ["Administrator"], "Successor", "接班人")],
+          notables: [p("朱姆林·勒哈格瓦苏伦", "勒哈格瓦苏伦", "朱姆林", "骑兵军长", 29, 86, 76, 70, 82, ["Brave", "Tactician"], "WarCommander", "诺门罕骑兵英雄")],
+          families: [f("乔巴山", "蒙古人民革命党", 84, 84, ruling: true)],
+          parties: [pt("蒙古人民革命党", 100)],
+          power: pw(ind: 0.50, mp: 0.78, mil: 3, eco: 3, sta: 4, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["CavalryTradition", "HomelandDefense"], lifetime: true, term: 40, warSupport: 84)
+        ),
+        // 12 美军太平洋舰队
+        n(12,
+          founder: p("切斯特·尼米兹", "尼米兹", "切斯特", "太平洋舰队总司令·五星上将", 56, 97, 90, 84, 92, ["Genius", "NavalMastery", "ShipMaster", "Strategist"], "Ruler", "太平洋战场总司令"),
+          successors: [p("雷蒙德·斯普鲁恩斯", "斯普鲁恩斯", "雷蒙德", "第五舰队司令", 55, 96, 86, 78, 88, ["Genius", "NavalMastery", "Tactician"], "Successor", "中途岛胜帅")],
+          notables: [
+              p("雷蒙德·斯普鲁恩斯", "斯普鲁恩斯", "雷蒙德", "航母特混舰队司令", 55, 96, 86, 78, 88, ["Genius", "NavalMastery", "Tactician"], "Admiral", "中途岛奇迹指挥官"),
+              p("威廉·哈尔西", "哈尔西", "威廉", "第三舰队司令", 59, 93, 76, 72, 92, ["Brave", "NavalMastery", "Hawkish"], "Admiral", "公牛哈尔西"),
+          ],
+          families: [f("尼米兹", "美军太平洋司令部", 90, 86, ruling: true)],
+          parties: [pt("美军太平洋战区司令部", 100)],
+          power: pw(ind: 3.60, mp: 1.45, mil: 6, eco: 6, sta: 6, nav: 6, fleets: 6, ships: 12, navBonus: 0.52,
+                    traits: ["WellTrained", "FieldCombatElite", "StrengthenCore"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 94)
         ),
     ]
 

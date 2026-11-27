@@ -12,6 +12,8 @@ import LieguojiCore
     @Published var volume: Double { didSet { store(); player?.volume = Float(volume) } }
     @Published var sfx: Bool { didSet { store() } }
     @Published var sfxVolume: Double { didSet { store() } }
+    /// v8.0.0 音画方案：`"studio"`（重制版物理建模时代交响+实感拟音，须热更 v7 音画包）或 `"classic"`（经典原作纯古风音轨与柔和木石音效）。
+    @Published var audioProfile: String { didSet { store(); reloadAudioEngine() } }
     @Published var haptics: Bool { didSet { store() } }
     @Published var particles: Bool { didSet { store(); EffectsView.particles = particles } }
     /// Opening a big panel pauses the world (and the map redraws at 30 fps) until it closes.
@@ -31,27 +33,50 @@ import LieguojiCore
     static let tracks = ["deplasa-pe", "final-stance", "guild-of-adventurers", "land-of-heroes", "wonders-and-mysteries-alt"]
     static let trackNames = ["deplasa-pe": "Deplasa Pe", "final-stance": "Final Stance", "guild-of-adventurers": "Guild of Adventurers",
                              "land-of-heroes": "Land of Heroes", "wonders-and-mysteries-alt": "Wonders and Mysteries",
-                             "era-antiquity-1": "编钟古韵 · 青铜纪元交响", "era-antiquity-2": "战车金戈 · 远古征伐乐章", "era-antiquity-3": "礼乐大同 · 青铜终章",
-                             "era-medieval-1": "丝路胡笳 · 中古礼乐", "era-medieval-2": "铁骑长歌 · 封建史诗", "era-medieval-3": "盛世朝议 · 中古变奏",
-                             "era-gunpowder-1": "远洋战鼓 · 线列交响", "era-gunpowder-2": "炮火海权 · 帝国远征", "era-gunpowder-3": "启蒙长风 · 航海终章",
-                             "era-ww1-1": "铁血战壕 · 工业号角", "era-ww1-2": "无畏海疆 · 大战序曲", "era-ww1-3": "凡尔赛余晖 · 工业挽歌",
-                             "era-ww2-1": "钢铁风暴 · 二战史诗", "era-ww2-2": "决战风云 · 太平洋与东线", "era-ww2-3": "破晓凯歌 · 大战终章",
-                             "era-modern-1": "铁幕电波 · 冷战深空", "era-modern-2": "多极穹顶 · 现代风云", "era-modern-3": "星河远望 · 世纪新章"]
+                             "era-antiquity-1": "编钟古韵 · 青铜纪元交响", "era-antiquity-2": "战车金戈 · 远古征伐乐章", "era-antiquity-3": "礼乐大同 · 青铜终章", "era-antiquity-4": "山河赋 · 华夏远古变奏",
+                             "era-medieval-1": "丝路胡笳 · 中古礼乐", "era-medieval-2": "铁骑长歌 · 封建史诗", "era-medieval-3": "盛世朝议 · 中古变奏", "era-medieval-4": "长安月 · 丝路夜曲",
+                             "era-gunpowder-1": "远洋战鼓 · 线列交响", "era-gunpowder-2": "炮火海权 · 帝国远征", "era-gunpowder-3": "启蒙长风 · 航海终章", "era-gunpowder-4": "维也纳华章 · 帝国进行曲",
+                             "era-ww1-1": "铁血战壕 · 工业号角", "era-ww1-2": "无畏海疆 · 大战序曲", "era-ww1-3": "凡尔赛余晖 · 工业挽歌", "era-ww1-4": "马恩河晨雾 · 弦乐挽歌",
+                             "era-ww2-1": "钢铁风暴 · 二战史诗", "era-ww2-2": "决战风云 · 太平洋与东线", "era-ww2-3": "破晓凯歌 · 大战终章", "era-ww2-4": "山河不屈 · 抗战交响诗",
+                             "era-modern-1": "铁幕电波 · 冷战深空", "era-modern-2": "多极穹顶 · 现代风云", "era-modern-3": "星河远望 · 世纪新章", "era-modern-4": "和平曙光 · 宏大终章"]
     @Published private(set) var activeEraAudio: String = ""
     private var player: AVAudioPlayer?
     private var sfxPlayers = [InkSound: AVAudioPlayer]()
     private var queue: [String] = []
 
-    /// 切换历史时代时自动优先播放 HotPack v6 `AudioHD/` 中对应时代的高清交响三乐章与战场音效（实时热生效）。
+    /// 仅当热更 v7+ 重制母带标记 `AudioHD/studio-master-v8.json` 存在且用户选择重制方案时启用时代交响/拟音，
+    /// 彻底拦截旧版 v6 刺耳合成 WAV！
+    private var hasV8StudioMaster: Bool {
+        let marker = HotPackManager.rootURL.appendingPathComponent("AudioHD/studio-master-v8.json")
+        return FileManager.default.fileExists(atPath: marker.path)
+    }
+
+    private var useStudioAudio: Bool {
+        audioProfile == "studio" && hasV8StudioMaster
+    }
+
+    func reloadAudioEngine() {
+        sfxPlayers.removeAll()
+        queue.removeAll()
+        if music {
+            player?.stop()
+            player = nil
+            play()
+        }
+    }
+
+    /// 切换历史时代时按当前音画方案切曲（v8 物理建模重制时代交响 / 经典原作纯净原声）。
     func setHistoricalEra(_ eraId: String) {
         let clean = eraId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard clean != activeEraAudio else { return }
         activeEraAudio = clean
         sfxPlayers.removeAll()
+        guard useStudioAudio else { return }
         let eraTrack1 = "era-\(clean)-1"
         let eraTrack2 = "era-\(clean)-2"
         let eraTrack3 = "era-\(clean)-3"
-        for t in [eraTrack3, eraTrack2] where hotPackEraTrackURL(t) != nil {
+        let eraTrack4 = "era-\(clean)-4"
+        for t in [eraTrack4, eraTrack3, eraTrack2] where hotPackEraTrackURL(t) != nil {
             queue.removeAll { $0 == t }
             queue.insert(t, at: 0)
         }
@@ -63,6 +88,7 @@ import LieguojiCore
     }
 
     private func hotPackEraTrackURL(_ name: String) -> URL? {
+        guard useStudioAudio else { return nil }
         for ext in ["m4a", "wav", "caf"] {
             if let u = HotPackManager.resourceURL(name: name, ext: ext, subdirectory: "AudioHD/Music") {
                 return u
@@ -76,7 +102,8 @@ import LieguojiCore
         music = d.object(forKey: "feel.music") as? Bool ?? true
         volume = d.object(forKey: "feel.volume") as? Double ?? 0.55
         sfx = d.object(forKey: "feel.sfx") as? Bool ?? true
-        sfxVolume = d.object(forKey: "feel.sfxVolume") as? Double ?? 0.65
+        sfxVolume = d.object(forKey: "feel.sfxVolume") as? Double ?? 0.58
+        audioProfile = d.string(forKey: "feel.audioProfile") ?? "studio"
         haptics = d.object(forKey: "feel.haptics") as? Bool ?? true
         particles = d.object(forKey: "feel.particles") as? Bool ?? true
         pauseInMenus = d.object(forKey: "feel.pauseInMenus") as? Bool ?? true
@@ -87,6 +114,7 @@ import LieguojiCore
         let d = UserDefaults.standard
         d.set(music, forKey: "feel.music"); d.set(volume, forKey: "feel.volume")
         d.set(sfx, forKey: "feel.sfx"); d.set(sfxVolume, forKey: "feel.sfxVolume")
+        d.set(audioProfile, forKey: "feel.audioProfile")
         d.set(haptics, forKey: "feel.haptics"); d.set(particles, forKey: "feel.particles"); d.set(pauseInMenus, forKey: "feel.pauseInMenus")
     }
 
@@ -109,7 +137,7 @@ import LieguojiCore
         if queue.isEmpty {
             var pool = Self.tracks.shuffled()
             if !activeEraAudio.isEmpty {
-                for idx in [3, 2, 1] {
+                for idx in [4, 3, 2, 1] {
                     let tk = "era-\(activeEraAudio)-\(idx)"
                     if hotPackEraTrackURL(tk) != nil { pool.insert(tk, at: 0) }
                 }
@@ -162,9 +190,11 @@ import LieguojiCore
             cached.play()
             return
         }
-        let eraSfxName = activeEraAudio.isEmpty ? "" : "\(sound.rawValue)-\(activeEraAudio)"
-        guard let url = (!eraSfxName.isEmpty ? HotPackManager.resourceURL(name: eraSfxName, ext: "wav", subdirectory: "AudioHD/SFX") : nil)
-                ?? HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "AudioHD/SFX")
+        let studioUrl: URL? = useStudioAudio ? (
+            (!activeEraAudio.isEmpty ? HotPackManager.resourceURL(name: "\(sound.rawValue)-\(activeEraAudio)", ext: "wav", subdirectory: "AudioHD/SFX") : nil)
+            ?? HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "AudioHD/SFX")
+        ) : nil
+        guard let url = studioUrl
                 ?? HotPackManager.resourceURL(name: sound.rawValue, ext: "wav", subdirectory: "Audio")
                 ?? Bundle.main.url(forResource: sound.rawValue, withExtension: "wav"),
               let p = try? AVAudioPlayer(contentsOf: url) else { return }
@@ -230,17 +260,17 @@ struct RemoteSettings: View {
         if model.remoteAddress != nil {
             let rtt = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
             let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.2fKB/帧", model.remoteFrameKB ?? 0) : ""
-            return "九州云服 v13 在线（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
+            return "九州云服 v14 在线（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
         }
-        if model.remoteReconnecting { return "正在自动续连九州云服 v13…" }
-        return model.autoRemote ? "正在待命连接九州云服 v13" : "本机满帧直演 · 0ms 零延迟"
+        if model.remoteReconnecting { return "正在后台静默续连九州云服 v14（本机零中断畅玩）" }
+        return model.autoRemote ? "正在待命连接九州云服 v14" : "本机满帧直演 · 0ms 零延迟"
     }
     private var statusSubtitle: String {
         if let addr = model.remoteAddress {
-            return "\(addr) · v13 LGB1 二进制差量 (<1KB/帧) + UDP 零队头阻塞，专为 3Mbps 云服调校，手机零发热"
+            return "\(addr) · v14 LGB2 军队差量 (<0.8KB/帧) + UDP 8767 零队头阻塞，断线自动无感回落本机永不卡死"
         }
-        if model.remoteReconnecting { return "世界进度安全托管云端，网络就绪后自动秒连续推" }
-        return model.autoRemote ? "LGB1+UDP 3Mbps 专调推流，断链自动持久重连" : "推荐看海默认模式：满血发挥手机 A 系芯片算力（0ms 延迟 · 最高 64× 极速），账号/云档/热更仍全程在线"
+        if model.remoteReconnecting { return "后台自动重连期间本机照常 0ms 推演与操作，绝无需手动干预" }
+        return model.autoRemote ? "LGB2 差量 + UDP 零阻塞专调推流，开局 0ms 直进不等待" : "默认本机优先：开局零等待直进地图，满血发挥 A 系芯片算力，账号/云档/热更全程在线"
     }
 
     var body: some View {
@@ -440,6 +470,13 @@ struct FeelSettings: View {
                 PaperSlider(title: "音效音量", value: $feel.sfxVolume, range: 0...1, step: 0.05) { "\(Int($0 * 100))%" }
                     .padding(.horizontal, 16).padding(.bottom, 8)
             }
+            Divider2()
+            VStack(alignment: .leading, spacing: 6) {
+                Text("音画风格方案（v8 物理建模重制 / 经典原作古风）")
+                    .font(Theme.caption).foregroundStyle(Theme.ink2)
+                ChipPicker(items: [("studio", "重制交响 · 物理拟音"), ("classic", "经典原作 · 纯净古风")], selection: $feel.audioProfile)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
             Divider2()
             PaperSwitch(title: "震动反馈", on: $feel.haptics)
             Divider2()

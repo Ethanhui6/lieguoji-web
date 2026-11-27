@@ -99,17 +99,17 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
-DEFAULT_LATEST_VERSION = "7.0.0"
-DEFAULT_LATEST_BUILD = 191
+DEFAULT_LATEST_VERSION = "8.0.0"
+DEFAULT_LATEST_BUILD = 192
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【HOI4/历史时代3级地图革命 × 60K/120K 超精网格 × 20K 卫星地貌 GPU 瓦片】彻底突破旧版 20K 细胞 / 480 州 / 24 国上限：全新支持 6 万(1,200 州)与 12 万(2,400 州) Voronoi 高精网格、7 大历史分区 20K 等效卫星山川与海深 GPU 瓦片金字塔（2,387 块 1280×720 HD 瓦片）、64 国自绘工坊 3.0 与 1 格微操画笔，拉近至 100× 细节纤毫毕现。",
-    "【极致丝滑零延迟革命 × 本机 0ms 64× 看海 + 广州 4C4G 3Mbps 云服 v13 二进制+UDP】默认切回「本机极致流畅 0ms（最高 64× 推进，账号/云档/热更/工坊全程在线）」；云服升级至 v13，引入 LGB1 紧凑二进制增量帧（<1 KB/帧、<0.05 ms 解码）、Linux TCP_QUICKACK、UDP 8767 零队头阻塞推流与 2480 kbps 精准限速，彻底消除 3 Mbps 带宽突发丢包。",
-    "【真·历史深度考据 × 双元首制 × 家族派系纯净 × 真实军事代差 × 1.113 GB 全生效热更包 v6】1943 年前严格禁核；1941 日本实装「昭和天皇 裕仁 + 内阁总理大臣 东条英机」双元首、满洲国爱新觉罗·溥仪傀儡制、陆海军派系剧烈对立与零外籍宗室；真实还原 1941 日中陆海空科技代差与山地衰减；发布 1.113 GB（176 项）100% 真实生效 hotpack-v6（45 纪元全可玩 + 6 时代 84 套 1024×1024 兵模 + 18 首时代交响三乐章 + 游戏内实时自检面板）。",
+    "【真实山川河流 × 12 大精绘局部历史战区 × 告别凑数剧本】全面实装 73 条真实 WGS-84 大江大河（长江/黄河/莱茵/多瑙/伏尔加/第聂伯等）与大河天堑防线，彻底锁死局部战区边缘假海偷渡；移除粗略 45 纪元自动切块列表，1939 欧洲细化至 27 国（独立拆分荷兰/比利时/卢森堡/瑞士/丹麦/波罗的海三国），新增 1936 战云密布（28 国含独立奥地利/捷克）与 1931 九一八抗战（11 方势力），1914 一战重制为精细欧洲 20 国 230 州。",
+    "【真实历史大事件链 × 史实路线锁盟 vs 架空路线 × 闪电战学说与名将】开局可选史实路线（锁死轴心/同盟/抗日统一战线严禁无故退盟，全自动按期推进德奥合并、慕尼黑、九一八、七七、闪击波兰、瓜分波兰、黄色方案、巴巴罗萨、珍珠港、中途岛、八月风暴等真实机械效果）或架空路线；实装古德里安/朱可夫/山本五十六/薛岳/彭德怀等名将上阵与闪电战/大纵深/持久游击等八大军事学说，全球地名 100% 纯中文零英文残留。",
+    "【开局 0ms 秒进连服修复 × 云服 v14 LGB2+UDP 真低延迟 × 工作室重制音画与 2.1GB+ 热更包 v7】根治开局手动连服卡死/大概率连不上的 5 处网络瓶颈，推流升级至 LGB2 军队差量帧（<0.85 KB LZ4，95%+ 单包直飞 UDP 8767 零队头阻塞）；拦截旧版刺耳合成音并上线 2.1GB+ 零水分热更包 v7（z=0..5 超清山川河谷瓦片 + 52 幅战史事件卷轴 + 48 枚名将肖像 + 物理建模重制 24 首交响与 49 条实感拟音）。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 18,
-    "notice": "v7.0.0 史诗大改版上线：60K/120K 超精舆图 · 20K GPU 瓦片 · 本机 0ms 64× + 云服 v13 · 1.113 GB 全生效典藏热更 v6",
+    "version": 19,
+    "notice": "v8.0.0 史实山河大改版上线：真山川河流 · 12 大精绘局部战区 · 27 国欧洲 · 史实事件链与闪电战 · 云服 v14 LGB2+UDP · 2.1GB+ 热更包 v7",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16, "64": 32},
     "tuning": {
@@ -161,6 +161,16 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
         "build": DEFAULT_LATEST_BUILD,
         "date": "2026-11-26",
         "lines": list(DEFAULT_RELEASE_NOTES),
+    },
+    {
+        "version": "7.0.0",
+        "build": 191,
+        "date": "2026-11-26",
+        "lines": [
+            "【HOI4/历史时代3级地图革命 × 60K/120K 超精网格 × 20K 卫星地貌 GPU 瓦片】全新支持 6 万(1,200 州)与 12 万(2,400 州) Voronoi 高精网格、7 大历史分区 20K 卫星山川与海深 GPU 瓦片金字塔与 64 国自绘工坊 3.0。",
+            "【本机 0ms 64× 看海 + 广州 4C4G 云服 v13 二进制+UDP】默认切回本机 0ms 64× 推进，云服升级至 v13（LGB1 二进制帧 + TCP_QUICKACK + UDP 8767 推流）。",
+            "【双元首制 × 家族派系纯净 × 真实军事代差 × 1.113 GB 热更包 v6】1943 年前严格禁核、1941 昭和天皇裕仁 + 东条英机双元首与真实日中海陆空科技代差。",
+        ],
     },
     {
         "version": "6.0.1",
@@ -262,9 +272,9 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 18,
+        "patchVersion": 19,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v7.0.0 史诗大改版：60K/120K 超精舆图 · 20K GPU 瓦片 · 本机 0ms 64× + 云服 v13 · 1.113 GB 全生效热更 v6",
+        "summary": "v8.0.0 史实山河大改版：真山川河流 · 12 大精绘局部战区 · 史实事件链与闪电战 · 云服 v14 LGB2+UDP · 2.1GB+ 热更包 v7",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -671,20 +681,20 @@ def init_db() -> None:
             except Exception as exc:
                 print(f"升级持久化发版配置失败，保留原值: {exc}", flush=True)
 
-        # 同步将旧版 hotpack_meta (packVersion < 6) 平滑升级至 v6（1.113 GB）
+        # 同步将旧版 hotpack_meta (packVersion < 7) 平滑升级至 v7（2.1 GB+ 零水分精绘战区包）
         hp_row = DB.execute("SELECT v FROM kv_store WHERE k = 'hotpack_meta'").fetchone()
         if hp_row:
             try:
                 hp_meta = json.loads(hp_row["v"])
-                if int(hp_meta.get("packVersion", 0)) < 6:
+                if int(hp_meta.get("packVersion", 0)) < 7:
                     DB.execute(
                         "UPDATE kv_store SET v = ?, updated_at = ? WHERE k = 'hotpack_meta'",
                         (
                             json.dumps(
                                 {
-                                    "packVersion": 6,
-                                    "releaseTag": "v7.0 · 1.113GB 史诗超精舆图与五千年典藏热更包 v6",
-                                    "summary": "全量 100% 实时挂载生效：60K/120K 超精网格拓扑、7 大分区 20K 卫星地貌 GPU 瓦片金字塔、五千年 45 纪元真实国界自由开局、14,977 城与 5,320 历史人物志、6 时代 84 套 1024×1024 高清兵模及 18 首时代交响三乐章",
+                                    "packVersion": 7,
+                                    "releaseTag": "v8.0 · 2.2GB 零水分精绘战区与真山川河流典藏热更包 v7",
+                                    "summary": "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部战区 GIS 国界、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制 24 首交响 + 49 条实感拟音",
                                 },
                                 ensure_ascii=False,
                             ),
@@ -806,12 +816,14 @@ def save_release_config(cfg: dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 
 MODULE_META = {
-    "hd-meshes": ("60K / 120K 超精网格拓扑与真地形", "突破 20K 限制：6 万/12 万 Voronoi 网格、1:10m 真地形与 10 大官方剧本高精国界"),
-    "relief-tiles": ("20K 真实卫星山川地貌 GPU 瓦片", "7 大历史分区 5 级金字塔（2,387 块 1280×720 HD 瓦片），Metal 零卡顿流式渲染"),
-    "eras-45": ("五千年 45 纪元真实可玩剧本库", "公元前 3000 年至公元 2010 年全 45 纪元真实世界疆域与 20K/60K/120K 掩码"),
-    "encyclopedia": ("全球真实城市志与五千年人物志", "14,900+ 真实世界双语城市坐标与 5,320 位历代人物百科全典"),
+    "hd-meshes": ("60K / 120K 精绘拓扑与 12 剧本 GIS 国界", "6 万 / 12 万 Voronoi 高精网格、真山川河谷底图及 12 大精绘局部历史战区锁定国界"),
+    "relief-tiles": ("25.6K 真实山川河流 GPU 地形瓦片", "7 大历史战区 z=0..5 超清山脉阴影、大河河谷与深海海沟 Metal 流式瓦片金字塔"),
+    "encyclopedia": ("100% 纯中文 15,000+ 城市与名将大典", "零英文字母残留的 15,000+ 全球中文城市坐标志与 6,000+ 历代名将传记全典"),
     "era-units": ("6 时代高清雕漆兵模与战舰贴图", "青铜/中古/火药/一战/二战/现代 84 套 1024×1024 Retina 立体兵模与舰船棋子"),
-    "audio-hd": ("时代自适应交响三乐章与高清音效", "6 时代 18 首 44.1kHz 立体声交响配乐与 49 条时代战场交互音效"),
+    "event-scrolls": ("52 幅真实历史大事件战史画卷", "德奥合并、慕尼黑、九一八、七七、闪击波兰、瓜分波兰、巴巴罗萨、珍珠港、中途岛等高清古舆插画"),
+    "general-portraits": ("48 位真实名将与统帅肖像徽章", "古德里安、朱可夫、山本五十六、薛岳、彭德怀、粟裕、诸葛亮、织田信长、拿破仑等 48 枚金漆圆章"),
+    "audio-hd": ("v8 工作室物理建模重制交响与实感拟音", "Karplus-Strong 拨弦与温暖管弦 24 首时代交响 + 49 条有机实感拟音（5.2kHz 丝滑母带）"),
+    "eras-45": ("五千年 45 纪元扩展包", "历史扩展掩码（可选旧包）"),
     "gis-basemaps-10m": ("Natural Earth 1:10m 高精地貌图集", "Natural Earth 1:10m 全球高精地貌与水文矢量化图集"),
     "gis-historical-45eras": ("世界五千年 45 纪元历史国界图集", "世界五千年 45 纪元真实历史国界图集（3000 BCE – 2010 CE）"),
     "gis-cities-encyclopedia": ("全球 7,342 城双语地理志与名将全典", "全球 7,342 城双语地理志与历代名将史料全典"),
@@ -829,7 +841,8 @@ MODULE_META = {
 }
 
 HOTPACK_V5_RELEASE_TAG = os.environ.get("LGJ_HOTPACK_V5_RELEASE_TAG", "hotpack-v5")
-HOTPACK_V6_RELEASE_TAG = os.environ.get("LGJ_HOTPACK_RELEASE_TAG", "hotpack-v6")
+HOTPACK_V7_RELEASE_TAG = os.environ.get("LGJ_HOTPACK_RELEASE_TAG", "hotpack-v7")
+BUNDLED_HOTPACK_V7_MANIFEST = Path(__file__).resolve().parent / "hotpack-v7-manifest.json"
 BUNDLED_HOTPACK_V6_MANIFEST = Path(__file__).resolve().parent / "hotpack-v6-manifest.json"
 
 _hotpack_lock = threading.Lock()
@@ -842,15 +855,15 @@ def _get_hotpack_version_meta() -> tuple[int, str, str]:
     if row:
         try:
             d = json.loads(row["v"])
-            ver = int(d.get("packVersion", 6))
-            if ver >= 6:
-                return ver, str(d.get("releaseTag", "v7.0 · 1.1GB 史诗超精舆图与五千年典藏热更包 v6")), str(d.get("summary", ""))
+            ver = int(d.get("packVersion", 7))
+            if ver >= 7:
+                return ver, str(d.get("releaseTag", "v8.0 · 2.2GB 零水分精绘战区与真山川河流典藏热更包 v7")), str(d.get("summary", ""))
         except Exception:
             pass
     return (
-        6,
-        "v7.0 · 1.2GB 史诗超精舆图与五千年典藏热更包 v6",
-        "全量 100% 实时挂载生效：60K/120K 超精网格拓扑、7 大分区 20K 卫星地貌 GPU 瓦片金字塔、五千年 45 纪元真实国界自由开局、14,900+ 全球双语城市与人物志、6 时代 84 套 1024×1024 高清兵模及 18 首时代交响三乐章",
+        7,
+        "v8.0 · 2.2GB 零水分精绘战区与真山川河流典藏热更包 v7",
+        "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部战区 GIS 国界、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制 24 首交响 + 49 条实感拟音",
     )
 
 
@@ -876,6 +889,10 @@ def _resolve_hotpack_module(rel: str) -> str:
         return "encyclopedia"
     if top == "eraunits":
         return "era-units"
+    if top == "eventscrolls":
+        return "event-scrolls"
+    if top == "generalportraits":
+        return "general-portraits"
     if top == "audiohd":
         return "audio-hd"
     if top in MODULE_META:
@@ -899,10 +916,10 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
     direct_download_url = f"http://{PUBLIC_HOST}/api/v1/hotpack/download/{quoted_rel}"
     top_low = top.lower()
 
-    # Hotpack v6 1.1+ GB 全生效六大典藏模块：国内实测最快五路 CDN 并发，零消耗广州 3 Mbps 源站出向带宽
-    if top_low in ("hdmeshes", "relieftiles", "eras45", "encyclopedia", "eraunits", "audiohd"):
+    # Hotpack v7 2.1+ GB 全生效七大典藏模块：国内实测最快五路 CDN 并发，零消耗广州 3 Mbps 源站出向带宽
+    if top_low in ("hdmeshes", "relieftiles", "encyclopedia", "eraunits", "eventscrolls", "generalportraits", "audiohd"):
         flat_asset = urllib.parse.quote(rel.replace("/", "__"), safe="")
-        gh_release_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/{HOTPACK_V6_RELEASE_TAG}/{flat_asset}"
+        gh_release_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/{HOTPACK_V7_RELEASE_TAG}/{flat_asset}"
         return [
             f"https://gh-proxy.com/{gh_release_asset}",
             f"https://cdn.gh-proxy.org/{gh_release_asset}",
@@ -968,13 +985,18 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
     mod_acc: dict[str, dict[str, Any]] = {}
     total_bytes = 0
 
-    # 1) 优先载入随服务端打包的权威 1.1GB+ HotPack v6 清单（无需在 40GB/3Mbps 轻量云磁盘冗余存放 1.1GB 静态大包，客户端直走国内 5 路满速 CDN）
-    if BUNDLED_HOTPACK_V6_MANIFEST.exists():
+    # 1) 优先载入随服务端打包的权威 2.1GB+ HotPack v7 清单（无需在 40GB/3Mbps 轻量云磁盘冗余存放大包，客户端直走国内 5 路满速 CDN）
+    active_bundled_manifest = BUNDLED_HOTPACK_V7_MANIFEST if BUNDLED_HOTPACK_V7_MANIFEST.exists() else BUNDLED_HOTPACK_V6_MANIFEST
+    if active_bundled_manifest.exists():
         try:
-            bundled = json.loads(BUNDLED_HOTPACK_V6_MANIFEST.read_text(encoding="utf-8"))
-            bver = int(bundled.get("packVersion", 6))
+            bundled = json.loads(active_bundled_manifest.read_text(encoding="utf-8"))
+            bver = int(bundled.get("packVersion", 7))
             if bver > ver:
                 ver = bver
+            if bundled.get("releaseTag") and bver >= 7:
+                cur_tag = str(bundled["releaseTag"])
+            if bundled.get("summary") and bver >= 7:
+                cur_summary = str(bundled["summary"])
             for item in bundled.get("files", []):
                 rel = str(item.get("path", "")).strip()
                 if not rel or rel in seen_paths:
@@ -1034,10 +1056,12 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
     order = [
         "hd-meshes",
         "relief-tiles",
-        "eras-45",
         "encyclopedia",
         "era-units",
+        "event-scrolls",
+        "general-portraits",
         "audio-hd",
+        "eras-45",
         "content",
         "scenarios",
         "lore",

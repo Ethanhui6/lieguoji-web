@@ -25,6 +25,8 @@ public struct SeaGraph: @unchecked Sendable {
     public let order: [Int]
     public let nodes: [Int: SeaNode]
     public let ports: [SeaPort]
+    /// v8.0.0 区域历史剧本外缘禁航海域编号集合（空集合表示开放世界全图，零影响原有世界与黄金基准）。
+    public let blockedSeaIds: Set<Int>
 
     /// Point-pair key equal iff the web's `${x},${y}` string key is equal (-0 prints as 0).
     struct EdgeKey: Hashable { let a: [UInt64], b: [UInt64]
@@ -38,10 +40,11 @@ public struct SeaGraph: @unchecked Sendable {
     static func mid(_ a: TravelPoint, _ b: TravelPoint) -> TravelPoint { TravelPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2) }
     static func point(_ v: JS) -> TravelPoint { TravelPoint(x: v.x.asNumber, y: v.y.asNumber) }
 
-    public init(_ d: TerrainDocument, elevations: [Int], provinces: [JS]) {
+    public init(_ d: TerrainDocument, elevations: [Int], provinces: [JS], blockedRegion: HistoricalRegion? = nil) {
         let f = Native.fr, scale = 1000 / max(d.width, d.height)
         let pts = d.points.map { TravelPoint(x: f($0.0), y: f($0.1)) }, h = elevations.map { f(Double($0)) }
         var nodes = [Int: SeaNode](), order = [Int]()
+        var blockedSeaIds = Set<Int>()
         var edgeIndex = [Int: Int](), edges = [(ids: [Int], a: Int, b: Int)](), coasts = [(node: Int, a: TravelPoint, b: TravelPoint)]()
         let n = pts.count
         func scaled(_ p: TravelPoint) -> TravelPoint { TravelPoint(x: p.x * scale, y: p.y * scale) }
@@ -69,7 +72,12 @@ public struct SeaGraph: @unchecked Sendable {
             for i in 0..<polygon.count { let a = polygon[i], b = polygon[(i + 1) % polygon.count]; area = area + (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x) }
             if abs(area) <= 0 { continue }
             var sx = 0.0, sy = 0.0; for p in polygon { sx += p.x }; for p in polygon { sy += p.y }
-            nodes[id] = SeaNode(id: id, center: TravelPoint(x: sx / Double(polygon.count), y: sy / Double(polygon.count)), polygon: polygon); order.append(id)
+            let centerPt = TravelPoint(x: sx / Double(polygon.count), y: sy / Double(polygon.count))
+            nodes[id] = SeaNode(id: id, center: centerPt, polygon: polygon); order.append(id)
+            if let reg = blockedRegion,
+               HistoricalBasemaps.isBlockedTheaterSea(region: reg, x: centerPt.x / scale, y: centerPt.y / scale, width: d.width, height: d.height) {
+                blockedSeaIds.insert(id)
+            }
             for i in 0..<ring.count { let a = ring[i], b = ring[(i + 1) % ring.count]; if a.shore && b.shore && SeaGraph.dist(a.p, b.p) > 0 { coasts.append((id, scaled(a.p), scaled(b.p))) } }
         }
         var exterior = Set<Int>()
@@ -82,6 +90,8 @@ public struct SeaGraph: @unchecked Sendable {
             let onBoundary = (a.x == 0 && b.x == 0) || (a.y == 0 && b.y == 0) || (a.x == w && b.x == w) || (a.y == ht && b.y == ht)
             if e.ids.count == 1, let l = left, onBoundary { exterior.insert(l.id) }
             guard let l = left, let r = right else { continue }
+            // v8.0.0 区域历史剧本边缘禁航带：切断边缘假海域链路，杜绝舰队与部队绕着地图边缘下海偷渡！
+            if blockedSeaIds.contains(l.id) || blockedSeaIds.contains(r.id) { continue }
             let cost = SeaGraph.dist(l.center, gate) + SeaGraph.dist(gate, r.center)
             l.links.append(SeaLink(to: r.id, gate: gate, distance: cost)); r.links.append(SeaLink(to: l.id, gate: gate, distance: cost))
         }
@@ -89,17 +99,19 @@ public struct SeaGraph: @unchecked Sendable {
         for sid in order where nodes[sid]!.component < 0 {
             let start = nodes[sid]!; var queue = [start]; start.component = component; var ocean = false, i = 0
             while i < queue.count { let x = queue[i]; i += 1; if exterior.contains(x.id) { ocean = true }; for l in x.links { let nx = nodes[l.to]!; if nx.component < 0 { nx.component = component; queue.append(nx) } } }
-            for x in queue { x.ocean = ocean }; component += 1
+            // 区域历史剧本中，处于内部真实海域且规模 >= 18 格的水域视为可航行海（如地中海/黑海/波罗的海/日本海），而被封堵的边缘禁航带强制标记不可航行！
+            let navigable = blockedRegion != nil ? (!blockedSeaIds.contains(start.id) && queue.count >= 18) : ocean
+            for x in queue { x.ocean = navigable }; component += 1
         }
         var owners = [EdgeKey: String]()
         for p in provinces { let poly = p.polygon.asArray.map(SeaGraph.point); for i in 0..<poly.count { owners[EdgeKey(poly[i], poly[(i + 1) % poly.count])] = p.id.asString } }
         var best = [String: (port: SeaPort, length: Double)](), bestOrder = [String]()
         for c in coasts {
-            let nd = nodes[c.node]!; guard let pid = owners[EdgeKey(c.a, c.b)], nd.ocean else { continue }
+            let nd = nodes[c.node]!; guard let pid = owners[EdgeKey(c.a, c.b)], nd.ocean, !blockedSeaIds.contains(nd.id) else { continue }
             let id = "port-\(pid)-\(nd.component)", length = SeaGraph.dist(c.a, c.b)
             if length > (best[id]?.length ?? 0) { if best[id] == nil { bestOrder.append(id) }; best[id] = (SeaPort(id: id, provinceId: pid, node: nd.id, shore: SeaGraph.mid(c.a, c.b)), length) }
         }
-        self.order = order; self.nodes = nodes; self.ports = bestOrder.map { best[$0]!.port }
+        self.order = order; self.nodes = nodes; self.ports = bestOrder.map { best[$0]!.port }; self.blockedSeaIds = blockedSeaIds
     }
 
     /// buildHarbors46 for 'capital-neighbor-v1' / 'capital-neighbor-v2'.

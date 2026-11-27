@@ -832,6 +832,19 @@ private struct GameTopChrome: View {
                 leadInset: leadSafe,
                 trailInset: trailSafe
             )
+
+            if let modal = model.pendingHistoricalModal {
+                HistoricalEventModalOverlay(
+                    modal: modal,
+                    route: model.activeHistoricalRoute,
+                    onChoose: { idx in
+                        GameFeel.shared.tap()
+                        Task { await model.resolveHistoricalEvent(choiceIndex: idx) }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                .zIndex(95)
+            }
         }
         .animation(Motion.panel, value: panel?.id)
         .animation(GameView.hudSpring, value: model.remoteReconnecting)

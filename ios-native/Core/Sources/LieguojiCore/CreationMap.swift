@@ -38,16 +38,21 @@ public enum CreationMap {
     static func jsRound(_ x: Double) -> Double { (x + 0.5).rounded(.down) }
 
     /// originalClimate + originalBiomeIds：格网自身的降水、气温与河流，按原作 Biomes.define 定群系。
-    static func biomes(_ x: Inputs, elevations h: [Int]) -> (ids: [UInt8], paths: [[Int]]) {
+    /// 历史剧本模式下（`historicalRegion != nil && != .custom`）叠加真实大河流域冲积平原水源，避免尼罗河谷/长江/莱茵河流域误判荒漠。
+    static func biomes(_ x: Inputs, elevations h: [Int], historicalRegion: HistoricalRegion? = nil) -> (ids: [UInt8], paths: [[Int]]) {
         let g = x.grid, d = x.document
         let heights = h.map { UInt8(min(100, max(0, $0))) }
         let climate = Climate.grid(heights, g.cellsX, g.cellsY)
-        let rivers = Climate.rivers(points: d.points, triangles: d.triangles, neighbors: g.neighbors, h, climate.precipitation)
+        let useRealRivers = (historicalRegion != nil && historicalRegion != .custom)
+        let rivers = useRealRivers ? (riverIds: [Int](repeating: 0, count: h.count), flux: [Int](repeating: 0, count: h.count), paths: [[Int]]()) : Climate.rivers(points: d.points, triangles: d.triangles, neighbors: g.neighbors, h, climate.precipitation)
+        let realRiverMask = useRealRivers ? HistoricalGeography.riverNearMask(region: historicalRegion!, points: g.points, width: g.width, height: g.height) : []
         var ids = [UInt8](repeating: 0, count: h.count)
         for cell in h.indices {
-            var sum = Double(climate.precipitation[cell]) + (rivers.riverIds[cell] != 0 ? max(Double(rivers.flux[cell]) / 10, 2) : 0), n = 1.0
+            let nearReal = useRealRivers && cell < realRiverMask.count && realRiverMask[cell]
+            let riverBoost: Double = nearReal ? 6.5 : (rivers.riverIds[cell] != 0 ? max(Double(rivers.flux[cell]) / 10, 2) : 0)
+            var sum = Double(climate.precipitation[cell]) + riverBoost, n = 1.0
             for j in g.neighbors[cell] where h[j] >= 20 { sum += Double(climate.precipitation[j]); n += 1 }
-            ids[cell] = UInt8(Climate.biome(moisture: jsRound(4 + sum / n), temperature: Int(climate.temperature[cell]), height: Double(h[cell]), hasRiver: rivers.riverIds[cell] != 0))
+            ids[cell] = UInt8(Climate.biome(moisture: jsRound(4 + sum / n), temperature: Int(climate.temperature[cell]), height: Double(h[cell]), hasRiver: nearReal || rivers.riverIds[cell] != 0))
         }
         return (ids, rivers.paths)
     }
@@ -355,16 +360,21 @@ public enum CreationMap {
     }
 
     /// buildWorldMap：`{bin, meta}`（bin 为 base64）与格子所属辖区（labelGrid 用）。
-    public static func build(_ x: Inputs, run r: JS, elevations h: [Int], seed: String, template: String) -> (map: JS, cells: [Int]) {
+    public static func build(_ x: Inputs, run r: JS, elevations h: [Int], seed: String, template: String, historicalRegion: HistoricalRegion? = nil) -> (map: JS, cells: [Int]) {
         let g = x.grid, w = r.world, sc = r.scale.asNumber
         let province = CreationStatics.cellProvinces(x.document, elevations: h, provinces: w.provinces.asArray, scale: sc)
-        let (ids, paths) = biomes(x, elevations: h)
+        let (ids, paths) = biomes(x, elevations: h, historicalRegion: historicalRegion)
         let rgb = biomeRGB(g, ids)
         let coastSegments = coast(x, elevations: h)
         let hiRes = h.count > 25_000
         let seaW = hiRes ? 1600 : 800, seaH = hiRes ? 900 : 450
         let seaRGBA = sea(coastSegments, width: g.width, height: g.height, seaW: seaW, seaH: seaH)
-        let riverFloats = rivers(x, elevations: h, paths: paths)
+        let riverFloats: [Float]
+        if let reg = historicalRegion, reg != .custom {
+            riverFloats = HistoricalGeography.buildRiverMesh(region: reg, elevations: h, graph: g)
+        } else {
+            riverFloats = rivers(x, elevations: h, paths: paths)
+        }
         // world.bin 版本 2。
         let base = x.base, cells = h.count
         var out = Data(); out.reserveCapacity(hiRes ? 18_000_000 : 6_000_000)

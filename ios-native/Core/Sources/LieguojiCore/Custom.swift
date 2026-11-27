@@ -346,6 +346,8 @@ public enum Regimes {
     public static func day(_ r: JS) {
         guard !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
         ReplayEngine.capture(r)
+        // v8.0.0 真实历史事件链按日触发（德奥合并、九一八事变、闪击波兰、瓜分波兰、黄色方案、珍珠港等）
+        HistoricalEvents.tickDay(r)
         let key = monthKey(r)
         if r.regimes.month.asInt == key { return }
         r.regimes.month = JS(key)
@@ -398,11 +400,14 @@ public enum Regimes {
         d += leverage(r, victim).defense
         let appMode = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
         if appMode {
-            // 动员法案与战争支持度实效（战时经济/总动员提升火力与防御，高战意鼓舞士气）
+            // 动员法案、战争支持度、军事学说（闪电战/大纵深/持久游击）与在阵史实名将综合实效
             let mobA = NuclearWarfare.mobilization(r, nationId: attacker)
             let mobD = NuclearWarfare.mobilization(r, nationId: victim)
             a += mobA.attackBonusPct + (NuclearWarfare.warSupport(r, nationId: attacker) - 50.0) * 0.14
             d += mobD.defenseBonusPct + (NuclearWarfare.warSupport(r, nationId: victim) - 50.0) * 0.10
+            let docMod = MilitaryDoctrines.combatModifiers(r, attacker: attacker, victim: victim)
+            a += docMod.attackPct
+            d += docMod.defensePct
         }
         let ratio: Double
         if appMode {

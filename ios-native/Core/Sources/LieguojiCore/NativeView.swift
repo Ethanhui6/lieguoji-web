@@ -420,7 +420,7 @@ extension NativeEngine {
                 if !slim {
                     let unitKey = r.units[id].optionalString ?? "Infantry"
                     let baseSp = r.forceSpeed.armies[id].base.optionalNumber ?? 0
-                    let unitSp = CombatReader.unitSpeed(unitKey) * Regimes.unitSpeed(r, a.nationId.asString, unitKey) * Regimes.armySpeed(r, id, nation: a.nationId.asString) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1)
+                    let unitSp = CombatReader.unitSpeed(unitKey) * Regimes.unitSpeed(r, a.nationId.asString, unitKey) * Regimes.armySpeed(r, id, nation: a.nationId.asString) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch * MilitaryDoctrines.marchSpeedMultiplier(r, nationId: a.nationId.asString) : 1)
                     let secPerTick = r.forceClock.secondsPerTick.optionalNumber ?? 0.05
                     let curLeg = max(0, min(max(0, tr.nodes.count - 1), tr.leg))
                     let remLegs = max(1, tr.nodes.count - 1 - curLeg)
@@ -479,6 +479,13 @@ extension NativeEngine {
             let order = r.armyAutonomy.armies[id].decision.optionalString ?? ""
             if ["attacking", "supporting", "guarding", "staging"].contains(order) { x.duty = order }
             if let b = banners[id] { x.banner = b.kind; x.bannerMark = b.mark; x.commander = b.name }
+            if UnitKinds.enabled, let cmd = MilitaryDoctrines.commander(r, armyId: id) {
+                if x.commander == nil || x.commander?.isEmpty == true { x.commander = cmd.name }
+                if x.banner == nil { x.banner = "general"; x.bannerMark = String(cmd.name.prefix(1)) }
+                x.commanderRole = cmd.title
+                x.commanderMilitary = cmd.military
+                x.tacticTag = cmd.tacticTag
+            }
             x.routeNote = routeNote
             let rawFull = r.tactics.forces[id].fullStrength.optionalNumber ?? Double(safeTroops)
             x.full = max(safeTroops, Int(exactly: rawFull.rounded()) ?? safeTroops)
@@ -728,6 +735,10 @@ extension NativeEngine {
         if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
             let eraObj = EraMilitarySystem.currentEra(r)
             out.historicalEra = eraObj.rawValue
+            if !r.regimes.historicalScenarioId.isNull {
+                out.historicalRoute = HistoricalEvents.isHistoricalRoute(r) ? "historical" : "sandbox"
+                out.pendingHistoricalEvent = HistoricalEvents.pendingModal(r)
+            }
             if !r.regimes.hoi4.isNull {
                 let h = r.regimes.hoi4
                 let wt = h.worldTension.optionalNumber ?? 0.0

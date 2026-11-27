@@ -148,6 +148,7 @@ struct MilitaryOverview: View {
                     },
                     onToast: { msg in onToast?(msg) }
                 )
+                MilitaryDoctrineQuickCard(model: model, nation: chosen, eraRaw: state.historicalEra, onToast: { msg in onToast?(msg) })
             }
 
             if !powers.isEmpty {
@@ -433,5 +434,70 @@ private struct ClashRow: View {
             RoundedRectangle(cornerRadius: 2).fill(rightColor).frame(width: 8, height: 22)
         }
         .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
+    }
+}
+
+/// v8.0.0 军务总览快捷「军事学说与战场战法」指挥卡：支持玩家即时切换闪电战/大纵深/持久游击/航母机动/狼群等八大学说。
+private struct MilitaryDoctrineQuickCard: View {
+    @ObservedObject var model: GameModel
+    let nation: Int
+    let eraRaw: String?
+    var onToast: ((String) -> Void)? = nil
+
+    @State private var busy = false
+    @State private var selectedId: String = ""
+
+    private var specs: [MilitaryDoctrines.Spec] {
+        let era = HistoricalEra(rawValue: eraRaw ?? "") ?? .ww2
+        return MilitaryDoctrines.allSpecs(for: era)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                InkIcon(glyph: .military, size: 14, weight: 1.8).foregroundStyle(Theme.seal)
+                Text("军事学说 · 战场战术切换").font(Theme.serif(14.5)).foregroundStyle(Theme.ink)
+                Spacer()
+                Text("闪电战·大纵深·游击·海空").font(Theme.caption).foregroundStyle(Theme.ink2)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    ForEach(specs, id: \.id) { sp in
+                        let on = selectedId == sp.id.rawValue
+                        Button {
+                            guard !busy else { return }
+                            GameFeel.shared.tap()
+                            busy = true
+                            selectedId = sp.id.rawValue
+                            Task {
+                                let err = await model.setMilitaryDoctrine(nation: nation, doctrineId: sp.id.rawValue)
+                                busy = false
+                                onToast?(err ?? "已切换军事学说：\(sp.name)")
+                            }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(sp.shortTag)
+                                    .font(Theme.serif(13))
+                                    .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                    .lineLimit(1)
+                                Text("速×\(String(format: "%.2f", sp.marchSpeedMult)) · 攻+\(Int(sp.attackBonusPct))%")
+                                    .font(Theme.sans(10))
+                                    .monospacedDigit()
+                                    .foregroundStyle(on ? Theme.paperLight.opacity(0.88) : Theme.ink2)
+                                    .lineLimit(1)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(on ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.7))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .paperCard()
+        .padding(.horizontal, Theme.Layout.pageInset)
     }
 }

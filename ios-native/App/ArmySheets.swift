@@ -33,9 +33,13 @@ struct ArmyRow: View {
                     if let duty = army.duty.flatMap({ Self.duties[$0] }) {
                         PaperTag(text: duty, color: Theme.seal, size: 10.5)
                     }
+                    if let tactic = army.tacticTag, !tactic.isEmpty {
+                        PaperTag(text: tactic, color: Theme.jade, size: 10.0)
+                    }
                 }
                 let grpPrefix = army.armyGroup.map { "\($0) · " } ?? ""
-                Text("\(grpPrefix)\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))")
+                let cmdPrefix = army.commander.flatMap { $0.isEmpty ? nil : "\($0)统率 · " } ?? ""
+                Text("\(cmdPrefix)\(grpPrefix)\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))")
                     .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
             }
             Spacer(minLength: 8)
@@ -81,6 +85,32 @@ struct ArmySheet: View {
 
     static let units = UnitKinds.kinds.map { ($0.key, $0.name) }
 
+    /// 按将领姓名从 HotPack v7 `GeneralPortraits/` 加载高清名将肖像徽章（无则自然回落至兵徽）。
+    private static let portraitKeys: [(match: String, file: String)] = [
+        ("古德里安", "guderian"), ("曼施坦因", "manstein"), ("隆美尔", "rommel"), ("邓尼茨", "donitz"),
+        ("莫德尔", "model"), ("龙德施泰特", "rundstedt"), ("朱可夫", "zhukov"), ("罗科索夫斯基", "rokossovsky"),
+        ("华西列夫斯基", "vasilevsky"), ("科涅夫", "konev"), ("斯大林", "stalin"), ("山本五十六", "yamamoto"),
+        ("南云", "nagumo"), ("山下奉文", "yamashita"), ("裕仁", "hirohito"), ("东条英机", "tojo"),
+        ("尼米兹", "nimitz"), ("麦克阿瑟", "macarthur"), ("艾森豪威尔", "eisenhower"), ("巴顿", "patton"),
+        ("哈尔西", "halsey"), ("蒙哥马利", "montgomery"), ("丘吉尔", "churchill"), ("戴高乐", "degaulle"),
+        ("薛岳", "xueyue"), ("彭德怀", "pengdehuai"), ("粟裕", "suyu"), ("林彪", "linbiao"),
+        ("刘伯承", "liubocheng"), ("白崇禧", "baichongxi"), ("李宗仁", "lizongren"), ("孙立人", "sunliren"),
+        ("张学良", "zhangxueliang"), ("蒋介石", "chiang"), ("毛泽东", "mao"), ("诸葛亮", "zhugeliang"),
+        ("周瑜", "zhouyu"), ("曹操", "caocao"), ("关羽", "guanyu"), ("白起", "baiqi"),
+        ("李靖", "lijing"), ("岳飞", "yuefei"), ("织田信长", "oda"), ("武田信玄", "takeda"),
+        ("上杉谦信", "uesugi"), ("拿破仑", "napoleon"), ("威灵顿", "wellington"), ("库图佐夫", "kutuzov"),
+    ]
+    private static func commanderPortrait(for name: String) -> UIImage? {
+        for item in portraitKeys where name.contains(item.match) {
+            if let url = HotPackManager.resourceURL(name: "gen_\(item.file)", ext: "png", subdirectory: "GeneralPortraits"),
+               let data = try? Data(contentsOf: url),
+               let img = UIImage(data: data) {
+                return img
+            }
+        }
+        return nil
+    }
+
     var body: some View {
         if let map = model.map, let resolved = model.resolveArmy(id: armyId, fallback: army) {
             let armyIndex = resolved.index
@@ -96,9 +126,18 @@ struct ArmySheet: View {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetGrabber()
 
-                    // 1. 军牌抬头：国色兵徽 + 军号编制 + 主将徽记 + 定位圆钮
+                    // 1. 军牌抬头：国色兵徽 + 史实名将肖像徽章（HotPack v7）+ 军号编制 + 主将徽记 + 定位圆钮
                     HStack(spacing: 12) {
-                        UnitMark(unit: a.unit, color: tint).frame(width: 48, height: 48)
+                        if let cmdName = a.commander, let portrait = Self.commanderPortrait(for: cmdName) {
+                            Image(uiImage: portrait)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 48, height: 48)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(tint, lineWidth: 2))
+                        } else {
+                            UnitMark(unit: a.unit, color: tint).frame(width: 48, height: 48)
+                        }
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 6) {
                                 Text(a.name).font(Theme.kai(24)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.72)
@@ -119,9 +158,15 @@ struct ArmySheet: View {
                                     return pct == 0 ? "" : " · 战力\(pct > 0 ? "+" : "−")\(abs(pct))%"
                                 }()
                                 let milStr = a.commanderMilitary.map { " · 武\($0)" } ?? ""
-                                Text("\(role)：\(c)\(milStr)\(bonusStr)")
+                                let tacStr = a.tacticTag.flatMap { $0.isEmpty ? nil : " · \($0)" } ?? ""
+                                Text("\(role)：\(c)\(milStr)\(bonusStr)\(tacStr)")
                                     .font(Theme.caption)
                                     .foregroundStyle((a.commanderBonusPct ?? 0) < 0 || a.banner == "ruler" ? Theme.seal : Theme.ink2)
+                                    .lineLimit(1)
+                            } else if let tactic = a.tacticTag, !tactic.isEmpty {
+                                Text("战法学说：\(tactic)")
+                                    .font(Theme.caption)
+                                    .foregroundStyle(Theme.jade)
                                     .lineLimit(1)
                             }
                         }

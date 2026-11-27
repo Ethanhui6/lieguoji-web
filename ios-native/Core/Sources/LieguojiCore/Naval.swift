@@ -194,6 +194,8 @@ public enum Naval {
                     powerBonus += min(0.45, (air - 40.0) / 100.0 * 0.65)
                 }
             }
+            // v8.0.0 军事学说（航母机动舰队/狼群战术）与战役奇袭（如偷袭珍珠港）海战加成
+            powerBonus += (MilitaryDoctrines.navalCombatMultiplier(r, nationId: nation) - 1.0)
         }
         return Volley.NavalInput(destiny: r.upperCombat.nations[nation].destiny.asNumber, maritime: r.economy.nations[nation].ethnic.optionalString == "Maritime", leader: leader, powerBonus: powerBonus)
     }

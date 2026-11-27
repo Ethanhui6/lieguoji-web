@@ -18,14 +18,14 @@ final class MapTileStreamer: @unchecked Sendable {
         let y: Int
         let offset: UInt64
         let length: UInt32
+        let url: URL
     }
 
     private struct TileArchive {
         let region: String
-        let url: URL
-        let maxZoom: Int
+        var maxZoom: Int
         let tileSize: Int
-        let records: [UInt64: TileRecord] // key: (z << 32) | (x << 16) | y
+        var records: [UInt64: TileRecord] // key: (z << 32) | (x << 16) | y
     }
 
     struct VisibleTile {
@@ -63,7 +63,13 @@ final class MapTileStreamer: @unchecked Sendable {
         var tilesSum = 0
         for url in files where url.pathExtension.lowercased() == "lgtr" {
             if let arch = Self.parseHeader(url: url) {
-                parsed[arch.region] = arch
+                if var existing = parsed[arch.region] {
+                    existing.maxZoom = max(existing.maxZoom, arch.maxZoom)
+                    for (k, v) in arch.records { existing.records[k] = v }
+                    parsed[arch.region] = existing
+                } else {
+                    parsed[arch.region] = arch
+                }
                 tilesSum += arch.records.count
                 if let sz = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize {
                     bytesSum += Int64(sz)
@@ -186,15 +192,22 @@ final class MapTileStreamer: @unchecked Sendable {
         lock.unlock()
 
         if !toRequest.isEmpty {
-            let url = archive.url
             decodeQueue.async { [weak self] in
-                guard let self, let fh = try? FileHandle(forReadingFrom: url) else {
-                    self?.clearInflight(toRequest.map(\.cacheKey))
-                    return
-                }
-                defer { try? fh.close() }
+                guard let self else { return }
                 let loader = MTKTextureLoader(device: device)
+                var handles = [URL: FileHandle]()
+                defer { for fh in handles.values { try? fh.close() } }
                 for item in toRequest {
+                    let fh: FileHandle
+                    if let cached = handles[item.record.url] {
+                        fh = cached
+                    } else if let opened = try? FileHandle(forReadingFrom: item.record.url) {
+                        handles[item.record.url] = opened
+                        fh = opened
+                    } else {
+                        self.clearInflight([item.cacheKey])
+                        continue
+                    }
                     do {
                         try fh.seek(toOffset: item.record.offset)
                         guard let data = try fh.read(upToCount: Int(item.record.length)), !data.isEmpty else {
@@ -274,9 +287,9 @@ final class MapTileStreamer: @unchecked Sendable {
                 var off: UInt64 = 0
                 for k in 0..<8 { off |= UInt64(tb[p + 5 + k]) << UInt64(k * 8) }
                 let len = UInt32(tb[p + 13]) | (UInt32(tb[p + 14]) << 8) | (UInt32(tb[p + 15]) << 16) | (UInt32(tb[p + 16]) << 24)
-                records[tileKey(z: z, x: x, y: y)] = TileRecord(z: z, x: x, y: y, offset: off, length: len)
+                records[tileKey(z: z, x: x, y: y)] = TileRecord(z: z, x: x, y: y, offset: off, length: len, url: url)
             }
-            return TileArchive(region: region, url: url, maxZoom: maxZoom, tileSize: tileSize, records: records)
+            return TileArchive(region: region, maxZoom: maxZoom, tileSize: tileSize, records: records)
         } catch {
             return nil
         }

@@ -50,6 +50,8 @@ public struct GameState: Codable, Equatable, Sendable {
         public var commanderTraits: [String]? = nil
         /// v5.2.1 合围断道标志（敌境无友邻陆路且无可用海港，攻防 −22%、耗粮加倍）。
         public var encircled: Bool? = nil
+        /// v8.0.0 将领专属战术标签（如「闪电战·装甲穿插」「天炉战法」「大纵深·钳形合围」）。
+        public var tacticTag: String? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     public struct Fleet: Codable, Equatable, Identifiable, Sendable {
@@ -133,6 +135,12 @@ public struct GameState: Codable, Equatable, Sendable {
     public var historicalEra: String? = nil
     public var lastNukeProvince: Int? = nil
     public var lastNukeDay: Int? = nil
+    /// v8.0.0 历史剧本推演路线（"historical" 史实路线 / "sandbox" 架空路线）与待批阅历史事件弹窗。
+    public var historicalRoute: String? = nil
+    public var pendingHistoricalEvent: HistoricalEvents.PendingModal? = nil
+    /// v14 LGB2 军团差量推流标志：为 true 时 `armies` 仅携带变动军团，客户端按 ID 合并并移除 `removedArmyIds`。
+    public var armyDeltaMode: Bool? = nil
+    public var removedArmyIds: [String]? = nil
     public var displayYear: Int { date.year + (yearOffset ?? 0) }
     /// 纯净日期文本（永远只显示时间，绝不混入地图名或剧本标题）。
     public var pureDateText: String {

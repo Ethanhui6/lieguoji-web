@@ -98,6 +98,10 @@ import LieguojiCore
     private var resignedActive = false
     private var foregroundRecovering = false
     private var lastForegroundHandledAt: CFTimeInterval = 0
+    /// v8.0.0 待玩家抉择的真实历史大事件弹窗（如德奥合并、九一八事变、闪击波兰、西安事变）
+    @Published var pendingHistoricalModal: HistoricalEvents.PendingModal? = nil
+    /// v8.0.0 当前对局的历史剧本推演路线（`"historical"` 史实路线 / `"sandbox"` 架空路线）
+    @Published var activeHistoricalRoute: String = "historical"
     /// A one-line notice for the game screen (e.g. the computer's link broke).
     @Published var notice: String?
 
@@ -820,12 +824,12 @@ import LieguojiCore
         if playing { restartPlayForRemoteHandoff() }
         return true
     }
-    /// 进入新世界、读档或展卷后立即在后台自动竞速接入最快云服线路（零配置、无需手动开启，仅尊重主动离线）。
+    /// 仅当玩家开启云端托管（`autoRemote == true`）时才在后台无感接入九州云服 v14；默认本机优先 0ms 零等待直接开玩！
     func ensureCloudConnectedNow() {
+        guard autoRemote, !remoteOfflineManual, !appInBackground, !reconnecting, remoteAddress == nil else { return }
         autoConnect()
-        guard !remoteOfflineManual, !appInBackground, !reconnecting, remoteAddress == nil else { return }
         Task { @MainActor [weak self] in
-            guard let self, self.phase == .playing, !self.remoteOfflineManual, self.remoteAddress == nil else { return }
+            guard let self, self.phase == .playing, self.autoRemote, !self.remoteOfflineManual, self.remoteAddress == nil else { return }
             _ = await self.findComputerNow()
         }
     }
@@ -1018,12 +1022,13 @@ import LieguojiCore
     private(set) var lastFounding: (path: String, seconds: Double)?
 
     init() {
-        // v7.0.0 本机优先极速看海默认策略（0ms 零延迟 + 64× 满速直演；账号/云存档/工坊/热更 100% 保持在线；随时可一键开启九州云服 v13 零发热挂机）：
-        if !UserDefaults.standard.bool(forKey: "v700.localFirstEngine") {
+        // v8.0.0 本机优先 0ms 极速直演 + 永不卡连接修复（账号/云存档/工坊/热更全时在线；随时一键切九州云服 v14 LGB2+UDP）：
+        if !UserDefaults.standard.bool(forKey: "v800.localFirstNetFix") {
             UserDefaults.standard.set(false, forKey: "remote.auto")
             UserDefaults.standard.set(false, forKey: "remote.autoAll")
             UserDefaults.standard.set(true, forKey: "remote.offlineManual")
             UserDefaults.standard.set(true, forKey: "v700.localFirstEngine")
+            UserDefaults.standard.set(true, forKey: "v800.localFirstNetFix")
         }
         if UserDefaults.standard.object(forKey: "remote.auto") == nil {
             UserDefaults.standard.set(false, forKey: "remote.auto")
@@ -1940,9 +1945,33 @@ import LieguojiCore
             if next.ruins == nil { next.ruins = previous.ruins }
             if next.yards == nil { next.yards = previous.yards }
             if next.events.isEmpty && !previous.events.isEmpty { next.events = previous.events }
+            if next.armyDeltaMode == true {
+                var merged = Dictionary(uniqueKeysWithValues: previous.armies.map { ($0.id, $0) })
+                for a in next.armies { merged[a.id] = a }
+                if let rem = next.removedArmyIds {
+                    for rid in rem { merged.removeValue(forKey: rid) }
+                }
+                next.armies = Array(merged.values)
+                next.armyDeltaMode = false
+                next.removedArmyIds = nil
+            }
         }
         if !next.owners.isEmpty {
             native.streamBuffer.seedBaselineOwners(next.owners)
+        }
+        native.streamBuffer.seedBaselineArmies(next.armies)
+        if let hr = next.historicalRoute, !hr.isEmpty {
+            activeHistoricalRoute = hr
+        }
+        if let pe = next.pendingHistoricalEvent, !pe.isEmpty,
+           let peData = pe.data(using: .utf8),
+           let modal = try? JSONDecoder().decode(HistoricalEvents.PendingModal.self, from: peData) {
+            if pendingHistoricalModal?.id != modal.id {
+                pendingHistoricalModal = modal
+                if playing && !ShotTour.on { pause() }
+            }
+        } else if next.pendingHistoricalEvent == nil && pendingHistoricalModal != nil {
+            // 仅在事件已被外部解决时保持 UI 同步
         }
         state = next
         if let nukeProv = next.lastNukeProvince, nukeProv >= 0,
@@ -3341,6 +3370,31 @@ extension GameModel {
         o.north = Double(climate.north) / 100; o.south = Double(min(climate.south, climate.north - 10)) / 100
         o.organicBorders = true
         o.historicalScenario = historicalScenario
+        o.historicalRoute = historicalScenario?.historicalRoute ?? "historical"
         return o
+    }
+
+    /// v8.0.0 决议历史大事件选项（德奥合并 / 九一八 / 闪击波兰 / 瓜分波兰等），立即执行真实引擎领土/外交/战事效果。
+    func resolveHistoricalEvent(choiceIndex: Int) async {
+        guard let modal = pendingHistoricalModal else { return }
+        let res = await native.resolveHistoricalEvent(eventId: modal.id, choiceIndex: choiceIndex)
+        pendingHistoricalModal = nil
+        if let data = res.state, let next = await Self.decode(GameState.self, from: data) {
+            apply(next)
+        }
+        if !res.reason.isEmpty {
+            notice = res.reason
+        }
+        forcePublishForAction()
+    }
+
+    /// v8.0.0 为指定国家切换军事学说（闪电战 / 大纵深 / 持久游击 / 航母特混 / 狼群等）。
+    func setMilitaryDoctrine(nation: Int, doctrineId: String) async -> String? {
+        let res = await native.setDoctrine(nation: nation, doctrineId: doctrineId)
+        if let data = res.state, let next = await Self.decode(GameState.self, from: data) {
+            apply(next)
+        }
+        forcePublishForAction()
+        return res.ok ? nil : res.reason
     }
 }

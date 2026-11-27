@@ -1375,6 +1375,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
             }
             DispatchQueue.main.async {
                 HotPackManager.shared.refreshActiveAssetReport()
+                GameFeel.shared.reloadAudioEngine()
             }
         }
         refreshActiveAssetReport()
@@ -1396,46 +1397,51 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return (total, count)
     }
 
-    /// 实时自检 6 大典藏模块的磁盘体积与内存/GPU 生效状态，直接展示在热更页面「已生效资产实时自检」中。
+    /// 实时自检 v8.0.0（hotpack-v7 · 2.1 GB+）7 大零水分精绘模块的磁盘体积与内存/GPU 生效状态。
     func refreshActiveAssetReport() {
         let root = Self.rootURL
         let has60k = MeshCatalog.isAvailable(.high60K, hotPackRoot: root)
         let has120k = MeshCatalog.isAvailable(.ultra120K, hotPackRoot: root)
         let meshStat = Self.directorySize(root.appendingPathComponent("HDMeshes", isDirectory: true))
         let tileSummary = MapTileStreamer.shared.mountedSummary
-        let erasStat = Self.directorySize(root.appendingPathComponent("Eras45", isDirectory: true))
-        let erasActive = HistoricalErasCatalog.isPackMounted
         let encStat = Self.directorySize(root.appendingPathComponent("Encyclopedia", isDirectory: true))
         let cityCount = HistoricalBasemaps.globalCities().count
         let unitStat = Self.directorySize(root.appendingPathComponent("EraUnits", isDirectory: true))
+        let scrollStat = Self.directorySize(root.appendingPathComponent("EventScrolls", isDirectory: true))
+        let portraitStat = Self.directorySize(root.appendingPathComponent("GeneralPortraits", isDirectory: true))
         let audioStat = Self.directorySize(root.appendingPathComponent("AudioHD", isDirectory: true))
+        let hasStudioV8 = FileManager.default.fileExists(atPath: root.appendingPathComponent("AudioHD/studio-master-v8.json").path)
 
         let meshDetail: String = (has60k && has120k)
-            ? "已挂载 60K（1,200 州）与 120K（2,400 州）高精拓扑"
-            : (has60k ? "已挂载 60K（1,200 州）高精拓扑" : "当前使用内置 20K 拓扑 · 下载即解锁 60K/120K")
+            ? "已挂载 60K（1,200 州）与 120K（2,400 州）精绘拓扑及 12 剧本高精 GIS 国界"
+            : (has60k ? "已挂载 60K（1,200 州）精绘拓扑" : "当前使用内置 20K 拓扑 · 下载即解锁 60K/120K 细密州郡")
         let tileDetail: String = tileSummary.regions > 0
-            ? "Metal GPU 瓦片金字塔实时流式就绪：\(tileSummary.regions) 大分区 · \(tileSummary.tiles) 块高清瓦片"
-            : "尚未挂载 · 下载即解锁 8K–16K 卫星山川与海深渲染"
-        let erasDetail: String = erasActive
-            ? "已实时挂载 45 纪元国界库（\(HistoricalErasCatalog.mountedMaskCount) 套高精疆界掩码，可直接开局）"
-            : "当前显示 45 纪元年表 · 下载即解锁全 45 纪元一键开局"
+            ? "Metal GPU 瓦片金字塔实时流式就绪：\(tileSummary.regions) 大战区 · \(tileSummary.tiles) 块 25.6K 级山川河谷瓦片"
+            : "尚未挂载 · 下载即解锁 25.6K 级真实山脉河谷与深海地貌渲染"
         let encDetail: String = cityCount >= 10000
-            ? "已挂载 \(cityCount) 座真实世界城市志与历史人物名录"
-            : "当前内置 \(cityCount) 座城市 · 下载扩展至 50,000+ 真实城市志"
+            ? "已挂载 \(cityCount) 座 100% 纯中文真实城市志与 6,000+ 历史将帅人物谱"
+            : "当前内置 \(cityCount) 座城市 · 下载扩展至 15,000+ 纯中文真实地名与名将库"
         let unitDetail: String = unitStat.files > 0
             ? "已接管 Metal 兵模管线：\(unitStat.files) 套 6 时代高清军团与舰船贴图"
             : "当前使用程序化雕漆兵模 · 下载即随时代自动换装"
-        let audioDetail: String = audioStat.files > 0
-            ? "已接管 AVAudio 引擎：\(audioStat.files) 条时代交响音轨与战场音效"
-            : "当前使用经典配乐 · 下载即随青铜/中古/一战/二战/冷战切曲"
+        let scrollDetail: String = scrollStat.files > 0
+            ? "已挂载 \(scrollStat.files) 幅史实大事件古舆插画（德奥合并·九一八·闪击波兰·中途岛等）"
+            : "尚未挂载 · 下载后历史大事件弹窗展示高清战史卷轴画卷"
+        let portraitDetail: String = portraitStat.files > 0
+            ? "已挂载 \(portraitStat.files) 枚史实名将与君主肖像徽章"
+            : "尚未挂载 · 下载后军团与朝堂展示名将肖像徽章"
+        let audioDetail: String = hasStudioV8
+            ? "已接管 AVAudio 引擎：v8 工作室物理建模重制（\(audioStat.files) 条交响乐章与实感拟音）"
+            : (audioStat.files > 0 ? "检测到旧版音频缓存，更新至 hotpack-v7 即刻切换重制交响母带" : "当前使用经典原作纯净原声 · 下载即解锁重制版时代交响")
 
         let rows: [ActiveAssetCheck] = [
-            ActiveAssetCheck(id: "hd-meshes", title: "60K / 120K 超精网格拓扑", detail: meshDetail, active: has60k || has120k, sizeBytes: meshStat.bytes),
-            ActiveAssetCheck(id: "relief-tiles", title: "8K–16K 卫星地貌 GPU 瓦片", detail: tileDetail, active: tileSummary.regions > 0, sizeBytes: tileSummary.bytes),
-            ActiveAssetCheck(id: "eras-45", title: "五千年 45 纪元真实可玩剧本", detail: erasDetail, active: erasActive, sizeBytes: erasStat.bytes),
-            ActiveAssetCheck(id: "encyclopedia", title: "50,000+ 真实世界城市与人物志", detail: encDetail, active: encStat.bytes > 0 || cityCount >= 10000, sizeBytes: encStat.bytes),
+            ActiveAssetCheck(id: "hd-meshes", title: "60K / 120K 精绘拓扑与 12 剧本 GIS 国界", detail: meshDetail, active: has60k || has120k, sizeBytes: meshStat.bytes),
+            ActiveAssetCheck(id: "relief-tiles", title: "25.6K 真实山川河流 GPU 地形瓦片", detail: tileDetail, active: tileSummary.regions > 0, sizeBytes: tileSummary.bytes),
+            ActiveAssetCheck(id: "encyclopedia", title: "100% 纯中文 15,000+ 城市与名将大典", detail: encDetail, active: encStat.bytes > 0 || cityCount >= 10000, sizeBytes: encStat.bytes),
             ActiveAssetCheck(id: "era-units", title: "6 时代高清兵模与战舰贴图", detail: unitDetail, active: unitStat.files > 0, sizeBytes: unitStat.bytes),
-            ActiveAssetCheck(id: "audio-hd", title: "时代自适应交响原声与战场音效", detail: audioDetail, active: audioStat.files > 0, sizeBytes: audioStat.bytes),
+            ActiveAssetCheck(id: "event-scrolls", title: "50+ 真实历史大事件战史画卷", detail: scrollDetail, active: scrollStat.files > 0, sizeBytes: scrollStat.bytes),
+            ActiveAssetCheck(id: "general-portraits", title: "48 位真实名将与统帅肖像徽章", detail: portraitDetail, active: portraitStat.files > 0, sizeBytes: portraitStat.bytes),
+            ActiveAssetCheck(id: "audio-hd", title: "v8 工作室物理建模重制交响与实感拟音", detail: audioDetail, active: hasStudioV8, sizeBytes: audioStat.bytes),
         ]
         activeAssetReport = rows
         mountedActiveBytes = rows.reduce(0) { $0 + $1.sizeBytes }

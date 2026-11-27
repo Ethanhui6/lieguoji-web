@@ -18,6 +18,8 @@ public enum NativeCreation {
         public var organicBorders: Bool = false
         /// 真实历史剧本（v5.8.0 历史舆图）：非 nil 时按真实世界底图、历史疆域、政体、君主与开局同盟/战事创建世界。
         public var historicalScenario: HistoricalScenario? = nil
+        /// v8.0.0 历史剧本推演路线：`"historical"`（严格史实路线与锁盟，默认）或 `"sandbox"`（多分支架空路线）。
+        public var historicalRoute: String = "historical"
         public init(seed: String, template: String, count: Int, cityCount: Int, relations: String = "peace", naming: String = "historical-names", cultures: [String] = []) {
             self.seed = seed; self.template = template; self.count = count; self.cityCount = cityCount; self.relations = relations; self.naming = naming; self.cultures = cultures
         }
@@ -119,7 +121,7 @@ public enum NativeCreation {
                 War26.install()
                 warEngine = Session.engine
             }
-            HistoricalScenarios.applyDiplomacy(run: r, scenario: sc, engine: warEngine)
+            HistoricalScenarios.applyDiplomacy(run: r, scenario: sc, engine: warEngine, route: o.historicalRoute)
             if o.relations == "war" && sc.openingWars.isEmpty, let engine = warEngine {
                 CreationPolitics.openingWars(r, engine: engine)
             }
@@ -140,7 +142,26 @@ public enum NativeCreation {
             CreationNames.vary(r, seed: o.seed)
         }
         progress?("map")
-        let map = CreationMap.build(x, run: r, elevations: effectiveHeights, seed: o.seed, template: o.template)
+        if let sc = o.historicalScenario, sc.region != .custom {
+            let riverMap = HistoricalGeography.riverProvinces(
+                region: sc.region,
+                provinces: r.world.provinces.asArray,
+                scale: r.scale.asNumber,
+                width: doc.width,
+                height: doc.height
+            )
+            for (pid, rName) in riverMap {
+                if !r.terrainContext.isNull && !r.terrainContext.provinces[pid].isNull {
+                    r.terrainContext.provinces[pid].hasMajorRiver = JS(true)
+                    r.terrainContext.provinces[pid].riverName = JS(rName)
+                }
+                if !r.upperCombat.isNull && !r.upperCombat.provinces[pid].isNull {
+                    let cur = r.upperCombat.provinces[pid].storedDefense.optionalNumber ?? 1.0
+                    r.upperCombat.provinces[pid].storedDefense = JS(min(3.0, cur + 0.35))
+                }
+            }
+        }
+        let map = CreationMap.build(x, run: r, elevations: effectiveHeights, seed: o.seed, template: o.template, historicalRegion: o.historicalScenario?.region)
         statics.labelGrid = CreationMap.labelGrid(x.grid, elevations: effectiveHeights, cells: map.cells)
         statics.map = map.map
         return World(run: r, statics: statics, cityCount: r.world.provinces.length)
@@ -242,7 +263,7 @@ public enum NativeCreation {
         let g = OpeningGovernment.provinceGeography(doc, elevations: heights, provinces: r.world.provinces.asArray, scale: scale)
         OpeningGovernment.attach(r, terrain: g.terrain, cells: g.cells, combat: g.combat)
         let provinces = r.world.provinces.asArray
-        let sea = SeaGraph(doc, elevations: heights, provinces: provinces)
+        let sea = SeaGraph(doc, elevations: heights, provinces: provinces, blockedRegion: o.historicalScenario?.region)
         guard let travel = CreationGeography.buildTravel(doc, elevations: heights, provinces: provinces, sea: sea) else { return nil }
         let positions = CreationGeography.armyPositions(r, graph: travel, binding: CreationGeography.binding(doc, elevations: heights, provinces: provinces))
         // 政府段各字段按网页的顺序排在整局末尾。

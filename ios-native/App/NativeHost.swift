@@ -16,9 +16,9 @@ struct ComputeRouteInfo: Identifiable, Equatable, Sendable {
     var active: Bool
 
     static let builtInRoutes: [ComputeRouteInfo] = [
-        ComputeRouteInfo(id: "tencent-443", name: "九州云服 v13 · 443 运营商优先专线", address: "111.230.153.235:443", tag: "LGB1+UDP · 3Mbps 专调", rttMs: nil, active: false),
-        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 v13 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "二进制 MUX v13 + UDP", rttMs: nil, active: false),
-        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 v13 · 8443 备用高速专线", address: "111.230.153.235:8443", tag: "双端口容灾专线", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-443", name: "九州云服 v14 · 443 运营商优先专线", address: "111.230.153.235:443", tag: "LGB2 差量 + UDP 零阻塞", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 v14 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "LGB2 差量 MUX v14 + UDP", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 v14 · 8443 备用高速专线", address: "111.230.153.235:8443", tag: "双端口容灾专线", rttMs: nil, active: false),
         ComputeRouteInfo(id: "lan-udp", name: "局域网毫秒直连", address: "lan", tag: "同 Wi-Fi 自动发现", rttMs: nil, active: false),
         ComputeRouteInfo(id: "cf-relay", name: "Cloudflare 全球边缘推流", address: "relay", tag: "弱网/海外穿透备用", rttMs: nil, active: false),
     ]
@@ -146,7 +146,9 @@ final class StreamFrameBuffer: @unchecked Sendable {
     private var lastRawBytes: Int = 0
     private var framesReceived: Int = 0
     private var latestDecodedDay: Int = 0
+    private var lastAcceptedSeq: UInt32 = 0
     private var baselineOwners: [Int] = []
+    private var baselineArmies: [String: GameState.Army] = [:]
     private let maxBuffered = 4
     var onFrameConsumed: (@Sendable (UInt32) -> Void)?
 
@@ -159,13 +161,16 @@ final class StreamFrameBuffer: @unchecked Sendable {
     func resetDay() {
         lock.lock()
         latestDecodedDay = 0
+        lastAcceptedSeq = 0
         baselineOwners.removeAll(keepingCapacity: true)
+        baselineArmies.removeAll(keepingCapacity: true)
         lock.unlock()
     }
 
     func resetBaseline() {
         lock.lock()
         baselineOwners.removeAll(keepingCapacity: true)
+        baselineArmies.removeAll(keepingCapacity: true)
         lock.unlock()
     }
 
@@ -173,6 +178,13 @@ final class StreamFrameBuffer: @unchecked Sendable {
         guard !owners.isEmpty else { return }
         lock.lock()
         baselineOwners = owners
+        lock.unlock()
+    }
+
+    func seedBaselineArmies(_ armies: [GameState.Army]) {
+        lock.lock()
+        baselineArmies.removeAll(keepingCapacity: true)
+        for a in armies { baselineArmies[a.id] = a }
         lock.unlock()
     }
 
@@ -203,6 +215,7 @@ final class StreamFrameBuffer: @unchecked Sendable {
     func reset(epoch: UInt8) {
         lock.lock()
         self.epoch = epoch
+        self.lastAcceptedSeq = 0
         queue.removeAll(keepingCapacity: true)
         let w = waiter
         waiter = nil
@@ -216,6 +229,7 @@ final class StreamFrameBuffer: @unchecked Sendable {
 
     func ingest(tag: UInt32, compressedPayload: Data) {
         let frameEpoch = UInt8((tag >> 24) & 0xFF)
+        let frameSeq = tag & 0x00FF_FFFF
         lock.lock()
         let accept = (frameEpoch == epoch)
         lock.unlock()
@@ -231,6 +245,13 @@ final class StreamFrameBuffer: @unchecked Sendable {
                 self.lock.unlock()
                 return
             }
+            // UDP 乱序/迟到包防护：丢弃同 epoch 下序号倒退的旧包（允许 24-bit 回绕）
+            if self.lastAcceptedSeq > 0 && frameSeq > 0 && frameSeq <= self.lastAcceptedSeq && (self.lastAcceptedSeq - frameSeq) < 100_000 {
+                self.lock.unlock()
+                return
+            }
+            if frameSeq > 0 { self.lastAcceptedSeq = frameSeq }
+
             if !decoded.owners.isEmpty {
                 self.baselineOwners = decoded.owners
             } else if let delta = decoded.ownersDelta, !self.baselineOwners.isEmpty {
@@ -246,6 +267,19 @@ final class StreamFrameBuffer: @unchecked Sendable {
                 }
                 decoded.owners = rebuilt
                 self.baselineOwners = rebuilt
+            }
+            // v14 LGB2 军队实体差量合并：将移动/变更军团叠加回基线并剔除阵亡军团
+            if decoded.armyDeltaMode == true {
+                for a in decoded.armies { self.baselineArmies[a.id] = a }
+                if let rem = decoded.removedArmyIds {
+                    for rid in rem { self.baselineArmies.removeValue(forKey: rid) }
+                }
+                decoded.armies = Array(self.baselineArmies.values)
+                decoded.armyDeltaMode = false
+                decoded.removedArmyIds = nil
+            } else {
+                self.baselineArmies.removeAll(keepingCapacity: true)
+                for a in decoded.armies { self.baselineArmies[a.id] = a }
             }
             self.lastCompressedBytes = compSize
             self.lastRawBytes = raw.count
@@ -678,12 +712,32 @@ actor NativeHost {
                         }
                     }
                 }
+                // v8.0.0 永不锁死玩家：云服掉线时立刻无缝回落本机引擎继续可玩（绝不再逼玩家手动重连才能点地图！）
+                if service.engine == nil, let snap = lastWorld {
+                    _ = service.handle("open", [:], payload: snap)
+                    service.engine?.enableAppRules()
+                }
+                if service.engine != nil {
+                    lost = false
+                    onLinkLost?()
+                    return service.handle(name, args, payload: payload)
+                }
                 lost = true
                 return EngineService.Reply(ok: false, reason: "与服务器的连接中断")
             }
         }
         if parked { return EngineService.Reply(ok: false, reason: "已暂存后台，返回前台即自动续连") }
-        if lost { return EngineService.Reply(ok: false, reason: "与服务器的连接中断，正在重连") }
+        if lost {
+            if service.engine == nil, let snap = lastWorld {
+                _ = service.handle("open", [:], payload: snap)
+                service.engine?.enableAppRules()
+            }
+            if service.engine != nil {
+                lost = false
+                return service.handle(name, args, payload: payload)
+            }
+            return EngineService.Reply(ok: false, reason: "与服务器的连接中断，正在重连")
+        }
         return service.handle(name, args, payload: payload)
     }
 
@@ -891,47 +945,41 @@ actor NativeHost {
             throw EngineError.message("世界已切换，已取消旧连接")
         }
 
-        // 若后台上传期间本机已先推演了若干天，精确追平差值天数或重新快照，严禁截断回退造成军队拉回！
+        // 若后台上传期间本机已先推演了若干天，平滑同步差值天数（彻底移除旧版 >15 天自杀掐断逻辑！）
         if initialSave != nil {
             var serverDay = startDay
             var nowDay = service.engine?.run.world.day.asInt ?? startDay
             var deltaDays = nowDay - serverDay
 
-            if deltaDays > 15 {
-                guard let freshSave = service.engine?.save() else {
-                    link.cancel()
-                    throw EngineError.message("本机世界已变化，已取消自动切换")
-                }
-                let freshDay = service.engine?.run.world.day.asInt ?? nowDay
-                try await Task.detached(priority: .userInitiated) {
-                    do {
-                        let reopened = try await link.call("open", [:], payload: freshSave)
-                        guard reopened.ok else { throw EngineError.message("服务器同步最新世界失败：\(reopened.reason)") }
-                        _ = try? await link.call("enableAppRules", [:], payload: nil)
-                    } catch {
+            if deltaDays > 40 {
+                if let freshSave = service.engine?.save() {
+                    let freshDay = service.engine?.run.world.day.asInt ?? nowDay
+                    try await Task.detached(priority: .userInitiated) {
+                        do {
+                            let reopened = try await link.call("open", [:], payload: freshSave)
+                            guard reopened.ok else { throw EngineError.message("服务器同步最新世界失败：\(reopened.reason)") }
+                            _ = try? await link.call("enableAppRules", [:], payload: nil)
+                        } catch {
+                            link.cancel()
+                            throw error
+                        }
+                    }.value
+                    guard advances.revision == startRev else {
                         link.cancel()
-                        throw error
+                        throw EngineError.message("世界已切换，已取消旧连接")
                     }
-                }.value
-                guard advances.revision == startRev else {
-                    link.cancel()
-                    throw EngineError.message("世界已切换，已取消旧连接")
-                }
-                latestSave = freshSave
-                serverDay = freshDay
-                nowDay = service.engine?.run.world.day.asInt ?? serverDay
-                deltaDays = nowDay - serverDay
-                if deltaDays > 15 {
-                    link.cancel()
-                    throw EngineError.message("本机推演推进较快，已取消本次切换以避免进度回退")
+                    latestSave = freshSave
+                    serverDay = freshDay
+                    nowDay = service.engine?.run.world.day.asInt ?? serverDay
+                    deltaDays = nowDay - serverDay
                 }
             }
 
             if deltaDays > 0 {
-                let step1 = deltaDays
+                let stepNow = min(365, deltaDays)
                 try await Task.detached(priority: .userInitiated) {
                     do {
-                        let r1 = try await link.call("step", ["days": step1, "slim": true], payload: nil)
+                        let r1 = try await link.call("step", ["days": stepNow, "slim": true], payload: nil)
                         guard r1.ok else { throw EngineError.message("服务器同步进度失败：\(r1.reason)") }
                     } catch {
                         link.cancel()
@@ -942,30 +990,7 @@ actor NativeHost {
                     link.cancel()
                     throw EngineError.message("世界已切换，已取消旧连接")
                 }
-                serverDay += step1
-
-                let recheckDay = service.engine?.run.world.day.asInt ?? serverDay
-                let remaining = recheckDay - serverDay
-                if remaining > 15 {
-                    link.cancel()
-                    throw EngineError.message("本机推演推进较快，已取消本次切换以避免进度回退")
-                } else if remaining > 0 {
-                    let step2 = remaining
-                    try await Task.detached(priority: .userInitiated) {
-                        do {
-                            let r2 = try await link.call("step", ["days": step2, "slim": true], payload: nil)
-                            guard r2.ok else { throw EngineError.message("服务器追平进度失败：\(r2.reason)") }
-                        } catch {
-                            link.cancel()
-                            throw error
-                        }
-                    }.value
-                    guard advances.revision == startRev else {
-                        link.cancel()
-                        throw EngineError.message("世界已切换，已取消旧连接")
-                    }
-                    serverDay += step2
-                }
+                serverDay += stepNow
             }
         }
 
@@ -1265,24 +1290,31 @@ actor NativeHost {
         guard let revision = advances.replaceWorld(world: world) else { throw EngineError.message("世界已经切换，忽略旧的载入请求") }
         try Self.loadCatalogs()
         lastResumedState = nil
+        lost = false
+        parked = false
         baselineOwners.removeAll(keepingCapacity: true)
         streamBuffer.resetDay()
-        if remote != nil { lastWorld = data }
+        lastWorld = data
         streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
-        let r = await call("open", payload: data)
+        // v8.0.0 零等待瞬开：始终先载入本机权威引擎，彻底根除开局卡连接/连不上导致无法进图的痼疾！
+        let localReply = service.handle("open", [:], payload: data)
+        service.engine?.enableAppRules()
         guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的载入结果") }
-        guard r.ok else { throw EngineError.message(r.reason) }
-        if remote == nil {
-            currentWorldId = service.currentWorldId
-            currentKnownDay = service.currentDay
-        } else if let info = try? await remote?.call("worldInfo", [:], payload: nil), info.ok, let text = info.text {
-            let parts = text.split(separator: "|", omittingEmptySubsequences: false)
-            if parts.count >= 2 {
-                currentWorldId = String(parts[0])
-                currentKnownDay = Int(parts[1]) ?? 0
+        guard localReply.ok else { throw EngineError.message(localReply.reason) }
+        currentWorldId = service.currentWorldId
+        currentKnownDay = service.currentDay
+        // 若此前已连着远程云服，安全同步新世界到云服；同步失败则静默切回本机继续 0ms 畅玩
+        if let link = remote {
+            let syncReply = try? await link.call("open", [:], payload: data)
+            if syncReply?.ok == true {
+                _ = try? await link.call("enableAppRules", [:], payload: nil)
+            } else {
+                link.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""
+                activeRouteId = ""; activeDirectAddress = ""
+                serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
             }
         }
-        return (r.map, r.data ?? Data(), revision)
+        return (localReply.map, localReply.data ?? Data(), revision)
     }
 
     private static let inputsLock = NSLock()
@@ -1353,21 +1385,29 @@ actor NativeHost {
         }
         guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的建世界结果") }
         lastResumedState = nil
+        lost = false
+        parked = false
         baselineOwners.removeAll(keepingCapacity: true)
         streamBuffer.resetDay()
         streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
-        let r: EngineService.Reply
-        if remote != nil {
-            let data = autoreleasepool { Data(built.json.utf8) }
-            lastWorld = data
-            r = await call("open", payload: data)
-        } else {
-            r = try autoreleasepool { service.adopt(try NativeEngine(created: built)) }
-        }
+        // v8.0.0 零等待瞬开：新世界永远 0ms 载入本机即可开玩；若已连云服则后台同步，失败不阻塞开局！
+        let r = try autoreleasepool { service.adopt(try NativeEngine(created: built)) }
         guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的建世界结果") }
         guard r.ok else { throw EngineError.message(r.reason) }
         currentWorldId = runId
         currentKnownDay = 0
+        if let link = remote {
+            let snap = autoreleasepool { Data(built.json.utf8) }
+            lastWorld = snap
+            let syncOk = (try? await link.call("open", [:], payload: snap))?.ok ?? false
+            if syncOk {
+                _ = try? await link.call("enableAppRules", [:], payload: nil)
+            } else {
+                link.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""
+                activeRouteId = ""; activeDirectAddress = ""
+                serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
+            }
+        }
         return (r.map, r.data ?? Data(), revision, built.cityCount)
     }
 
@@ -1567,6 +1607,16 @@ actor NativeHost {
         await command("setRebelMode", ["mode": mode])
     }
     func eraMilitaryInfo(_ nation: Int) async -> Data? { await call("eraMilitaryInfo", ["n": nation]).data }
+    func resolveHistoricalEvent(eventId: String, choiceIndex: Int) async -> (ok: Bool, reason: String, state: Data?) {
+        await command("resolveHistoricalEvent", ["eventId": eventId, "choiceIndex": choiceIndex])
+    }
+    func setDoctrine(nation: Int, doctrineId: String) async -> (ok: Bool, reason: String, state: Data?) {
+        await command("setDoctrine", ["n": nation, "doctrineId": doctrineId])
+    }
+    func doctrineInfo(_ nation: Int) async -> Data? { await call("doctrineInfo", ["n": nation]).data }
+    func setPlayerNation(_ nation: Int) async -> (ok: Bool, reason: String, state: Data?) {
+        await command("setPlayerNation", ["n": nation])
+    }
 }
 
 /// A channel to LieguojiServer: direct full-duplex TCP (LAN / Cloud VPS), persistent WebSocket Push relay, or HTTP/2 fallback.
@@ -1942,7 +1992,9 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
                         }
                     }
                 case .failed(let e): finish(.failure(e))
-                case .waiting(let e): finish(.failure(EngineError.message("连不上服务器（\(e.localizedDescription)）。请确认服务器已运行且端口开放。")))
+                case .waiting:
+                    // iOS Wi-Fi/5G 切换与首次拉起常会短暂进入 .waiting 后立即 .ready，绝不误杀，交由超时定时器判定！
+                    break
                 default: break
                 }
             }
@@ -2003,7 +2055,11 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
 
         udp.stateUpdateHandler = { [weak udp] state in
             if case .ready = state {
+                // 连发两枚 NAT 打洞注册包，确保国内运营商 NAT 即刻放行 UDP 8767 零队头阻塞下行帧
                 udp?.send(content: regPacket, completion: .contentProcessed { _ in })
+                DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.14) { [weak udp] in
+                    udp?.send(content: regPacket, completion: .contentProcessed { _ in })
+                }
                 receiveNextDatagram()
             }
         }
@@ -2012,7 +2068,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         udpKeepaliveTask?.cancel()
         udpKeepaliveTask = Task.detached(priority: .utility) { [weak self, weak udp] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                try? await Task.sleep(nanoseconds: 3_200_000_000)
                 guard let self, self.isMuxActive, let udp else { return }
                 udp.send(content: regPacket, completion: .contentProcessed { _ in })
             }
@@ -2222,7 +2278,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
             let reqId = allocId()
             let inner = EngineWire.request(name, args, payload: payload, compressPayload: true)
             let frame = EngineWire.muxFrame(type: EngineWire.muxRequest, id: reqId, body: inner)
-            let rpcTimeout: Double = (name == "open" || name == "save" || name == "catalogs") ? 35.0 : 12.0
+            let rpcTimeout: Double = (name == "open" || name == "save" || name == "catalogs") ? 48.0 : 14.0
             let replyBody = try await sendMuxAndWait(id: reqId, frame: frame, timeoutSeconds: rpcTimeout)
             return try decodeWireReply(replyBody)
         }

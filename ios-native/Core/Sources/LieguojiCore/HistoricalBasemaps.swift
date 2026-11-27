@@ -259,8 +259,51 @@ public enum HistoricalBasemaps {
             if let data = try? Data(contentsOf: citiesURL),
                let decoded = try? JSONDecoder().decode([GazetteerCity].self, from: data),
                !decoded.isEmpty {
-                store.setCities(decoded)
+                // v8.0.0 严格保证加载的每一座城市名均为 100% 纯中文，彻底拦截外文残留
+                let cleaned = decoded.map { c in
+                    GazetteerCity(
+                        n: NamingCatalog.enforceChinesePlaceName(c.n),
+                        lon: c.lon, lat: c.lat, pop: c.pop, cap: c.cap, iso: c.iso
+                    )
+                }
+                store.setCities(cleaned)
             }
+        }
+    }
+
+    /// v8.0.0 区域历史剧本的真实地图外缘禁航判定（单位为地图画布像素坐标 `x in 0...width`, `y in 0...height`）：
+    /// 彻底封堵区域底图边缘的假运河/假海岸（如欧洲东缘俄罗斯内陆边界、中国北缘西缘西伯利亚与西域边界、
+    /// 地中海南缘撒哈拉边界），使舰队与渡海部队绝对不能绕行地图边缘或在假边界建港下海！
+    public static func isBlockedTheaterSea(region: HistoricalRegion, x: Double, y: Double, width: Double, height: Double) -> Bool {
+        guard region != .world && region != .custom else { return false }
+        let nx = x / max(1.0, width)
+        let ny = y / max(1.0, height)
+        // 所有区域剧本的最外圈 2.6% 画幅边框一律作为不可通航地图边界，杜绝船只贴着地图框绕行
+        if nx < 0.026 || nx > 0.974 || ny < 0.026 || ny > 0.974 { return true }
+        switch region {
+        case .europe:
+            // 欧洲东缘（俄罗斯内陆乌拉尔线）、东北极地冻海与东南内陆边缘禁止假海岸下海
+            if nx > 0.945 { return true }
+            if ny < 0.055 && nx > 0.56 { return true }
+            if ny > 0.92 && nx > 0.78 { return true }
+            return false
+        case .huaxia, .china:
+            // 华夏/中国全图的北缘（漠北西伯利亚）与西缘（西域高原内陆）均为陆疆边界，绝不可下海
+            if ny < 0.060 || nx < 0.060 { return true }
+            if ny > 0.92 && nx < 0.30 { return true }
+            return false
+        case .eastAsiaJapan:
+            // 东亚与太平洋的北缘（西伯利亚内陆）与西缘（青藏/印度内陆）严禁假海岸通航
+            if ny < 0.055 || nx < 0.055 { return true }
+            return false
+        case .mediterranean:
+            // 地中海的北缘（北欧陆地）、东缘（波斯内陆）与南缘（撒哈拉腹地）均为陆疆边界
+            if ny < 0.055 || nx > 0.945 || ny > 0.940 { return true }
+            return false
+        case .japanDetail:
+            return false
+        case .world, .custom:
+            return false
         }
     }
 

@@ -167,16 +167,16 @@ final class V9OverhaulTests: XCTestCase {
         let r36 = eng36.run
         let modernReforms = Regimes.reforms(for: HistoricalEra.current(r36))
         XCTAssertTrue(modernReforms.contains { $0.id == "econ_war" }, "现代剧本应包含战时经济法案")
-        XCTAssertTrue(modernReforms.contains { $0.id == "focus_blitz_rearm" }, "现代剧本应包含 HOI4 风格国家焦点国策")
-        XCTAssertFalse(modernReforms.contains { $0.id == "exam" }, "现代剧本不应混入古典科举制")
+        XCTAssertTrue(modernReforms.contains { $0.id == "focus_blitz_armored" }, "现代剧本应包含 HOI4 风格国家焦点国策")
+        XCTAssertFalse(modernReforms.contains { $0.id == "keju" }, "现代剧本不应混入古典科举制")
 
-        // 校验德国开局已正确预装战时/部分动员与现代法西斯政体
+        // 校验德国开局已正确预装战时/部分动员与现代法西斯政体样式
         let ger = r36.world.nations.asArray.first { ($0.name.optionalString ?? "").contains("德意志") }
         XCTAssertNotNil(ger)
         if let gerId = ger?.id.asString {
             let active = r36.regimes.nations[gerId].reforms.asArray.map(\.asString)
             XCTAssertTrue(active.contains("econ_partial") || active.contains("econ_war"), "1936 德国应预装现代工业动员法案")
-            XCTAssertEqual(r36.civilization.nations[gerId].polity.asString, "fascist")
+            XCTAssertEqual(Regimes.style(r36, gerId).id, "nazi", "1936 德国政体样式应为纳粹极权体制")
         }
         cleanup()
 
@@ -187,7 +187,7 @@ final class V9OverhaulTests: XCTestCase {
         let builtSg = try NativeCreation.generate(optSg, inputs: inputs, worldId: "v9-sg", runId: "run-sg")
         let engSg = try NativeEngine(world: Data(builtSg.json.utf8))
         let classicReforms = Regimes.reforms(for: HistoricalEra.current(engSg.run))
-        XCTAssertTrue(classicReforms.contains { $0.id == "exam" }, "古典剧本应包含科举取士")
+        XCTAssertTrue(classicReforms.contains { $0.id == "keju" }, "古典剧本应包含科举取士")
         XCTAssertFalse(classicReforms.contains { $0.id == "econ_war" }, "古典剧本不应出现现代战时经济")
     }
 }

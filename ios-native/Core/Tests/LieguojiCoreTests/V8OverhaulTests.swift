@@ -165,13 +165,17 @@ final class V8OverhaulTests: XCTestCase {
         let gerBefore = r36.world.provinces.asArray.filter { $0.controller.optionalString == gerId }.count
         let ausBefore = r36.world.provinces.asArray.filter { $0.controller.optionalString == ausId }.count
         XCTAssertGreaterThan(ausBefore, 0, "1936 开局奥地利必须拥有独立领土")
-        // 触发德奥合并事件（1938 年 3 月，第 805 日）
+        // 触发德奥合并事件（1938 年 3 月，第 805 日；依次结算 1936-1937 前置事件后即触发德奥合并）
         r36.world.day = JS(805)
         if !r36.world.date.isNull {
             r36.world.date.year = JS(1938)
             r36.world.date.month = JS(3)
         }
-        HistoricalEvents.tickDay(r36)
+        for _ in 0..<12 {
+            if !r36.regimes.firedEvents["anschluss_1938"].isNull { break }
+            HistoricalEvents.tickDay(r36)
+        }
+        XCTAssertFalse(r36.regimes.firedEvents["anschluss_1938"].isNull, "1938 年 3 月应触发德奥合并事件")
         let gerAfter = r36.world.provinces.asArray.filter { $0.controller.optionalString == gerId }.count
         let ausAfter = r36.world.provinces.asArray.filter { $0.controller.optionalString == ausId }.count
         XCTAssertEqual(ausAfter, 0, "德奥合并事件触发后奥地利领土应完全并入德国")

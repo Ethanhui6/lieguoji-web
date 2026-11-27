@@ -85,7 +85,7 @@ public enum Regions {
         mutating func delete(_ k: Int) { if values.removeValue(forKey: k) != nil { keys.removeAll { $0 == k } } }
         mutating func clear() { keys = []; values = [:] }
     }
-    struct Cluster { var ring: [Vertex]; var area: Double; var x: Double; var y: Double; var height: Double; var members: [Int]; var adjacent = Adjacency(); var revision = 0; var live = true }
+    struct Cluster { var ring: [Vertex]; var area: Double; var effArea: Double = 0; var x: Double; var y: Double; var height: Double; var members: [Int]; var adjacent = Adjacency(); var revision = 0; var live = true }
     struct Entry { let a: Int, b: Int, ar: Int, br: Int, cost: Double }
     struct Queue {
         var values: [Entry] = []
@@ -179,14 +179,16 @@ public enum Regions {
     }
 
     /// 与 `partitionWithinBorders` 同源，并额外返回 `faces` 供计算每州真实人口/工业密度均值。
-    /// v9.0.0：传入 `historicalRegion` 时自动叠加真实 WGS-84 大江大河分界阻力，令州郡自然沿莱茵/多瑙/长江/黄河/第聂伯/维斯瓦等天堑划界。
+    /// v10.0.0：传入 `popDensity` 与 `historicalRegion` 时，启用**非均匀地理密度分州** + 真实大河分界阻力：
+    /// 俄罗斯/西伯利亚/青藏/戈壁等低密度广袤区自然合并为疏朗大州，而欧洲核心/日本/华北江南/台湾/香港/新加坡等稠密战略区自然保持精致细分小州！
     public static func partitionWithinBordersWithFaces(
         _ d: TerrainDocument,
         elevations: [Int],
         ownerMask: [Int8],
         cities: Int,
         surface known: Climate.Surface? = nil,
-        historicalRegion: HistoricalRegion? = nil
+        historicalRegion: HistoricalRegion? = nil,
+        popDensity: [UInt8]? = nil
     ) -> (regions: [Region], owners: [Int], faces: [Face])? {
         let faces = landFaces(d, elevations)
         guard !faces.isEmpty, !ownerMask.isEmpty else { return nil }
@@ -283,17 +285,38 @@ public enum Regions {
             }
         }
 
-        // 3. 统计各国面积、面数与连通分块数（跳过 -2 无人之地），按 sqrt(nationArea) 分配公平的州郡配额 targetPerNation[owner]
+        // 3. 统计各国真实面积、地理密度加权有效面积（effArea）、面数与连通分块数（跳过 -2 无人之地）：
+        // v10.0.0：低密度广袤荒原（西伯利亚/青藏/戈壁）自动压低密度权重合并为大州，稠密要冲（欧陆核心/日本/中原/台湾/香港/新加坡）自动抬高权重细分出精巧小州！
         var nationArea = [Int: Double]()
+        var nationEffArea = [Int: Double]()
         var nationFaceCount = [Int: Int]()
         var nationCompCount = [Int: Int]()
         var faceAreas = [Double](repeating: 0, count: faces.count)
+        var faceEffAreas = [Double](repeating: 0, count: faces.count)
+        let hasPopDensity = (popDensity?.isEmpty == false)
         for (fi, f) in faces.enumerated() {
             let a = polygonArea(f.ring)
             faceAreas[fi] = a
+            let densityWeight: Double
+            if hasPopDensity, let popArr = popDensity {
+                var sum = 0
+                var cnt = 0
+                for v in f.source where v >= 0 && v < popArr.count && elevations[v] >= 20 {
+                    let pd = Int(popArr[v])
+                    if pd > 0 { sum += pd; cnt += 1 }
+                }
+                let avgPop = cnt > 0 ? Double(sum) / Double(cnt) : 85.0
+                let dNorm = max(0.12, avgPop / 100.0)
+                densityWeight = max(0.20, min(3.50, pow(dNorm, 1.38)))
+            } else {
+                densityWeight = 1.0
+            }
+            let ea = a * densityWeight
+            faceEffAreas[fi] = ea
             let o = faceOwner[fi]
             guard o >= 0 else { continue }
             nationArea[o, default: 0] += a
+            nationEffArea[o, default: 0] += ea
             nationFaceCount[o, default: 0] += 1
         }
         do {
@@ -320,13 +343,13 @@ public enum Regions {
             targetPerNation[o] = m
             minTotal += m
         }
-        let provCap = d.points.count > 80_000 ? 2400 : (d.points.count > 25_000 ? 1200 : 480)
+        let provCap = d.points.count > 80_000 ? 2600 : (d.points.count > 25_000 ? 1400 : 720)
         let ringVertexCap = d.points.count > 25_000 ? 480 : 200
         let requestedTotal = max(minTotal, min(provCap, cities))
         var sqrtWeights = [Int: Double]()
         var sumSqrt = 0.0
         for o in activeOwners {
-            let w = max(1e-6, (nationArea[o] ?? 1.0)).squareRoot()
+            let w = max(1e-6, (nationEffArea[o] ?? nationArea[o] ?? 1.0)).squareRoot()
             sqrtWeights[o] = w
             sumSqrt += w
         }
@@ -401,15 +424,15 @@ public enum Regions {
 
         var clusters = faces.enumerated().map { i, f -> Cluster in
             let p = middle(f.ring)
-            var cl = Cluster(ring: f.ring, area: faceAreas[i], x: p.0, y: p.1, height: f.height, members: [i])
+            var cl = Cluster(ring: f.ring, area: faceAreas[i], effArea: faceEffAreas[i], x: p.0, y: p.1, height: f.height, members: [i])
             if faceOwner[i] < 0 { cl.live = false }
             return cl
         }
         var clusterOwner = faceOwner
         var liveCount = nationFaceCount
-        var nationTargetArea = [Int: Double]()
+        var nationTargetEffArea = [Int: Double]()
         for o in activeOwners {
-            nationTargetArea[o] = (nationArea[o] ?? 1.0) / Double(max(1, targetPerNation[o] ?? 1))
+            nationTargetEffArea[o] = (nationEffArea[o] ?? nationArea[o] ?? 1.0) / Double(max(1, targetPerNation[o] ?? 1))
         }
 
         var edgeOwner = [String: Int]()
@@ -441,10 +464,12 @@ public enum Regions {
             let x = clusters[a], y = clusters[b]
             guard x.live, y.live, let border = x.adjacent[b] else { return }
             let dx = x.x - y.x, dy = x.y - y.y
-            let ward = (dx * dx + dy * dy) * x.area * y.area / max(1e-9, x.area + y.area)
+            // v10.0.0：使用地理密度加权有效面积 effArea 驱动 Ward 合并代价，使低密度荒原（西伯利亚/青藏）自动聚合成宽阔大州、稠密都会自动保留精致小州！
+            let xa = x.effArea, ya = y.effArea
+            let ward = (dx * dx + dy * dy) * xa * ya / max(1e-9, xa + ya)
             let neck = 1 + min(4, min(x.area, y.area).squareRoot() / max(border.length, 1e-9))
-            let tArea = nationTargetArea[owner] ?? 1.0
-            let minA = min(x.area, y.area), floorA = tArea * 0.48
+            let tEffArea = nationTargetEffArea[owner] ?? 1.0
+            let minA = min(xa, ya), floorA = tEffArea * 0.48
             let smallFactor = minA < floorA ? max(0.08, (minA / max(1e-9, floorA)) * 0.40) : 1.0
             let boundary = Double(x.ring.count + y.ring.count - 2 * border.edges)
             let r = boundary / 200.0
@@ -471,6 +496,7 @@ public enum Regions {
             clusters[e.a].y = (a.y * a.area + b.y * b.area) / max(1e-9, area)
             clusters[e.a].height = (a.height * a.area + b.height * b.area) / max(1e-9, area)
             clusters[e.a].area = area
+            clusters[e.a].effArea = a.effArea + b.effArea
             clusters[e.a].ring = ring
             clusters[e.a].members.append(contentsOf: b.members)
             clusters[e.a].revision += 1

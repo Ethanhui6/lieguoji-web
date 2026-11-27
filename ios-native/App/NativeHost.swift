@@ -1160,7 +1160,40 @@ actor NativeHost {
         }
     }
 
-    /// 最优路径秒级重连：并行竞速 111.230.153.235:443 / :8765 / :8443（首个健康端口 <50ms 胜出）→ 局域网 UDP 自动发现 → 云端最新 LAN IP → Cloudflare WebSocket 推流。
+    /// v10.0.0 单轮 1.8 秒极速并行竞速（443 / 8765 / 8443 + 局域网 UDP 同期起跑）：彻底废除旧版 35 秒串行超时死等！
+    private nonisolated static func raceDirectAndLAN(directCandidates: [String], roomCode: String, timeout: Double = 1.6) async -> (address: String, isLAN: Bool)? {
+        await withTaskGroup(of: (String, Bool)?.self) { group in
+            for addr in directCandidates {
+                group.addTask {
+                    if await Self.probeDirectTCP(addr, timeout: timeout) != nil {
+                        return (addr, false)
+                    }
+                    return nil
+                }
+            }
+            group.addTask {
+                if let lanFound = await LANDiscovery.discover(roomCode: roomCode, timeoutSeconds: min(0.8, timeout)) {
+                    return (lanFound, true)
+                }
+                return nil
+            }
+            for await hit in group {
+                if let winner = hit {
+                    group.cancelAll()
+                    return winner
+                }
+            }
+            return nil
+        }
+    }
+
+    private nonisolated static var hasCustomRelayRoomCode: Bool {
+        let custom = (UserDefaults.standard.string(forKey: "remote.roomCode") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return custom.count >= 6
+    }
+
+    /// v10.0.0 最优路径 1.8 秒快败重连：并行竞速 443 / 8765 / 8443 + 局域网 UDP（首个健康节点胜出即连），绝不串行轮询死等！
     private func reattachBest() async -> String? {
         if let existing = remoteAddress, remote != nil { return existing }
         guard !reattaching else { return nil }
@@ -1169,27 +1202,16 @@ actor NativeHost {
 
         let room = Self.activeRoomCode
         let directCandidates = directRaceCandidates()
-        if let winner = await Self.raceDirectAddresses(directCandidates, timeout: 1.5) {
-            fastestRouteHint = winner.address
-            if let label = try? await connect(winner.address, timeout: 2.0, reattach: true) {
+        if let winner = await Self.raceDirectAndLAN(directCandidates: directCandidates, roomCode: room, timeout: 1.6) {
+            if winner.isLAN { discoveredLANAddress = winner.address } else { fastestRouteHint = winner.address }
+            if let label = try? await connect(winner.address, timeout: 1.8, reattach: true) {
                 return label
             }
         }
-        for addr in directCandidates where addr != fastestRouteHint {
-            if let label = try? await connect(addr, timeout: 1.6, reattach: true) { return label }
+        // 仅当玩家明确输入了跨网中继房间码时才探测 Cloudflare Relay，否则直接快败回本机 0ms！
+        if Self.hasCustomRelayRoomCode, let status = await RelayLink.probeStatus(code: room), status.online {
+            if let label = try? await connect(room, timeout: 2.8, reattach: true) { return label }
         }
-        if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.55) {
-            discoveredLANAddress = lanFound
-            if let label = try? await connect(lanFound, timeout: 1.4, reattach: true) { return label }
-        }
-        if let status = await RelayLink.probeStatus(code: room), status.online {
-            for lanAddr in status.lan {
-                if let label = try? await connect(lanAddr, timeout: 1.3, reattach: true) { return label }
-            }
-            if let label = try? await connect(room, timeout: 4.0, reattach: true) { return label }
-        }
-        if let address = lastAddress, !directCandidates.contains(address), address != room,
-           let label = try? await connect(address, timeout: 3.0, reattach: true) { return label }
         return nil
     }
 
@@ -1258,7 +1280,7 @@ actor NativeHost {
         ])
     }
 
-    /// 自动接入：并行竞速 443 / 8765 / 8443 云服专线（优先已预热最快线路）→ 局域网 UDP 10ms 秒发现 → 云端中转 LAN 列表 → Cloudflare WebSocket 推流。
+    /// v10.0.0 单轮 1.8 秒快速接入：并行竞速 443 / 8765 / 8443 + 局域网 UDP，首个健康节点胜出即连，超时即刻返回绝不卡顿。
     func connectAuto() async -> (label: String, transport: String, rttMs: Int?)? {
         guard !cloudHandingOff else { return nil }
         cloudHandingOff = true
@@ -1268,33 +1290,17 @@ actor NativeHost {
             return nil
         }
         guard remote == nil, service.engine != nil else { return nil }
-        if let hint = fastestRouteHint, !hint.isEmpty, let label = try? await connect(hint, timeout: 1.8) {
-            return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
-        }
-        let directCandidates = directRaceCandidates()
-        if let winner = await Self.raceDirectAddresses(directCandidates, timeout: 1.5) {
-            fastestRouteHint = winner.address
-            if let label = try? await connect(winner.address, timeout: 2.0) {
-                return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
-            }
-        }
-        for addr in directCandidates where addr != fastestRouteHint {
-            if let label = try? await connect(addr, timeout: 1.6) {
-                return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
-            }
-        }
         let room = Self.activeRoomCode
-        if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.65) {
-            discoveredLANAddress = lanFound
-            if let label = try? await connect(lanFound, timeout: 1.5) {
+        let directCandidates = directRaceCandidates()
+        if let winner = await Self.raceDirectAndLAN(directCandidates: directCandidates, roomCode: room, timeout: 1.6) {
+            if winner.isLAN { discoveredLANAddress = winner.address } else { fastestRouteHint = winner.address }
+            if let label = try? await connect(winner.address, timeout: 1.8) {
                 return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
             }
         }
-        guard let status = await RelayLink.probeStatus(code: room), status.online else { return nil }
-        for address in status.lan {
-            if let label = try? await connect(address, timeout: 1.3) { return (label, remoteTransport, liveRTTMs ?? lastRTTMs) }
+        if Self.hasCustomRelayRoomCode, let status = await RelayLink.probeStatus(code: room), status.online {
+            if let label = try? await connect(room, timeout: 2.8) { return (label, remoteTransport, liveRTTMs ?? lastRTTMs) }
         }
-        if let label = try? await connect(room) { return (label, remoteTransport, liveRTTMs ?? lastRTTMs) }
         return nil
     }
 
@@ -2161,15 +2167,15 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         heartbeatTask = Task.detached(priority: .utility) { [weak self] in
             var missedPings = 0
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 2_800_000_000)
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard let self, self.isMuxActive else { return }
-                if let ms = await self.muxPingRTT(timeoutSeconds: 3.5) {
+                if let ms = await self.muxPingRTT(timeoutSeconds: 1.8) {
                     missedPings = 0
                     self.onRTTMeasured?(ms)
                 } else {
                     missedPings += 1
-                    // 容忍蜂窝弱网 1–3 秒瞬时丢包，连续 4 次失答才判定真实断链
-                    if missedPings >= 4 {
+                    // v10.0.0：连续 3 次 1.8s 失答（~5.4s）即判定真实断链并触发 0ms 本机无缝接管，不再死等 25 秒！
+                    if missedPings >= 3 {
                         self.failAll(EngineError.message("心跳超时，直连链路已断开"))
                         self.connection.cancel()
                         return
@@ -2294,7 +2300,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
             let reqId = allocId()
             let inner = EngineWire.request(name, args, payload: payload, compressPayload: true)
             let frame = EngineWire.muxFrame(type: EngineWire.muxRequest, id: reqId, body: inner)
-            let rpcTimeout: Double = (name == "open" || name == "save" || name == "catalogs") ? 48.0 : 14.0
+            let rpcTimeout: Double = (name == "open" || name == "save" || name == "catalogs") ? 18.0 : 6.5
             let replyBody = try await sendMuxAndWait(id: reqId, frame: frame, timeoutSeconds: rpcTimeout)
             return try decodeWireReply(replyBody)
         }

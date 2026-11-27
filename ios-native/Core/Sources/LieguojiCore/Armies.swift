@@ -130,9 +130,13 @@ public enum Armies {
     public static func strength(_ r: JS, _ home: String) -> Int {
         let med = median(r)
         let pop = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == home }?.population.asNumber ?? med
+        let prov = r.world.provinces.asArray.first { $0.id.asString == home }
+        return strengthFast(r, home, pop: pop, medianPop: med, prov: prov)
+    }
+    /// v10.0.0 O(1) 兵力核算快路径：接收预索引字典与中位人口，彻底消除 300–800 州大图月结时的 O(P²) 线性遍历瓶颈。
+    private static func strengthFast(_ r: JS, _ home: String, pop: Double, medianPop med: Double, prov: JS?) -> Int {
         let base = Muster.legionStrength(pop, median: med)
         guard UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy else { return base }
-        let prov = r.world.provinces.asArray.first { $0.id.asString == home }
         let owner = prov?.controller.optionalString ?? ""
         let indIdx = owner.isEmpty ? 1.0 : NuclearWarfare.industryIndex(r, nationId: owner)
         let mpScale = owner.isEmpty ? 1.0 : NuclearWarfare.manpowerScale(r, nationId: owner)
@@ -199,8 +203,16 @@ public enum Armies {
         func atWar(_ a: String, _ b: String) -> Bool { a != b && Wars.relation(r, a, b)?.status.asString == "war" }
         func safe(_ province: String, _ nation: String) -> Bool { !landHolders(space(r), province).contains { atWar($0.nationId.asString, nation) } }
         func alive(_ a: JS) -> Bool { a.troops.asNumber > 0 && a.status.asString != "destroyed" }
+        // v10.0.0：单次月结前一次性预索引全省、州治经济记录与人口中位数，消除 O(P²) 嵌套线性查找！
+        let allProvinces = r.world.provinces.asArray
+        var provById = [String: JS](minimumCapacity: allProvinces.count)
+        for pr in allProvinces { provById[pr.id.asString] = pr }
+        let allStatecraftProvs = r.world.statecraft.provinces.asArray
+        var scById = [String: JS](minimumCapacity: allStatecraftProvs.count)
+        for sp in allStatecraftProvs { scById[sp.provinceId.asString] = sp }
+        let medPop = median(r)
         for n in r.world.nations.asArray {
-            let id = n.id.asString, owned = r.world.provinces.asArray.filter { $0.controller.asString == id }, land = owned.filter { $0.legalOwner.asString == id }
+            let id = n.id.asString, owned = allProvinces.filter { $0.controller.asString == id }, land = owned.filter { $0.legalOwner.asString == id }
             // App worlds: this map's provinces are far larger and fewer than the original's, so a state
             // keeps up to two standing armies a province and one and a half per province in all (the original:
             // one a province, two thirds of them), for armies as numerous as the original's.
@@ -225,12 +237,14 @@ public enum Armies {
             func safeHere(_ province: String) -> Bool { !landHolders(here, province).contains { atWar($0.nationId.asString, id) } }
             for p in land {
                 if Regimes.isBlank(r, id) || standing >= cap || total >= globalCap { break }
-                if !safeHere(p.id.asString) || (atHome[p.id.asString] ?? 0) >= perHome { continue }
-                let data = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == p.id.asString }!
-                let required = Int((Double(strength(r, p.id.asString)) / 10 + 0.5).rounded(.down))
-                if data.population.asNumber < Double(required) { continue }
-                create(r, nation: id, home: p.id.asString, kind: "regular"); data.population = JS(data.population.asNumber - Double(required)); formed += 1; cost += required
-                standing += 1; atHome[p.id.asString, default: 0] += 1; total += 1
+                let pid = p.id.asString
+                if !safeHere(pid) || (atHome[pid] ?? 0) >= perHome { continue }
+                guard let data = scById[pid] else { continue }
+                let pop = data.population.asNumber
+                let required = Int((Double(strengthFast(r, pid, pop: pop, medianPop: medPop, prov: p)) / 10 + 0.5).rounded(.down))
+                if pop < Double(required) { continue }
+                create(r, nation: id, home: pid, kind: "regular"); data.population = JS(pop - Double(required)); formed += 1; cost += required
+                standing += 1; atHome[pid, default: 0] += 1; total += 1
             }
             if formed > (UnitKinds.enabled ? 3 : 0) { People.announce(r, kind: UnitKinds.enabled ? "regular" : "diplomacy", text: "\(n.name.asString)新编\(formed)支常备军", reason: "按故乡编制征集，本次扣内部人口\(cost)；每支新军同时建立真实位置、速度和基础战力记录。", nations: [id], province: nil) }
             let war = r.world.statecraft.relations.asArray.contains { ($0.a.asString == id || $0.b.asString == id) && $0.status.asString == "war" }
@@ -254,7 +268,7 @@ public enum Armies {
             if !history.lastMonth.isNull && month - history.lastMonth.asInt < 12 || history.recent.length == 3 && month - history.recent[0].asInt < 60 { continue }
             let threshold = r.upperCombat.nations[id].coreThreshold.asNumber
             let cores = owned.filter { r.upperCombat.provinces[$0.id.asString].distance.asNumber <= threshold }, ids = Set(cores.map(\.id.asString))
-            if !cores.contains(where: { c in c.neighbors.asArray.contains { nb in !ids.contains(nb.asString) && atWar(id, r.world.provinces.asArray.first { $0.id.asString == nb.asString }!.controller.asString) } }) { continue }
+            if !cores.contains(where: { c in c.neighbors.asArray.contains { nb in let nid = nb.asString; return !ids.contains(nid) && atWar(id, provById[nid]?.controller.asString ?? "") } }) { continue }
             let leaderId = r.people.nations[id].leaderId
             let traits: [Muster.Trait]? = leaderId.isNull ? nil : r.people.persons[leaderId.asInt.description].traits.asArray.map { t in
                 let x = Nobility.trait(t.asString); return Muster.Trait(modifier: x?.emergencyMobilizationModifier.optionalNumber ?? 0, allowed: x?.canEmergencyMobilization.optionalBool != false)

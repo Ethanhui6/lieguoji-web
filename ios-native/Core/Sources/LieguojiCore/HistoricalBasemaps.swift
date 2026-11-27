@@ -37,7 +37,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .china: return "中原、江南、巴蜀、塞北、西域与朝鲜半岛"
         case .europe: return "西欧、中东欧、巴尔干、不列颠、北欧与地中海"
         case .eastAsiaJapan: return "日本列岛、朝鲜、东亚大陆、中南半岛与吕宋海疆"
-        case .japanDetail: return "九州·四国·本州·奥羽令制国精图"
+        case .japanDetail: return "九州·四国·本州·奥羽 24 家大名令制国超细精图"
         case .mediterranean: return "罗马·拜占庭·近东环海地图"
         case .world: return "五大洲四大洋完整格局 · 全球争霸舞台"
         case .custom: return "自定义绘制山海地形与历史势力"
@@ -63,7 +63,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .china: return 73.0
         case .europe: return -11.5
         case .eastAsiaJapan: return 88.0
-        case .japanDetail: return 128.0
+        case .japanDetail: return 129.0
         case .mediterranean: return -10.0
         case .world: return -168.0
         case .custom: return 0.0
@@ -76,7 +76,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .china: return 136.0
         case .europe: return 46.5
         case .eastAsiaJapan: return 150.0
-        case .japanDetail: return 146.5
+        case .japanDetail: return 143.0
         case .mediterranean: return 55.0
         case .world: return 176.0
         case .custom: return 100.0
@@ -89,7 +89,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .china: return 17.5
         case .europe: return 34.5
         case .eastAsiaJapan: return -8.5
-        case .japanDetail: return 30.0
+        case .japanDetail: return 30.6
         case .mediterranean: return 24.0
         case .world: return -55.0
         case .custom: return 0.0
@@ -102,7 +102,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .china: return 54.0
         case .europe: return 67.5
         case .eastAsiaJapan: return 50.5
-        case .japanDetail: return 46.0
+        case .japanDetail: return 42.6
         case .mediterranean: return 56.0
         case .world: return 72.0
         case .custom: return 100.0
@@ -115,7 +115,7 @@ public enum HistoricalRegion: String, Codable, CaseIterable, Sendable, Identifia
         case .china: return 0.025
         case .europe: return 0.025
         case .eastAsiaJapan: return 0.025
-        case .japanDetail: return 0.035
+        case .japanDetail: return 0.020
         case .mediterranean: return 0.025
         case .world: return 0.02
         case .custom: return 0.03

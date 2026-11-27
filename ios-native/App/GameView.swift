@@ -1038,7 +1038,7 @@ private struct GameOnlineSignalPill: View {
 
     private var signalStrength: (bars: Int, color: Color) {
         guard model.remoteAddress != nil else {
-            return (0, model.remoteReconnecting ? Theme.gold : Theme.seal)
+            return model.remoteReconnecting ? (1, Theme.gold) : (3, Theme.jade)
         }
         guard let rtt = model.remoteRTTMs else { return (3, Theme.jade) }
         if rtt < 85 { return (3, Theme.jade) }
@@ -1055,7 +1055,7 @@ private struct GameOnlineSignalPill: View {
         if model.remoteReconnecting {
             return "重连中…"
         }
-        return "未连接 · 点此秒连"
+        return "本机 0ms"
     }
 
     var body: some View {
@@ -1063,10 +1063,6 @@ private struct GameOnlineSignalPill: View {
         let sig = signalStrength
         Button {
             GameFeel.shared.tap()
-            if !connected {
-                model.reconnectFastestRoute()
-                say("正在自动竞速重连最优云服线路…")
-            }
             routeSheetOpen = true
             Task { await model.probeAllRoutes() }
         } label: {
@@ -1079,7 +1075,7 @@ private struct GameOnlineSignalPill: View {
                 }
                 Text(pillLabel)
                     .font(Theme.sans(11.5))
-                    .foregroundStyle(connected ? Theme.ink : (model.remoteReconnecting ? Theme.ink : Theme.seal))
+                    .foregroundStyle(Theme.ink)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
@@ -1088,7 +1084,7 @@ private struct GameOnlineSignalPill: View {
             .padding(.horizontal, 10)
             .frame(height: 26)
             .background(Theme.paperLight.opacity(0.95), in: Capsule())
-            .overlay(Capsule().strokeBorder(sig.color.opacity(connected ? 0.36 : 0.44), lineWidth: 0.75))
+            .overlay(Capsule().strokeBorder(sig.color.opacity(0.38), lineWidth: 0.75))
             .overlay(Capsule().inset(by: 2).strokeBorder(Theme.hairline, lineWidth: 0.45))
         }
         .buttonStyle(PressStyle())
@@ -1103,7 +1099,7 @@ private struct GameOnlineSignalPill: View {
     }
 }
 
-/// 轻量宋韵「云服推流线路与延迟」多线竞速切换面板（全 5 条推流专线实时测速、1 键切换与秒连）。
+/// 轻量宋韵「算力引擎与推流线路」面板：默认本机 Apple Silicon 0ms 原生演算，支持 1 键无缝切换广州云服/局域网电脑。
 private struct ComputeRouteSheet: View {
     @ObservedObject var model: GameModel
     let say: (String) -> Void
@@ -1123,26 +1119,72 @@ private struct ComputeRouteSheet: View {
         if model.remoteAddress != nil {
             let transport = model.remoteTransport.isEmpty ? "九州云服" : model.remoteTransport
             let rttPart = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
-            return "已连接：\(transport)\(rttPart)"
+            return "当前云端推流：\(transport)\(rttPart)"
         }
         if model.remoteReconnecting {
-            return "正在自动竞速重连云服线路…"
+            return "正在尝试连接云服线路…"
         }
-        return "当前未连接云服 · 点按任一线路即可秒连"
+        return "当前：本机 Apple Silicon 0ms 推演（最流畅 · 零网络抖动）"
     }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "云服推流线路与延迟", subtitle: statusSubtitle, seal: "线")
+                SheetHeader(title: "算力引擎与推流线路", subtitle: statusSubtitle, seal: "算")
 
-                // 顶部快捷竞速与重连指令
+                // v10.0.0 本机 Apple Silicon 0ms 推荐卡（置于所有公网线路之上）
+                Group2 {
+                    HStack(alignment: .center, spacing: 10) {
+                        OnlineSignalBars(bars: 3, activeColor: Theme.jade)
+                            .frame(width: Theme.Layout.iconGutter, alignment: .center)
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 6) {
+                                Text("本机 Apple Silicon 原生演算")
+                                    .font(Theme.serif(14.5))
+                                    .foregroundStyle(model.remoteAddress == nil ? Theme.jade : Theme.ink)
+                                PaperTag(text: "0ms 推荐", color: Theme.jade, size: 10)
+                            }
+                            Text("纯本机零延迟 · 无 3Mbps 带宽瓶颈 · 滑屏推演最丝滑")
+                                .font(Theme.sans(11.5))
+                                .foregroundStyle(Theme.ink2)
+                                .lineLimit(2)
+                        }
+                        Spacer(minLength: 6)
+                        if model.remoteAddress == nil {
+                            Text("当前引擎")
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.jade)
+                                .frame(width: 68, height: 28)
+                                .background(Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.7))
+                        } else {
+                            Button {
+                                GameFeel.shared.tap()
+                                model.switchToOfflineLocal()
+                                say("已切回本机 Apple Silicon 0ms 原生演算")
+                                onClose()
+                            } label: {
+                                Text("切回本机")
+                                    .font(Theme.caption)
+                                    .foregroundStyle(Theme.paperLight)
+                                    .frame(width: 68, height: 28)
+                                    .background(Theme.jade, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                // 顶部快捷竞速与云服切换指令
                 HStack(spacing: 8) {
                     EditorialTactileButton(
-                        title: model.probingRoutes ? "正在全线测速…" : "一键测速并选最快线路",
+                        title: model.probingRoutes ? "正在全线测速…" : "可选：测速并连最快云服",
                         icon: .lightning,
                         accent: true,
-                        solid: true,
+                        solid: false,
                         compact: true,
                         fullWidth: true,
                         disabled: model.probingRoutes
@@ -1150,20 +1192,8 @@ private struct ComputeRouteSheet: View {
                         Task {
                             await model.probeAllRoutes()
                             model.reconnectFastestRoute()
-                            say("已完成全线测速并切换至最优推流线路")
+                            say("已完成全线测速并尝试接入最优云服")
                         }
-                    }
-
-                    EditorialTactileButton(
-                        title: "立即重连",
-                        icon: .refresh,
-                        accent: true,
-                        solid: false,
-                        compact: true,
-                        fullWidth: false
-                    ) {
-                        model.reconnectFastestRoute()
-                        say("正在自动竞速重连最优云服线路…")
                     }
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)

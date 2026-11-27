@@ -101,6 +101,10 @@ public struct HistoricalPowerSpec: Codable, Sendable {
     public var nuclearProgress: Double
     public var startingReactors: Int
     public var warSupport: Double
+    /// v10.0.0：史实开局常备军团数（按国情而非省份数，杜绝广土荒原开局爆兵）。
+    public var startingArmies: Int?
+    /// v10.0.0：史实常备军团编制上限（供 `Armies.maxArmiesCap` 弹性动员缩放）。
+    public var maxArmies: Int?
 
     public init(
         industryIndex: Double,
@@ -118,7 +122,9 @@ public struct HistoricalPowerSpec: Codable, Sendable {
         startingNukes: Int = 0,
         nuclearProgress: Double = 0.0,
         startingReactors: Int = 0,
-        warSupport: Double = 55.0
+        warSupport: Double = 55.0,
+        startingArmies: Int? = nil,
+        maxArmies: Int? = nil
     ) {
         self.industryIndex = industryIndex
         self.manpowerScale = manpowerScale
@@ -136,6 +142,8 @@ public struct HistoricalPowerSpec: Codable, Sendable {
         self.nuclearProgress = nuclearProgress
         self.startingReactors = startingReactors
         self.warSupport = warSupport
+        self.startingArmies = startingArmies
+        self.maxArmies = maxArmies
     }
 }
 
@@ -465,6 +473,12 @@ public enum HistoricalRoster {
             hp.nuclearProgress = JS(entry.power.nuclearProgress)
             hp.startingReactors = JS(entry.power.startingReactors)
             hp.warSupport = JS(entry.power.warSupport)
+            let resolvedStartArmies = entry.power.startingArmies
+                ?? max(2, min(16, Int((1.5 + entry.power.industryIndex * 2.4 + entry.power.manpowerScale * 1.6 + Double(entry.power.techMil) * 0.45 + (entry.power.warSupport - 55.0) * 0.04).rounded())))
+            let resolvedMaxArmies = entry.power.maxArmies
+                ?? max(resolvedStartArmies + 2, min(30, Int((Double(resolvedStartArmies) * 1.80 + 2.0).rounded())))
+            hp.startingArmies = JS(resolvedStartArmies)
+            hp.maxArmies = JS(resolvedMaxArmies)
             r.regimes.historicalPower[nid] = hp
 
             let indCap = (entry.power.industryIndex * 100.0).rounded()
@@ -1449,13 +1463,16 @@ public enum HistoricalRoster {
         nukes: Int = 0,
         nucProg: Double = 0.0,
         reactors: Int = 0,
-        warSupport: Double = 58.0
+        warSupport: Double = 58.0,
+        startArmies: Int? = nil,
+        maxArmies: Int? = nil
     ) -> HistoricalPowerSpec {
         HistoricalPowerSpec(
             industryIndex: ind, manpowerScale: mp, techMil: mil, techEco: eco, techSta: sta, techNav: nav,
             fleetCount: fleets, shipsPerFleet: ships, navalPowerBonus: navBonus, stateTraits: traits,
             isLifetimeRuler: lifetime, termYears: term, startingNukes: nukes, nuclearProgress: nucProg,
-            startingReactors: reactors, warSupport: warSupport
+            startingReactors: reactors, warSupport: warSupport,
+            startingArmies: startArmies, maxArmies: maxArmies
         )
     }
 
@@ -2215,16 +2232,17 @@ public enum HistoricalRoster {
         ),
     ]
 
-    // MARK: - 剧本 5：日本战国 · 桶狭间合战（公元 1560 年，14 国）
+    // MARK: - 剧本 5：日本战国 · 桶狭间合战（公元 1560 年，24 家大名 · O(1) 闭包构造防止 Swift 5.10 类型推断超时）
 
-    private static let sengoku1560: [HistoricalNationRoster] = [
+    private static let sengoku1560: [HistoricalNationRoster] = {
+        var out = [HistoricalNationRoster]()
+        out.reserveCapacity(24)
         // 0 织田
-        n(0,
+        out.append(n(0,
           founder: p("织田信长", "织田", "信长", "上总介·右大臣", 26, 96, 92, 88, 93, ["Genius", "Conqueror", "Reformer", "Visionary", "Unifier"], "Ruler", "第六天魔王·天下布武"),
           successors: [
               p("织田信忠", "织田", "信忠", "秋田城介", 18, 84, 82, 80, 82, ["Brave", "Diligent", "BattleHardened"], "Successor", "嫡长子"),
               p("羽柴秀吉", "羽柴", "秀吉", "关白·太阁", 23, 92, 96, 95, 96, ["Genius", "MasterDiplomat", "Administrator", "Unifier", "Charismatic"], "Successor", "丰臣秀吉·猴子"),
-              p("德川家康", "德川", "家康", "征夷大将军", 18, 90, 96, 92, 90, ["Patient", "Administrator", "Lawgiver", "Strategist", "Unifier"], "Successor", "江户幕府开创者"),
           ],
           notables: [
               p("柴田胜家", "柴田", "胜家", "笔头家老", 38, 91, 74, 62, 84, ["Brave", "BattleHardened", "Stubborn"], "WarCommander", "鬼柴田·冲锋悍将"),
@@ -2242,31 +2260,30 @@ public enum HistoricalRoster {
           ],
           parties: [pt("尾张革新派", 56), pt("谱代家臣派", 44)],
           power: pw(ind: 1.95, mp: 1.35, mil: 5, eco: 5, sta: 5, nav: 3, fleets: 1, ships: 5, navBonus: 0.14,
-                    traits: ["FieldCombatElite", "Conqueror", "WellTrained", "SiegeCapture"], lifetime: true, term: 40, warSupport: 86)
-        ),
+                    traits: ["FieldCombatElite", "Conqueror", "WellTrained", "SiegeCapture"], lifetime: true, term: 40, warSupport: 86, startArmies: 4, maxArmies: 10)
+        ))
         // 1 今川
-        n(1,
+        out.append(n(1,
           founder: p("今川义元", "今川", "义元", "治部大辅", 41, 82, 88, 86, 86, ["Administrator", "Lawgiver", "Diplomatic", "Financier"], "Ruler", "东海道第一弓取"),
           successors: [
               p("今川氏真", "今川", "氏真", "上总介", 22, 54, 68, 72, 68, ["Scholar", "Extravagant"], "Successor", "嫡子"),
-              p("德川家康", "德川", "家康", "松平元康", 18, 90, 96, 92, 90, ["Patient", "Administrator", "Strategist", "Lawgiver"], "Successor", "三河松平家主"),
           ],
           notables: [
               p("朝比奈泰朝", "朝比奈", "泰朝", "备中守", 32, 84, 76, 70, 80, ["Brave", "Just", "BattleHardened"], "WarCommander", "挂川城忠烈名将"),
               p("冈部元信", "冈部", "元信", "五郎兵卫", 36, 86, 72, 68, 82, ["Brave", "Veteran", "Stubborn"], "WarCommander", "鸣海城死战名将"),
-              p("松平元康", "松平", "元康", "藏人佐", 18, 90, 94, 90, 88, ["Patient", "Strategist", "Administrator"], "WarCommander", "三河先锋·后为德川家康"),
+              p("太原雪斋遗弟子", "今川", "氏丰", "评定众", 38, 70, 82, 80, 74, ["Scholar", "Administrator"], "Chancellor", "骏府文治重臣"),
           ],
           families: [
               f("今川", "骏河今川本家", 86, 80, ruling: true),
               f("朝比奈", "朝比奈家", 68, 76),
-              f("松平", "三河松平家", 64, 48),
+              f("冈部", "冈部家", 64, 74),
           ],
-          parties: [pt("公家旧仪派", 54), pt("谱代家臣派", 46)],
+          parties: [pt("骏府公家旧仪派", 54), pt("今川谱代众", 46)],
           power: pw(ind: 1.55, mp: 1.35, mil: 4, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 4, navBonus: 0.08,
-                    traits: ["WellTrained", "StrengthenCore"], lifetime: true, term: 40, warSupport: 72)
-        ),
+                    traits: ["WellTrained", "StrengthenCore"], lifetime: true, term: 40, warSupport: 72, startArmies: 5, maxArmies: 10)
+        ))
         // 2 武田
-        n(2,
+        out.append(n(2,
           founder: p("武田信玄", "武田", "信玄", "大膳大夫·甲斐之虎", 39, 97, 91, 88, 94, ["Genius", "Strategist", "Administrator", "BattleHardened", "Lawgiver"], "Ruler", "风林火山·甲斐之虎"),
           successors: [
               p("武田胜赖", "武田", "胜赖", "四郎", 18, 86, 70, 68, 80, ["Brave", "Hawkish", "BattleHardened"], "Successor", "四男·武田继主"),
@@ -2283,12 +2300,12 @@ public enum HistoricalRoster {
               f("山县", "赤备山县家", 72, 78),
               f("马场", "马场家", 70, 78),
           ],
-          parties: [pt("谱代家臣派", 58), pt("国人领主派", 42)],
+          parties: [pt("甲斐谱代众", 58), pt("信浓国人众", 42)],
           power: pw(ind: 1.50, mp: 1.35, mil: 5, eco: 4, sta: 5, nav: 1, fleets: 0, ships: 2, navBonus: 0.0,
-                    traits: ["CavalryTradition", "FieldCombatElite", "WellTrained"], lifetime: true, term: 40, warSupport: 86)
-        ),
+                    traits: ["CavalryTradition", "FieldCombatElite", "WellTrained"], lifetime: true, term: 40, warSupport: 86, startArmies: 6, maxArmies: 12)
+        ))
         // 3 上杉
-        n(3,
+        out.append(n(3,
           founder: p("上杉谦信", "上杉", "谦信", "关东管领·越后之龙", 30, 99, 78, 78, 94, ["Genius", "Brave", "BattleHardened", "Just", "Tactician"], "Ruler", "军神·毗沙门天化身"),
           successors: [
               p("上杉景胜", "上杉", "景胜", "中纳言", 18, 84, 82, 76, 84, ["Stubborn", "Just", "Patient"], "Successor", "养子·米泽藩祖"),
@@ -2303,12 +2320,12 @@ public enum HistoricalRoster {
               f("直江", "直江重臣家", 72, 78),
               f("柿崎", "柿崎将门", 66, 72),
           ],
-          parties: [pt("谱代家臣派", 60), pt("国人领主派", 40)],
+          parties: [pt("春日山谱代众", 60), pt("扬北国人众", 40)],
           power: pw(ind: 1.35, mp: 1.20, mil: 5, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 4, navBonus: 0.08,
-                    traits: ["FieldCombatElite", "FightToTheEnd", "WellTrained"], lifetime: true, term: 40, warSupport: 86)
-        ),
-        // 4 北条
-        n(4,
+                    traits: ["FieldCombatElite", "FightToTheEnd", "WellTrained"], lifetime: true, term: 40, warSupport: 86, startArmies: 5, maxArmies: 11)
+        ))
+        // 4 北条（修复旧版误写「尾张革新派」bug -> 史实「小田原评定众 / 相模谱代众」）
+        out.append(n(4,
           founder: p("北条氏康", "北条", "氏康", "左京大夫·相模之狮", 45, 90, 95, 86, 92, ["Administrator", "Lawgiver", "Tactician", "Beloved"], "Ruler", "禄寿应稳·善政名君"),
           successors: [
               p("北条氏政", "北条", "氏政", "左京大夫", 22, 80, 84, 78, 78, ["Administrator", "Patient", "Stubborn"], "Successor", "嫡子"),
@@ -2322,12 +2339,12 @@ public enum HistoricalRoster {
               f("北条", "小田原北条本家", 92, 80, ruling: true),
               f("松田", "松田家老", 68, 72),
           ],
-          parties: [pt("谱代家臣派", 56), pt("尾张革新派", 44)],
+          parties: [pt("小田原评定众", 58), pt("相模谱代众", 42)],
           power: pw(ind: 1.70, mp: 1.40, mil: 4, eco: 5, sta: 5, nav: 2, fleets: 1, ships: 4, navBonus: 0.10,
-                    traits: ["CoreDefense", "HomelandDefense", "StrengthenCore"], lifetime: true, term: 40, warSupport: 78)
-        ),
+                    traits: ["CoreDefense", "HomelandDefense", "StrengthenCore"], lifetime: true, term: 40, warSupport: 78, startArmies: 6, maxArmies: 12)
+        ))
         // 5 毛利
-        n(5,
+        out.append(n(5,
           founder: p("毛利元就", "毛利", "元就", "陆奥守·谋神", 52, 92, 94, 97, 92, ["Genius", "Strategist", "MasterDiplomat", "Patient", "Visionary"], "Ruler", "西国第一谋神"),
           successors: [
               p("毛利隆元", "毛利", "隆元", "大膳大夫", 37, 76, 88, 84, 84, ["Administrator", "Just", "Benevolent"], "Successor", "长子"),
@@ -2344,12 +2361,12 @@ public enum HistoricalRoster {
               f("小早川", "小早川家", 74, 84),
               f("村上", "能岛村上水军", 66, 74),
           ],
-          parties: [pt("谱代家臣派", 50), pt("水军海众派", 30), pt("国人领主派", 20)],
+          parties: [pt("毛利两川派", 50), pt("濑户水军众", 30), pt("安艺国人众", 20)],
           power: pw(ind: 1.55, mp: 1.30, mil: 4, eco: 4, sta: 5, nav: 5, fleets: 3, ships: 6, navBonus: 0.34,
-                    traits: ["WellTrained", "HomelandDefense", "FieldCombatElite"], lifetime: true, term: 40, warSupport: 80)
-        ),
+                    traits: ["WellTrained", "HomelandDefense", "FieldCombatElite"], lifetime: true, term: 40, warSupport: 80, startArmies: 5, maxArmies: 11)
+        ))
         // 6 三好
-        n(6,
+        out.append(n(6,
           founder: p("三好长庆", "三好", "长庆", "修理大夫", 38, 86, 88, 84, 86, ["Administrator", "Unifier", "Strategist"], "Ruler", "畿内霸主"),
           successors: [
               p("三好义兴", "三好", "义兴", "筑前守", 18, 78, 80, 78, 80, ["Brave", "Diligent"], "Successor", "嫡子"),
@@ -2363,12 +2380,12 @@ public enum HistoricalRoster {
               f("三好", "阿波三好本家", 86, 80, ruling: true),
               f("松永", "松永家", 72, 54),
           ],
-          parties: [pt("国人领主派", 54), pt("水军海众派", 46)],
+          parties: [pt("阿波三好众", 54), pt("堺港会合众", 46)],
           power: pw(ind: 1.55, mp: 1.15, mil: 4, eco: 5, sta: 4, nav: 3, fleets: 1, ships: 4, navBonus: 0.14,
-                    traits: ["StrengthenCore", "WellTrained"], lifetime: true, term: 40, warSupport: 70)
-        ),
+                    traits: ["StrengthenCore", "WellTrained"], lifetime: true, term: 40, warSupport: 70, startArmies: 4, maxArmies: 9)
+        ))
         // 7 岛津
-        n(7,
+        out.append(n(7,
           founder: p("岛津贵久", "岛津", "贵久", "陆奥守", 46, 86, 86, 82, 88, ["Administrator", "Unifier", "Visionary"], "Ruler", "萨摩中兴之祖"),
           successors: [
               p("岛津义久", "岛津", "义久", "修理大夫", 27, 88, 92, 90, 92, ["Strategist", "Administrator", "NaturalLeader", "Unifier"], "Successor", "岛津四兄弟长兄·九州霸主"),
@@ -2383,12 +2400,12 @@ public enum HistoricalRoster {
               f("岛津", "萨摩岛津本家", 92, 80, ruling: true),
               f("伊集院", "伊集院家老", 66, 72),
           ],
-          parties: [pt("谱代家臣派", 66), pt("水军海众派", 34)],
+          parties: [pt("萨摩外城众", 66), pt("南蛮铁炮众", 34)],
           power: pw(ind: 1.35, mp: 1.25, mil: 5, eco: 4, sta: 4, nav: 3, fleets: 2, ships: 5, navBonus: 0.18,
-                    traits: ["FightToTheEnd", "FieldCombatElite", "WellTrained"], lifetime: true, term: 40, warSupport: 88)
-        ),
+                    traits: ["FightToTheEnd", "FieldCombatElite", "WellTrained"], lifetime: true, term: 40, warSupport: 88, startArmies: 4, maxArmies: 9)
+        ))
         // 8 大友
-        n(8,
+        out.append(n(8,
           founder: p("大友宗麟", "大友", "宗麟", "左卫门督", 30, 80, 86, 90, 84, ["Diplomatic", "Financier", "Visionary", "SeaVision"], "Ruler", "九州吉利支丹大名"),
           successors: [
               p("大友义统", "大友", "义统", "左兵卫督", 18, 62, 68, 70, 66, ["Craven", "Extravagant"], "Successor", "嫡子"),
@@ -2401,12 +2418,12 @@ public enum HistoricalRoster {
               f("大友", "丰后大友本家", 86, 80, ruling: true),
               f("立花", "立花家", 72, 82),
           ],
-          parties: [pt("水军海众派", 52), pt("谱代家臣派", 48)],
+          parties: [pt("府内南蛮商派", 52), pt("丰后谱代众", 48)],
           power: pw(ind: 1.45, mp: 1.15, mil: 4, eco: 5, sta: 4, nav: 3, fleets: 2, ships: 5, navBonus: 0.16,
-                    traits: ["CoreDefense", "WellTrained"], lifetime: true, term: 40, warSupport: 74)
-        ),
+                    traits: ["CoreDefense", "WellTrained"], lifetime: true, term: 40, warSupport: 74, startArmies: 4, maxArmies: 9)
+        ))
         // 9 伊达
-        n(9,
+        out.append(n(9,
           founder: p("伊达晴宗", "伊达", "晴宗", "左京大夫", 41, 78, 82, 80, 78, ["Administrator", "Diplomatic", "Patient"], "Ruler", "奥州探题"),
           successors: [
               p("伊达辉宗", "伊达", "辉宗", "左京大夫", 18, 80, 84, 86, 84, ["Diplomatic", "Just", "Benevolent"], "Successor", "嫡子"),
@@ -2420,12 +2437,12 @@ public enum HistoricalRoster {
               f("伊达", "米泽伊达本家", 88, 80, ruling: true),
               f("片仓", "片仓重臣家", 68, 80),
           ],
-          parties: [pt("谱代家臣派", 56), pt("国人领主派", 44)],
+          parties: [pt("米泽谱代众", 56), pt("奥羽国人众", 44)],
           power: pw(ind: 1.25, mp: 1.15, mil: 4, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
-                    traits: ["CavalryTradition", "Conqueror"], lifetime: true, term: 40, warSupport: 78)
-        ),
+                    traits: ["CavalryTradition", "Conqueror"], lifetime: true, term: 40, warSupport: 78, startArmies: 4, maxArmies: 9)
+        ))
         // 10 长宗我部
-        n(10,
+        out.append(n(10,
           founder: p("长宗我部国亲", "长宗我部", "国亲", "宫内少辅", 52, 82, 82, 78, 82, ["Ambitious", "Administrator", "Patient"], "Ruler", "土佐中兴之主"),
           successors: [
               p("长宗我部元亲", "长宗我部", "元亲", "土佐守·姬若子", 21, 91, 86, 80, 90, ["Brave", "Unifier", "Tactician", "NaturalLeader"], "Successor", "四国霸主"),
@@ -2438,12 +2455,12 @@ public enum HistoricalRoster {
               f("长宗我部", "冈丰长宗我部家", 86, 80, ruling: true),
               f("久武", "久武家老", 64, 74),
           ],
-          parties: [pt("谱代家臣派", 62), pt("水军海众派", 38)],
+          parties: [pt("一领具足众", 62), pt("土佐水军众", 38)],
           power: pw(ind: 1.10, mp: 1.05, mil: 4, eco: 3, sta: 4, nav: 3, fleets: 1, ships: 4, navBonus: 0.14,
-                    traits: ["FightToTheEnd", "HomelandDefense"], lifetime: true, term: 40, warSupport: 80)
-        ),
+                    traits: ["FightToTheEnd", "HomelandDefense"], lifetime: true, term: 40, warSupport: 80, startArmies: 3, maxArmies: 7)
+        ))
         // 11 朝仓
-        n(11,
+        out.append(n(11,
           founder: p("朝仓义景", "朝仓", "义景", "左卫门督", 27, 64, 76, 76, 76, ["Scholar", "Patient", "Dovish"], "Ruler", "越前一乘谷之主"),
           successors: [
               p("朝仓景镜", "朝仓", "景镜", "式部大辅", 35, 74, 72, 70, 68, ["Ambitious", "Veteran"], "Successor", "一门众重臣"),
@@ -2456,12 +2473,12 @@ public enum HistoricalRoster {
               f("朝仓", "越前朝仓本家", 86, 80, ruling: true),
               f("鱼住", "鱼住家老", 60, 68),
           ],
-          parties: [pt("公家旧仪派", 56), pt("一向宗门徒", 44)],
+          parties: [pt("一乘谷公家派", 56), pt("加贺一向宗门徒", 44)],
           power: pw(ind: 1.20, mp: 1.00, mil: 3, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.06,
-                    traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 64)
-        ),
+                    traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 64, startArmies: 3, maxArmies: 7)
+        ))
         // 12 斋藤
-        n(12,
+        out.append(n(12,
           founder: p("斋藤义龙", "斋藤", "义龙", "左京大夫", 33, 86, 80, 74, 80, ["Brave", "IronFist", "BattleHardened"], "Ruler", "美浓蝮蛇之子"),
           successors: [
               p("斋藤龙兴", "斋藤", "龙兴", "右兵卫大辅", 18, 62, 62, 64, 64, ["Stubborn", "Extravagant"], "Successor", "嫡子"),
@@ -2475,12 +2492,12 @@ public enum HistoricalRoster {
               f("竹中", "竹中家", 64, 68),
               f("稻叶", "西美浓稻叶家", 66, 62),
           ],
-          parties: [pt("国人领主派", 54), pt("谱代家臣派", 46)],
+          parties: [pt("西美浓三人众", 54), pt("稻叶山谱代众", 46)],
           power: pw(ind: 1.25, mp: 1.00, mil: 4, eco: 4, sta: 3, nav: 1, fleets: 0, ships: 2, navBonus: 0.0,
-                    traits: ["CoreDefense", "FieldCombatElite"], lifetime: true, term: 40, warSupport: 72)
-        ),
+                    traits: ["CoreDefense", "FieldCombatElite"], lifetime: true, term: 40, warSupport: 72, startArmies: 3, maxArmies: 7)
+        ))
         // 13 龙造寺
-        n(13,
+        out.append(n(13,
           founder: p("龙造寺隆信", "龙造寺", "隆信", "山城守·肥前之熊", 31, 88, 74, 70, 84, ["Brave", "Hawkish", "BattleHardened", "IronFist"], "Ruler", "肥前之熊"),
           successors: [
               p("龙造寺政家", "龙造寺", "政家", "民部大辅", 18, 66, 72, 72, 70, ["Patient", "Dovish"], "Successor", "嫡子"),
@@ -2494,11 +2511,194 @@ public enum HistoricalRoster {
               f("龙造寺", "肥前龙造寺家", 86, 80, ruling: true),
               f("锅岛", "锅岛重臣家", 74, 78),
           ],
-          parties: [pt("谱代家臣派", 62), pt("国人领主派", 38)],
+          parties: [pt("肥前谱代众", 62), pt("有明海国人众", 38)],
           power: pw(ind: 1.15, mp: 1.10, mil: 4, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
-                    traits: ["FieldCombatElite", "Conqueror"], lifetime: true, term: 40, warSupport: 78)
-        ),
-    ]
+                    traits: ["FieldCombatElite", "Conqueror"], lifetime: true, term: 40, warSupport: 78, startArmies: 3, maxArmies: 7)
+        ))
+        // 14 松平家（三河冈崎·德川家康）
+        out.append(n(14,
+          founder: p("松平元康", "松平", "元康", "藏人佐·德川家康", 18, 90, 94, 90, 88, ["Patient", "Strategist", "Administrator", "Lawgiver", "Unifier"], "Ruler", "三河松平家主·后为德川家康"),
+          successors: [
+              p("德川秀忠", "德川", "秀忠", "二代将军", 18, 78, 86, 84, 82, ["Patient", "Administrator", "Diligent"], "Successor", "嫡子"),
+          ],
+          notables: [
+              p("本多忠胜", "本多", "忠胜", "平八郎", 18, 97, 68, 62, 90, ["Brave", "BattleHardened", "FieldCombatElite"], "WarCommander", "战国第一猛将·蜻蛉切"),
+              p("酒井忠次", "酒井", "忠次", "左卫门尉", 33, 88, 82, 80, 84, ["Veteran", "Tactician", "Just"], "Chancellor", "德川四天王笔头"),
+              p("石川数正", "石川", "数正", "伯耆守", 27, 76, 86, 88, 80, ["Diplomatic", "Administrator"], "Diplomat", "三河外交重臣"),
+          ],
+          families: [
+              f("松平", "三河松平本家", 90, 82, ruling: true),
+              f("酒井", "三河谱代酒井家", 74, 84),
+              f("本多", "本多将门", 72, 86),
+          ],
+          parties: [pt("三河谱代武士团", 68), pt("三河一向宗门徒", 32)],
+          power: pw(ind: 1.25, mp: 1.15, mil: 5, eco: 4, sta: 5, nav: 1, fleets: 0, ships: 2, navBonus: 0.04,
+                    traits: ["WellTrained", "FightToTheEnd", "CoreDefense"], lifetime: true, term: 40, warSupport: 84, startArmies: 3, maxArmies: 8)
+        ))
+        // 15 足利幕府（京都室町幕府·剑豪将军足利义辉）
+        out.append(n(15,
+          founder: p("足利义辉", "足利", "义辉", "征夷大将军", 24, 90, 78, 84, 88, ["Brave", "Just", "NaturalLeader", "BattleHardened"], "Ruler", "剑豪将军·室町第十三代将军"),
+          successors: [
+              p("足利义昭", "足利", "义昭", "十五代将军", 23, 64, 72, 82, 76, ["Ambitious", "Diplomatic", "Stubborn"], "Successor", "胞弟·觉庆"),
+          ],
+          notables: [
+              p("细川藤孝", "细川", "藤孝", "兵部大辅", 26, 84, 90, 92, 88, ["Scholar", "MasterDiplomat", "Tactician"], "Chancellor", "文武双全幕府重臣"),
+              p("和田惟政", "和田", "惟政", "伊贺守", 24, 80, 78, 82, 80, ["Brave", "Just", "Diplomatic"], "WarCommander", "幕府奉公众忠臣"),
+          ],
+          families: [
+              f("足利", "室町足利将军家", 90, 84, ruling: true),
+              f("细川", "细川管领家", 76, 78),
+          ],
+          parties: [pt("幕府奉公众", 56), pt("京都公家朝廷派", 44)],
+          power: pw(ind: 1.35, mp: 0.90, mil: 4, eco: 5, sta: 5, nav: 1, fleets: 0, ships: 2, navBonus: 0.04,
+                    traits: ["CoreDefense", "StrengthenCore"], lifetime: true, term: 40, warSupport: 72, startArmies: 3, maxArmies: 6)
+        ))
+        // 16 浅井家（北近江小谷城）
+        out.append(n(16,
+          founder: p("浅井长政", "浅井", "长政", "备前守", 18, 86, 80, 82, 88, ["Brave", "Just", "Charismatic", "BattleHardened"], "Ruler", "北近江英主"),
+          successors: [
+              p("浅井万福丸", "浅井", "万福丸", "嫡子", 18, 70, 74, 74, 76, ["Just", "Patient"], "Successor", "嫡子"),
+          ],
+          notables: [
+              p("矶野员昌", "矶野", "员昌", "丹波守", 37, 89, 70, 66, 82, ["Brave", "BattleHardened"], "WarCommander", "浅井家第一猛将"),
+              p("远藤直经", "远藤", "直经", "喜右卫门", 29, 84, 82, 80, 80, ["Strategist", "Just", "Brave"], "Chancellor", "浅井忠烈智囊"),
+          ],
+          families: [
+              f("浅井", "北近江浅井本家", 86, 82, ruling: true),
+              f("矶野", "矶野将门", 68, 76),
+          ],
+          parties: [pt("北近江少壮派", 58), pt("浅井宿老国人众", 42)],
+          power: pw(ind: 1.15, mp: 0.95, mil: 4, eco: 4, sta: 4, nav: 1, fleets: 0, ships: 2, navBonus: 0.04,
+                    traits: ["FieldCombatElite", "HomelandDefense"], lifetime: true, term: 40, warSupport: 80, startArmies: 2, maxArmies: 6)
+        ))
+        // 17 六角家（南近江观音寺城）
+        out.append(n(17,
+          founder: p("六角义贤", "六角", "义贤", "左京大夫·承祯", 39, 78, 82, 84, 78, ["Administrator", "Diplomatic", "Patient"], "Ruler", "南近江名门守护"),
+          successors: [
+              p("六角义治", "六角", "义治", "右卫门督", 18, 70, 68, 70, 68, ["Stubborn", "Ambitious"], "Successor", "嫡子"),
+          ],
+          notables: [
+              p("蒲生定秀", "蒲生", "定秀", "下野守", 52, 84, 86, 82, 82, ["Veteran", "Administrator", "Tactician"], "Chancellor", "日野城智将·蒲生氏乡祖父"),
+              p("后藤贤丰", "后藤", "贤丰", "但马守", 42, 82, 82, 78, 80, ["Just", "Veteran"], "WarCommander", "六角两藤笔头"),
+          ],
+          families: [
+              f("六角", "南近江六角守护家", 86, 80, ruling: true),
+              f("蒲生", "日野蒲生家", 72, 74),
+          ],
+          parties: [pt("观音寺家臣众", 60), pt("甲贺国人忍者众", 40)],
+          power: pw(ind: 1.25, mp: 0.95, mil: 3, eco: 5, sta: 4, nav: 1, fleets: 0, ships: 2, navBonus: 0.04,
+                    traits: ["CoreDefense", "StrengthenCore"], lifetime: true, term: 40, warSupport: 66, startArmies: 2, maxArmies: 6)
+        ))
+        // 18 北畠家（伊势松坂·剑圣国司）
+        out.append(n(18,
+          founder: p("北畠具教", "北畠", "具教", "伊势国司·权中纳言", 32, 90, 76, 78, 84, ["Brave", "BattleHardened", "Scholar"], "Ruler", "冢原卜传高徒·剑圣国司"),
+          successors: [
+              p("北畠具房", "北畠", "具房", "伊势国司", 18, 66, 74, 76, 74, ["Patient", "Dovish"], "Successor", "嫡子"),
+          ],
+          notables: [
+              p("藤方朝成", "藤方", "朝成", "刑部少辅", 36, 82, 78, 76, 78, ["Brave", "Just"], "WarCommander", "伊势国司谱代猛将"),
+              p("九鬼嘉隆", "九鬼", "嘉隆", "右马允", 18, 88, 74, 72, 84, ["NavalMastery", "ShipMaster", "Brave"], "Admiral", "志摩九鬼水军名将"),
+          ],
+          families: [
+              f("北畠", "伊势北畠国司家", 86, 82, ruling: true),
+              f("九鬼", "志摩九鬼水军", 68, 72),
+          ],
+          parties: [pt("伊势国司公家派", 58), pt("志摩熊野水军众", 42)],
+          power: pw(ind: 1.15, mp: 0.95, mil: 4, eco: 4, sta: 4, nav: 4, fleets: 2, ships: 4, navBonus: 0.22,
+                    traits: ["HomelandDefense", "CoreDefense"], lifetime: true, term: 40, warSupport: 74, startArmies: 3, maxArmies: 6)
+        ))
+        // 19 尼子家（出云月山富田城）
+        out.append(n(19,
+          founder: p("尼子晴久", "尼子", "晴久", "修理大夫·八国守护", 46, 86, 84, 78, 84, ["BattleHardened", "Stubborn", "Administrator"], "Ruler", "山阴八国霸主"),
+          successors: [
+              p("尼子义久", "尼子", "义久", "右卫门督", 20, 72, 74, 72, 74, ["Stubborn", "Patient"], "Successor", "嫡子"),
+          ],
+          notables: [
+              p("山中鹿介", "山中", "幸盛", "尼子十勇士之首", 18, 93, 72, 74, 92, ["Brave", "BattleHardened", "DefyTheStrong", "Just"], "WarCommander", "愿受七难八苦·山阴麒麟儿"),
+              p("宇山久兼", "宇山", "久兼", "飞驒守", 48, 76, 86, 82, 80, ["Administrator", "Financier", "Just"], "Chancellor", "尼子忠臣家老"),
+          ],
+          families: [
+              f("尼子", "出云尼子本家", 88, 80, ruling: true),
+              f("山中", "山中忠烈家", 70, 86),
+          ],
+          parties: [pt("出云尼子谱代众", 60), pt("山阴国人领主众", 40)],
+          power: pw(ind: 1.30, mp: 1.10, mil: 4, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
+                    traits: ["HomelandDefense", "FightToTheEnd"], lifetime: true, term: 40, warSupport: 82, startArmies: 4, maxArmies: 8)
+        ))
+        // 20 宇喜多家（备前冈山）
+        out.append(n(20,
+          founder: p("宇喜多直家", "宇喜多", "直家", "和泉守", 31, 82, 88, 94, 80, ["Strategist", "Ambitious", "MasterDiplomat"], "Ruler", "战国三大枭雄·备前谋主"),
+          successors: [
+              p("宇喜多秀家", "宇喜多", "秀家", "备前宰相", 18, 84, 84, 84, 88, ["Brave", "Charismatic", "NaturalLeader"], "Successor", "丰臣五大老"),
+          ],
+          notables: [
+              p("户川秀安", "户川", "秀安", "肥后守", 22, 84, 80, 76, 80, ["Brave", "Tactician"], "WarCommander", "宇喜多三老笔头"),
+              p("长船贞亲", "长船", "贞亲", "越中守", 26, 74, 86, 84, 78, ["Administrator", "Financier"], "Chancellor", "备前内政柱石"),
+          ],
+          families: [
+              f("宇喜多", "备前宇喜多本家", 86, 82, ruling: true),
+              f("户川", "户川重臣家", 70, 78),
+          ],
+          parties: [pt("备前谋略新锐派", 62), pt("浦上旧臣众", 38)],
+          power: pw(ind: 1.15, mp: 0.90, mil: 4, eco: 5, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.10,
+                    traits: ["CoreDefense", "WellTrained"], lifetime: true, term: 40, warSupport: 74, startArmies: 2, maxArmies: 6)
+        ))
+        // 21 佐竹家（常陆太田城·关东名门）
+        out.append(n(21,
+          founder: p("佐竹义昭", "佐竹", "义昭", "常陆介", 29, 82, 84, 82, 82, ["Veteran", "Patient", "Administrator"], "Ruler", "常陆清和源氏宗主"),
+          successors: [
+              p("佐竹义重", "佐竹", "义重", "鬼义重·常陆介", 18, 93, 84, 80, 88, ["Brave", "BattleHardened", "Conqueror"], "Successor", "坂东太郎·鬼义重"),
+          ],
+          notables: [
+              p("真壁氏干", "真壁", "氏干", "鬼真壁", 18, 90, 64, 60, 82, ["Brave", "BattleHardened"], "WarCommander", "常陆猛将·鬼真壁"),
+              p("和田昭为", "和田", "昭为", "安房守", 28, 76, 84, 84, 78, ["Diplomatic", "Administrator"], "Chancellor", "佐竹家老"),
+          ],
+          families: [
+              f("佐竹", "常陆佐竹源氏", 88, 82, ruling: true),
+              f("真壁", "真壁将门", 68, 78),
+          ],
+          parties: [pt("常陆宗室谱代众", 60), pt("北关东联军派", 40)],
+          power: pw(ind: 1.25, mp: 1.05, mil: 4, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
+                    traits: ["HomelandDefense", "FieldCombatElite"], lifetime: true, term: 40, warSupport: 78, startArmies: 3, maxArmies: 7)
+        ))
+        // 22 最上家（出羽山形城）
+        out.append(n(22,
+          founder: p("最上义守", "最上", "义守", "出羽守", 39, 76, 80, 84, 78, ["Diplomatic", "Patient"], "Ruler", "出羽探题"),
+          successors: [
+              p("最上义光", "最上", "义光", "出羽守·羽州之狐", 18, 91, 90, 94, 88, ["Genius", "MasterDiplomat", "Strategist", "Brave"], "Successor", "出羽之狐·长谷堂名将"),
+          ],
+          notables: [
+              p("志村光安", "志村", "光安", "伊豆守", 26, 88, 80, 74, 84, ["Brave", "BattleHardened", "Tactician"], "WarCommander", "长谷堂死守名将"),
+              p("鲑延秀纲", "鲑延", "秀纲", "越前守", 20, 86, 74, 72, 82, ["Brave", "Just"], "WarCommander", "最上笔头猛将"),
+          ],
+          families: [
+              f("最上", "山形最上本家", 86, 80, ruling: true),
+              f("志村", "志村重臣家", 68, 80),
+          ],
+          parties: [pt("山形最上谱代众", 58), pt("庄内酒田商港派", 42)],
+          power: pw(ind: 1.10, mp: 0.95, mil: 4, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
+                    traits: ["CoreDefense", "HomelandDefense"], lifetime: true, term: 40, warSupport: 74, startArmies: 3, maxArmies: 6)
+        ))
+        // 23 南部家（陆奥三户·盛冈）
+        out.append(n(23,
+          founder: p("南部晴政", "南部", "晴政", "大膳大夫", 43, 86, 80, 76, 84, ["Conqueror", "Brave", "BattleHardened"], "Ruler", "三日月圆如满月·奥北霸主"),
+          successors: [
+              p("南部信直", "南部", "信直", "大膳大夫", 18, 82, 86, 86, 84, ["Diplomatic", "Administrator", "Patient"], "Successor", "盛冈藩祖"),
+          ],
+          notables: [
+              p("石川高信", "石川", "高信", "左卫门尉", 52, 84, 80, 76, 82, ["Veteran", "BattleHardened"], "WarCommander", "津轻镇守名将"),
+              p("北信爱", "北", "信爱", "尾张守", 37, 80, 86, 84, 82, ["Just", "Administrator", "Diplomatic"], "Chancellor", "南部家忠臣智囊"),
+          ],
+          families: [
+              f("南部", "陆奥南部本家", 88, 80, ruling: true),
+              f("北", "北氏家老", 68, 82),
+          ],
+          parties: [pt("糠部铁骑众", 64), pt("津轻国人众", 36)],
+          power: pw(ind: 1.05, mp: 1.00, mil: 4, eco: 3, sta: 4, nav: 2, fleets: 1, ships: 3, navBonus: 0.06,
+                    traits: ["CavalryTradition", "HomelandDefense"], lifetime: true, term: 40, warSupport: 78, startArmies: 3, maxArmies: 7)
+        ))
+        return out
+    }()
 
     // MARK: - 剧本 6：拿破仑战争 · 远征莫斯科（公元 1812 年，10 国）
 
@@ -3157,22 +3357,77 @@ public enum HistoricalRoster {
           families: [f("乔巴山", "蒙古人民革命党", 84, 82, ruling: true)],
           parties: [pt("蒙古人民革命党", 100)],
           power: pw(ind: 0.45, mp: 0.70, mil: 3, eco: 2, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
-                    traits: ["CavalryTradition", "HomelandDefense"], lifetime: true, term: 40, warSupport: 78)
+                    traits: ["CavalryTradition", "HomelandDefense"], lifetime: true, term: 40, warSupport: 78, startArmies: 2, maxArmies: 5)
+        ),
+        // 11 西藏地方
+        n(11,
+          founder: p("土登嘉措", "格鲁", "土登嘉措", "十三世达赖", 55, 62, 82, 82, 88, ["Patient", "Just", "Scholar"], "Ruler", "十三世达赖"),
+          successors: [p("热振活佛", "格鲁", "降白益西", "摄政活佛", 20, 58, 76, 78, 82, ["Patient", "Scholar"], "Successor", "摄政")],
+          notables: [p("察绒·达桑占堆", "察绒", "达桑占堆", "藏军总司令", 43, 80, 78, 74, 80, ["Reformer", "Veteran"], "WarCommander", "藏军近代化统领")],
+          families: [f("格鲁", "噶厦政府", 86, 82, ruling: true), f("察绒", "藏军贵族派", 72, 74)],
+          parties: [pt("噶厦执政派", 68), pt("寺院僧官派", 32)],
+          power: pw(ind: 0.35, mp: 0.60, mil: 2, eco: 2, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["HomelandDefense", "CoreDefense"], lifetime: true, term: 40, warSupport: 62, startArmies: 2, maxArmies: 5)
+        ),
+        // 12 滇军龙云
+        n(12,
+          founder: p("龙云", "龙", "云", "云南省主席", 47, 84, 82, 80, 86, ["BattleHardened", "Veteran", "Stubborn"], "Ruler", "云南王·滇军总司令"),
+          successors: [p("卢汉", "卢", "汉", "第六十军军长", 36, 88, 80, 78, 86, ["Brave", "BattleHardened", "Tactician"], "Successor", "台儿庄血战名将")],
+          notables: [p("卢汉", "卢", "汉", "滇军主力军长", 36, 88, 80, 78, 86, ["Brave", "BattleHardened", "Tactician"], "WarCommander", "滇军悍将")],
+          families: [f("龙", "昆明滇军帅府", 88, 84, ruling: true), f("卢", "滇军将门", 78, 84)],
+          parties: [pt("滇军系", 100)],
+          power: pw(ind: 0.55, mp: 0.95, mil: 3, eco: 3, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
+                    traits: ["HomelandDefense", "FightToTheEnd"], lifetime: true, term: 40, warSupport: 82, startArmies: 3, maxArmies: 7)
+        ),
+        // 13 英属印度与缅甸
+        n(13,
+          founder: p("威灵顿勋爵", "弗里曼-托马斯", "乔治", "印度总督", 62, 76, 86, 84, 80, ["Administrator", "Financier", "Patient"], "Ruler", "英属印度总督"),
+          successors: [p("林利思戈勋爵", "霍普", "维克托", "印度总督", 44, 72, 84, 82, 78, ["Administrator", "Stubborn"], "Successor", "继任总督")],
+          notables: [p("菲利普·切特伍德", "切特伍德", "菲利普", "英印军总司令·元帅", 62, 86, 80, 74, 82, ["Veteran", "Strategist"], "WarCommander", "英印陆军元帅")],
+          families: [f("温莎", "新德里总督府", 86, 82, ruling: true)],
+          parties: [pt("印度总督府", 66), pt("印度国大党", 34)],
+          power: pw(ind: 1.35, mp: 1.45, mil: 4, eco: 4, sta: 4, nav: 5, fleets: 3, ships: 6, navBonus: 0.28,
+                    traits: ["WellTrained", "CoreDefense"], lifetime: true, term: 40, warSupport: 64, startArmies: 5, maxArmies: 10)
+        ),
+        // 14 法属印度支那
+        n(14,
+          founder: p("皮埃尔·帕斯基耶", "帕斯基耶", "皮埃尔", "印支总督", 54, 66, 78, 76, 72, ["Administrator", "Patient"], "Ruler", "河内印支总督"),
+          successors: [p("勒内·罗班", "罗班", "勒内", "印支总督", 58, 66, 76, 74, 70, ["Administrator", "IronFist"], "Successor", "继任总督")],
+          notables: [p("夏尔·欧班", "欧班", "夏尔", "印支驻军司令", 56, 76, 74, 70, 72, ["Veteran"], "WarCommander", "河内防卫司令")],
+          families: [f("帕斯基耶", "河内总督府", 80, 80, ruling: true)],
+          parties: [pt("河内殖民总督府", 70), pt("越南民族独立派", 30)],
+          power: pw(ind: 0.85, mp: 0.90, mil: 3, eco: 3, sta: 3, nav: 3, fleets: 1, ships: 4, navBonus: 0.12,
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 54, startArmies: 3, maxArmies: 6)
         ),
     ]
 
     // MARK: - 剧本 9：二战前夜 · 欧陆风云（公元 1936 年 · 28 国完整还原奥地利/捷克斯洛伐克/低地三国）
 
     private static let ww2Eve1936: [HistoricalNationRoster] = {
-        // 复用 1939 欧洲 27 国高精名录基座，精准替换为 1936 真实领袖并加入独立奥地利(23)与捷克斯洛伐克(24)
+        // 复用 1939 欧洲 27 国高精名录基座，精准替换为 1936 真实领袖、1936 和平开局兵力并加入独立奥地利(23)与捷克斯洛伐克(24)
         var list = ww2Europe1939.map { item -> HistoricalNationRoster in
             var copy = item
             if item.nationIndex >= 24 { copy.nationIndex = item.nationIndex + 1 }
+            // 1936 年欧洲尚未全面总动员，按和平/扩军初期适当压低开局现役兵力
+            if let st = copy.power.startingArmies {
+                copy.power.startingArmies = max(1, Int((Double(st) * 0.74).rounded()))
+            }
             return copy
+        }
+        // 0 德国 1936 莱茵兰扩军初期：11 支精锐师，战时上限 28
+        if let idx = list.firstIndex(where: { $0.nationIndex == 0 }) {
+            list[idx].power.startingArmies = 11
+            list[idx].power.maxArmies = 28
+        }
+        // 1 苏联 1936：12 支常备军（战时动员上限 30）
+        if let idx = list.firstIndex(where: { $0.nationIndex == 1 }) {
+            list[idx].power.startingArmies = 12
+            list[idx].power.maxArmies = 30
         }
         // 替换 3 法国 1936 人民阵线总理莱昂·布鲁姆
         if let idx = list.firstIndex(where: { $0.nationIndex == 3 }) {
             list[idx].founder = p("莱昂·布鲁姆", "布鲁姆", "莱昂", "法兰西总理", 64, 64, 80, 82, 80, ["Reformer", "Scholar", "Diplomatic"], "Ruler", "人民阵线总理")
+            list[idx].power.startingArmies = 10
         }
         // 替换 6 西班牙第二共和国总统阿萨尼亚
         if let idx = list.firstIndex(where: { $0.nationIndex == 6 }) {
@@ -3191,7 +3446,7 @@ public enum HistoricalRoster {
           families: [f("许士尼格", "维也纳祖国阵线", 80, 80, ruling: true), f("哈布斯堡", "奥地利旧皇室", 68, 70)],
           parties: [pt("祖国阵线", 72), pt("社会民主党", 28)],
           power: pw(ind: 1.30, mp: 0.78, mil: 4, eco: 5, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
-                    traits: ["CoreDefense", "HomelandDefense"], lifetime: false, term: 4, warSupport: 64)
+                    traits: ["CoreDefense", "HomelandDefense"], lifetime: false, term: 4, warSupport: 64, startArmies: 3, maxArmies: 6)
         ))
         // 插入 24 捷克斯洛伐克（军工强国斯柯达+苏台德堡垒）
         list.append(n(24,
@@ -3204,7 +3459,7 @@ public enum HistoricalRoster {
           families: [f("贝奈斯", "布拉格共和派", 84, 82, ruling: true), f("斯柯达", "比尔森重工军工集团", 80, 82)],
           parties: [pt("农业党", 36), pt("国家社会党", 34), pt("社会民主党", 30)],
           power: pw(ind: 2.15, mp: 1.05, mil: 5, eco: 6, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
-                    traits: ["WellTrained", "CoreDefense", "HomelandDefense"], lifetime: false, term: 7, warSupport: 86)
+                    traits: ["WellTrained", "CoreDefense", "HomelandDefense"], lifetime: false, term: 7, warSupport: 86, startArmies: 6, maxArmies: 11)
         ))
         return list.sorted { $0.nationIndex < $1.nationIndex }
     }()
@@ -3238,9 +3493,9 @@ public enum HistoricalRoster {
           parties: [pt("国家社会主义德意志工人党", 100)],
           power: pw(ind: 3.40, mp: 1.75, mil: 6, eco: 6, sta: 5, nav: 4, fleets: 3, ships: 7, navBonus: 0.28,
                     traits: ["FieldCombatElite", "Conqueror", "WellTrained", "SiegeCapture", "CavalryTradition"],
-                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 92)
+                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 92, startArmies: 16, maxArmies: 28)
         ),
-        // 1 苏联
+        // 1 苏联（1939.9 尚未全面转入卫国战争，仅于西线与核心枢纽常备 14 师，严禁在西伯利亚/远东无脑铺兵；开战后可动员至 30 师）
         n(1,
           founder: p("约瑟夫·斯大林", "朱加什维利", "约瑟夫", "联共(布)总书记·大元帅", 56, 85, 92, 84, 90, ["IronFist", "Stubborn", "Administrator", "Visionary"], "Ruler", "苏联最高统帅"),
           successors: [
@@ -3264,7 +3519,7 @@ public enum HistoricalRoster {
           parties: [pt("苏联共产党", 100)],
           power: pw(ind: 2.30, mp: 2.20, mil: 4, eco: 5, sta: 5, nav: 3, fleets: 3, ships: 6, navBonus: 0.16,
                     traits: ["HomelandDefense", "FightToTheEnd", "CoreDefense"],
-                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 85)
+                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 85, startArmies: 14, maxArmies: 30)
         ),
         // 2 大英帝国（1939年9月双首脑：乔治六世为国王，张伯伦任首相，丘吉尔任第一海军大臣兼战时接班人）
         n(2,
@@ -3290,7 +3545,7 @@ public enum HistoricalRoster {
           parties: [pt("保守党", 58), pt("工党", 32), pt("自由党", 10)],
           power: pw(ind: 3.10, mp: 1.55, mil: 5, eco: 6, sta: 6, nav: 6, fleets: 6, ships: 11, navBonus: 0.45,
                     traits: ["WellTrained", "FightToTheEnd", "HomelandDefense", "StrengthenCore"],
-                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 86),
+                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 86, startArmies: 9, maxArmies: 18),
           familyRelations: [fr("丘吉尔", "张伯伦", -28)]
         ),
         // 3 法国
@@ -3313,7 +3568,7 @@ public enum HistoricalRoster {
           ],
           parties: [pt("激进社会党", 40), pt("工人国际法国支部", 35), pt("民主联盟", 25)],
           power: pw(ind: 2.30, mp: 1.40, mil: 4, eco: 5, sta: 5, nav: 5, fleets: 4, ships: 8, navBonus: 0.28,
-                    traits: ["CoreDefense", "HomelandDefense"], lifetime: false, term: 4, warSupport: 68)
+                    traits: ["CoreDefense", "HomelandDefense"], lifetime: false, term: 4, warSupport: 68, startArmies: 12, maxArmies: 20)
         ),
         // 4 波兰
         n(4,
@@ -3331,7 +3586,7 @@ public enum HistoricalRoster {
           ],
           parties: [pt("萨纳齐亚阵营", 48), pt("波兰人民党", 28), pt("波兰国家党", 24)],
           power: pw(ind: 1.40, mp: 1.20, mil: 3, eco: 4, sta: 4, nav: 2, fleets: 1, ships: 4, navBonus: 0.10,
-                    traits: ["FightToTheEnd", "HomelandDefense", "CavalryTradition"], lifetime: false, term: 5, warSupport: 88)
+                    traits: ["FightToTheEnd", "HomelandDefense", "CavalryTradition"], lifetime: false, term: 5, warSupport: 88, startArmies: 7, maxArmies: 11)
         ),
         // 5 意大利王国（双首脑：维托里奥·埃马努埃莱三世为国王，墨索里尼为国家领袖兼首相掌实权）
         n(5,
@@ -3353,7 +3608,7 @@ public enum HistoricalRoster {
           ],
           parties: [pt("国家法西斯党", 100)],
           power: pw(ind: 1.85, mp: 1.35, mil: 4, eco: 4, sta: 4, nav: 5, fleets: 4, ships: 8, navBonus: 0.28,
-                    traits: ["CoreDefense", "BullyTheWeak"], lifetime: true, term: 40, warSupport: 72),
+                    traits: ["CoreDefense", "BullyTheWeak"], lifetime: true, term: 40, warSupport: 72, startArmies: 8, maxArmies: 15),
           familyRelations: [fr("萨伏伊", "墨索里尼", -22)]
         ),
         // 6 西班牙
@@ -3506,23 +3761,25 @@ public enum HistoricalRoster {
           power: pw(ind: 1.15, mp: 1.15, mil: 3, eco: 3, sta: 3, nav: 2, fleets: 1, ships: 3, navBonus: 0.08,
                     traits: ["HomelandDefense", "FightToTheEnd"], lifetime: true, term: 40, warSupport: 76)
         ),
-        // 14 希腊
+        // 14 希腊王国（双首脑：乔治二世为国王，梅塔克萨斯任王国首相掌政）
         n(14,
-          founder: p("扬尼斯·梅塔克萨斯", "梅塔克萨斯", "扬尼斯", "希腊首相·将军", 62, 84, 82, 78, 84, ["Stubborn", "IronFist", "Veteran", "Brave"], "Ruler", "「不！」日抗意首相"),
+          founder: p("乔治二世", "格吕克斯堡", "乔治", "希腊国王", 49, 68, 76, 80, 78, ["Patient", "Diplomatic"], "Ruler", "格吕克斯堡王朝希腊国王"),
           successors: [
-              p("乔治二世", "格吕克斯堡", "乔治", "希腊国王", 49, 68, 76, 80, 78, ["Patient", "Diplomatic"], "Successor", "希腊国王"),
+              p("保罗一世", "格吕克斯堡", "保罗", "王储", 38, 68, 78, 80, 80, ["Patient", "Just"], "Successor", "希腊王储"),
           ],
           notables: [
+              p("扬尼斯·梅塔克萨斯", "梅塔克萨斯", "扬尼斯", "希腊王国首相", 62, 84, 82, 78, 84, ["Stubborn", "IronFist", "Veteran", "Brave"], "Chancellor", "「不！」日抗意铁腕首相"),
               p("亚历山德罗斯·帕帕戈斯", "帕帕戈斯", "亚历山德罗斯", "陆军元帅", 55, 89, 80, 74, 86, ["BattleHardened", "Tactician", "Veteran"], "WarCommander", "阿尔巴尼亚反攻名帅"),
               p("亚历山德罗斯·萨凯拉里乌", "萨凯拉里乌", "亚历山德罗斯", "海军中将", 52, 82, 74, 70, 78, ["NavalMastery", "Brave"], "Admiral", "希腊皇家海军司令"),
           ],
           families: [
               f("格吕克斯堡", "希腊王室", 84, 80, ruling: true),
+              f("梅塔克萨斯", "八四政权内阁派", 80, 74),
               f("帕帕戈斯", "雅典将门", 70, 78),
           ],
-          parties: [pt("八四政权派", 46), pt("希腊自由党", 30), pt("希腊人民党", 24)],
+          parties: [pt("八四政权派", 100)],
           power: pw(ind: 1.05, mp: 0.90, mil: 4, eco: 3, sta: 4, nav: 3, fleets: 2, ships: 4, navBonus: 0.16,
-                    traits: ["HomelandDefense", "FightToTheEnd", "DefyTheStrong"], lifetime: true, term: 40, warSupport: 88)
+                    traits: ["HomelandDefense", "FightToTheEnd", "DefyTheStrong"], lifetime: true, term: 40, warSupport: 88, startArmies: 4, maxArmies: 7)
         ),
         // 15 土耳其
         n(15,
@@ -3685,7 +3942,7 @@ public enum HistoricalRoster {
           ],
           parties: [pt("国民党中央派", 55), pt("桂系", 20), pt("晋绥系", 15), pt("川军系", 10)],
           power: pw(ind: 0.48, mp: 2.35, mil: 2, eco: 2, sta: 3, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
-                    traits: ["HomelandDefense", "FightToTheEnd", "CoreDefense"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 88),
+                    traits: ["HomelandDefense", "FightToTheEnd", "CoreDefense"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 88, startArmies: 11, maxArmies: 20),
           familyRelations: [fr("蒋", "李", -24), fr("蒋", "阎", -18)]
         ),
         // 1 延安抗日根据地（史实轻装游击编制，依托山地与持久战抗衡，无现代工业与海空）
@@ -3713,7 +3970,7 @@ public enum HistoricalRoster {
           ],
           parties: [pt("中国共产党", 100)],
           power: pw(ind: 0.28, mp: 1.45, mil: 2, eco: 2, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
-                    traits: ["HomelandDefense", "FightToTheEnd"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 96)
+                    traits: ["HomelandDefense", "FightToTheEnd"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 96, startArmies: 5, maxArmies: 11)
         ),
         // 2 大日本帝国（昭和天皇裕仁在位为国家元首，东条英机任内阁总理大臣掌政；真实陆海对立派系 + 全面工业/海空/科技降维压制）
         n(2,
@@ -3743,7 +4000,7 @@ public enum HistoricalRoster {
           parties: [pt("大政翼赞会", 100)],
           power: pw(ind: 3.85, mp: 1.55, mil: 6, eco: 6, sta: 5, nav: 6, fleets: 6, ships: 12, navBonus: 0.55,
                     traits: ["FieldCombatElite", "WellTrained", "Conqueror", "SiegeCapture", "FightToTheEnd"],
-                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 94),
+                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 94, startArmies: 14, maxArmies: 24),
           familyRelations: [
               fr("东条", "山本", -48),
               fr("东条", "近卫", -26),
@@ -3770,7 +4027,7 @@ public enum HistoricalRoster {
           ],
           parties: [pt("满洲国协和会", 100)],
           power: pw(ind: 1.65, mp: 1.15, mil: 5, eco: 4, sta: 3, nav: 2, fleets: 0, ships: 2, navBonus: 0.05,
-                    traits: ["WellTrained", "CoreDefense"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 64),
+                    traits: ["WellTrained", "CoreDefense"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 64, startArmies: 6, maxArmies: 11),
           familyRelations: [fr("爱新觉罗", "梅津", -35)]
         ),
         // 4 苏联远东（史实司令阿帕纳先科，消除地名姓氏）
@@ -3790,7 +4047,7 @@ public enum HistoricalRoster {
           ],
           parties: [pt("苏联共产党", 100)],
           power: pw(ind: 1.45, mp: 1.40, mil: 5, eco: 4, sta: 5, nav: 3, fleets: 2, ships: 5, navBonus: 0.16,
-                    traits: ["HomelandDefense", "FieldCombatElite", "CoreDefense"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 86)
+                    traits: ["HomelandDefense", "FieldCombatElite", "CoreDefense"], lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 86, startArmies: 7, maxArmies: 14)
         ),
         // 5 英属缅甸与马来
         n(5,
@@ -3940,7 +4197,7 @@ public enum HistoricalRoster {
           parties: [pt("民主党", 54), pt("共和党", 46)],
           power: pw(ind: 4.00, mp: 1.90, mil: 6, eco: 6, sta: 6, nav: 6, fleets: 6, ships: 12, navBonus: 0.48,
                     traits: ["WellTrained", "StrengthenCore", "ManifestDestiny", "FieldCombatElite"],
-                    lifetime: false, term: 4, nukes: 4, nucProg: 40.0, reactors: 3, warSupport: 80)
+                    lifetime: false, term: 4, nukes: 4, nucProg: 40.0, reactors: 3, warSupport: 80, startArmies: 14, maxArmies: 28)
         ),
         // 1 苏联
         n(1,
@@ -3965,7 +4222,7 @@ public enum HistoricalRoster {
           parties: [pt("苏联共产党", 100)],
           power: pw(ind: 2.85, mp: 2.10, mil: 6, eco: 5, sta: 5, nav: 5, fleets: 4, ships: 8, navBonus: 0.28,
                     traits: ["HomelandDefense", "FightToTheEnd", "WellTrained", "Conqueror"],
-                    lifetime: true, term: 40, nukes: 2, nucProg: 30.0, reactors: 2, warSupport: 86)
+                    lifetime: true, term: 40, nukes: 2, nucProg: 30.0, reactors: 2, warSupport: 86, startArmies: 16, maxArmies: 30)
         ),
         // 2 中华人民共和国
         n(2,
@@ -3991,7 +4248,7 @@ public enum HistoricalRoster {
           parties: [pt("中国共产党", 100)],
           power: pw(ind: 1.45, mp: 2.35, mil: 4, eco: 3, sta: 6, nav: 2, fleets: 1, ships: 4, navBonus: 0.10,
                     traits: ["FightToTheEnd", "FieldCombatElite", "HomelandDefense", "DefyTheStrong"],
-                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 94)
+                    lifetime: true, term: 40, nukes: 0, nucProg: 0.0, reactors: 0, warSupport: 94, startArmies: 13, maxArmies: 24)
         ),
         // 3 英国（双首脑：乔治六世为国王，克莱门特·艾德礼任首相；1950年飓风计划研发中，尚未拥核）
         n(3,

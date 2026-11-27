@@ -491,10 +491,10 @@ private struct HistoricalScenarioCard: View {
                 }
                 .buttonStyle(.plain)
 
-                // 核心规模与格局标签条
+                // 核心规模与格局标签条（v10.0.0：开放式地理密度细分，不再把真实历史剧本写死为固定州数）
                 HStack(spacing: 6) {
                     scenarioChip("\(scenario.nations.count) 列国", tint: Theme.seal)
-                    scenarioChip("\(scenario.provinceCount) 州郡", tint: Theme.ink)
+                    scenarioChip("真实地理细分", tint: Theme.ink)
                     if !scenario.openingAlliances.isEmpty {
                         scenarioChip("\(scenario.openingAlliances.count) 阵营同盟", tint: Theme.jade)
                     }
@@ -930,7 +930,7 @@ struct PlayerWorkshopBrowserView: View {
                         .lineLimit(2)
                 }
                 HStack(spacing: 8) {
-                    Text("\(sc.nations.count) 国 · \(sc.provinceCount) 州")
+                    Text("\(sc.nations.count) 国 · 地理密度细分")
                         .font(Theme.caption)
                         .monospacedDigit()
                         .foregroundStyle(Theme.ink2)

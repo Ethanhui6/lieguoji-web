@@ -78,6 +78,10 @@ import LieguojiCore
     var snapArmies = false
     /// The simulation's own costs for the metrics overlay (set by the game each step; not published).
     var simText = ""
+    /// v10.0.0：手势拖屏/双指缩放/惯性滑行期间为真（非 @Published），供 GameModel 暂缓 SwiftUI 全树刷新，彻底消除滑屏闪动与卡顿。
+    var isInteracting = false
+    /// 手势与惯性滑行彻底静稳后回调，通知 GameModel 立即补齐一次暂缓的 HUD 状态刷新。
+    var onInteractionEnded: (() -> Void)?
     /// 显示设置 (web 0.5.40 map display options), kept between launches.
     @Published var display = DisplaySettings.load() { didSet { display.save() } }
     /// 推演与画面 settings (armies shown, war arrows, icon size, frame rate, autosave).
@@ -460,6 +464,8 @@ struct MapView: UIViewRepresentable {
         private var mtk: MTKView?
         private var renderer: MapRenderer?
         private let overlayHost = UIView()
+        /// v10.0.0：无变换原点补偿容器（固定位于 overlayHost 内 `-clipRect.origin`），让 `overlayCanvas` 的 bounds 与 center 永不随裁剪框漂移，彻底根除 GPU 仿射变换支点偏移引发的文字抖动。
+        private let overlayOriginView = UIView()
         private let overlayCanvas = UIView()
         private let overlayClipMask: CAShapeLayer = {
             let m = CAShapeLayer()
@@ -481,10 +487,17 @@ struct MapView: UIViewRepresentable {
         private var lastClipMaskRect: CGRect = .null
         private var overlayMaskAttached = false
         private var needsFullLabelUpdate = false
-        /// v9.0.0：O(1) GPU 手势平移/缩放锚点与挂起底图更新标记（拖屏 0ms CPU 零卡顿）。
+        /// v10.0.0：O(1) GPU 手势平移/缩放锚点与全量覆盖层延迟提交标记（滑屏期间绝对零 CPU 重排、零双变换闪动）。
         private var lastOverlayCamera: MapCamera?
         private var overlayAnchorCamera: MapCamera?
         private var deferredWorldUpdate = false
+        private var deferredEffectsUpdate = false
+        private var deferredViewLabelsUpdate = false
+        private var deferredTroopsUpdate = false
+        private var lastCitiesSignature: (Int, Int) = (-1, -1)
+        private var overlayTransformActive: Bool {
+            overlayCanvas.transform != .identity || panning || pinching || isFlinging
+        }
         private var lastAppearanceKey: (mode: MapMode, highlight: Int?, relations: [Int: UInt32], fills: [RGB]?, view: String)?
         private var lastBorderWide: Set<Int> = []
         private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 78 : 12 }
@@ -787,13 +800,16 @@ struct MapView: UIViewRepresentable {
             effects.alpha = CGFloat(max(0, min(1, (initialReveal - 0.9) / 0.1)))
             syncTroopVisibility(reveal: initialReveal)
             mtkView.frame = containerView.bounds; mtkView.autoresizingMask = [.flexibleWidth, .flexibleHeight]; containerView.addSubview(mtkView)
-            // 统一将全部地图覆盖层（战争特效、国名地名、飘字、兵力条、天气）收入静态全屏的 overlayHost -> overlayCanvas，
-            // 平移缩放永不改其 frame；仅在缩远露出卷轴边框时挂载单个复用 CAShapeLayer 蒙版裁在画心内。
+            // v10.0.0：统一覆盖层三层架构 `overlayHost(硬裁剪) -> overlayOriginView(无变换原点抵消) -> overlayCanvas(固定全屏中心支点 + GPU 仿射矩阵)`
             overlayHost.frame = containerView.bounds
             overlayHost.isUserInteractionEnabled = false; overlayHost.clipsToBounds = true
-            overlayCanvas.frame = containerView.bounds
+            overlayOriginView.frame = containerView.bounds
+            overlayOriginView.isUserInteractionEnabled = false
+            overlayCanvas.bounds = containerView.bounds
+            overlayCanvas.center = CGPoint(x: containerView.bounds.midX, y: containerView.bounds.midY)
             overlayCanvas.isUserInteractionEnabled = false
-            overlayHost.addSubview(overlayCanvas)
+            overlayOriginView.addSubview(overlayCanvas)
+            overlayHost.addSubview(overlayOriginView)
             containerView.addSubview(overlayHost)
             // 战争特效在地名之下（地图之上）：交战、围城、攻占、事件印都不盖住国名与城名；
             // 战况飘字与兵力条另放在地名之上；不设 autoresizingMask 以免平移画框时级联触发子视图 layoutSubviews。
@@ -972,6 +988,7 @@ struct MapView: UIViewRepresentable {
 
         /// 世界切换前静默本旧视图：立即停掉显示链路、漂移与浪花并释放重型瞬态墨场/拓扑内存，避免与新世界叠加触发真机 Jetsam。
         private func quiesceForWorldSwitch() {
+            controller.isInteracting = false
             sheetSettleWork?.cancel(); sheetSettleWork = nil
             link?.invalidate(); link = nil; appliedFrameRange = nil
             drift?.invalidate(); drift = nil
@@ -1034,6 +1051,7 @@ struct MapView: UIViewRepresentable {
                 overlayHost.layer.mask = nil
                 overlayMaskAttached = false
                 if overlayHost.frame != b { overlayHost.frame = b }
+                if overlayOriginView.frame != b { overlayOriginView.frame = b }
                 overlayCanvas.bounds = b
                 overlayCanvas.center = CGPoint(x: b.midX, y: b.midY)
                 lastClipMaskRect = .null
@@ -1096,7 +1114,8 @@ struct MapView: UIViewRepresentable {
                 }
             }
         }
-        /// v9.0.0：纯硬件矩形裁剪（overlayHost.clipsToBounds + frame = clipRect），彻底废除离屏 CAShapeLayer.mask 合成开销！
+        /// v10.0.0：纯硬件矩形裁剪 + 无变换原点抵消容器 `overlayOriginView`，让 `overlayCanvas` 的 bounds/center 恒定不变，
+        /// 拖拽缩放施加 `overlayCanvas.transform` 时支点零偏移，彻底消除边缘露出或缩放时的文字整体晃动！
         private func updateOverlayClipMask(clipRect: CGRect, fullBounds: CGRect) {
             if overlayMaskAttached || overlayHost.layer.mask != nil {
                 overlayHost.layer.mask = nil
@@ -1105,7 +1124,11 @@ struct MapView: UIViewRepresentable {
             if overlayHost.frame != clipRect {
                 overlayHost.frame = clipRect
             }
-            let canvasCenter = CGPoint(x: fullBounds.midX - clipRect.minX, y: fullBounds.midY - clipRect.minY)
+            let originFrame = CGRect(x: -clipRect.minX, y: -clipRect.minY, width: fullBounds.width, height: fullBounds.height)
+            if overlayOriginView.frame != originFrame {
+                overlayOriginView.frame = originFrame
+            }
+            let canvasCenter = CGPoint(x: fullBounds.midX, y: fullBounds.midY)
             if overlayCanvas.bounds != fullBounds {
                 overlayCanvas.bounds = fullBounds
             }
@@ -1128,14 +1151,15 @@ struct MapView: UIViewRepresentable {
             }
             updateOverlayClipMask(clipRect: clipRect, fullBounds: fullBounds)
 
-            // v9.0.0 O(1) GPU 手势变换快路径：拖拽/双指缩放/惯性滑行期间零 CPU 遍历地名、特效与兵力条，直接以 GPU 仿射矩阵跟手同步！
+            // v10.0.0 O(1) GPU 手势变换快路径：拖拽/双指缩放/惯性滑行期间零 CPU 遍历地名、特效与兵力条，
+            // 直接以固定中心支点的 GPU 仿射矩阵跟手同步（支点不动，绝不抖动、绝不闪动）！
             if fastGesture && !skipLabels {
                 if overlayAnchorCamera == nil, let prev = lastOverlayCamera {
                     overlayAnchorCamera = prev
                 }
                 if let anchor = overlayAnchorCamera, anchor.scale > 1e-6 {
                     let ratio = clamped.scale / anchor.scale
-                    if ratio >= 0.62 && ratio <= 1.62 && ratio.isFinite {
+                    if ratio >= 0.52 && ratio <= 1.92 && ratio.isFinite {
                         let tx = (anchor.centerX - clamped.centerX) * clamped.scale
                         let ty = (anchor.centerY - clamped.centerY) * clamped.scale
                         if tx.isFinite && ty.isFinite {
@@ -1174,8 +1198,8 @@ struct MapView: UIViewRepresentable {
             }
             placeSpot()
         }
-        /// v9.0.0 纯异步管线提交帧：彻底移除 presentsWithTransaction = true 与阻塞主线程的同步 mtk.draw()（waitUntilScheduled），
-        /// 结合 O(1) GPU overlayCanvas.transform，拖拽/缩放/惯性滑行全程 0ms 主线程等待，丝滑满帧。
+        /// v10.0.0 同 VSync 无阻塞提帧：交互移动期间保持 `presentsWithTransaction = false`（0ms 主线程阻塞）并直接内联调用 `mtk.draw()`，
+        /// 让 Metal 地图帧与 `overlayCanvas.transform` 在**同一 VSync** 编码上屏，彻底消除 1 帧相位滞后导致的滑屏文字漂移！
         private func syncPresentCameraFrame(skipLabels: Bool, purePan: Bool = false, forceSync: Bool = false, fromLayout: Bool = false, forceAsyncRedraw: Bool = false) {
             guard let renderer, let mtk else { return }
             let vpSize = mtk.bounds.size
@@ -1189,13 +1213,21 @@ struct MapView: UIViewRepresentable {
             CATransaction.setDisableActions(true)
             applyOverlays(skipLabels: skipLabels, purePan: purePan, fastGesture: fastGesture, camera: clamped, viewport: vpSize, clipRect: clipRect, fullBounds: fullBounds)
             if mtk.presentsWithTransaction { mtk.presentsWithTransaction = false }
-            if !mapFrozenForSheet {
-                requestAsyncMetalRedraw(force: cameraMoving || forceSync || forceAsyncRedraw)
-            }
             CATransaction.commit()
+
+            if !mapFrozenForSheet {
+                if (cameraMoving || forceSync) && !fromLayout && mtk.window != nil && !isDrawingInline {
+                    isDrawingInline = true
+                    mtk.draw()
+                    isDrawingInline = false
+                } else {
+                    requestAsyncMetalRedraw(force: cameraMoving || forceSync || forceAsyncRedraw)
+                }
+            }
         }
-        /// 手势、惯性滑行或飞行动画收尾：归零 GPU 变换矩阵，补齐一次完整国名/城名/特效/延迟世界更新。
+        /// 手势、惯性滑行或飞行动画收尾：归零 GPU 变换矩阵，一次性原子补齐全部延迟的疆域/国名/特效/兵力条与 SwiftUI HUD 刷新。
         private func settleLabels(cameraOverride: MapCamera? = nil) {
+            controller.isInteracting = false
             overlayAnchorCamera = nil
             if overlayCanvas.transform != .identity {
                 CATransaction.begin()
@@ -1203,23 +1235,29 @@ struct MapView: UIViewRepresentable {
                 overlayCanvas.transform = .identity
                 CATransaction.commit()
             }
-            if deferredWorldUpdate {
+            let hadDeferred = deferredWorldUpdate || deferredEffectsUpdate || deferredViewLabelsUpdate || deferredTroopsUpdate
+            if hadDeferred {
                 deferredWorldUpdate = false
+                deferredEffectsUpdate = false
+                deferredViewLabelsUpdate = false
+                deferredTroopsUpdate = false
                 sync()
             }
             if let override = cameraOverride, override != camera {
                 set(override, sync: true, fastPan: false)
+                controller.onInteractionEnded?()
                 return
             }
             if let mtk, mtk.presentsWithTransaction {
                 mtk.presentsWithTransaction = false
             }
-            if (needsFullLabelUpdate || lastOverlayCamera != camera) && !mapFrozenForSheet {
+            if (needsFullLabelUpdate || hadDeferred || lastOverlayCamera != camera) && !mapFrozenForSheet {
                 syncPresentCameraFrame(skipLabels: false, purePan: false, forceSync: true)
             }
             if !mapFrozenForSheet && !controller.highSpeed {
                 syncWeather()
             }
+            controller.onInteractionEnded?()
         }
         private func set(_ camera: MapCamera, sync: Bool = false, skipLabels: Bool = false, fastPan: Bool = false, fromLayout: Bool = false) {
             guard let renderer, let mtk else { return }
@@ -1343,6 +1381,7 @@ struct MapView: UIViewRepresentable {
             switch g.state {
             case .began:
                 panning = true
+                controller.isInteracting = true
                 controller.onMapBrowsing?(true)
                 let t = g.translation(in: mtk)
                 if t.x.isFinite && t.y.isFinite {
@@ -1406,6 +1445,7 @@ struct MapView: UIViewRepresentable {
             switch g.state {
             case .began:
                 lastPinch = p; pinching = true; panning = false
+                controller.isInteracting = true
                 controller.onMapBrowsing?(true)
                 atUnrollFloor = gestureCamera.scale <= bounds.lowerBound * 1.015
                 startLink()
@@ -1727,21 +1767,25 @@ struct MapView: UIViewRepresentable {
                 let stopping = pinnedAgainstEdge || hypot(nextVel.x, nextVel.y) <= 8
                 if stopping {
                     velocity = .zero
-                    set(nextCam, sync: true, fastPan: false)
+                    settleLabels(cameraOverride: nextCam)
                     scheduleClearPresentsWithTransactionIfIdle()
                 } else {
                     velocity = nextVel
                     set(nextCam, fastPan: true)
                 }
             } else if fingerDragging {
-                // 手指按住未动时保持链路就绪但不空画，松手或下一帧滑动即刻跟手。
+                // v10.0.0：手指按住未动时保持链路就绪，绝对不在 overlayTransformActive 期间写 troops 造成双变换闪动！
                 pace(l, to: .full)
                 if !mapFrozenForSheet && renderer?.isAnimating == true {
                     if let mtk, mtk.window != nil {
                         renderer?.pinnedFrameTime = CACurrentMediaTime()
                         if mtk.presentsWithTransaction { mtk.presentsWithTransaction = false }
                     }
-                    if (renderer?.reveal ?? 0) >= 0.99 { updateTroops(fastPan: true) }
+                    if overlayTransformActive {
+                        deferredTroopsUpdate = true
+                    } else if (renderer?.reveal ?? 0) >= 0.99 {
+                        updateTroops(fastPan: true)
+                    }
                     requestAsyncMetalRedraw()
                 }
             } else if renderer?.isAnimating == true {
@@ -1826,16 +1870,19 @@ struct MapView: UIViewRepresentable {
             if controller.worldRevision != shownRevision, let next = controller.world,
                next.vertices.count == map.vertices.count, next.cellCount == map.cellCount,
                Self.worldChanged(next, map) {
-                if panning || pinching {
-                    // v9.0.0：手指拖屏/双指缩放期间暂缓重型底图重着色与城名重建，松手瞬间零卡顿一次性提交！
+                if overlayTransformActive {
+                    // v10.0.0：拖屏/缩放/惯性滑行期间暂缓重型底图重着色与地名重建，松手刹那一次性提交，零闪动零掉帧！
                     deferredWorldUpdate = true
                 } else {
                     shownRevision = controller.worldRevision
                     map = next
                     renderer?.setMap(next, skipStatic: controller.replayLocked, skipOutlines: controller.replayScrubbing, animateColors: !controller.replayLocked || controller.replayAnimate)
-                    // 回放期间城池位置不变，跳过主线程 CoreText 全城重绘，彻底消除逐帧掉帧与卡顿。
-                    if !controller.replayLocked { labels?.setCities(map: next) }
-                    // 快速拖拽回放进度条期间跳过国名框重建，松手或单步/自动播放时即时更新。
+                    // v10.0.0：城池与国家数未变时跳过昂贵的 CoreText 全城重绘，彻底消除疆域易主时的文字卡顿与闪烁。
+                    let citySig = (next.meta.cities.count, next.meta.nations.count)
+                    if !controller.replayLocked && citySig != lastCitiesSignature {
+                        lastCitiesSignature = citySig
+                        labels?.setCities(map: next)
+                    }
                     if !controller.replayScrubbing {
                         if let groups = controller.viewLabels { labels?.setGroups(groups, animated: false) } else { labels?.setNations(map: next, animated: false) }
                         if !mapFrozenForSheet, let renderer, let mtk {
@@ -1893,7 +1940,11 @@ struct MapView: UIViewRepresentable {
                 dirty = true
                 if !mapFrozenForSheet {
                     if (renderer?.reveal ?? 0) >= 0.99 {
-                        if !controller.sheetOpen { updateTroops() }
+                        if overlayTransformActive {
+                            deferredTroopsUpdate = true
+                        } else if !controller.sheetOpen {
+                            updateTroops()
+                        }
                         if renderer?.isAnimating == true { startLink() }
                     } else {
                         syncTroopVisibility(reveal: renderer?.reveal ?? 0)
@@ -1907,19 +1958,28 @@ struct MapView: UIViewRepresentable {
                 dirty = true
             }
             if controller.viewLabels != shownViewLabels {
-                let animated = !mapFrozenForSheet && (controller.viewLabels?.map(\.name) != shownViewLabels?.map(\.name))
-                shownViewLabels = controller.viewLabels
-                if let groups = shownViewLabels { labels?.setGroups(groups, animated: animated) } else { labels?.setNations(map: map, animated: animated) }
-                if !mapFrozenForSheet, let renderer, let mtk {
-                    labels?.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
+                if overlayTransformActive {
+                    deferredViewLabelsUpdate = true
+                } else {
+                    let animated = !mapFrozenForSheet && (controller.viewLabels?.map(\.name) != shownViewLabels?.map(\.name))
+                    shownViewLabels = controller.viewLabels
+                    if let groups = shownViewLabels { labels?.setGroups(groups, animated: animated) } else { labels?.setNations(map: map, animated: animated) }
+                    if !mapFrozenForSheet, let renderer, let mtk {
+                        labels?.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
+                    }
+                    dirty = true
                 }
-                dirty = true
             }
             if !mapFrozenForSheet && controller.effects != shownEffects {
-                shownEffects = controller.effects
-                effects.set(shownEffects)
-                effects.alpha = controller.reveal >= 1 ? 1 : 0
-                dirty = true
+                if overlayTransformActive {
+                    // v10.0.0：滑屏 GPU 变换期间严禁向已变换的 overlayCanvas 写入新屏幕坐标的特效箭头，松手后一次性原子提交！
+                    deferredEffectsUpdate = true
+                } else {
+                    shownEffects = controller.effects
+                    effects.set(shownEffects)
+                    effects.alpha = controller.reveal >= 1 ? 1 : 0
+                    dirty = true
+                }
             }
             labels?.setSelected(controller.selectedProvince)
             if let renderer {

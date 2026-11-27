@@ -175,7 +175,15 @@ extension NativeEngine {
         var rows = [(name: String, nation: Int, value: Double, text: String, color: String?)]()
         switch category {
         case "power":
-            for (i, n) in living { let v = War26.strength(r, n.id.asString); rows.append((n.name.asString, i, v, String(format: "%.1f", v), n.color.optionalString)) }
+            if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+                for (i, n) in living {
+                    let cp = War26.compositePower(r, n.id.asString)
+                    let text = "综合 \(Int(cp.total.rounded())) · 工\(Int(cp.industry.rounded())) 军\(Int(cp.military.rounded())) 科\(Int(cp.tech.rounded()))"
+                    rows.append((n.name.asString, i, cp.total, text, n.color.optionalString))
+                }
+            } else {
+                for (i, n) in living { let v = War26.strength(r, n.id.asString); rows.append((n.name.asString, i, v, String(format: "%.1f", v), n.color.optionalString)) }
+            }
         case "population":
             for (i, n) in living { let v = population[n.id.asString] ?? 0; rows.append((n.name.asString, i, v, fmt(v), n.color.optionalString)) }
         case "economy":

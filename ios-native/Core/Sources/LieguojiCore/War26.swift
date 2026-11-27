@@ -24,8 +24,101 @@ public enum War26 {
         var values: [Int] { slots.compactMap { $0 } }
     }
 
-    /// war26Strength (State.GetStrength with the web unit scales).
-    static func strength(_ r: JS, _ id: String) -> Double {
+    /// v10.0.0 五维综合国力拆解（工业产能、海陆军质与战略投送、四线科技代差、核心人口与有效疆域、外交安定与凝聚力），
+    /// 彻底替代旧版仅凭「领土数×5 + 兵力数」导致广袤荒原或暴兵国虚高、二战德/英/美/日被严重低估的问题。
+    public struct CompositePower: Sendable {
+        public let total: Double
+        public let industry: Double
+        public let military: Double
+        public let tech: Double
+        public let landPop: Double
+        public let diplomacy: Double
+    }
+
+    public static func compositePower(_ r: JS, _ id: String) -> CompositePower {
+        // 1. 工业产能与现代经济底盘（工业指数为主体，月财政与国库为辅助，防止纯囤钱霸榜）
+        let indIdx = NuclearWarfare.industryIndex(r, nationId: id)
+        let fin = r.finance.isNull ? JS.null : r.finance.nations[id]
+        let gold = max(0.0, fin.gold.optionalNumber ?? 0.0)
+        let income = max(0.0, fin.goldPerMonth.optionalNumber ?? 0.0)
+        let reactors = r.regimes.isNull || r.regimes.nuclear.isNull ? 0.0 : max(0.0, r.regimes.nuclear[id].reactors.optionalNumber ?? 0.0)
+        let industryScore = indIdx * 38.0
+            + min(30.0, (income + 1.0).squareRoot() * 1.55)
+            + min(12.0, (gold + 1.0).squareRoot() * 0.12)
+            + reactors * 5.0
+
+        // 2. 四线科技现代化水平（陆军/经济/治国/海军 1..6 级）
+        let tMil = WorldDepth.techLevel(r, nation: id, branch: "military")
+        let tEco = WorldDepth.techLevel(r, nation: id, branch: "economy")
+        let tSta = WorldDepth.techLevel(r, nation: id, branch: "statecraft")
+        let tNav = WorldDepth.techLevel(r, nation: id, branch: "naval")
+        let techScore = Double(tMil * 9 + tEco * 8 + tSta * 6 + tNav * 7)
+
+        // 3. 军队质量、海军远洋投送与战略威慑（数量递减防人海碾压，乘以科技与工业质量权重）
+        var armyRaw = 0.0, navyRaw = 0.0
+        let cargo = r.transports.cargo.isNull ? [] : r.transports.cargo.asArray.map(\.army)
+        for a in r.world.armies.asArray + cargo where a.nationId.asString == id && a.status.asString != "destroyed" {
+            let troops = max(0.0, a.troops.asNumber)
+            let morale = max(35.0, min(115.0, a.morale.optionalNumber ?? 80.0)) / 80.0
+            armyRaw += (troops / 2200.0) * morale
+        }
+        for fl in (r.navy.fleets.isNull ? [] : r.navy.fleets.asArray) where fl.nationId.asString == id && fl.status.asString != "lost" {
+            navyRaw += max(0.0, min(14.0, fl.ships.asNumber)) / 4.0
+        }
+        let dampedArmy = armyRaw <= 22.0 ? armyRaw : (22.0 + (armyRaw - 22.0) * 0.42)
+        let landQuality = 0.68 + 0.17 * Double(tMil) + 0.18 * indIdx.squareRoot()
+        let navBonus = (r.regimes.isNull || r.regimes.historicalPower.isNull) ? 0.0 : (r.regimes.historicalPower[id].navalPowerBonus.optionalNumber ?? 0.0)
+        let nukes = (r.regimes.isNull || r.regimes.nuclear.isNull) ? 0.0 : max(0.0, r.regimes.nuclear[id].nukes.optionalNumber ?? 0.0)
+        let militaryScore = dampedArmy * landQuality * 2.15
+            + navyRaw * (3.8 + 0.85 * Double(tNav)) * (1.0 + navBonus * 1.45)
+            + nukes * 20.0
+
+        // 4. 有效核心人口与递减疆域（西伯利亚/荒原广土强烈递减，人口稠密核心区稳定加分）
+        var owned = 0
+        var ownedIds = Set<String>()
+        for p in r.world.provinces.asArray where p.controller.asString == id {
+            owned += 1
+            ownedIds.insert(p.id.asString)
+        }
+        var totalPop = 0.0
+        for sp in r.world.statecraft.provinces.asArray where ownedIds.contains(sp.provinceId.asString) {
+            totalPop += max(0.0, sp.population.optionalNumber ?? 0.0)
+        }
+        let dampedLand = owned <= 14 ? Double(owned) * 2.2 : (30.8 + (Double(owned) - 14.0) * 0.65)
+        let popScore = min(56.0, (totalPop / 1000.0).squareRoot() * 2.15)
+        let landPopScore = dampedLand + popScore
+
+        // 5. 外交阵营、政局安定、战争动员凝聚力与附庸体系
+        let stability = max(0.0, min(100.0, Regimes.leverage(r, id).stability))
+        let destiny = max(0.0, r.destiny.isNull ? 50.0 : (r.destiny.nations[id].destiny.optionalNumber ?? 50.0))
+        let warSupport = NuclearWarfare.warSupport(r, nationId: id)
+        var allies = 0
+        if !r.alliances.isNull && !r.alliances.records.isNull {
+            for rec in r.alliances.records.asArray where rec.endedTick.isNull {
+                let members = rec.memberIds.asArray.map(\.asString)
+                if members.contains(id) { allies += max(0, members.count - 1) }
+            }
+        }
+        let vassals = Vassals.vassals(r, id).count
+        let diplomacyScore = stability * 0.18 + min(12.0, destiny / 8.5) + warSupport * 0.12
+            + min(15.0, Double(allies) * 3.0) + min(12.0, Double(vassals) * 4.5)
+
+        let total = max(1.0, industryScore + militaryScore + techScore + landPopScore + diplomacyScore)
+        return CompositePower(
+            total: total,
+            industry: industryScore,
+            military: militaryScore,
+            tech: techScore,
+            landPop: landPopScore,
+            diplomacy: diplomacyScore
+        )
+    }
+
+    /// war26Strength (State.GetStrength with the web unit scales; App 模式使用真实五维综合国力).
+    public static func strength(_ r: JS, _ id: String) -> Double {
+        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+            return compositePower(r, id).total
+        }
         var army = 0.0, navy = 0.0
         let cargo = r.transports.cargo.isNull ? [] : r.transports.cargo.asArray.map(\.army)
         for a in r.world.armies.asArray + cargo where a.nationId.asString == id && a.status.asString != "destroyed" { army = f(army + f(f(max(0, a.troops.asNumber)) / f(2000))) }

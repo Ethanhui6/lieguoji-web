@@ -288,6 +288,8 @@ public enum Regimes {
         guard s.parties, s.single == nil else { return }
         let b = book(r, id)
         if b.parties.isNull { b.parties = parties(r, id, s, seed: key); return }
+        // v10.0.0：一党执政/威权战时体制（如大政翼赞会/国民联盟 100 席）严禁举行假多党轮替大选！
+        guard b.parties.asArray.count >= 2 else { return }
         guard key % 48 == Offices.stateId(r, id) % 48 else { return }
         let before = b.parties.asArray.max { $0.seats.asInt < $1.seats.asInt }?.name.optionalString
         // 大选: the same parties stand again; each swings a few seats, and the government pays for bad times
@@ -306,6 +308,8 @@ public enum Regimes {
     /// 大选 (共和国、联邦): the head of state is chosen at each election by the republic candidate rule;
     /// the incumbent may stand again until he has served eight years.
     static func leaderElection(_ r: JS, _ id: String) {
+        // v10.0.0：史实终身领袖或单党威权元首（如斯大林/希特勒/佛朗哥/萨拉查/裕仁等）不受普通议会换届罢免
+        if !r.regimes.isNull && !r.regimes.historicalTermPolicy.isNull && r.regimes.historicalTermPolicy[id].isLifetimeRuler.isTruthy { return }
         let polity = r.civilization.nations[id].polity.optionalString ?? ""
         guard polity == "Republic" || polity == "Federation", let lid = r.people.nations[id].leaderId.optionalNumber, let old = People.person(r, Int(lid)), old.isAlive.asBool else { return }
         let reign = r.chronicle.leaders[id].isNull ? nil : r.chronicle.leaders[id].asArray.last

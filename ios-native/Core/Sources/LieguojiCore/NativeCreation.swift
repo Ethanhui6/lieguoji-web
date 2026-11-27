@@ -37,12 +37,12 @@ public enum NativeCreation {
         public var errorDescription: String? { if case .message(let m) = self { return m }; return nil }
     }
 
-    /// engine.ts raisedCities（20K 保持 480 与网页基准一致，60K/120K 高精网自动扩展至 1200/2400 州）。
-    static func raised(_ n: Int, cap: Int = 480) -> Int { min(cap, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
+    /// engine.ts raisedCities（20K 放开至 720，60K/120K 高精网自动扩展至 1400/2600 州，打破僵化 280 州限制）。
+    static func raised(_ n: Int, cap: Int = 720) -> Int { min(cap, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
     static func maxProvinces(for pointCount: Int) -> Int {
-        if pointCount > 80_000 { return 2400 }
-        if pointCount > 25_000 { return 1200 }
-        return 480
+        if pointCount > 80_000 { return 2600 }
+        if pointCount > 25_000 { return 1400 }
+        return 720
     }
     static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic",
                              "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
@@ -63,11 +63,11 @@ public enum NativeCreation {
         }
         let baseCityTarget: Int = {
             guard let sc = o.historicalScenario else { return o.cityCount }
-            // v9.0.0：60K/120K 高精拓扑网格自动释放更高 HOI4 级州郡密度，同时保持流畅帧率与计算速度
+            // v10.0.0：开放式地理密度州郡规模，按网格精度自然释放 AoH3/HOI4 级细分（打破固定 280 州限制）
             if doc.points.count > 80_000 {
-                return min(820, Int((Double(sc.provinceCount) * 2.25).rounded()))
+                return min(1100, Int((Double(sc.provinceCount) * 2.45).rounded()))
             } else if doc.points.count > 25_000 {
-                return min(560, Int((Double(sc.provinceCount) * 1.65).rounded()))
+                return min(740, Int((Double(sc.provinceCount) * 1.75).rounded()))
             }
             return sc.provinceCount
         }()
@@ -116,7 +116,8 @@ public enum NativeCreation {
                 scenario: sc,
                 provinceNames: historicalProvinceNames ?? [],
                 popDensities: historicalPopDensities,
-                engine: nil
+                engine: nil,
+                travel: travel
             )
             let savedOffices = r.offices47.isNull ? nil : r.offices47.clone()
             CreationRules.enable(r)
@@ -208,7 +209,7 @@ public enum NativeCreation {
                   let gis = HistoricalBasemaps.bakedScenarioGIS(id: sc.id, expectedCount: doc.points.count),
                   gis.ownerMask.count == doc.points.count,
                   gis.nationCount == sc.nations.count,
-                  let borderPart = Regions.partitionWithinBordersWithFaces(doc, elevations: heights, ownerMask: gis.ownerMask, cities: cityCount, historicalRegion: sc.region) {
+                  let borderPart = Regions.partitionWithinBordersWithFaces(doc, elevations: heights, ownerMask: gis.ownerMask, cities: cityCount, historicalRegion: sc.region, popDensity: gis.popDensity) {
             regions = borderPart.regions
             if gis.ownerMask.contains(-2) {
                 wastelandCells = gis.ownerMask.map { $0 == -2 }

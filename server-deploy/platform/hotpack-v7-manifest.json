@@ -1,10 +1,10 @@
 {
   "ok": true,
-  "packVersion": 8,
-  "releaseTag": "v9.0 · 2.06GB HOI4级精绘地图与无人之地典藏热更包 v8",
-  "summary": "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部历史战区 GIS 国界（含不可通行无人之地）、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制 24 首交响 + 49 条实感拟音",
-  "totalBytes": 2215929587,
-  "updatedAt": 1795763787513,
+  "packVersion": 9,
+  "releaseTag": "v10.0 · 2.06GB 开放非均匀地理与24大名日本战国热更包 v9",
+  "summary": "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部战区非均匀地理密度 GIS 国界（含 AoH3 级放大 24 家大名日本战国、俄西伯利亚大州与台湾/港澳/新加坡/欧陆核心超细化）、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制音画",
+  "totalBytes": 2220804451,
+  "updatedAt": 1795773979251,
   "modules": [
     {
       "id": "hd-meshes",
@@ -17,7 +17,7 @@
       "id": "relief-tiles",
       "name": "25.6K 真实山川河流 GPU 地形瓦片",
       "detail": "7 大历史战区 z=0..5 超清山脉阴影、大河河谷与深海海沟 Metal 流式瓦片金字塔",
-      "bytes": 1294475876,
+      "bytes": 1299350740,
       "fileCount": 25
     },
     {
@@ -4081,7 +4081,7 @@
       "path": "HDMeshes/basemaps_120k.bin",
       "module": "hd-meshes",
       "size": 841205,
-      "sha256": "1c2af6fccae6e8507548c710815cf95979dbd3a1f76e7f41bbc930f1786b8448",
+      "sha256": "092544c524958675feca9e96c277986dc8d0ba0a6c9b02328b373c492201a930",
       "cdnUrls": [
         "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__basemaps_120k.bin",
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__basemaps_120k.bin",
@@ -4096,7 +4096,7 @@
       "path": "HDMeshes/basemaps_60k.bin",
       "module": "hd-meshes",
       "size": 420253,
-      "sha256": "c3cbb62e02c0591273ee55bd56ba0b451f7116fc9f03738739312046663068a5",
+      "sha256": "c0bc7bb87a4da8b29846ea1b3783ea24a485ce8881f376366a7ce12865b71628",
       "cdnUrls": [
         "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__basemaps_60k.bin",
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__basemaps_60k.bin",
@@ -4111,7 +4111,7 @@
       "path": "HDMeshes/scenarios_gis_120k.bin",
       "module": "hd-meshes",
       "size": 2883168,
-      "sha256": "3233ee2e03fc09b675197a6f65957a2debab38840a679516a62cd0bfea580484",
+      "sha256": "f75544ddce2cca3cca9f7b41d72b176000e3fb3448f972e646248c0313544fe7",
       "cdnUrls": [
         "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__scenarios_gis_120k.bin",
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__scenarios_gis_120k.bin",
@@ -4126,7 +4126,7 @@
       "path": "HDMeshes/scenarios_gis_60k.bin",
       "module": "hd-meshes",
       "size": 1439904,
-      "sha256": "dd20e5e8c618ee5611cafeb9e0a45dc272275b681ab2ab8f138d8a8c3fc585fb",
+      "sha256": "f4c9c25a46993e91a596efac6133a2bc650db772d400e34095f3d232aa8cb83d",
       "cdnUrls": [
         "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__scenarios_gis_60k.bin",
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__scenarios_gis_60k.bin",
@@ -4380,8 +4380,8 @@
     {
       "path": "ReliefTiles/japan_detail_z5_0.lgtr",
       "module": "relief-tiles",
-      "size": 41927562,
-      "sha256": "fce297c8c5d83b8de2ae15d8fb2e35df42e7d259398e4a98e651f43e7f5d96dc",
+      "size": 43271317,
+      "sha256": "663614fac8516a4d73a7abb6503ea40642d577e161d52301c353cb826303a3da",
       "cdnUrls": [
         "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/ReliefTiles__japan_detail_z5_0.lgtr",
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/ReliefTiles__japan_detail_z5_0.lgtr",
@@ -4395,8 +4395,8 @@
     {
       "path": "ReliefTiles/japan_detail_z5_1.lgtr",
       "module": "relief-tiles",
-      "size": 44927280,
-      "sha256": "53a5afdd4bac6806d45dd20d44af17bad7fe4c2a5d93a425fd7da28120ef2401",
+      "size": 46109364,
+      "sha256": "a35fcea914064b0b4c7b42fe3559a89f4323cca52eb5e73954e9cc47b5ea4c74",
       "cdnUrls": [
         "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/ReliefTiles__japan_detail_z5_1.lgtr",
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/ReliefTiles__japan_detail_z5_1.lgtr",
@@ -4410,8 +4410,8 @@
     {
       "path": "ReliefTiles/japan_detail.lgtr",
       "module": "relief-tiles",
-      "size": 66795471,
-      "sha256": "aa4ce76862f1638bd0ecbd7a31aff14bc8a2cf25cf3fa50d3341d14304739388",
+      "size": 69144496,
+      "sha256": "9db810737848f023844e28731799696f64329e3be0f61ec489a6cdfc12950b7e",
       "cdnUrls": [
         "https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/ReliefTiles__japan_detail.lgtr",
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/ReliefTiles__japan_detail.lgtr",

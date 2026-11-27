@@ -39,17 +39,37 @@ import LieguojiCore
             }
         }
     }
-    private var lastPublish = 0.0, publishPending = false
+    private var lastPublish = 0.0, publishPending = false, publishDeferredByGesture = false
+    private var cloudConnectInFlight = false
+    private var lastEffectsRefreshAt: CFTimeInterval = 0
     private func publishState() {
+        // v10.0.0：手势拖屏/双指缩放/惯性滑行期间暂缓 SwiftUI 视图树全量 diff，松手刹那立即补齐一次刷新，彻底杜绝滑屏闪动与卡顿！
+        if controller.isInteracting && state != nil {
+            publishDeferredByGesture = true
+            return
+        }
         let now = Date().timeIntervalSinceReferenceDate, gap = pageOpen ? 1.85 : (playing ? 0.28 : 0.08)
         if now - lastPublish >= gap || state == nil { lastPublish = now; objectWillChange.send(); return }
         guard !publishPending else { return }
         publishPending = true
         DispatchQueue.main.asyncAfter(deadline: .now() + gap) { [weak self] in
             guard let self else { return }
-            publishPending = false; lastPublish = Date().timeIntervalSinceReferenceDate
+            publishPending = false
+            if self.controller.isInteracting && self.state != nil {
+                self.publishDeferredByGesture = true
+                return
+            }
+            lastPublish = Date().timeIntervalSinceReferenceDate
             objectWillChange.send()
         }
+    }
+    /// 手势与惯性滑行完全静稳后立即把期间暂缓的 HUD 数值补齐上屏。
+    private func flushDeferredGesturePublish() {
+        guard publishDeferredByGesture else { return }
+        publishDeferredByGesture = false
+        publishPending = false
+        lastPublish = Date().timeIntervalSinceReferenceDate
+        objectWillChange.send()
     }
     /// 二级弹窗内玩家明确触发操作时立即刷新视图，兼顾平时 1.85s 低开销节流与交互 0ms 反馈。
     func forcePublishForAction() {
@@ -625,11 +645,11 @@ import LieguojiCore
         }
         if shouldResumePlay && !playing { play() }
     }
-    /// 自动接入九州云服托管（v9.0.0 默认开启：开局 0ms 本机即玩，后台无感自动握手广州九州云服 v15 接管长程零发热推演）。
+    /// 自动接入九州云服托管（v10.0.0 默认关闭：优先本机 Apple Silicon 0ms 原生演算，丝滑无延迟；玩家可在算力线路面板随时 1 键切换至广州云服或局域网电脑）。
     var autoRemote: Bool {
         get {
             if remoteOfflineManual { return false }
-            return UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true
+            return UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? false
         }
         set {
             objectWillChange.send()
@@ -638,7 +658,7 @@ import LieguojiCore
             UserDefaults.standard.set(!newValue, forKey: "remote.offlineManual")
             remoteOfflineManual = !newValue
             if newValue {
-                autoConnect()
+                ensureCloudConnectedNow()
             }
         }
     }
@@ -656,153 +676,57 @@ import LieguojiCore
     }
     private var autoTask: Task<Void, Never>? { didSet { lifecycle.setAutoTask(autoTask) } }
     private var reconnectTask: Task<Void, Never>? { didSet { lifecycle.setReconnectTask(reconnectTask) } }
-    /// 链路意外中断时的持久化指数退避自动重连（绝不静默降级切本地；后台挂起后切回前台即秒连）。
+    /// v10.0.0 零冻结无感容灾：云服一旦波动或断链，立即 0ms 切回本机 Apple Silicon 无缝继续推演，
+    /// 绝不强停时间轴、绝不锁死在无限重连循环里影响体验！
     private var reconnecting = false
     func remoteLost(resumePlay: Bool? = nil) {
         let wasPlaying = resumePlay ?? (playing || pendingResumePlayAfterReconnect)
-        if playing { loopToken = nil; loop?.cancel(); loop = nil; playing = false }
+        reconnectTask?.cancel()
+        reconnectTask = nil
+        reconnecting = false
+        remoteReconnecting = false
+        remoteReconnectAttempt = 0
+        pendingResumePlayAfterReconnect = false
         remoteAddress = nil
+        remoteTransport = ""
         remoteRTTMs = nil
         remoteFrameKB = nil
         remotePushActive = false
         syncActiveRouteState(activeId: nil)
-        if remoteOfflineManual {
-            reconnectTask?.cancel()
-            reconnectTask = nil
-            reconnecting = false
-            remoteReconnecting = false
-            remoteReconnectAttempt = 0
-            pendingResumePlayAfterReconnect = false
-            remoteConnectionDetail = "已手动切至离线"
-            return
-        }
+
         if appInBackground {
             wasPlayingBeforeBackground = wasPlayingBeforeBackground || wasPlaying
-            wasRemoteBeforeBackground = true
-            pendingResumePlayAfterReconnect = wasPlaying
-            reconnectTask?.cancel()
-            reconnectTask = nil
-            reconnecting = false
-            remoteReconnecting = false
+            wasRemoteBeforeBackground = !remoteOfflineManual
+            remoteConnectionDetail = "本机 0ms 待命"
             return
         }
-        guard phase == .playing else {
-            reconnectTask?.cancel()
-            reconnectTask = nil
-            reconnecting = false
-            remoteReconnecting = false
-            remoteReconnectAttempt = 0
-            pendingResumePlayAfterReconnect = false
-            return
-        }
-        pendingResumePlayAfterReconnect = wasPlaying
-        reconnectTask?.cancel()
-        reconnectTask = nil
-        reconnecting = true
-        remoteReconnecting = true
-        remoteReconnectAttempt = 0
-        if remoteConnectionDetail.isEmpty || remoteConnectionDetail == "九州云服直连" || remoteConnectionDetail == "局域网高速直连" || remoteConnectionDetail == "云端推流中继" {
-            remoteConnectionDetail = "断线自动重连中"
-        }
-        notice = "云服连接中断，正在持续自动重连…"
 
-        let scheduleSeconds: [Double] = [0.25, 0.5, 1.0, 2.0, 3.0, 5.0]
-        reconnectTask = Task { @MainActor [weak self] in
-            var attempt = 0
-            while let self, !Task.isCancelled {
-                if self.remoteOfflineManual {
-                    self.reconnecting = false
-                    self.remoteReconnecting = false
-                    self.remoteReconnectAttempt = 0
-                    self.pendingResumePlayAfterReconnect = false
-                    self.remoteConnectionDetail = "已手动切至离线"
-                    return
+        remoteConnectionDetail = "本机 Apple Silicon 0ms"
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.native.fallbackLocal()
+            guard self.phase == .playing else { return }
+            if wasPlaying {
+                if self.playing {
+                    self.restartPlayForRemoteHandoff()
+                } else {
+                    self.play()
                 }
-                if self.phase != .playing {
-                    self.reconnecting = false
-                    self.remoteReconnecting = false
-                    self.remoteReconnectAttempt = 0
-                    self.pendingResumePlayAfterReconnect = false
-                    return
-                }
-                if self.appInBackground {
-                    self.reconnecting = false
-                    self.remoteReconnecting = false
-                    self.wasRemoteBeforeBackground = true
-                    self.wasPlayingBeforeBackground = self.wasPlayingBeforeBackground || self.pendingResumePlayAfterReconnect
-                    return
-                }
-
-                attempt += 1
-                self.remoteReconnectAttempt = attempt
-                if attempt > 1 {
-                    self.remoteConnectionDetail = "第 \(attempt) 次重连云服"
-                }
-
-                if let label = await self.native.reattach() {
-                    guard !Task.isCancelled, !self.remoteOfflineManual, self.phase == .playing else { return }
-                    let transport = await self.native.remoteTransport
-                    let routeId = await self.native.activeRouteId
-                    let liveRtt = self.native.liveRTTMs
-                    let lastRtt = await self.native.lastRTTMs
-                    let pushCapable = await self.native.serverSupportsPush
-                    let resumedData = await self.native.consumeResumedState()
-
-                    self.remoteAddress = label
-                    self.remoteTransport = transport
-                    self.remoteRTTMs = liveRtt ?? lastRtt
-                    self.remotePushActive = pushCapable
-                    self.remoteReconnectAttempt = 0
-                    self.reconnecting = false
-                    self.remoteReconnecting = false
-                    self.wasRemoteBeforeBackground = false
-                    self.remoteConnectionDetail = self.connectionDetailForTransport(transport)
-                    self.syncActiveRouteState(activeId: routeId.isEmpty ? NativeHost.routeId(forAddress: label, transport: transport) : routeId, rttMs: self.remoteRTTMs)
-
-                    let stateData: Data?
-                    if let resumedData {
-                        stateData = resumedData
-                    } else {
-                        stateData = await self.native.state()
-                    }
-                    if let stateData, let fresh = await Self.decode(GameState.self, from: stateData) {
-                        self.apply(fresh)
-                    }
-
-                    let msText = self.remoteRTTMs.map { " \($0)ms" } ?? ""
-                    self.notice = "已重新接上云服（\(transport.isEmpty ? "在线" : transport)\(msText)）"
-                    let resumeNow = self.pendingResumePlayAfterReconnect
-                    self.pendingResumePlayAfterReconnect = false
-                    self.reconnectTask = nil
-                    if resumeNow && !self.playing {
-                        self.play()
-                    }
-                    return
-                }
-
-                guard !Task.isCancelled, !self.remoteOfflineManual, self.phase == .playing else { return }
-                if self.appInBackground {
-                    self.reconnecting = false
-                    self.remoteReconnecting = false
-                    self.wasRemoteBeforeBackground = true
-                    self.wasPlayingBeforeBackground = self.wasPlayingBeforeBackground || self.pendingResumePlayAfterReconnect
-                    return
-                }
-
-                let baseDelay = scheduleSeconds[min(attempt - 1, scheduleSeconds.count - 1)]
-                let jitter = Double.random(in: 0.85...1.15)
-                let waitNs = UInt64((baseDelay * jitter) * 1_000_000_000)
-                try? await Task.sleep(nanoseconds: waitNs)
+            }
+            if !self.remoteOfflineManual {
+                self.notice = "云服波动，已无缝切回本机 0ms 继续推演"
             }
         }
     }
     func findComputerNow() async -> Bool {
-        guard remoteAddress == nil else { return true }
+        guard remoteAddress == nil, !cloudConnectInFlight else { return remoteAddress != nil }
+        cloudConnectInFlight = true
+        defer { cloudConnectInFlight = false }
         remoteOfflineManual = false
         UserDefaults.standard.set(false, forKey: "remote.offlineManual")
-        remoteConnectionDetail = "正在并发竞速连接九州云服"
+        remoteConnectionDetail = "正在并发竞速连接九州云服（1.8s）"
         guard let found = await native.connectAuto() else {
-            if !remoteReconnecting { remoteConnectionDetail = "云服待命重连中" }
+            remoteConnectionDetail = "本机 Apple Silicon 0ms"
             return false
         }
         let pushCapable = await native.serverSupportsPush
@@ -827,10 +751,10 @@ import LieguojiCore
         if playing { restartPlayForRemoteHandoff() }
         return true
     }
-    /// 仅当玩家开启云端托管（`autoRemote == true`）时才在后台无感接入九州云服 v14；默认本机优先 0ms 零等待直接开玩！
+    /// v10.0.0：仅当玩家主动开启云端托管（`autoRemote == true`）时发起单次并发竞速连接，
+    /// 彻底根除旧版同时启动 `autoConnect()` 与 `findComputerNow()` 引发的双连接竞态！
     func ensureCloudConnectedNow() {
-        guard autoRemote, !remoteOfflineManual, !appInBackground, !reconnecting, remoteAddress == nil else { return }
-        autoConnect()
+        guard autoRemote, !remoteOfflineManual, !appInBackground, !reconnecting, !cloudConnectInFlight, remoteAddress == nil else { return }
         Task { @MainActor [weak self] in
             guard let self, self.phase == .playing, self.autoRemote, !self.remoteOfflineManual, self.remoteAddress == nil else { return }
             _ = await self.findComputerNow()
@@ -1025,21 +949,25 @@ import LieguojiCore
     private(set) var lastFounding: (path: String, seconds: Double)?
 
     init() {
-        // v9.0.0 混合零延迟自动云算力架构：开局秒进不阻塞，后台自动直连广州九州云服（443/8765/8443+UDP 竞速），
-        // 丝滑平滑缓冲令云端行军如原生满帧；如无网络自动本地运行，恢复网络即无缝续连。
-        if !UserDefaults.standard.bool(forKey: "v900.cloudAutoHybrid") {
-            UserDefaults.standard.set(true, forKey: "remote.auto")
-            UserDefaults.standard.set(true, forKey: "remote.autoAll")
-            UserDefaults.standard.set(false, forKey: "remote.offlineManual")
-            UserDefaults.standard.set(true, forKey: "v900.cloudAutoHybrid")
+        // v10.0.0 本机优先 0ms 原生主引擎：手机 Apple Silicon 单核与内存延迟（0.0ms）远优于 3Mbps 公网云服务器（40–80ms），
+        // 默认直开本机 0ms 丝滑满帧，同时保留「算力线路」1 键无缝切换广州云服/局域网电脑；云端断链瞬间 0 暂停切回本机！
+        if !UserDefaults.standard.bool(forKey: "v1000.localFirstDefault") {
+            UserDefaults.standard.set(false, forKey: "remote.auto")
+            UserDefaults.standard.set(false, forKey: "remote.autoAll")
+            UserDefaults.standard.set(true, forKey: "remote.offlineManual")
+            UserDefaults.standard.set(true, forKey: "v1000.localFirstDefault")
         }
         if UserDefaults.standard.object(forKey: "remote.auto") == nil {
-            UserDefaults.standard.set(true, forKey: "remote.auto")
+            UserDefaults.standard.set(false, forKey: "remote.auto")
         }
         if UserDefaults.standard.object(forKey: "remote.autoAll") == nil {
-            UserDefaults.standard.set(true, forKey: "remote.autoAll")
+            UserDefaults.standard.set(false, forKey: "remote.autoAll")
         }
-        remoteOfflineManual = UserDefaults.standard.object(forKey: "remote.offlineManual") as? Bool ?? false
+        remoteOfflineManual = UserDefaults.standard.object(forKey: "remote.offlineManual") as? Bool ?? true
+        remoteConnectionDetail = "本机 Apple Silicon 0ms"
+        controller.onInteractionEnded = { [weak self] in
+            self?.flushDeferredGesturePublish()
+        }
         let watcher = NetworkPathWatcher { [weak self] interfaceSig in
             Task { @MainActor [weak self] in
                 self?.handleNetworkPathRecovered(interfaceSig: interfaceSig)
@@ -2155,7 +2083,12 @@ import LieguojiCore
         refreshLanes()
         refreshWashes(previous: previous, next: next)
         refreshArmies()
-        refreshEffects(previous: previous, newEvents: newEvents)
+        // v10.0.0：高速推演（≥8×）时将战争特效图层重建限频至 6Hz（0.16s），避免每帧重建几十个 CoreAnimation 箭头引发闪动与主线程尖峰！
+        let effectsGate: Double = (playing && speed >= 8) ? 0.16 : 0.0
+        if effectsGate <= 0 || !newEvents.isEmpty || (now - lastEffectsRefreshAt >= effectsGate) {
+            lastEffectsRefreshAt = now
+            refreshEffects(previous: previous, newEvents: newEvents)
+        }
         // 单步全部地图数据（疆域/墨晕/军团/特效/海港/天时）一次性原子合批提交至渲染层，彻底消除多轮重复 sync。
         controller.flushSync()
         if mapView != .state && mapView != .terrain, !playing || CACurrentMediaTime() - lastViewRefresh > 0.6 {

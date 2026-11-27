@@ -46,7 +46,7 @@ const REGIONS = [
   { name: 'huaxia',          lonMin: 95.5,   lonMax: 129.0, latMin: 18.0,  latMax: 44.5, pad: 0.025, z5Shards: 3 },
   { name: 'europe',          lonMin: -11.5,  lonMax: 46.5,  latMin: 34.5,  latMax: 67.5, pad: 0.025, z5Shards: 3 },
   { name: 'east_asia_japan', lonMin: 88.0,   lonMax: 150.0, latMin: -8.5,  latMax: 50.5, pad: 0.025, z5Shards: 3 },
-  { name: 'japan_detail',    lonMin: 128.0,  lonMax: 146.5, latMin: 30.0,  latMax: 46.0, pad: 0.035, z5Shards: 2 },
+  { name: 'japan_detail',    lonMin: 129.0,  lonMax: 143.0, latMin: 30.6,  latMax: 42.6, pad: 0.020, z5Shards: 2 },
   { name: 'mediterranean',   lonMin: -10.0,  lonMax: 55.0,  latMin: 24.0,  latMax: 56.0, pad: 0.025, z5Shards: 2 },
   { name: 'world',           lonMin: -168.0, lonMax: 176.0, latMin: -55.0, latMax: 72.0, pad: 0.020, z5Shards: 2 },
 ];
@@ -549,6 +549,7 @@ function isJapanArchipelagoOnly(lon, lat) {
   if (lat > 41.55 && lon < 139.25) return false;     // 剔除俄国滨海边疆区
   if (lat > 38.20 && lon < 138.00) return false;     // 剔除日本海西岸大陆/北朝鲜
   if (lat > 35.65 && lon < 131.80) return false;     // 剔除朝鲜半岛中南部（保留隐岐/山阴）
+  if (lat > 34.72 && lon < 130.15) return false;     // 剔除釜山/巨济岛半岛南端（保留对马岛 34.1..34.70）
   if (lat > 34.35 && lon < 129.05) return false;     // 剔除釜山/济州西侧
   if (lat > 33.00 && lon < 128.85) return false;     // 剔除济州岛
   return true;
@@ -576,7 +577,8 @@ async function rebuildChangedBasemaps(grid20, mesh60, mesh120, swiftRivers) {
   }
 
   const RW = 5760, RH = 3240;
-  for (const regName of ['east_asia_japan', 'japan_detail', 'world']) {
+  // v10.0.0：仅重烘焙边界已放大的 japan_detail（20K/60K/120K 底图 + ReliefTiles 金字塔），保留未改动战区加速构建
+  for (const regName of ['japan_detail']) {
     const reg = REGIONS.find(r => r.name === regName);
     const t0 = Date.now();
     const frame = makeProjectionFrame(reg, MAP_W, MAP_H);
@@ -749,6 +751,135 @@ function getYearPolys(year) {
     GEO_CACHE.set(year, extractPolygons(JSON.parse(fs.readFileSync(fn, 'utf8'))));
   }
   return GEO_CACHE.get(year);
+}
+
+let POP_PLACES_CACHE = null;
+function getPopulatedPlaces() {
+  if (POP_PLACES_CACHE) return POP_PLACES_CACHE;
+  const fn = path.join(SRC_DIR, 'ne_10m_populated_places.geojson');
+  const out = [];
+  if (fs.existsSync(fn)) {
+    const gj = JSON.parse(fs.readFileSync(fn, 'utf8'));
+    for (const f of gj.features || []) {
+      if (f.geometry?.type !== 'Point') continue;
+      const [lon, lat] = f.geometry.coordinates;
+      const p = f.properties || {};
+      const pop = Number(p.POP_MAX ?? p.pop_max ?? p.POP_MIN ?? p.pop_min ?? 0);
+      if (!Number.isFinite(lon) || !Number.isFinite(lat) || pop < 15000) continue;
+      const weight = Math.max(0.25, Math.min(2.25, (Math.log10(Math.max(15000, pop)) - 3.9) * 0.72));
+      out.push({ lon, lat, weight });
+    }
+  }
+  POP_PLACES_CACHE = out;
+  return out;
+}
+
+const POP_FIELD_CACHE = new Map();
+/**
+ * v10.0.0：基于 Natural Earth 全球人口城市库 + 真实宏观地理人口/工业带构建非均匀密度场（14..255）。
+ * - 俄西伯利亚/青藏/戈壁/撒哈拉/澳内陆/极北北美压低至 16..34 -> 自然生成广袤大州且禁止开局刷兵；
+ * - 欧陆核心/低地三国/鲁尔/波兰/英伦/日本畿内关东/中国核心/台湾/香港澳门/新加坡抬升至 175..255 -> 自然细分为超密战略战术州郡。
+ */
+function buildPopDensityField(frame, CW, CH, regionName) {
+  const key = `${regionName}:${CW}x${CH}`;
+  if (POP_FIELD_CACHE.has(key)) return POP_FIELD_CACHE.get(key);
+
+  const field = new Float32Array(CW * CH);
+  const invScale = 1 / frame.scale;
+  const invLonScale = 1 / (frame.cosScale * frame.scale);
+
+  for (let y = 0; y < CH; y++) {
+    const lat = frame.latMax - ((y + 0.5) - frame.originY) * invScale;
+    const row = y * CW;
+    for (let x = 0; x < CW; x++) {
+      const lon = frame.lonMin + ((x + 0.5) - frame.originX) * invLonScale;
+      let d = 64.0;
+
+      if (regionName === 'japan_detail') {
+        // 日本战国专图：畿内/尾张浓尾/骏河/关东平原最稠密，中国地方/北九州次之，奥羽深山稍疏
+        d = 115.0;
+        if (lon >= 134.8 && lon <= 137.4 && lat >= 34.2 && lat <= 35.7) d = 215.0;      // 畿内・尾张・美浓・近江
+        else if (lon >= 138.6 && lon <= 140.6 && lat >= 35.0 && lat <= 36.4) d = 205.0; // 关东平原
+        else if (lon >= 137.4 && lon <= 139.0 && lat >= 34.6 && lat <= 35.5) d = 185.0; // 东海道（三河/远江/骏河）
+        else if (lon >= 129.6 && lon <= 134.8 && lat >= 32.5 && lat <= 35.3) d = 158.0; // 九州・四国・中国地方
+        else if (lat >= 37.8) d = 88.0;                                                 // 奥羽山地
+      } else {
+        // 1. 广袤稀疏疆域（大州）
+        if ((lon >= 56.0 && lat >= 52.0) || (lat >= 62.2 && lon >= 26.0) || (lon >= 134.0 && lat >= 50.0)) {
+          d = 20.0; // 西伯利亚与俄远东极北
+        } else if (lon >= 38.5 && lat >= 47.0 && lon < 56.0) {
+          d = 35.0; // 欧俄东翼广袤森林草原（大都市高斯峰仍会抬高莫斯科/伏尔加）
+        } else if (lon >= 74.0 && lon <= 101.0 && lat >= 28.0 && lat <= 37.8) {
+          d = 22.0; // 青藏高原与帕米尔
+        } else if (lon >= 74.0 && lon <= 116.0 && lat > 37.8 && lat <= 51.0) {
+          d = 24.0; // 西域大漠・戈壁・蒙古高原
+        } else if (lon >= -17.0 && lon <= 58.0 && lat >= 14.0 && lat <= 30.2 && !(lon >= 29.8 && lon <= 32.8 && lat >= 24.0 && lat <= 31.8)) {
+          d = 20.0; // 撒哈拉与阿拉伯大沙漠（保留尼罗河谷）
+        } else if (lon <= -55.0 && lat >= 53.5) {
+          d = 20.0; // 加拿大极北与阿拉斯加
+        } else if (lon >= 115.0 && lon <= 144.0 && lat >= -31.5 && lat <= -15.5) {
+          d = 22.0; // 澳大利亚内陆荒漠
+        } else if (lon >= -74.0 && lon <= -49.0 && lat >= -12.5 && lat <= 4.5) {
+          d = 24.0; // 亚马孙雨林腹地
+        } else if (lat >= 60.5 && lon >= 5.0 && lon < 26.0) {
+          d = 38.0; // 北欧高纬山区
+        }
+
+        // 2. 高密度战略细化带（细密战术州郡：欧洲核心/低地/鲁尔/波兰/英伦/北意/日本/华东华北/台湾/港澳/新加坡）
+        if (lon >= 2.4 && lon <= 7.3 && lat >= 49.4 && lat <= 53.6) d = Math.max(d, 215.0);          // 低地三国
+        else if (lon >= 5.8 && lon <= 14.8 && lat >= 47.5 && lat <= 53.8) d = Math.max(d, 185.0);    // 鲁尔・德意志核心
+        else if (lon >= -4.2 && lon <= 1.9 && lat >= 50.1 && lat <= 54.8) d = Math.max(d, 182.0);    // 英格兰核心
+        else if (lon >= -1.5 && lon <= 6.0 && lat >= 47.0 && lat <= 50.6) d = Math.max(d, 170.0);    // 巴黎盆地・北法
+        else if (lon >= 7.4 && lon <= 13.8 && lat >= 43.8 && lat <= 46.5) d = Math.max(d, 178.0);    // 波河平原・北意
+        else if (lon >= 13.5 && lon <= 22.5 && lat >= 49.0 && lat <= 54.0) d = Math.max(d, 165.0);   // 波兰・西里西亚・波希米亚
+        else if (lon >= 6.0 && lon <= 17.2 && lat >= 45.8 && lat <= 48.6) d = Math.max(d, 162.0);    // 瑞士・奥地利
+        else if (lon >= 117.2 && lon <= 122.3 && lat >= 29.2 && lat <= 33.2) d = Math.max(d, 205.0); // 江南长三角
+        else if (lon >= 112.5 && lon <= 120.0 && lat >= 33.0 && lat <= 40.5) d = Math.max(d, 185.0); // 华北中原平原
+        else if (lon >= 103.0 && lon <= 107.6 && lat >= 28.8 && lat <= 31.8) d = Math.max(d, 172.0); // 四川盆地
+        else if (lon >= 115.0 && lon <= 120.2 && lat >= 22.8 && lat <= 27.6) d = Math.max(d, 178.0); // 闽粤沿海
+        else if (lon >= 129.5 && lon <= 141.5 && lat >= 31.0 && lat <= 39.0) d = Math.max(d, 202.0); // 日本本州・九州・四国
+        else if (lon >= 125.5 && lon <= 129.5 && lat >= 34.5 && lat <= 38.5) d = Math.max(d, 168.0); // 朝鲜半岛中南部
+        else if (lon >= -88.0 && lon <= -69.5 && lat >= 36.5 && lat <= 44.0) d = Math.max(d, 180.0); // 美国东岸・五大湖
+
+        // 3. 超精细战略要冲（台湾 / 香港澳门 / 新加坡 / 直布罗陀 / 马耳他）
+        if (lon >= 119.8 && lon <= 122.2 && lat >= 21.8 && lat <= 25.4) d = Math.max(d, 236.0);      // 台湾全岛超细化
+        if (lon >= 112.6 && lon <= 114.8 && lat >= 21.8 && lat <= 23.5) d = Math.max(d, 242.0);      // 香港・澳门・珠三角
+        if (lon >= 101.0 && lon <= 104.6 && lat >= 0.9 && lat <= 4.2) d = Math.max(d, 232.0);        // 新加坡・马六甲
+        if (lon >= -5.8 && lon <= -5.0 && lat >= 35.8 && lat <= 36.5) d = Math.max(d, 235.0);        // 直布罗陀
+        if (lon >= 14.0 && lon <= 14.8 && lat >= 35.6 && lat <= 36.2) d = Math.max(d, 235.0);        // 马耳他
+      }
+      field[row + x] = d;
+    }
+  }
+
+  // 叠加 Natural Earth 真实世界城市人口高斯热力峰（让大都市与枢纽精准抬升）
+  const places = getPopulatedPlaces();
+  const radPx = Math.max(10, Math.min(34, Math.round(1.35 * frame.scale)));
+  const sigma = radPx * 0.45;
+  const inv2s2 = 1 / (2 * sigma * sigma);
+  for (const pl of places) {
+    if (pl.lon < frame.lonMin - 2 || pl.lon > frame.lonMax + 2 || pl.lat < frame.latMin - 2 || pl.lat > frame.latMax + 2) continue;
+    const [cx, cy] = projectPt(pl.lon, pl.lat, frame);
+    const ix0 = Math.max(0, Math.floor(cx - radPx));
+    const ix1 = Math.min(CW - 1, Math.ceil(cx + radPx));
+    const iy0 = Math.max(0, Math.floor(cy - radPx));
+    const iy1 = Math.min(CH - 1, Math.ceil(cy + radPx));
+    const boost = pl.weight * 42.0;
+    for (let y = iy0; y <= iy1; y++) {
+      const dy2 = (y - cy) * (y - cy);
+      const row = y * CW;
+      for (let x = ix0; x <= ix1; x++) {
+        const d2 = (x - cx) * (x - cx) + dy2;
+        if (d2 <= radPx * radPx) {
+          const v = field[row + x] + boost * Math.exp(-d2 * inv2s2);
+          field[row + x] = v > 255.0 ? 255.0 : v;
+        }
+      }
+    }
+  }
+
+  POP_FIELD_CACHE.set(key, field);
+  return field;
 }
 
 // 真实多边形轮廓：1931 中国省界（沿山川省界自然弯曲，彻底告别横平竖直方块线！）
@@ -1349,41 +1480,66 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       }
     }
   } else {
-    // sengoku_1560：日本战国 14 家大名（纯净列岛底图，零朝鲜/大陆杂质；津轻海峡以北虾夷地/北海道设为史实无人之地！）
+    // v10.0.0 sengoku_1560：AoH3 级日本战国 24 家大名令制国超细版图（纯净放大列岛底图；津轻海峡以北虾夷地/北海道设为史实无人之地 -2！）
+    const kyushuSet = new Set(['shimazu', 'otomo', 'ryuzoji']);
+    const chugokuSet = new Set(['mori', 'amago', 'ukita']);
+    const kinkiSet = new Set(['miyoshi', 'ashikaga', 'rokkaku', 'azai', 'kitabatake']);
+    const chubuKantoSet = new Set(['oda', 'matsudaira', 'imagawa', 'saito', 'asakura', 'takeda', 'uesugi', 'hojo', 'satake']);
+    const tohokuSet = new Set(['date', 'mogami', 'nanbu']);
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
-        if (lat > 41.48) { canvas[row + x] = WASTELAND; continue; } // 虾夷地（北海道）：1560 战国大名未开拓无人之地
-        if (lat >= 37.65 && lon >= 139.6) canvas[row + x] = idxOf('date');
-        else if (lon <= 131.8 && lat <= 33.95) {
-          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, new Set(['shimazu', 'otomo', 'ryuzoji']));
-        } else if (lon >= 132.0 && lon <= 134.8 && lat >= 32.6 && lat <= 34.35) {
-          canvas[row + x] = lon >= 133.95 ? idxOf('miyoshi') : idxOf('chosokabe');
+        if (lat > 41.42) { canvas[row + x] = WASTELAND; continue; } // 虾夷地（北海道）：1560 战国大名未开拓无人之地
+        // 1. 九州与对马（避开关门海峡以北的山口长门）
+        if ((lon <= 131.85 && lat <= 33.92 && !(lon >= 130.92 && lat >= 33.86)) || (lon <= 129.75 && lat <= 34.75)) {
+          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, kyushuSet);
+        // 2. 四国（土佐/伊予归长宗我部，东阿波/赞岐归三好）
+        } else if (lon >= 132.0 && lon <= 134.82 && lat >= 32.55 && lat <= 34.40 && !(lon < 133.65 && lat > 34.15)) {
+          canvas[row + x] = lon >= 133.92 ? idxOf('miyoshi') : idxOf('chosokabe');
+        // 3. 奥羽东北（伊达/最上/南部三足鼎立）
+        } else if (lat >= 37.30 && lon >= 139.55) {
+          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, tohokuSet);
+        // 4. 中国地方山阴山阳（毛利/尼子/宇喜多）
+        } else if (lon < 134.55 && lat >= 33.86) {
+          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, chugokuSet);
+        // 5. 畿内与伊势纪伊（足利幕府/三好/六角/浅井/北畠）
+        } else if (lon >= 134.55 && lon < 136.66 && lat < 35.62) {
+          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, kinkiSet);
+        // 6. 东海/美浓/北陆/甲信越/关东（织田/松平/今川/斋藤/朝仓/武田/上杉/北条/佐竹）
         } else {
-          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, new Set(['oda', 'imagawa', 'takeda', 'uesugi', 'hojo', 'mori', 'miyoshi', 'date', 'asakura', 'saito']));
+          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, chubuKantoSet);
         }
       }
     }
   }
+
+  // ==================== v10.0.0 真实地理非均匀人口与战略密度场（核心区极密细分，俄西伯利亚/青藏/戈壁/撒哈拉广袤大州） ====================
+  const popField = buildPopDensityField(frame, CW, CH, sc.region);
 
   // ==================== 网格采样 + 同陆块 BFS 填缝（零跨海！保留 -2 无人之地）+ 碎点清理 ====================
   const sampleMesh = (mesh, bm) => {
     const owners = new Int8Array(mesh.n).fill(-1);
     const pop = new Uint8Array(mesh.n);
 
-    // 1. 直接采样光栅画布（保留 -2 无人之地！）
+    // 1. 直接采样光栅画布（保留 -2 无人之地！）+ 写入非均匀真实地理人口密度（14..255）
     for (let i = 0; i < mesh.n; i++) {
       if (bm[i] < 20) continue;
       const x = mesh.coords[i * 2], y = mesh.coords[i * 2 + 1];
       const px = Math.max(0, Math.min(CW - 1, Math.round(x)));
       const py = Math.max(0, Math.min(CH - 1, Math.round(y)));
-      const tag = canvas[py * CW + px];
+      const pIdx = py * CW + px;
+      const tag = canvas[pIdx];
       if (tag === WASTELAND) owners[i] = WASTELAND;
       else if (tag >= 0 && tag < sc.nations.length) owners[i] = tag;
-      const elev = bm[i];
-      const lowlandBoost = elev <= 32 ? 65 : elev <= 48 ? 35 : 5;
-      pop[i] = tag === WASTELAND ? 0 : Math.min(240, 48 + lowlandBoost + ((i * 29) % 55));
+      if (tag === WASTELAND) {
+        pop[i] = 0;
+      } else {
+        const elev = bm[i];
+        const elevMod = elev <= 30 ? 1.12 : elev <= 45 ? 1.00 : elev <= 62 ? 0.78 : 0.56;
+        const baseD = popField[pIdx] * elevMod;
+        pop[i] = Math.max(14, Math.min(255, Math.round(baseD)));
+      }
     }
 
     // 2. 同陆块 BFS 填补海岸线 1-2 格未命中缝隙（同时以已归属国和 -2 无人之地作种子，仅填 -1 缝隙，绝不跨海、绝不吞并无人之地！）

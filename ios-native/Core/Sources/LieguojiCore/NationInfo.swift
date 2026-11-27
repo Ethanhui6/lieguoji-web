@@ -280,6 +280,34 @@ extension NativeEngine {
             pd.likelyPath = JS(outlook.likelyPath)
             pd.defeatShock = JS(Int((Regimes.defeatPenalty(r, id) * 100).rounded()))
             pd.mood = JS(Int((Regimes.mood(r, id) * 100).rounded()))
+            // v10.0.0：真实王权等级与主权形态标定（区隔虚君立宪、幕府/摄政架空、二元皇权、封建领主与集权君主）
+            let royalInfo: (level: Int, label: String)? = {
+                switch st.id {
+                case "constitutional", "union":
+                    return (22, "虚君立宪 · 象征王权")
+                case "shogunate":
+                    return (28, "天皇垂拱 · 幕府掌兵")
+                case "regency":
+                    return (34, "名义王室 · 摄政代治")
+                case "elective":
+                    return (52, "选侯王权 · 贵族制衡")
+                case "feudal", "principality", "archduchy", "margraviate":
+                    return (60, "封建领主王权")
+                case "dualMonarchy":
+                    return (70, "二元皇权 · 君相共治")
+                case "absolute", "empire", "dynasty", "tsardom", "sultanate", "emirate", "pharaonic":
+                    return (90, "集权君主王权")
+                case "despotism":
+                    return (96, "极权专制皇权")
+                default:
+                    return nil
+                }
+            }()
+            if let ri = royalInfo {
+                let stabAdj = max(-10, min(8, (outlook.stability - 55) / 5))
+                pd.royalAuthority = JS(max(10, min(100, ri.level + stabAdj)))
+                pd.royalAuthorityLabel = JS(ri.label)
+            }
             pd.transitions = .array(Regimes.availableTransitions(r, id).map { tr in
                 let x = JS.object()
                 x.id = JS(tr.id); x.title = JS(tr.title); x.subtitle = JS(tr.subtitle)

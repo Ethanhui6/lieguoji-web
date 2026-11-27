@@ -96,7 +96,7 @@ public struct GameState: Codable, Equatable, Sendable {
     public var ownersDelta: [Int]? = nil
     public let labels: [WorldMeta.LabelBox]?
     public let nations: [Nation]
-    public let armies: [Army]
+    public var armies: [Army]
     public var fleets: [Fleet]? = nil
     /// Sunk fleets being rebuilt at their docks (造舰), with the months left.
     public struct Yard: Codable, Equatable, Sendable { public let name: String; public let nation: Int; public let months: Double }

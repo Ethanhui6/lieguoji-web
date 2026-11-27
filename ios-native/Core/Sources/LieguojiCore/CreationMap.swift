@@ -44,17 +44,18 @@ public enum CreationMap {
         let heights = h.map { UInt8(min(100, max(0, $0))) }
         let climate = Climate.grid(heights, g.cellsX, g.cellsY)
         let useRealRivers = (historicalRegion != nil && historicalRegion != .custom)
-        let rivers = useRealRivers ? (riverIds: [Int](repeating: 0, count: h.count), flux: [Int](repeating: 0, count: h.count), paths: [[Int]]()) : Climate.rivers(points: d.points, triangles: d.triangles, neighbors: g.neighbors, h, climate.precipitation)
+        let rivers: Climate.Rivers? = useRealRivers ? nil : Climate.rivers(points: d.points, triangles: d.triangles, neighbors: g.neighbors, h, climate.precipitation)
         let realRiverMask = useRealRivers ? HistoricalGeography.riverNearMask(region: historicalRegion!, points: g.points, width: g.width, height: g.height) : []
         var ids = [UInt8](repeating: 0, count: h.count)
         for cell in h.indices {
             let nearReal = useRealRivers && cell < realRiverMask.count && realRiverMask[cell]
-            let riverBoost: Double = nearReal ? 6.5 : (rivers.riverIds[cell] != 0 ? max(Double(rivers.flux[cell]) / 10, 2) : 0)
+            let procRiverId = rivers?.riverIds[cell] ?? 0
+            let riverBoost: Double = nearReal ? 6.5 : (procRiverId != 0 ? max(Double(rivers?.flux[cell] ?? 0) / 10, 2) : 0)
             var sum = Double(climate.precipitation[cell]) + riverBoost, n = 1.0
             for j in g.neighbors[cell] where h[j] >= 20 { sum += Double(climate.precipitation[j]); n += 1 }
-            ids[cell] = UInt8(Climate.biome(moisture: jsRound(4 + sum / n), temperature: Int(climate.temperature[cell]), height: Double(h[cell]), hasRiver: nearReal || rivers.riverIds[cell] != 0))
+            ids[cell] = UInt8(Climate.biome(moisture: jsRound(4 + sum / n), temperature: Int(climate.temperature[cell]), height: Double(h[cell]), hasRiver: nearReal || procRiverId != 0))
         }
-        return (ids, rivers.paths)
+        return (ids, rivers?.paths ?? [])
     }
 
     /// originalBiomeLinear 后按 world-map.ts 转成 sRGB 字节。

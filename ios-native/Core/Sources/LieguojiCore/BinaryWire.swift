@@ -156,7 +156,7 @@ public enum BinaryStateWire {
         if hasTail { hdrFlags |= 1 << 8 }
         if isArmyDelta { hdrFlags |= 1 << 9 }
         if let hr = gs.historicalRoute, !hr.isEmpty { hdrFlags |= 1 << 10 }
-        if let pe = gs.pendingHistoricalEvent, !pe.isEmpty { hdrFlags |= 1 << 11 }
+        if gs.pendingHistoricalEvent != nil { hdrFlags |= 1 << 11 }
         w.u16(hdrFlags)
 
         // Core header scalars
@@ -396,9 +396,9 @@ public enum BinaryStateWire {
             w.str8(gs.historicalRoute ?? "")
         }
         if (hdrFlags & (1 << 11)) != 0 {
-            let peBytes = Array((gs.pendingHistoricalEvent ?? "").utf8)
-            w.u32(UInt32(peBytes.count))
-            w.buf.append(contentsOf: peBytes)
+            let peData = gs.pendingHistoricalEvent.flatMap { try? JSONEncoder().encode($0) } ?? Data()
+            w.u32(UInt32(peData.count))
+            w.buf.append(contentsOf: peData)
         }
 
         return Data(w.buf)
@@ -741,11 +741,11 @@ public enum BinaryStateWire {
             guard let hr = r.str8() else { return nil }
             if !hr.isEmpty { historicalRoute = hr }
         }
-        var pendingHistoricalEvent: String? = nil
+        var pendingHistoricalEvent: HistoricalEvents.PendingModal? = nil
         if version >= 2 && (hdrFlags & (1 << 11)) != 0 {
             guard let peBytes = r.data32() else { return nil }
             if !peBytes.isEmpty {
-                pendingHistoricalEvent = String(decoding: peBytes, as: UTF8.self)
+                pendingHistoricalEvent = try? JSONDecoder().decode(HistoricalEvents.PendingModal.self, from: peBytes)
             }
         }
 

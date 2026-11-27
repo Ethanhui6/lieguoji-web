@@ -40,9 +40,21 @@ else
     echo "未启用 UFW（请在腾讯云控制台防火墙确认放行 TCP 80/443/8443/8765 及 UDP 8767）"
 fi
 
-echo "=== [3/4] 拉取列国纪最新主分支并重建部署 v13 计算服 + 平台服 ==="
-REPO_DIR="${LGJ_REPO_DIR:-/opt/lieguoji-web}"
+echo "=== [3/4] 自动定位现有部署目录并拉取列国纪最新主分支重建部署 v13 计算服 + 平台服 ==="
+DETECTED_REPO=""
+if command -v docker >/dev/null 2>&1; then
+    DATA_SRC="$(sudo docker inspect -f '{{range .Mounts}}{{if eq .Destination "/data"}}{{.Source}}{{end}}{{end}}' lieguoji-platform 2>/dev/null || true)"
+    if [ -n "$DATA_SRC" ] && [ -d "$DATA_SRC" ]; then
+        CAND="$(dirname "$(dirname "$DATA_SRC")")"
+        if [ -d "$CAND/.git" ] && [ -f "$CAND/server-deploy/docker-compose.yml" ]; then
+            DETECTED_REPO="$CAND"
+        fi
+    fi
+fi
+REPO_DIR="${LGJ_REPO_DIR:-${DETECTED_REPO:-/opt/lieguoji-web}}"
+echo "目标仓库目录: $REPO_DIR"
 if [ -d "$REPO_DIR/.git" ]; then
+    git config --global --add safe.directory "$REPO_DIR" || true
     cd "$REPO_DIR"
     git fetch origin main --depth=1
     git reset --hard origin/main
@@ -57,9 +69,17 @@ export LGJ_PUBLIC_HOST="${LGJ_PUBLIC_HOST:-111.230.153.235}"
 export LGJ_MAX_KBPS="${LGJ_MAX_KBPS:-2480}"
 sudo -E docker compose up -d --build --remove-orphans
 
-echo "=== [4/4] 部署健康检查 ==="
-sleep 3
+echo "=== [4/4] 部署健康检查与 7.0.0 推送确认 ==="
+sleep 4
 sudo docker compose ps
-curl -sS "http://127.0.0.1/api/v1/bootstrap" | head -c 360 || true
-echo ""
-echo "✅ 列国纪 v7.0 / LieguojiServer v13（BBR+FQ · LGB1 <1KB/帧 · UDP 8767 · 3Mbps 专调）已就绪！"
+python3 - <<'PY' || true
+import json, urllib.request
+with urllib.request.urlopen("http://127.0.0.1/api/v1/bootstrap?version=6.0.1&build=190", timeout=8) as r:
+    d = json.loads(r.read().decode("utf-8"))
+u = d.get("update", {})
+hp = d.get("hotpack", {})
+print(f"客户端推送状态: hasAppUpdate={u.get('hasAppUpdate')} -> v{u.get('latestVersion')} (Build {u.get('latestBuild')}, {u.get('ipaSizeMB')} MB)")
+print(f"热更新清单状态: packVersion=v{hp.get('packVersion')} · {hp.get('fileCount')} 文件 · {hp.get('totalBytes', 0)/(1024**3):.3f} GB")
+print(f"更新志条目数: {len(d.get('changelog', []))} 条（最新: v{d.get('changelog', [{}])[0].get('version')}）")
+PY
+echo "✅ 列国纪 v7.0.0 推送 + LieguojiServer v13（BBR+FQ · LGB1 <1KB/帧 · UDP 8767 · 3Mbps 专调）已就绪！"

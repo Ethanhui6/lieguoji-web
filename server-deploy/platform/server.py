@@ -102,14 +102,14 @@ RANKS = [
 DEFAULT_LATEST_VERSION = "7.0.0"
 DEFAULT_LATEST_BUILD = 191
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【HOI4/历史时代3级地图革命 × 60K/120K 超精网格 × 14K 卫星地貌 GPU 瓦片】彻底突破旧版 20K 细胞 / 480 州 / 24 国上限：全新支持 6 万(1,200 州)与 12 万(2,400 州) Voronoi 高精网格、7 大历史分区 14K 卫星山川与海深 GPU 瓦片金字塔、64 国自绘工坊 3.0 与 1 格微操画笔，拉近至 100× 细节纤毫毕现。",
+    "【HOI4/历史时代3级地图革命 × 60K/120K 超精网格 × 20K 卫星地貌 GPU 瓦片】彻底突破旧版 20K 细胞 / 480 州 / 24 国上限：全新支持 6 万(1,200 州)与 12 万(2,400 州) Voronoi 高精网格、7 大历史分区 20K 等效卫星山川与海深 GPU 瓦片金字塔（2,387 块 1280×720 HD 瓦片）、64 国自绘工坊 3.0 与 1 格微操画笔，拉近至 100× 细节纤毫毕现。",
     "【极致丝滑零延迟革命 × 本机 0ms 64× 看海 + 广州 4C4G 3Mbps 云服 v13 二进制+UDP】默认切回「本机极致流畅 0ms（最高 64× 推进，账号/云档/热更/工坊全程在线）」；云服升级至 v13，引入 LGB1 紧凑二进制增量帧（<1 KB/帧、<0.05 ms 解码）、Linux TCP_QUICKACK、UDP 8767 零队头阻塞推流与 2480 kbps 精准限速，彻底消除 3 Mbps 带宽突发丢包。",
-    "【真·历史深度考据 × 双元首制 × 家族派系纯净 × 真实军事代差 × 1.1 GB 全生效热更包 v6】1943 年前严格禁核；1941 日本实装「昭和天皇 裕仁 + 内阁总理大臣 东条英机」双元首、满洲国爱新觉罗·溥仪傀儡制、陆海军派系剧烈对立与零外籍宗室；真实还原 1941 日中陆海空科技代差与山地衰减；发布 1.1 GB 100% 真实生效 hotpack-v6（45 纪元全可玩 + 6 时代兵模 + 12 首交响双乐章 + 游戏内实时自检面板）。",
+    "【真·历史深度考据 × 双元首制 × 家族派系纯净 × 真实军事代差 × 1.113 GB 全生效热更包 v6】1943 年前严格禁核；1941 日本实装「昭和天皇 裕仁 + 内阁总理大臣 东条英机」双元首、满洲国爱新觉罗·溥仪傀儡制、陆海军派系剧烈对立与零外籍宗室；真实还原 1941 日中陆海空科技代差与山地衰减；发布 1.113 GB（176 项）100% 真实生效 hotpack-v6（45 纪元全可玩 + 6 时代 84 套 1024×1024 兵模 + 18 首时代交响三乐章 + 游戏内实时自检面板）。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 17,
-    "notice": "v7.0.0 史诗大改版上线：60K/120K 超精舆图 · 14K 卫星瓦片 · 本机 0ms 64× + 云服 v13 · 1.1GB 全生效典藏热更 v6",
+    "version": 18,
+    "notice": "v7.0.0 史诗大改版上线：60K/120K 超精舆图 · 20K GPU 瓦片 · 本机 0ms 64× + 云服 v13 · 1.113 GB 全生效典藏热更 v6",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16, "64": 32},
     "tuning": {
@@ -145,12 +145,11 @@ def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
     b = int(build or DEFAULT_LATEST_BUILD)
     fname = f"lieguoji-{v}-build{b}-unsigned.ipa"
     return [
+        f"https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
-        f"https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://ghfast.top/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
-        f"https://lieguoji-edge.pages.dev/api/cdn/ipa/v{v}/{fname}",
         f"https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"http://{PUBLIC_HOST}/downloads/lieguoji-latest.ipa",
     ]
@@ -158,17 +157,20 @@ def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
 
 CHANGELOG_HISTORY: list[dict[str, Any]] = [
     {
-        "version": "7.0.0",
-        "build": 191,
-        "date": "2026-11-26",
-        "title": "史诗大改版：60K/120K 超精地图 × 14K GPU 瓦片 × 本机 0ms 64× / 云服 v13 × 真实历史双元首 × 1.1GB 全生效热更 v6",
-        "notes": DEFAULT_RELEASE_NOTES,
-    },
-    {
         "version": DEFAULT_LATEST_VERSION,
         "build": DEFAULT_LATEST_BUILD,
         "date": "2026-11-26",
         "lines": list(DEFAULT_RELEASE_NOTES),
+    },
+    {
+        "version": "6.0.1",
+        "build": 190,
+        "date": "2026-11-26",
+        "lines": [
+            "【热更新提速 50 倍 × 点击即刻秒动 × 五路 206 满速并发】正式上架 GitHub Release hotpack-v5 全量 69 项 229.37 MB 真实地理与五千年史典资产，接入 gh-proxy.com / cdn.gh-proxy.org / gh-proxy.org / EdgeOne 五路 HTTP 206 满速分片并发。",
+            "【全界面同步「九州云服 v12」显示】统一行宫链路卡、设置页与管理员司礼监监控页状态文案及动态典藏总包体积显示。",
+            "【全面消除界面文字错乱与挤压】优化热更新进度卡、标题页宣纸公告栏与 iPhone 竖屏排版布局。",
+        ],
     },
     {
         "version": "6.0.0",
@@ -253,16 +255,16 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "maintenance": False,
     "maintenanceMessage": "九州云服正在例行修缮，稍候片刻即可重登。",
     "releaseDate": "2026-11-26",
-    "ipaSizeMB": 42.7,
-    "downloadUrl": "https://github.com/Ethanhui6/lieguoji-web/releases/latest",
+    "ipaSizeMB": 44.2,
+    "downloadUrl": f"https://github.com/Ethanhui6/lieguoji-web/releases/tag/v{DEFAULT_LATEST_VERSION}",
     "directIpaUrl": build_default_ipa_mirrors(DEFAULT_LATEST_VERSION, DEFAULT_LATEST_BUILD)[0],
     "ipaMirrors": build_default_ipa_mirrors(DEFAULT_LATEST_VERSION, DEFAULT_LATEST_BUILD),
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 13,
+        "patchVersion": 18,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v6.0.0 极速计算服 v12（16Mbps 五路竞速）+ 32× 爽看海 + 228MB 真实地理五千年史典热更包 v5",
+        "summary": "v7.0.0 史诗大改版：60K/120K 超精舆图 · 20K GPU 瓦片 · 本机 0ms 64× + 云服 v13 · 1.113 GB 全生效热更 v6",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -632,6 +634,65 @@ def init_db() -> None:
                 "INSERT INTO kv_store(k, v, updated_at) VALUES ('release', ?, ?)",
                 (json.dumps(DEFAULT_RELEASE, ensure_ascii=False), now_ms()),
             )
+        else:
+            # 服务端随代码发版升级时，若持久化库里的 latestBuild / patchVersion 落后于新版默认值，自动平滑升级推送，
+            # 防止旧版数据库残留 6.0.1(190) 导致游戏内收不到 7.0.0(191) 更新推送。
+            try:
+                stored = json.loads(row["v"])
+                if not isinstance(stored, dict):
+                    stored = json.loads(json.dumps(DEFAULT_RELEASE))
+                changed = False
+                stored_build = int(stored.get("latestBuild") or 0)
+                if stored_build < DEFAULT_LATEST_BUILD:
+                    stored["latestVersion"] = DEFAULT_LATEST_VERSION
+                    stored["latestBuild"] = DEFAULT_LATEST_BUILD
+                    stored["releaseDate"] = DEFAULT_RELEASE["releaseDate"]
+                    stored["ipaSizeMB"] = DEFAULT_RELEASE["ipaSizeMB"]
+                    stored["downloadUrl"] = DEFAULT_RELEASE["downloadUrl"]
+                    stored["ipaMirrors"] = list(DEFAULT_RELEASE["ipaMirrors"])
+                    stored["directIpaUrl"] = DEFAULT_RELEASE["directIpaUrl"]
+                    stored["releaseNotes"] = list(DEFAULT_RELEASE_NOTES)
+                    changed = True
+                stored_hp = stored.get("hotpatch") if isinstance(stored.get("hotpatch"), dict) else {}
+                stored_pv = int(stored_hp.get("patchVersion") or 0)
+                default_pv = int(DEFAULT_RELEASE["hotpatch"]["patchVersion"])
+                if stored_pv < default_pv:
+                    stored["hotpatch"] = json.loads(json.dumps(DEFAULT_RELEASE["hotpatch"]))
+                    changed = True
+                if changed:
+                    DB.execute(
+                        "UPDATE kv_store SET v = ?, updated_at = ? WHERE k = 'release'",
+                        (json.dumps(stored, ensure_ascii=False), now_ms()),
+                    )
+                    print(
+                        f"已自动将持久化发版配置升级至 v{stored['latestVersion']} (Build {stored['latestBuild']}, patch={stored['hotpatch']['patchVersion']})",
+                        flush=True,
+                    )
+            except Exception as exc:
+                print(f"升级持久化发版配置失败，保留原值: {exc}", flush=True)
+
+        # 同步将旧版 hotpack_meta (packVersion < 6) 平滑升级至 v6（1.113 GB）
+        hp_row = DB.execute("SELECT v FROM kv_store WHERE k = 'hotpack_meta'").fetchone()
+        if hp_row:
+            try:
+                hp_meta = json.loads(hp_row["v"])
+                if int(hp_meta.get("packVersion", 0)) < 6:
+                    DB.execute(
+                        "UPDATE kv_store SET v = ?, updated_at = ? WHERE k = 'hotpack_meta'",
+                        (
+                            json.dumps(
+                                {
+                                    "packVersion": 6,
+                                    "releaseTag": "v7.0 · 1.113GB 史诗超精舆图与五千年典藏热更包 v6",
+                                    "summary": "全量 100% 实时挂载生效：60K/120K 超精网格拓扑、7 大分区 20K 卫星地貌 GPU 瓦片金字塔、五千年 45 纪元真实国界自由开局、14,977 城与 5,320 历史人物志、6 时代 84 套 1024×1024 高清兵模及 18 首时代交响三乐章",
+                                },
+                                ensure_ascii=False,
+                            ),
+                            now_ms(),
+                        ),
+                    )
+            except Exception:
+                pass
 
         cnt = DB.execute("SELECT COUNT(*) AS c FROM announcements").fetchone()["c"]
         if cnt == 0:

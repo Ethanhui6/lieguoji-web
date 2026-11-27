@@ -165,7 +165,7 @@ final class V9OverhaulTests: XCTestCase {
         let eng36 = try NativeEngine(world: Data(built36.json.utf8))
         eng36.enableAppRules()
         let r36 = eng36.run
-        let modernReforms = Regimes.reforms(for: r36)
+        let modernReforms = Regimes.reforms(for: HistoricalEra.current(r36))
         XCTAssertTrue(modernReforms.contains { $0.id == "econ_war" }, "现代剧本应包含战时经济法案")
         XCTAssertTrue(modernReforms.contains { $0.id == "focus_blitz_rearm" }, "现代剧本应包含 HOI4 风格国家焦点国策")
         XCTAssertFalse(modernReforms.contains { $0.id == "exam" }, "现代剧本不应混入古典科举制")
@@ -186,7 +186,7 @@ final class V9OverhaulTests: XCTestCase {
         optSg.historicalRoute = "historical"
         let builtSg = try NativeCreation.generate(optSg, inputs: inputs, worldId: "v9-sg", runId: "run-sg")
         let engSg = try NativeEngine(world: Data(builtSg.json.utf8))
-        let classicReforms = Regimes.reforms(for: engSg.run)
+        let classicReforms = Regimes.reforms(for: HistoricalEra.current(engSg.run))
         XCTAssertTrue(classicReforms.contains { $0.id == "exam" }, "古典剧本应包含科举取士")
         XCTAssertFalse(classicReforms.contains { $0.id == "econ_war" }, "古典剧本不应出现现代战时经济")
     }

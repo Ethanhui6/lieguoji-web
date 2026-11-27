@@ -16,9 +16,11 @@ extension HistoricalEvents {
 
     // MARK: - 1. 1936 战云密布 & 1939 二战欧洲战场（42 条密集 HOI4 级事件链）
 
-    private static let ww2Europe1936And1939Events: [EventSpec] = [
+    private static let ww2Europe1936And1939Events: [EventSpec] = {
+        var out: [EventSpec] = []
+        out.reserveCapacity(48)
         // --- 1936 专属战前风云（14 条） ---
-        EventSpec(
+        out.append(EventSpec(
             id: "rhineland_1936",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1936, triggerMonth: 3, minDay: 8,
@@ -33,8 +35,8 @@ extension HistoricalEvents {
                 Choice(title: "德军占领莱茵兰·英法口头抗议（史实）", subtitle: "德国士气大振，鲁尔工业区彻底解锁", isHistorical: true, effectCode: "ic:germany:18|gold:germany:300|morale:germany:12|law:germany:focus_four_year|tension:10"),
                 Choice(title: "法国强硬出兵驱逐德军（架空）", subtitle: "法德在莱茵河提前爆发战争", isHistorical: false, effectCode: "war:france:germany:1|tension:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "spanish_civil_war_1936",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1936, triggerMonth: 7, minDay: 35,
@@ -49,8 +51,8 @@ extension HistoricalEvents {
                 Choice(title: "德意苏各自派志愿军参战（史实）", subtitle: "德军空地协同日趋成熟，欧洲对立加深", isHistorical: true, effectCode: "buff:germany:秃鹰军团实战经验:12:6:1.08:0:180|buff:ussr:国际纵队实战经验:8:10:1.0:0:180|morale:italy:8|tension:8"),
                 Choice(title: "各国严守不干涉委员会协定（架空）", subtitle: "西班牙局势趋缓，紧张度回落", isHistorical: false, effectCode: "gold:spain:250|tension:-4"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "anti_comintern_1936",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1936, triggerMonth: 11, minDay: 65,
@@ -65,8 +67,8 @@ extension HistoricalEvents {
                 Choice(title: "确立柏林—罗马轴心（史实）", subtitle: "德意结成战略同盟，威慑西欧与巴尔干", isHistorical: true, effectCode: "ally:germany:italy|ic:germany:10|ic:italy:12|tension:8"),
                 Choice(title: "意大利维持斯特雷萨阵线（架空）", subtitle: "意大利靠拢英法以制衡德国南下", isHistorical: false, effectCode: "ally:uk:italy|tension:4"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "soviet_five_year_1937",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1937, triggerMonth: 4, minDay: 110,
@@ -80,8 +82,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "全力优先重工业与坦克工厂（史实）", subtitle: "苏联工业产能大幅攀升", isHistorical: true, effectCode: "ic:ussr:32|gold:ussr:400|law:ussr:focus_five_year"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "uk_rearmament_1937",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1937, triggerMonth: 8, minDay: 145,
@@ -95,8 +97,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "优先建成雷达防空网与战斗机产线（史实）", subtitle: "不列颠本土防空与防御显著提升", isHistorical: true, effectCode: "ic:uk:22|law:uk:focus_radar_airdef|buff:uk:本土雷达预警网:6:18:1.0:12:240"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "france_maginot_1937",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1937, triggerMonth: 11, minDay: 175,
@@ -111,8 +113,8 @@ extension HistoricalEvents {
                 Choice(title: "依托马奇诺采取守势战略（史实）", subtitle: "法国东线正面坚若磐石，但机动偏弱", isHistorical: true, effectCode: "buff:france:马奇诺要塞防线:0:22:0.96:0:240|morale:france:10"),
                 Choice(title: "采纳戴高乐建议组建装甲机动师（架空）", subtitle: "放弃纯守势，强化法国装甲进攻能力", isHistorical: false, effectCode: "buff:france:戴高乐装甲改革:20:8:1.14:0:240|law:france:focus_blitz_armored"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "anschluss_1938",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1938, triggerMonth: 3, minDay: 210,
@@ -127,8 +129,8 @@ extension HistoricalEvents {
                 Choice(title: "履行德奥合并（史实）", subtitle: "和平吞并奥地利全境，德国工业与兵源暴涨", isHistorical: true, effectCode: "annex:germany:austria|tension:15|ic:germany:28|gold:germany:350"),
                 Choice(title: "奥地利拒绝并武装抵抗（架空）", subtitle: "德奥爆发战争，欧洲提前陷入战火", isHistorical: false, effectCode: "war:germany:austria:1|tension:22"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "munich_1938",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1938, triggerMonth: 9, minDay: 270,
@@ -143,8 +145,8 @@ extension HistoricalEvents {
                 Choice(title: "签署慕尼黑协定割让苏台德（史实）", subtitle: "德国不战而夺捷克边防要塞与军工区", isHistorical: true, effectCode: "cede:czechoslovakia:germany:45|tension:14|ic:germany:24"),
                 Choice(title: "英法拒绝绥靖、联手保卫捷克（架空）", subtitle: "捷克抗德，英法立即介入全面大战", isHistorical: false, effectCode: "war:germany:czechoslovakia:1|war:uk:germany:1|war:france:germany:1|tension:28"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "first_vienna_award_1938",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1938, triggerMonth: 11, minDay: 295,
@@ -158,8 +160,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "执行维也纳仲裁（史实）", subtitle: "匈牙利获领土补偿并靠拢德意", isHistorical: true, effectCode: "cede:czechoslovakia:hungary:15|ic:hungary:12|gold:hungary:200|tension:6"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "bohemia_1939",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1939, triggerMonth: 3, minDay: 330,
@@ -174,8 +176,8 @@ extension HistoricalEvents {
                 Choice(title: "吞并波希米亚·接收斯柯达军工（史实）", subtitle: "德国军力大增，英法波紧急结盟", isHistorical: true, effectCode: "annex:germany:czechoslovakia|ic:germany:26|ally:uk:poland|tension:16"),
                 Choice(title: "仅迫使捷克称臣纳贡（架空）", subtitle: "捷克成为德国附庸国，保留自治", isHistorical: false, effectCode: "vassal:germany:czechoslovakia|tension:10"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "memel_1939",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1939, triggerMonth: 3, minDay: 342,
@@ -190,8 +192,8 @@ extension HistoricalEvents {
                 Choice(title: "立陶宛被迫割让梅梅尔（史实）", subtitle: "东普鲁士防线进一步巩固", isHistorical: true, effectCode: "cede:lithuania:germany:20|gold:germany:180|tension:5"),
                 Choice(title: "立陶宛誓死拒割（架空）", subtitle: "波罗的海提前爆发武装冲突", isHistorical: false, effectCode: "war:germany:lithuania:0|tension:12"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "pact_of_steel_1939",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1939, triggerMonth: 5, minDay: 365,
@@ -205,8 +207,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "签署钢铁条约·锁定德意轴心（史实）", subtitle: "轴心国军事一体化加速", isHistorical: true, effectCode: "ally:germany:italy|law:germany:econ_war|morale:italy:12|tension:8"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "molotov_ribbentrop_1939",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1939, triggerMonth: 8, minDay: 400,
@@ -221,8 +223,8 @@ extension HistoricalEvents {
                 Choice(title: "签署苏德密约（史实）", subtitle: "消除两线作战顾虑，为闪击波兰铺路", isHistorical: true, effectCode: "pact:germany:ussr:2|tension:12"),
                 Choice(title: "拒绝结约、警惕东线（架空）", subtitle: "苏德保持高度敌意，可能爆发早战", isHistorical: false, effectCode: "tension:10"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "franco_victory_1939",
             scenarioIds: ["ww2_eve_1936"],
             triggerYear: 1939, triggerMonth: 4, minDay: 350,
@@ -236,10 +238,10 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "宣布武装中立·休养生息（史实）", subtitle: "西班牙避免卷入欧陆全面大战", isHistorical: true, effectCode: "gold:spain:250|buff:spain:伊比利亚中立休养:0:12:1.0:0:240"),
             ]
-        ),
+        ))
 
         // --- 1936 & 1939 共同核心二战事件链（28 条） ---
-        EventSpec(
+        out.append(EventSpec(
             id: "fall_weiss_1939",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1939, triggerMonth: 9, minDay: 3,
@@ -254,8 +256,8 @@ extension HistoricalEvents {
                 Choice(title: "发动白色方案 · 闪击波兰（史实）", subtitle: "德军激活闪电战突击加成，英法自动参战", isHistorical: true, effectCode: "buff:germany:闪电战·白色方案:32:0:1.35:0:120|war:germany:poland:1|war:uk:germany:1|war:france:germany:1|law:germany:econ_war|tension:25"),
                 Choice(title: "最后通牒索要但泽走廊（架空）", subtitle: "波兰割让但泽换取短暂和平", isHistorical: false, effectCode: "cede:poland:germany:20|tension:12"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "poland_partition_1939",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1939, triggerMonth: 9, minDay: 22,
@@ -270,8 +272,8 @@ extension HistoricalEvents {
                 Choice(title: "出兵西进、按密约瓜分波兰（史实）", subtitle: "苏联接管波兰东部疆域，建立西方战略纵深", isHistorical: true, effectCode: "cede_east:poland:ussr:45|war:ussr:poland:0|pact:germany:ussr:2|tension:10"),
                 Choice(title: "严守中立、不参与瓜分（架空）", subtitle: "苏联按兵不动，保持对波兰中立", isHistorical: false, effectCode: "tension:-4"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "phony_war_atlantic_1939",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1939, triggerMonth: 10, minDay: 48,
@@ -285,8 +287,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "皇家海军封锁北海 vs 德军狼群破交（史实）", subtitle: "双方围绕北大西洋航道展开持久拉锯", isHistorical: true, effectCode: "buff:uk:大西洋护航编队:6:12:1.0:22:180|buff:germany:大西洋狼群破交:8:0:1.0:18:180|tension:6"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "winter_war_1939",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1939, triggerMonth: 11, minDay: 85,
@@ -301,8 +303,8 @@ extension HistoricalEvents {
                 Choice(title: "红军进攻卡累利阿（史实）", subtitle: "冬季战争爆发，芬兰展开雪地顽强抵抗", isHistorical: true, effectCode: "war:ussr:finland:0|buff:finland:曼纳海姆雪地防线:12:38:1.12:0:150|morale:finland:20|tension:10"),
                 Choice(title: "芬兰外交妥协割让维堡边境（架空）", subtitle: "割让卡累利阿边缘避免惨烈战争", isHistorical: false, effectCode: "cede:finland:ussr:15|pact:ussr:finland:2|tension:3"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "moscow_peace_finland_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 3, minDay: 160,
@@ -317,8 +319,8 @@ extension HistoricalEvents {
                 Choice(title: "缔结莫斯科和约·红军大整编（史实）", subtitle: "苏联拓展列宁格勒纵深并改革军队", isHistorical: true, effectCode: "cede:finland:ussr:18|peace:ussr:finland|ic:ussr:18|morale:ussr:10"),
                 Choice(title: "红军拒绝停战·直取赫尔辛基（架空）", subtitle: "战事继续升级，北欧全面震动", isHistorical: false, effectCode: "buff:ussr:北线强攻:18:0:1.10:0:90|tension:8"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "weserubung_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 4, minDay: 185,
@@ -333,8 +335,8 @@ extension HistoricalEvents {
                 Choice(title: "执行威瑟演习（史实）", subtitle: "突袭丹麦与挪威，夺取北海制海要冲", isHistorical: true, effectCode: "buff:germany:威瑟演习突击:22:0:1.22:20:90|war:germany:denmark:1|war:germany:norway:1|ally:uk:norway|tension:10"),
                 Choice(title: "暂缓北欧战线、集中主力西进（架空）", subtitle: "跳过北欧直接备战西线", isHistorical: false, effectCode: "tension:2"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "churchill_pm_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 5, minDay: 215,
@@ -348,8 +350,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "热血与汗水 · 誓死抗战到底（史实）", subtitle: "英国全面转入总动员，本土士气空前高昂", isHistorical: true, effectCode: "morale:uk:25|ic:uk:24|law:uk:econ_war|law:uk:draft_extensive|buff:uk:决不投降誓言:14:24:1.05:15:240"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "fall_gelb_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 5, minDay: 225,
@@ -364,8 +366,8 @@ extension HistoricalEvents {
                 Choice(title: "发动黄色方案 · 绕道低地三国（史实）", subtitle: "全面进攻荷兰、比利时、卢森堡，包抄法军主力", isHistorical: true, effectCode: "buff:germany:镰刀计划·阿登闪击:36:0:1.40:0:120|war:germany:netherlands:1|war:germany:belgium:1|war:germany:luxembourg:1|ally:uk:netherlands|ally:uk:belgium|tension:18"),
                 Choice(title: "正面强攻马奇诺防线（架空）", subtitle: "不侵犯低地三国中立，直接强攻法德边境", isHistorical: false, effectCode: "war:germany:france:1|tension:8"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "dunkirk_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 5, minDay: 245,
@@ -379,8 +381,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "全力执行发电机行动撤回本土（史实）", subtitle: "保全远征军骨干力量，确保英国不倒", isHistorical: true, effectCode: "morale:uk:20|gold:uk:320|buff:uk:敦刻尔克精神:10:25:1.05:15:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "italy_joins_war_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 6, minDay: 260,
@@ -395,8 +397,8 @@ extension HistoricalEvents {
                 Choice(title: "意大利履行钢铁条约参战（史实）", subtitle: "对英法宣战，开辟地中海战区", isHistorical: true, effectCode: "ally:germany:italy|war:italy:france:1|war:italy:uk:1|law:italy:econ_war|tension:10"),
                 Choice(title: "墨索里尼继续观望中立（架空）", subtitle: "意大利暂不出兵，避免过早耗尽海军", isHistorical: false, effectCode: "gold:italy:250|tension:-3"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "baltic_annexation_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 6, minDay: 272,
@@ -411,8 +413,8 @@ extension HistoricalEvents {
                 Choice(title: "红军进驻波罗的海三国（史实）", subtitle: "苏联和平并入波罗的海三国，构筑西方纵深", isHistorical: true, effectCode: "annex:ussr:lithuania|annex:ussr:latvia|annex:ussr:estonia|ic:ussr:22|tension:10"),
                 Choice(title: "仅签署驻军附庸条约（架空）", subtitle: "三国成为苏联附庸保留名义自治", isHistorical: false, effectCode: "vassal:ussr:lithuania|vassal:ussr:latvia|vassal:ussr:estonia|tension:5"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "bessarabia_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 6, minDay: 285,
@@ -427,8 +429,8 @@ extension HistoricalEvents {
                 Choice(title: "苏联收回比萨拉比亚·罗匈靠拢德国（史实）", subtitle: "东欧局势剧变，轴心掌控巴尔干石油", isHistorical: true, effectCode: "cede_east:romania:ussr:18|ally:germany:romania|ally:germany:hungary|gold:germany:300|tension:8"),
                 Choice(title: "罗马尼亚武装拒割（架空）", subtitle: "苏罗在德涅斯特河爆发冲突", isHistorical: false, effectCode: "war:ussr:romania:0|tension:14"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "battle_of_britain_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 8, minDay: 315,
@@ -442,8 +444,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "喷火战机迎击 · 守卫不列颠长空（史实）", subtitle: "皇家空军挫败海狮计划，保住反攻基地", isHistorical: true, effectCode: "buff:uk:不列颠空战胜利:14:32:1.05:25:180|morale:uk:20|law:uk:focus_radar_airdef"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "greco_italian_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 10, minDay: 365,
@@ -458,8 +460,8 @@ extension HistoricalEvents {
                 Choice(title: "意军进攻希腊·巴尔干战火重燃（史实）", subtitle: "希腊加入同盟国并顽强反击", isHistorical: true, effectCode: "war:italy:greece:1|ally:uk:greece|buff:greece:品都斯山地反击:18:32:1.08:0:150|tension:8"),
                 Choice(title: "意大利暂缓进攻希腊（架空）", subtitle: "巴尔干暂时保持脆弱和平", isHistorical: false, effectCode: "tension:-2"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "lend_lease_europe_1941",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1941, triggerMonth: 3, minDay: 475,
@@ -473,8 +475,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "接收租借法案战略物资（史实）", subtitle: "英国工业、国库与海上补给大幅增强", isHistorical: true, effectCode: "ic:uk:35|gold:uk:600|law:uk:focus_lend_lease|morale:uk:12"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "balkan_campaign_1941",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1941, triggerMonth: 4, minDay: 505,
@@ -489,8 +491,8 @@ extension HistoricalEvents {
                 Choice(title: "发动巴尔干闪电战（史实）", subtitle: "迅速肃清巴尔干南翼，准备巴巴罗萨", isHistorical: true, effectCode: "ally:germany:bulgaria|war:germany:yugoslavia:1|war:germany:greece:1|war:hungary:yugoslavia:1|buff:germany:玛莉塔行动:24:0:1.25:0:75|tension:10"),
                 Choice(title: "容忍南斯拉夫中立、提早攻苏（架空）", subtitle: "避免巴尔干拖延，为东线抢出五周黄金时间", isHistorical: false, effectCode: "buff:germany:提前东征整备:16:0:1.15:0:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "barbarossa_1941",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1941, triggerMonth: 6, minDay: 560,
@@ -505,8 +507,8 @@ extension HistoricalEvents {
                 Choice(title: "启动巴巴罗萨计划（史实）", subtitle: "全线突击苏联，触发史上最大规模陆战", isHistorical: true, effectCode: "buff:germany:巴巴罗萨突击:32:0:1.32:0:150|buff:ussr:伟大卫国战争:10:25:1.05:0:240|law:ussr:econ_total|law:ussr:draft_alladults|war:germany:ussr:1|war:italy:ussr:1|war:romania:ussr:1|war:hungary:ussr:1|war:finland:ussr:1|ally:uk:ussr|tension:25"),
                 Choice(title: "维持苏德和平、全力执行海狮登陆（架空）", subtitle: "暂缓攻苏，集中力量渡海进攻英国", isHistorical: false, effectCode: "buff:germany:海狮渡海准备:18:0:1.15:32:150|tension:10"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "ural_evacuation_1941",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1941, triggerMonth: 8, minDay: 615,
@@ -520,8 +522,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "完成工业大东迁 · 量产 T-34（史实）", subtitle: "乌拉尔兵工厂爆发惊人产能", isHistorical: true, effectCode: "ic:ussr:45|gold:ussr:500|morale:ussr:14"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "moscow_winter_1941",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1941, triggerMonth: 12, minDay: 720,
@@ -536,8 +538,8 @@ extension HistoricalEvents {
                 Choice(title: "朱可夫发动莫斯科大反攻（史实）", subtitle: "西伯利亚精锐全线反击，粉碎德军闪电战神话", isHistorical: true, effectCode: "buff:ussr:莫斯科冬季反攻:32:28:1.20:0:150|ic:ussr:35|morale:ussr:22"),
                 Choice(title: "固守伏尔加与莫斯科防线（架空）", subtitle: "积蓄重炮与坦克兵团等待春季总攻", isHistorical: false, effectCode: "buff:ussr:纵深筑垒:8:36:1.0:0:150|ic:ussr:25"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "case_blue_1942",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1942, triggerMonth: 6, minDay: 900,
@@ -551,8 +553,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "集中装甲主力南下高加索与伏尔加（史实）", subtitle: "德军再度发起大规模夏季攻势", isHistorical: true, effectCode: "buff:germany:蓝色方案夏季攻势:26:0:1.22:0:120|gold:germany:300"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "el_alamein_1942",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1942, triggerMonth: 10, minDay: 1020,
@@ -566,8 +568,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "蒙哥马利发动阿拉曼反攻（史实）", subtitle: "盟军重夺地中海与南欧战略主动权", isHistorical: true, effectCode: "buff:uk:阿拉曼胜利反攻:24:14:1.14:20:180|gold:uk:380|morale:uk:18"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "stalingrad_uranus_1942",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1942, triggerMonth: 11, minDay: 1055,
@@ -581,8 +583,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "发动天王星双钳合围（史实）", subtitle: "苏军彻底夺回东线战略主动权", isHistorical: true, effectCode: "buff:ussr:斯大林格勒·天王星反击:35:24:1.20:0:180|ic:ussr:30|morale:ussr:25"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "total_war_1943",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1943, triggerMonth: 2, minDay: 1140,
@@ -596,8 +598,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "启动全面总体战与重坦量产（史实）", subtitle: "德国军工达到战时最高峰", isHistorical: true, effectCode: "law:germany:econ_total|law:germany:draft_alladults|ic:germany:32|morale:germany:12"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "kursk_1943",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1943, triggerMonth: 7, minDay: 1275,
@@ -611,8 +613,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "纵深消耗后全线装甲反击（史实）", subtitle: "苏军彻底粉碎德军东线最后一次战略进攻", isHistorical: true, effectCode: "buff:ussr:库尔斯克装甲反攻:30:30:1.18:0:180|morale:ussr:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "italy_armistice_1943",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1943, triggerMonth: 9, minDay: 1335,
@@ -626,8 +628,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "盟军强攻亚平宁软肋（史实）", subtitle: "轴心南线动摇，盟军牵制大批德军", isHistorical: true, effectCode: "buff:uk:亚平宁两栖推进:22:12:1.15:25:150|morale:uk:18|morale:italy:-20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "normandy_1944",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1944, triggerMonth: 6, minDay: 1600,
@@ -641,8 +643,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "发动霸王行动 · 登陆诺曼底（史实）", subtitle: "开辟欧洲西线第二战场，直指莱茵河", isHistorical: true, effectCode: "buff:uk:霸王行动·诺曼底登陆:34:15:1.25:30:200|buff:france:自由法国解放本土:28:15:1.22:0:200|gold:uk:500|morale:uk:25"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "bagration_1944",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1944, triggerMonth: 6, minDay: 1620,
@@ -656,8 +658,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "启动巴格拉季昂大纵深攻势（史实）", subtitle: "红军摧枯拉朽横扫东线直逼柏林", isHistorical: true, effectCode: "buff:ussr:巴格拉季昂大纵深:38:16:1.30:0:200|ic:ussr:30|morale:ussr:25"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "berlin_1945",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1945, triggerMonth: 4, minDay: 1900,
@@ -671,10 +673,10 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "总攻柏林 · 解放欧洲（史实）", subtitle: "东西联军齐头并进终结纳粹霸权", isHistorical: true, effectCode: "buff:ussr:柏林终局总攻:40:20:1.25:0:180|buff:uk:莱茵河大推进:34:18:1.22:0:180|morale:ussr:30|morale:uk:25"),
             ]
-        ),
+        ))
 
         // --- 额外真实外交与战区补强事件（中立国/土耳其/瑞典/瑞士） ---
-        EventSpec(
+        out.append(EventSpec(
             id: "swiss_redoubt_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 7, minDay: 300,
@@ -688,8 +690,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "启动阿尔卑斯武装中立堡垒（史实）", subtitle: "以险峻雪山威慑一切入侵企图", isHistorical: true, effectCode: "buff:switzerland:阿尔卑斯国家堡垒:0:45:1.0:0:360|morale:switzerland:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "sweden_iron_ore_1940",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1940, triggerMonth: 9, minDay: 340,
@@ -704,8 +706,8 @@ extension HistoricalEvents {
                 Choice(title: "保持武装中立并维持铁矿贸易（史实）", subtitle: "瑞典繁荣自保，德国军工得续", isHistorical: true, effectCode: "gold:sweden:420|ic:sweden:14|ic:germany:12"),
                 Choice(title: "全面禁运铁矿并靠拢同盟国（架空）", subtitle: "激怒柏林，北欧可能再度燃起战火", isHistorical: false, effectCode: "ally:uk:sweden|war:germany:sweden:1|tension:10"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "turkey_montreux_1941",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1941, triggerMonth: 5, minDay: 530,
@@ -719,8 +721,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "严守海峡中立·左右逢源（史实）", subtitle: "保全安纳托利亚免于战火", isHistorical: true, effectCode: "buff:turkey:海峡武装中立:6:28:1.0:18:240|gold:turkey:300"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "romania_switch_1944",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1944, triggerMonth: 8, minDay: 1680,
@@ -735,13 +737,16 @@ extension HistoricalEvents {
                 Choice(title: "罗马尼亚阵前倒戈（史实）", subtitle: "巴尔干轴心崩盘，德军彻底断油", isHistorical: true, effectCode: "peace:romania:ussr|war:romania:germany:0|buff:ussr:巴尔干大捷:24:10:1.20:0:120"),
                 Choice(title: "死守普洛耶什蒂油田（架空）", subtitle: "罗马尼亚继续为轴心苦战", isHistorical: false, effectCode: "buff:romania:死守喀尔巴阡:10:25:1.0:0:120"),
             ]
-        ),
-    ]
+        ))
+        return out
+    }()
 
     // MARK: - 2. 1931 民国危局 · 九一八至十四年抗战事件链（18 条）
 
-    private static let china1931Events: [EventSpec] = [
-        EventSpec(
+    private static let china1931Events: [EventSpec] = {
+        var out: [EventSpec] = []
+        out.reserveCapacity(48)
+        out.append(EventSpec(
             id: "mukden_1931",
             scenarioIds: ["china_1931"],
             triggerYear: 1931, triggerMonth: 9, minDay: 5,
@@ -756,8 +761,8 @@ extension HistoricalEvents {
                 Choice(title: "关东军全面出击东北（史实）", subtitle: "日军突袭沈阳、长春，进逼松花江", isHistorical: true, effectCode: "buff:japan:关东军突袭:28:0:1.28:15:120|war:japan:northeast:1|tension:18"),
                 Choice(title: "东北军就地全军死战抵抗（架空）", subtitle: "张学良下令全军誓死守土，全国援军驰援关外", isHistorical: false, effectCode: "buff:northeast:誓死守卫白山黑水:25:35:1.15:0:180|war:japan:northeast:1|war:roc:japan:1|tension:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "jiangqiao_1931",
             scenarioIds: ["china_1931"],
             triggerYear: 1931, triggerMonth: 11, minDay: 45,
@@ -771,8 +776,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "马占山誓死扼守嫩江桥（史实）", subtitle: "东北抗日义勇军士气大振", isHistorical: true, effectCode: "buff:northeast:江桥抗战义旗:14:28:1.05:0:120|morale:northeast:25|gold:roc:260"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "jan28_shanghai_1932",
             scenarioIds: ["china_1931"],
             triggerYear: 1932, triggerMonth: 1, minDay: 110,
@@ -787,8 +792,8 @@ extension HistoricalEvents {
                 Choice(title: "十九路军奋起保卫大上海（史实）", subtitle: "全国军民斗志昂扬，日军受挫止步", isHistorical: true, effectCode: "buff:roc:一二八沪上血战:15:24:1.0:0:150|morale:roc:20|tension:10"),
                 Choice(title: "国民政府即刻对日全面宣战（架空）", subtitle: "全面抗战提前五年全面打响", isHistorical: false, effectCode: "war:roc:japan:1|buff:roc:提前全面抗战:18:24:1.05:0:180|tension:22"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "manchukuo_1932",
             scenarioIds: ["china_1931"],
             triggerYear: 1932, triggerMonth: 3, minDay: 145,
@@ -803,8 +808,8 @@ extension HistoricalEvents {
                 Choice(title: "扶植长春伪满傀儡政权（史实）", subtitle: "强化关东军北疆军工补给基地", isHistorical: true, effectCode: "ic:japan:24|gold:japan:300|tension:12"),
                 Choice(title: "直接划为关东军军管直辖区（架空）", subtitle: "强化军事统治，引发更猛烈民众起义", isHistorical: false, effectCode: "ic:japan:16|tension:16"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "great_wall_1933",
             scenarioIds: ["china_1931"],
             triggerYear: 1933, triggerMonth: 3, minDay: 220,
@@ -818,8 +823,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "长城各口死战御敌（史实）", subtitle: "大刀队威震全国，延缓日军入关", isHistorical: true, effectCode: "buff:roc:喜峰口大刀队:20:22:1.06:0:120|morale:roc:18|morale:northeast:16"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "long_march_1934",
             scenarioIds: ["china_1931"],
             triggerYear: 1934, triggerMonth: 10, minDay: 300,
@@ -833,8 +838,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "北上抗日 · 淬炼铁血红军（史实）", subtitle: "红军行军机动与顽强意志大幅跃升", isHistorical: true, effectCode: "law:cpc:focus_people_war|buff:cpc:长征铁军意志:22:32:1.25:0:240|morale:cpc:28"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "german_advisors_1935",
             scenarioIds: ["china_1931"],
             triggerYear: 1935, triggerMonth: 6, minDay: 350,
@@ -848,8 +853,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "整训德械调整师与兵工扩产（史实）", subtitle: "中央军精锐火力与防御显著增强", isHistorical: true, effectCode: "ic:roc:22|gold:roc:240|buff:roc:德械调整师:16:18:1.05:0:180"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "suiyuan_1936",
             scenarioIds: ["china_1931"],
             triggerYear: 1936, triggerMonth: 11, minDay: 395,
@@ -863,8 +868,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "傅作义寒夜奇袭收复百灵庙（史实）", subtitle: "晋绥防线士气如虹", isHistorical: true, effectCode: "buff:shanxi:百灵庙大捷:24:24:1.15:0:150|morale:shanxi:25|gold:shanxi:200"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "xian_incident_1936",
             scenarioIds: ["china_1931"],
             triggerYear: 1936, triggerMonth: 12, minDay: 420,
@@ -879,8 +884,8 @@ extension HistoricalEvents {
                 Choice(title: "和平解决西安事变、一致对外（史实）", subtitle: "停止内战，全民族凝聚抗日共识", isHistorical: true, effectCode: "peace:roc:cpc|ally:roc:cpc|ally:roc:northeast|ally:roc:shanxi|ally:roc:guangxi|ally:roc:sichuan|ally:roc:yunnan"),
                 Choice(title: "继续内斗消耗（架空）", subtitle: "错失团结御侮良机，抗战局势雪上加霜", isHistorical: false, effectCode: "tension:8"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "marco_polo_1937",
             scenarioIds: ["china_1931"],
             triggerYear: 1937, triggerMonth: 7, minDay: 540,
@@ -895,8 +900,8 @@ extension HistoricalEvents {
                 Choice(title: "全民族抗战 · 誓死御侮（史实）", subtitle: "抗日民族统一战线正式锁定，全国进入全面抗战", isHistorical: true, effectCode: "ally:roc:cpc|ally:roc:shanxi|ally:roc:guangxi|ally:roc:sichuan|ally:roc:yunnan|war:japan:roc:1|war:japan:cpc:1|law:roc:econ_war|law:roc:draft_extensive|buff:roc:淞沪与持久抗战:14:32:1.05:0:240|buff:cpc:敌后游击烽火:20:36:1.18:0:240|tension:25"),
                 Choice(title: "华北局部妥协退让（架空）", subtitle: "割让华北换取短暂喘息，士气受挫", isHistorical: false, effectCode: "cede:roc:japan:15|tension:10"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "songhu_1937",
             scenarioIds: ["china_1931"],
             triggerYear: 1937, triggerMonth: 8, minDay: 575,
@@ -910,8 +915,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "寸土不让 · 掩护工业大内迁（史实）", subtitle: "粉碎三月亡华妄想，筑牢西南大后方", isHistorical: true, effectCode: "ic:roc:20|morale:roc:20|morale:sichuan:18|morale:guangxi:18|buff:roc:四行仓库壮志:12:28:1.0:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "pingxingguan_1937",
             scenarioIds: ["china_1931"],
             triggerYear: 1937, triggerMonth: 9, minDay: 605,
@@ -925,8 +930,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "乔沟设伏 · 痛歼坂垣师团（史实）", subtitle: "八路军与晋绥军协同大捷", isHistorical: true, effectCode: "buff:cpc:平型关大捷:28:26:1.18:0:150|buff:shanxi:忻口太原协同:16:22:1.05:0:120|morale:cpc:25"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "taierzhuang_1938",
             scenarioIds: ["china_1931"],
             triggerYear: 1938, triggerMonth: 4, minDay: 720,
@@ -940,8 +945,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "运河血战 · 合围歼灭日军精锐（史实）", subtitle: "打破日军不可战胜迷信，全国斗志沸腾", isHistorical: true, effectCode: "buff:guangxi:台儿庄大捷:28:24:1.15:0:180|buff:roc:徐州会战振奋:20:20:1.05:0:150|gold:roc:300|morale:guangxi:28"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "wuhan_soviet_aid_1938",
             scenarioIds: ["china_1931"],
             triggerYear: 1938, triggerMonth: 7, minDay: 790,
@@ -955,8 +960,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "接受苏联军援 · 坚持空间换时间（史实）", subtitle: "持久战格局彻底确立", isHistorical: true, effectCode: "gold:roc:450|ic:roc:22|buff:roc:武汉持久消耗:14:30:1.0:0:180"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "khalkhin_gol_1939",
             scenarioIds: ["china_1931"],
             triggerYear: 1939, triggerMonth: 8, minDay: 1020,
@@ -971,8 +976,8 @@ extension HistoricalEvents {
                 Choice(title: "朱可夫双翼合围痛歼关东军（史实）", subtitle: "震慑东京，确保苏联远东后方稳固", isHistorical: true, effectCode: "buff:ussr_fe:诺门罕装甲大捷:34:20:1.22:0:180|buff:mongolia:苏蒙骑兵协同:22:22:1.18:0:180|morale:japan:-15"),
                 Choice(title: "苏日全面扩大远东大战（架空）", subtitle: "苏蒙联军乘胜直驱东北与关东军全面开战", isHistorical: false, effectCode: "war:ussr_fe:japan:1|war:mongolia:japan:1|tension:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "changsha_1939_china31",
             scenarioIds: ["china_1931"],
             triggerYear: 1939, triggerMonth: 10, minDay: 1080,
@@ -986,8 +991,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "施展天炉战法 · 死守长沙（史实）", subtitle: "正面战场稳如磐石", isHistorical: true, effectCode: "buff:roc:长沙天炉战法:20:34:1.08:0:180|morale:roc:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "hundred_regiments_1940",
             scenarioIds: ["china_1931"],
             triggerYear: 1940, triggerMonth: 8, minDay: 1290,
@@ -1001,8 +1006,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "一百零五团全线大破袭（史实）", subtitle: "华北日军交通线瘫痪，抗战信心倍增", isHistorical: true, effectCode: "buff:cpc:百团大战破袭:34:22:1.25:0:180|morale:cpc:25|morale:japan:-12"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "burma_road_1941",
             scenarioIds: ["china_1931"],
             triggerYear: 1941, triggerMonth: 3, minDay: 1440,
@@ -1016,13 +1021,16 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "全线贯通滇缅国际大动脉（史实）", subtitle: "西南大后方补给与工业显著增强", isHistorical: true, effectCode: "ic:roc:18|ic:yunnan:14|gold:roc:360|gold:yunnan:220|ally:roc:uk_india"),
             ]
-        ),
-    ]
+        ))
+        return out
+    }()
 
     // MARK: - 3. 1941 二战亚洲太平洋战场（18 条 HOI4 级太平洋与抗战事件链）
 
-    private static let ww2Asia1941Events: [EventSpec] = [
-        EventSpec(
+    private static let ww2Asia1941Events: [EventSpec] = {
+        var out: [EventSpec] = []
+        out.reserveCapacity(48)
+        out.append(EventSpec(
             id: "pearl_harbor_1941",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1941, triggerMonth: 12, minDay: 4,
@@ -1037,8 +1045,8 @@ extension HistoricalEvents {
                 Choice(title: "执行南进战略 · 偷袭珍珠港（史实）", subtitle: "联合舰队全线南下，夺取东南亚石油橡胶", isHistorical: true, effectCode: "buff:japan:虎！虎！虎！海空奇袭:28:0:1.25:35:150|war:japan:usa_pacific:1|war:japan:philippines:1|war:japan:uk_burma:1|war:japan:uk_malaya:1|war:japan:dutch_ei:1|tension:30"),
                 Choice(title: "放弃南进 · 转向北进突击苏联远东（架空）", subtitle: "联合关东军北上西伯利亚，暂不惹怒美国", isHistorical: false, effectCode: "buff:japan:关东军北进突击:26:0:1.22:10:150|war:japan:ussr_fe:1|war:japan:mongolia:1|tension:22"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "hong_kong_1941",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1941, triggerMonth: 12, minDay: 18,
@@ -1052,8 +1060,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "泰国借道 · 日军闪击马来与香港（史实）", subtitle: "轴心掌控南海与马来半岛主动权", isHistorical: true, effectCode: "ally:japan:thailand|buff:japan:银轮闪击南洋:20:0:1.22:20:90|tension:8"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "third_changsha_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 1, minDay: 35,
@@ -1067,8 +1075,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "湘北大捷 · 振奋全球盟军（史实）", subtitle: "中国正面战场稳如磐石，赢得国际赞誉", isHistorical: true, effectCode: "buff:roc:第三次长沙大捷:22:30:1.10:0:180|morale:roc:24|gold:roc:350"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "singapore_fall_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 2, minDay: 70,
@@ -1082,8 +1090,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "夺取南洋战略资源区（史实）", subtitle: "日本战时燃油与军工短暂缓解", isHistorical: true, effectCode: "ic:japan:26|gold:japan:400|buff:dutch_ei:焦土炸毁油井:8:22:1.0:10:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "flying_tigers_hump_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 4, minDay: 120,
@@ -1097,8 +1105,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "开通驼峰航线 · 飞虎队护航（史实）", subtitle: "中国大后方战略补给源源不断", isHistorical: true, effectCode: "ic:roc:26|gold:roc:420|buff:roc:飞虎队与驼峰航线:18:18:1.08:0:180"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "doolittle_raid_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 4, minDay: 135,
@@ -1112,8 +1120,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "实施杜立特东京空袭（史实）", subtitle: "极大振奋盟军士气，打乱日本战略节奏", isHistorical: true, effectCode: "morale:usa_pacific:25|buff:usa_pacific:杜立特奇袭士气:18:10:1.12:22:120|morale:japan:-10"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "coral_sea_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 5, minDay: 155,
@@ -1127,8 +1135,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "截击日军登陆编队 · 守住巴布亚（史实）", subtitle: "阻断日军南进澳新航道", isHistorical: true, effectCode: "buff:usa_pacific:珊瑚海航母决战:16:24:1.05:24:120|morale:usa_pacific:16"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "midway_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 6, minDay: 185,
@@ -1143,8 +1151,8 @@ extension HistoricalEvents {
                 Choice(title: "发起太平洋跳岛大反攻（史实）", subtitle: "美军航母产能暴涨，全面压制联合舰队", isHistorical: true, effectCode: "ic:usa_pacific:65|gold:usa_pacific:600|law:usa_pacific:focus_carrier_fleet|buff:usa_pacific:太平洋海空大反攻:26:16:1.22:36:240|buff:roc:驼峰航线与远征反攻:18:16:1.08:0:180|morale:japan:-18"),
                 Choice(title: "稳健固守西南太平洋防线（架空）", subtitle: "优先积蓄两栖与航母舰队力量", isHistorical: false, effectCode: "ic:usa_pacific:45|buff:usa_pacific:重工爆舰:12:24:1.05:28:200"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "guadalcanal_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 8, minDay: 245,
@@ -1158,8 +1166,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "血战铁底湾 · 夺取所罗门制空权（史实）", subtitle: "美军彻底转入战略反攻", isHistorical: true, effectCode: "buff:usa_pacific:瓜岛两栖反攻:24:14:1.15:24:150|morale:usa_pacific:18"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "yanan_production_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 10, minDay: 300,
@@ -1173,8 +1181,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "大生产自救 · 敌后游击反扫荡（史实）", subtitle: "延安根据地越战越强，牢牢牵制华北日军", isHistorical: true, effectCode: "ic:yanan:24|gold:yanan:320|law:yanan:focus_people_war|buff:yanan:敌后反扫荡游击:20:38:1.20:0:240|morale:yanan:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "chinese_expedition_burma_1943",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1943, triggerMonth: 10, minDay: 640,
@@ -1188,8 +1196,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "东西对进 · 打通史迪威公路（史实）", subtitle: "精锐美械师横扫缅北日军", isHistorical: true, effectCode: "buff:roc:远征军缅北大反攻:28:18:1.18:0:180|buff:uk_burma:英帕尔缅北协同:24:22:1.12:0:180|gold:roc:400"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "imphal_kohima_1944",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1944, triggerMonth: 3, minDay: 790,
@@ -1203,8 +1211,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "空投固守英帕尔 · 追击崩溃日军（史实）", subtitle: "彻底扭转东南亚陆战态势", isHistorical: true, effectCode: "buff:uk_burma:英帕尔大捷反攻:26:32:1.15:0:180|ic:uk_burma:22|morale:uk_burma:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "ichi_go_1944",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1944, triggerMonth: 4, minDay: 825,
@@ -1218,8 +1226,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "发动一号作战 · 孤注一掷打通华南（史实）", subtitle: "日军回光返照，敌后战线愈发空虚", isHistorical: true, effectCode: "buff:japan:一号作战强攻:22:0:1.15:0:90|buff:roc:衡阳四十七日血战:12:30:1.0:0:150|buff:yanan:华北局部大反攻:26:20:1.18:0:180"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "philippine_sea_1944",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1944, triggerMonth: 6, minDay: 890,
@@ -1233,8 +1241,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "彻底歼灭日军航母舰载机群（史实）", subtitle: "西太平洋海空控制权完全易手", isHistorical: true, effectCode: "ic:usa_pacific:45|buff:usa_pacific:马里亚纳制空霸权:28:18:1.20:40:180|morale:japan:-20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "leyte_gulf_1944",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1944, triggerMonth: 10, minDay: 1010,
@@ -1248,8 +1256,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "决战莱特湾 · 解放菲律宾（史实）", subtitle: "联合舰队彻底瓦解，日本海运断绝", isHistorical: true, effectCode: "buff:usa_pacific:莱特湾决胜:34:16:1.24:42:180|buff:philippines:菲律宾游击光复:24:22:1.15:0:180|morale:usa_pacific:25"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "iwo_okinawa_1945",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1945, triggerMonth: 4, minDay: 1180,
@@ -1263,8 +1271,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "攻克冲绳门户 · 湘西雪峰山大捷（史实）", subtitle: "盟军兵临日本本土与华南门户", isHistorical: true, effectCode: "buff:usa_pacific:冲绳海空压制:34:16:1.20:38:150|buff:roc:湘西雪峰山大捷:28:22:1.15:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "august_storm_1945",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1945, triggerMonth: 8, minDay: 1290,
@@ -1279,8 +1287,8 @@ extension HistoricalEvents {
                 Choice(title: "发动八月风暴 · 解放东北（史实）", subtitle: "红军钢铁洪流突袭关东军与伪满洲国", isHistorical: true, effectCode: "buff:ussr_fe:八月风暴钢铁洪流:40:16:1.35:0:150|buff:mongolia:苏蒙越兴安岭:28:14:1.28:0:150|war:ussr_fe:japan:1|war:ussr_fe:manchukuo:1|war:mongolia:manchukuo:1|tension:15"),
                 Choice(title: "维持苏日中立条约（架空）", subtitle: "苏联暂不介入远东战事", isHistorical: false, effectCode: "tension:-5"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "china_grand_counteroffensive_1945",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1945, triggerMonth: 8, minDay: 1305,
@@ -1294,13 +1302,16 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "全线大反攻 · 光复锦绣河山（史实）", subtitle: "十四年血战终迎胜利曙光", isHistorical: true, effectCode: "buff:roc:抗战胜利大反攻:38:20:1.25:0:180|buff:yanan:大反攻收复失地:38:22:1.28:0:180|morale:roc:30|morale:yanan:30"),
             ]
-        ),
-    ]
+        ))
+        return out
+    }()
 
     // MARK: - 4. 1914 第一次世界大战 · 欧陆炮火（16 条）
 
-    private static let ww1Events: [EventSpec] = [
-        EventSpec(
+    private static let ww1Events: [EventSpec] = {
+        var out: [EventSpec] = []
+        out.reserveCapacity(48)
+        out.append(EventSpec(
             id: "schlieffen_1914",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1914, triggerMonth: 8, minDay: 5,
@@ -1315,8 +1326,8 @@ extension HistoricalEvents {
                 Choice(title: "执行施里芬计划（史实）", subtitle: "借道比利时包抄巴黎，大英帝国参战", isHistorical: true, effectCode: "buff:germany:施里芬突击:26:0:1.25:0:100|war:germany:belgium:1|war:germany:france:1|war:britain:germany:1|tension:28"),
                 Choice(title: "改行东进战略 · 先击溃沙俄（架空）", subtitle: "西线防御、东线全力重锤俄罗斯帝国", isHistorical: false, effectCode: "buff:germany:坦能堡东线突击:28:12:1.20:0:120|war:germany:russia:1|tension:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "tannenberg_1914",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1914, triggerMonth: 8, minDay: 24,
@@ -1330,8 +1341,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "铁路内线合围 · 决胜坦能堡（史实）", subtitle: "东普鲁士防线转危为安", isHistorical: true, effectCode: "buff:germany:坦能堡合围:24:18:1.15:0:120|morale:germany:18|morale:russia:-12"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "marne_1914",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1914, triggerMonth: 9, minDay: 40,
@@ -1345,8 +1356,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "出租车抢运援军 · 奇迹守住巴黎（史实）", subtitle: "粉碎施里芬速胜计划，西线转入堑壕持久战", isHistorical: true, effectCode: "buff:france:马恩河奇迹防线:14:32:1.05:0:180|buff:britain:远征军坚守西线:10:26:1.0:0:180|morale:france:22"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "ottoman_entry_1914",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1914, triggerMonth: 10, minDay: 75,
@@ -1360,8 +1371,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "封锁海峡 · 同盟国南线开火（史实）", subtitle: "切断黑海援俄航道，开辟高加索与近东战线", isHistorical: true, effectCode: "war:ottoman:russia:1|war:ottoman:britain:1|war:ottoman:france:1|buff:ottoman:达达尼尔炮台:8:28:1.0:18:150|tension:12"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "gallipoli_1915",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1915, triggerMonth: 4, minDay: 245,
@@ -1375,8 +1386,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "凯末尔死守加里波利峭壁（史实）", subtitle: "挫败协约国海峡登陆计划", isHistorical: true, effectCode: "buff:ottoman:加里波利奇迹防卫:12:34:1.0:15:150|morale:ottoman:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "italy_london_1915",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1915, triggerMonth: 5, minDay: 275,
@@ -1391,8 +1402,8 @@ extension HistoricalEvents {
                 Choice(title: "意大利加入协约国进攻奥匈（史实）", subtitle: "阿尔卑斯与伊松佐河战线全面燃起", isHistorical: true, effectCode: "ally:britain:italy|war:italy:austria_hungary:1|buff:italy:阿尔卑斯进军:18:16:1.05:0:120|tension:10"),
                 Choice(title: "意大利坚守三国同盟中立（架空）", subtitle: "奥匈免于两面受敌", isHistorical: false, effectCode: "gold:italy:300|tension:-4"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "gorlice_tarnow_1915",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1915, triggerMonth: 5, minDay: 260,
@@ -1406,8 +1417,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "马肯森重炮突破东线（史实）", subtitle: "德奥联军高歌猛进占领波兰与立陶宛", isHistorical: true, effectCode: "buff:germany:东线大突破:28:8:1.18:0:150|buff:austria_hungary:加利西亚反击:20:10:1.12:0:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "bulgaria_joins_cp_1915",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1915, triggerMonth: 10, minDay: 390,
@@ -1421,8 +1432,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "保加利亚加入同盟国进攻塞尔维亚（史实）", subtitle: "打通中欧至奥斯曼陆上走廊", isHistorical: true, effectCode: "ally:germany:bulgaria|war:bulgaria:serbia:1|gold:ottoman:280|buff:bulgaria:马其顿突击:22:10:1.15:0:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "verdun_1916",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1916, triggerMonth: 2, minDay: 520,
@@ -1436,8 +1447,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "死守圣路 · 绝不放弃凡尔登（史实）", subtitle: "法军钢铁意志粉碎德军消耗阴谋", isHistorical: true, effectCode: "buff:france:凡尔登钢铁防线:12:38:1.0:0:200|morale:france:20|buff:germany:凡尔登重炮轰击:22:12:1.0:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "jutland_1916",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1916, triggerMonth: 5, minDay: 610,
@@ -1451,8 +1462,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "锁死北海 · 逼退公海舰队（史实）", subtitle: "协约国彻底掌握全球海洋贸易命脉", isHistorical: true, effectCode: "buff:britain:大舰队北海封锁:10:14:1.0:35:240|gold:britain:350"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "brusilov_1916",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1916, triggerMonth: 6, minDay: 635,
@@ -1466,8 +1477,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "发动勃鲁西洛夫大攻势（史实）", subtitle: "重创奥匈主力并吸引罗马尼亚参战", isHistorical: true, effectCode: "buff:russia:勃鲁西洛夫渗透:32:12:1.20:0:150|ally:britain:romania|war:romania:austria_hungary:1"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "somme_tanks_1916",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1916, triggerMonth: 9, minDay: 720,
@@ -1481,8 +1492,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "投入马克 I 型坦克破阵（史实）", subtitle: "协约国开启装甲机械化先河", isHistorical: true, effectCode: "buff:britain:马克I型坦克突击:24:14:1.10:0:180|ic:britain:22|ic:france:16"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "greece_entente_1917",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1917, triggerMonth: 6, minDay: 990,
@@ -1496,8 +1507,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "希腊加入协约国出兵马其顿（史实）", subtitle: "巴尔干协约阵营再度壮大", isHistorical: true, effectCode: "ally:britain:greece|war:greece:bulgaria:1|war:greece:ottoman:1|buff:greece:萨洛尼卡进军:20:16:1.10:15:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "brest_litovsk_1918",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1918, triggerMonth: 3, minDay: 1240,
@@ -1512,8 +1523,8 @@ extension HistoricalEvents {
                 Choice(title: "签署布列斯特和约·全力西线决战（史实）", subtitle: "东线停火，德军发动春季暴风突击", isHistorical: true, effectCode: "cede:russia:germany:16|peace:germany:russia|peace:austria_hungary:russia|buff:germany:皇帝会战·暴风突击:34:0:1.22:0:120"),
                 Choice(title: "俄国拒绝签和·死战到底（架空）", subtitle: "东线继续两线消耗德国主力", isHistorical: false, effectCode: "buff:russia:誓死保卫东线:14:26:1.0:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "hundred_days_1918",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1918, triggerMonth: 8, minDay: 1380,
@@ -1527,8 +1538,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "发动百日总攻 · 突破兴登堡防线（史实）", subtitle: "协约国锁定一战最终胜局", isHistorical: true, effectCode: "buff:france:百日大总攻:38:16:1.25:0:180|buff:britain:亚眠装甲破防:36:16:1.25:20:180|gold:france:500|ic:britain:35"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "armistice_1918",
             scenarioIds: ["ww1_1914"],
             triggerYear: 1918, triggerMonth: 11, minDay: 1470,
@@ -1542,13 +1553,16 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "铭记停战时刻 · 重塑欧陆新秩序（史实）", subtitle: "协约阵营士气与威望攀升", isHistorical: true, effectCode: "morale:britain:25|morale:france:25|gold:britain:400|gold:france:400"),
             ]
-        ),
-    ]
+        ))
+        return out
+    }()
 
     // MARK: - 5. 1812 拿破仑欧陆 · 远征莫斯科（10 条）
 
-    private static let napoleon1812Events: [EventSpec] = [
-        EventSpec(
+    private static let napoleon1812Events: [EventSpec] = {
+        var out: [EventSpec] = []
+        out.reserveCapacity(48)
+        out.append(EventSpec(
             id: "niemen_crossing_1812",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1812, triggerMonth: 6, minDay: 6,
@@ -1562,8 +1576,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "挥师东征 · 直指斯摩棱斯克与莫斯科（史实）", subtitle: "帝国铁骑势不可挡", isHistorical: true, effectCode: "buff:france:大军团东征:30:8:1.25:0:120|morale:france:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "salamanca_1812",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1812, triggerMonth: 7, minDay: 35,
@@ -1577,8 +1591,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "威灵顿铁拳反攻伊比利亚（史实）", subtitle: "半岛战线死死钉住法军数十万精锐", isHistorical: true, effectCode: "buff:britain:萨拉曼卡大捷:24:18:1.15:18:180|buff:spain:伊比利亚游击抗法:18:24:1.12:0:180|buff:portugal:英葡联军推进:18:18:1.10:0:180"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "borodino_1812",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1812, triggerMonth: 9, minDay: 85,
@@ -1592,8 +1606,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "博罗季诺死战后坚壁清野（史实）", subtitle: "保全俄军主力，诱敌陷入莫斯科空城", isHistorical: true, effectCode: "buff:russia:博罗季诺坚忍:16:28:1.05:0:120|morale:russia:16"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "russian_winter_1812",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1812, triggerMonth: 11, minDay: 140,
@@ -1608,8 +1622,8 @@ extension HistoricalEvents {
                 Choice(title: "发动焦土寒冬大反击（史实）", subtitle: "哥萨克骑兵与寒冬合围追击撤退法军", isHistorical: true, effectCode: "buff:russia:冬将军反攻:32:30:1.20:0:180|war:russia:france:1|morale:france:-20"),
                 Choice(title: "在莫斯科城下决战讲和（架空）", subtitle: "尝试与拿破仑媾和止战", isHistorical: false, effectCode: "peace:russia:france"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "prussia_liberation_1813",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1813, triggerMonth: 3, minDay: 260,
@@ -1624,8 +1638,8 @@ extension HistoricalEvents {
                 Choice(title: "布吕歇尔出师 · 加入反法同盟（史实）", subtitle: "普俄联军在德意志草原发起大反攻", isHistorical: true, effectCode: "ally:russia:prussia|war:prussia:france:1|buff:prussia:普鲁士解放战争:28:18:1.18:0:180|morale:prussia:25"),
                 Choice(title: "普鲁士继续观望自保（架空）", subtitle: "暂不对法兰西宣战", isHistorical: false, effectCode: "gold:prussia:240"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "sweden_coalition_1813",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1813, triggerMonth: 5, minDay: 320,
@@ -1639,8 +1653,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "瑞典加入反法同盟 · 进军北欧与德意志（史实）", subtitle: "北翼牵制法丹联军", isHistorical: true, effectCode: "ally:britain:sweden|war:sweden:france:1|war:sweden:denmark:1|buff:sweden:特拉亨堡战法:22:16:1.15:18:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "austria_coalition_1813",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1813, triggerMonth: 8, minDay: 405,
@@ -1655,8 +1669,8 @@ extension HistoricalEvents {
                 Choice(title: "奥地利加入反法同盟决战德意志（史实）", subtitle: "天平彻底倾倒，诸国决战在即", isHistorical: true, effectCode: "ally:russia:austria|war:austria:france:1|buff:austria:波希米亚大军团:24:20:1.12:0:180"),
                 Choice(title: "维也纳维持婚姻盟约保持中立（架空）", subtitle: "拿破仑保住南翼喘息空间", isHistorical: false, effectCode: "pact:france:austria:3|gold:austria:300"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "leipzig_nations_1813",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1813, triggerMonth: 10, minDay: 470,
@@ -1670,8 +1684,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "诸国大会战 · 决定欧洲百年格局（史实）", subtitle: "俄普奥联军乘胜西渡莱茵河", isHistorical: true, effectCode: "buff:austria:诸国大会战胜利:26:16:1.15:0:150|buff:prussia:渡过莱茵河:28:14:1.18:0:150|buff:france:老近卫军死战:22:22:1.10:0:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "treaty_of_kiel_1814",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1814, triggerMonth: 1, minDay: 560,
@@ -1686,8 +1700,8 @@ extension HistoricalEvents {
                 Choice(title: "签署基尔条约 · 挪威并入瑞典（史实）", subtitle: "北欧格局尘埃落定", isHistorical: true, effectCode: "cede:denmark:sweden:45|peace:sweden:denmark"),
                 Choice(title: "丹麦—挪威誓死卫国拒签（架空）", subtitle: "北欧战火继续燃烧", isHistorical: false, effectCode: "buff:denmark:北海死守:14:26:1.0:20:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "hundred_days_waterloo_1815",
             scenarioIds: ["napoleon_1812"],
             triggerYear: 1815, triggerMonth: 6, minDay: 1050,
@@ -1701,13 +1715,16 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "百日王朝 · 决战滑铁卢（史实）", subtitle: "法兰西与反法联军展开世纪谢幕大战", isHistorical: true, effectCode: "buff:france:百日王朝老近卫军:36:18:1.22:0:120|buff:britain:滑铁卢红衫方阵:24:34:1.10:0:120|morale:france:30|morale:britain:24"),
             ]
-        ),
-    ]
+        ))
+        return out
+    }()
 
     // MARK: - 6. 1950 冷战铁幕 · 核威慑与两极格局（12 条）
 
-    private static let coldWar1950Events: [EventSpec] = [
-        EventSpec(
+    private static let coldWar1950Events: [EventSpec] = {
+        var out: [EventSpec] = []
+        out.reserveCapacity(48)
+        out.append(EventSpec(
             id: "sino_soviet_treaty_1950",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1950, triggerMonth: 2, minDay: 10,
@@ -1721,8 +1738,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "缔结中苏同盟 · 启动 156 项工程（史实）", subtitle: "新中国重工业与国防建设腾飞", isHistorical: true, effectCode: "ally:ussr:prc|ic:prc:35|gold:prc:450|law:prc:focus_five_year|tension:8"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "korean_war_1950",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1950, triggerMonth: 6, minDay: 45,
@@ -1737,8 +1754,8 @@ extension HistoricalEvents {
                 Choice(title: "抗美援朝 · 保家卫国（史实）", subtitle: "新中国精锐志愿军展现惊人穿插与防御战力", isHistorical: true, effectCode: "buff:prc:抗美援朝·三三制穿插:28:36:1.18:0:240|morale:prc:26|ic:usa:28|tension:24"),
                 Choice(title: "强化东北边防、外交斡旋（架空）", subtitle: "专注国内重工业建设", isHistorical: false, effectCode: "ic:prc:30|tension:10"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "marshall_plan_1950",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1950, triggerMonth: 10, minDay: 110,
@@ -1752,8 +1769,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "全面推进马歇尔重建计划（史实）", subtitle: "西欧北约工业与财政大幅跃升", isHistorical: true, effectCode: "ic:west_europe:36|ic:france:22|gold:west_europe:500|gold:usa:350"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "japan_boom_1951",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1951, triggerMonth: 9, minDay: 360,
@@ -1767,8 +1784,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "缔结安保条约 · 全力经济腾飞（史实）", subtitle: "日本工业产能迅速恢复", isHistorical: true, effectCode: "ally:usa:japan|ic:japan:32|gold:japan:420"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "uk_hurricane_1952",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1952, triggerMonth: 10, minDay: 660,
@@ -1782,8 +1799,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "宣布飓风核试成功（史实）", subtitle: "大英帝国核武库 +2 枚", isHistorical: true, effectCode: "nuke:uk:2|law:uk:focus_atomic_proj|tension:10"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "thermonuclear_1953",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1953, triggerMonth: 8, minDay: 900,
@@ -1797,8 +1814,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "迈入热核威慑平衡时代（史实）", subtitle: "美苏核武库双双扩容", isHistorical: true, effectCode: "nuke:usa:2|nuke:ussr:2|ic:usa:24|ic:ussr:24|tension:14"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "bandung_nonaligned_1955",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1955, triggerMonth: 4, minDay: 1200,
@@ -1812,8 +1829,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "高举求同存异与不结盟旗帜（史实）", subtitle: "亚非拉新兴世界加速自主建设", isHistorical: true, effectCode: "ic:india:24|ic:yugo_mideast:22|ic:latam:20|gold:india:350|gold:yugo_mideast:350|tension:-6"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "warsaw_pact_1955",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1955, triggerMonth: 5, minDay: 1245,
@@ -1827,8 +1844,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "组建华沙条约联合司令部（史实）", subtitle: "欧陆两大军事集团武装对峙", isHistorical: true, effectCode: "ally:ussr:warsaw_east|buff:ussr:华约钢铁洪流:20:20:1.10:0:240|buff:warsaw_east:华约防线:16:26:1.05:0:240|buff:west_europe:北约中欧防线:16:26:1.05:0:240|tension:14"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "suez_crisis_1956",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1956, triggerMonth: 10, minDay: 1500,
@@ -1843,8 +1860,8 @@ extension HistoricalEvents {
                 Choice(title: "收回苏伊士运河主权（史实）", subtitle: "阿拉伯民族独立浪潮席卷中东", isHistorical: true, effectCode: "gold:yugo_mideast:450|morale:yugo_mideast:22|tension:10"),
                 Choice(title: "英法强行军事占领运河区（架空）", subtitle: "中东爆发全面热战", isHistorical: false, effectCode: "war:uk:yugo_mideast:1|war:france:yugo_mideast:1|tension:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "sputnik_1957",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1957, triggerMonth: 10, minDay: 1750,
@@ -1858,8 +1875,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "迈向星辰大海 · 太空竞赛加速（史实）", subtitle: "两大超级大国科研与重工再上新阶", isHistorical: true, effectCode: "ic:ussr:32|ic:usa:32|morale:ussr:18|tension:8"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "cuban_missile_1962",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1962, triggerMonth: 10, minDay: 2400,
@@ -1874,8 +1891,8 @@ extension HistoricalEvents {
                 Choice(title: "双方克制撤导 · 建立莫斯科热线（史实）", subtitle: "化险为夷，冷战转入理性管控核平衡", isHistorical: true, effectCode: "pact:usa:ussr:3|gold:usa:300|gold:ussr:300|tension:-10"),
                 Choice(title: "强硬突破封锁 · 核威慑失控开战（架空）", subtitle: "美苏北约华约爆发全球热核大战！", isHistorical: false, effectCode: "war:usa:ussr:1|nuke:usa:2|nuke:ussr:2|tension:35"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "prc_atomic_1964",
             scenarioIds: ["coldwar_1950"],
             triggerYear: 1964, triggerMonth: 10, minDay: 2800,
@@ -1889,14 +1906,17 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "宣布两弹成功 · 打破大国核垄断（史实）", subtitle: "新中国战略威慑力历史性跃升", isHistorical: true, effectCode: "nuke:prc:2|law:prc:focus_atomic_proj|ic:prc:35|morale:prc:30|tension:10"),
             ]
-        ),
-    ]
+        ))
+        return out
+    }()
 
     // MARK: - 7. 战国 / 三国 / 盛唐 / 宋金 / 日本战国（38 条中华与扶桑史诗事件链）
 
-    private static let ancientAndSengokuEvents: [EventSpec] = [
+    private static let ancientAndSengokuEvents: [EventSpec] = {
+        var out: [EventSpec] = []
+        out.reserveCapacity(48)
         // --- 战国七雄（公元前 260 年 · 8 条） ---
-        EventSpec(
+        out.append(EventSpec(
             id: "changping_260bce",
             scenarioIds: ["zhanguo_260bce"],
             triggerYear: -260, triggerMonth: 7, minDay: 12,
@@ -1911,8 +1931,8 @@ extension HistoricalEvents {
                 Choice(title: "白起绝粮道 · 决胜长平（史实）", subtitle: "秦军锐不可当，三晋防线动摇", isHistorical: true, effectCode: "buff:qin:武安君长平决胜:34:14:1.22:0:150|war:qin:zhao:1|morale:qin:22"),
                 Choice(title: "赵王识破反间 · 坚守廉颇壁垒（架空）", subtitle: "廉颇老成持重，长平化作旷日消耗战", isHistorical: false, effectCode: "buff:zhao:廉颇高垒深沟:10:36:1.0:0:180|morale:zhao:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "handan_rescue_257bce",
             scenarioIds: ["zhanguo_260bce"],
             triggerYear: -257, triggerMonth: 12, minDay: 240,
@@ -1926,8 +1946,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "信陵君窃符救赵 · 楚魏来援（史实）", subtitle: "合纵义师解邯郸之围，延缓秦灭六国", isHistorical: true, effectCode: "ally:zhao:wei|ally:zhao:chu|war:wei:qin:1|war:chu:qin:1|buff:wei:信陵君救赵:24:22:1.20:0:150|buff:zhao:邯郸解围士气:20:30:1.10:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "zhengguo_canal_246bce",
             scenarioIds: ["zhanguo_260bce"],
             triggerYear: -246, triggerMonth: 5, minDay: 520,
@@ -1941,8 +1961,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "贯通郑国渠 · 富强关中（史实）", subtitle: "关中化作天下第一粮仓", isHistorical: true, effectCode: "gold:qin:550|morale:qin:18|buff:qin:关中沃野粮足:16:12:1.08:0:200"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "five_states_hezhong_247bce",
             scenarioIds: ["zhanguo_260bce"],
             triggerYear: -247, triggerMonth: 4, minDay: 450,
@@ -1956,8 +1976,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "五国合纵 · 剑指函谷关（史实）", subtitle: "关东列强联手遏制暴秦", isHistorical: true, effectCode: "ally:wei:han|ally:wei:yan|buff:wei:五国合纵军威:26:20:1.15:0:120|buff:chu:合纵北伐:20:16:1.10:0:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "li_mu_xiongnu_244bce",
             scenarioIds: ["zhanguo_260bce"],
             triggerYear: -244, triggerMonth: 8, minDay: 600,
@@ -1971,8 +1991,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "李牧诱敌合围大破匈奴（史实）", subtitle: "赵国北疆安如磐石", isHistorical: true, effectCode: "buff:zhao:李牧雁门大捷:28:32:1.18:0:180|morale:zhao:25|morale:xiongnu:-18"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "qi_tian_isolation_240bce",
             scenarioIds: ["zhanguo_260bce"],
             triggerYear: -240, triggerMonth: 3, minDay: 720,
@@ -1987,8 +2007,8 @@ extension HistoricalEvents {
                 Choice(title: "远交强秦 · 临淄富商自保（史实）", subtitle: "齐国暂免战火且财赋充盈", isHistorical: true, effectCode: "gold:qi:500|pact:qi:qin:3"),
                 Choice(title: "醒悟唇亡齿寒 · 出兵西援合纵（架空）", subtitle: "齐国精锐技击士全线驰援关东", isHistorical: false, effectCode: "ally:zhao:qi|war:qi:qin:1|buff:qi:齐鲁技击出征:26:16:1.15:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "jing_ke_227bce",
             scenarioIds: ["zhanguo_260bce"],
             triggerYear: -227, triggerMonth: 10, minDay: 960,
@@ -2002,8 +2022,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "图穷匕见 · 秦军怒伐燕赵（史实）", subtitle: "大秦一统车轮不可阻挡", isHistorical: true, effectCode: "war:qin:yan:1|buff:qin:横扫六合天威:36:14:1.25:0:150|morale:qin:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "wang_jian_chu_224bce",
             scenarioIds: ["zhanguo_260bce"],
             triggerYear: -224, triggerMonth: 5, minDay: 1120,
@@ -2017,10 +2037,10 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "王翦南征 · 决战大楚江淮（史实）", subtitle: "战国七雄迎来最后决胜时刻", isHistorical: true, effectCode: "war:qin:chu:1|buff:qin:王翦伐楚大军:32:18:1.18:0:180|buff:chu:江淮楚军死志:18:28:1.05:0:150"),
             ]
-        ),
+        ))
 
         // --- 三国鼎立 · 赤壁风云（公元 208 年 · 8 条） ---
-        EventSpec(
+        out.append(EventSpec(
             id: "chibi_208",
             scenarioIds: ["sanguo_208"],
             triggerYear: 208, triggerMonth: 11, minDay: 25,
@@ -2035,8 +2055,8 @@ extension HistoricalEvents {
                 Choice(title: "孙刘结盟 · 火烧赤壁（史实）", subtitle: "孙刘联军获水战火攻奇效，抵御曹魏南下", isHistorical: true, effectCode: "ally:sunwu:liubei|buff:sunwu:赤壁火攻:26:28:1.15:40:150|buff:liubei:联吴抗曹:24:26:1.15:0:150|morale:caowei:-15"),
                 Choice(title: "江东举州归降曹丞相（架空）", subtitle: "东吴称臣曹操，天下一统提前降临", isHistorical: false, effectCode: "vassal:caowei:sunwu|peace:caowei:sunwu"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "hefei_zhangliao_209",
             scenarioIds: ["sanguo_208"],
             triggerYear: 209, triggerMonth: 4, minDay: 120,
@@ -2050,8 +2070,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "八百死士破敌 · 稳固合肥（史实）", subtitle: "曹魏重振江淮防线军威", isHistorical: true, effectCode: "buff:caowei:张辽威震逍遥津:24:32:1.16:0:150|morale:caowei:22"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "tongguan_machao_211",
             scenarioIds: ["sanguo_208"],
             triggerYear: 211, triggerMonth: 7, minDay: 320,
@@ -2065,8 +2085,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "西征关中 · 潼关大决战（史实）", subtitle: "曹操挥师西进平定凉州隐患", isHistorical: true, effectCode: "war:caowei:mateng:1|buff:caowei:贾诩离间破敌:26:16:1.18:0:150|buff:mateng:西凉铁骑冲锋:30:10:1.25:0:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "liubei_enter_shu_212",
             scenarioIds: ["sanguo_208"],
             triggerYear: 212, triggerMonth: 10, minDay: 460,
@@ -2081,8 +2101,8 @@ extension HistoricalEvents {
                 Choice(title: "挥师入蜀 · 践行隆中对（史实）", subtitle: "攻取天府之国，奠定季汉根基", isHistorical: true, effectCode: "war:liubei:liuzhang:1|buff:liubei:隆中对·入蜀精师:30:18:1.20:0:180|morale:liubei:22"),
                 Choice(title: "与刘璋结为汉室宗亲盟友（架空）", subtitle: "益荆同盟共同北伐曹魏", isHistorical: false, effectCode: "ally:liubei:liuzhang|gold:liubei:300"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "hanzhong_215",
             scenarioIds: ["sanguo_208"],
             triggerYear: 215, triggerMonth: 7, minDay: 680,
@@ -2096,8 +2116,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "争夺汉中咽喉 · 群雄会战秦岭（史实）", subtitle: "汉中成为魏蜀必争之地", isHistorical: true, effectCode: "war:caowei:zhanglu:1|buff:liubei:定军山汉中王:28:24:1.15:0:150|buff:caowei:秦岭南征:22:18:1.10:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "fan_castle_219",
             scenarioIds: ["sanguo_208"],
             triggerYear: 219, triggerMonth: 8, minDay: 920,
@@ -2111,8 +2131,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "北伐襄樊 · 水淹七军威震华夏（史实）", subtitle: "荆州铁骑锋芒毕露直逼许昌", isHistorical: true, effectCode: "buff:liubei:水淹七军威震华夏:36:14:1.22:0:120|morale:liubei:28|buff:caowei:徐晃长驱解围:22:24:1.12:0:120"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "shixie_lingnan_210",
             scenarioIds: ["sanguo_208"],
             triggerYear: 210, triggerMonth: 6, minDay: 220,
@@ -2126,8 +2146,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "保境安民 · 兴南海通商（史实）", subtitle: "交州财赋丰厚、边海稳固", isHistorical: true, effectCode: "gold:shixie:420|buff:shixie:交州安境通商:8:22:1.0:18:240|pact:shixie:sunwu:3"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "tuntian_caowei_214",
             scenarioIds: ["sanguo_208"],
             triggerYear: 214, triggerMonth: 3, minDay: 580,
@@ -2141,10 +2161,10 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "大兴屯田 · 充实中原粮仓（史实）", subtitle: "曹魏财赋兵粮冠绝天下", isHistorical: true, effectCode: "gold:caowei:520|morale:caowei:16|buff:caowei:许下屯田丰盈:14:16:1.05:0:200"),
             ]
-        ),
+        ))
 
         // --- 盛唐天宝（公元 755 年 · 7 条） ---
-        EventSpec(
+        out.append(EventSpec(
             id: "anshi_755",
             scenarioIds: ["tang_755"],
             triggerYear: 755, triggerMonth: 11, minDay: 18,
@@ -2159,8 +2179,8 @@ extension HistoricalEvents {
                 Choice(title: "起用郭子仪李光弼 · 联回纥稳中原（史实）", subtitle: "大唐与回纥同盟共抗强敌，死守关中江淮", isHistorical: true, effectCode: "ally:tang:uyghur|buff:tang:朔方平叛忠勇:22:28:1.10:0:180|buff:tibet:吐蕃乘虚东进:24:12:1.15:0:150|war:tibet:tang:1"),
                 Choice(title: "盛唐兵锋不减 · 先西击吐蕃稳河陇（架空）", subtitle: "哥舒翰潼关出击，全线反推吐蕃", isHistorical: false, effectCode: "buff:tang:天宝铁骑西征:30:18:1.18:0:180|war:tang:tibet:1"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "sui_yang_757",
             scenarioIds: ["tang_755"],
             triggerYear: 757, triggerMonth: 5, minDay: 150,
@@ -2174,8 +2194,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "守住江淮财源 · 诏赏忠烈（史实）", subtitle: "大唐国库与军心大振", isHistorical: true, effectCode: "gold:tang:480|morale:tang:24|buff:tang:睢阳铁壁:14:30:1.0:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "uyghur_cavalry_757",
             scenarioIds: ["tang_755"],
             triggerYear: 757, triggerMonth: 9, minDay: 240,
@@ -2189,8 +2209,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "回纥铁骑南援 · 绢马互市（史实）", subtitle: "唐回双赢，共保丝路通畅", isHistorical: true, effectCode: "ally:tang:uyghur|gold:uyghur:380|buff:uyghur:漠北铁骑驰援:28:12:1.22:0:150|buff:tang:收复两京锐气:24:18:1.12:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "tibet_hexi_763",
             scenarioIds: ["tang_755"],
             triggerYear: 763, triggerMonth: 10, minDay: 480,
@@ -2204,8 +2224,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "吐蕃精锐东出争锋河陇（史实）", subtitle: "青藏高原霸主展现巅峰军力", isHistorical: true, effectCode: "war:tibet:tang:1|buff:tibet:雪域赞普雄师:30:18:1.20:0:180|morale:tibet:22"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "nanzhao_alliance_756",
             scenarioIds: ["tang_755"],
             triggerYear: 756, triggerMonth: 6, minDay: 95,
@@ -2220,8 +2240,8 @@ extension HistoricalEvents {
                 Choice(title: "南诏吐蕃联手制衡西南（史实）", subtitle: "吐蕃南诏结盟，西南防线大固", isHistorical: true, effectCode: "ally:tibet:nanzhao|buff:nanzhao:洱海山地精兵:18:32:1.10:0:180"),
                 Choice(title: "南诏重修唐好 · 归附长安（架空）", subtitle: "贞元归唐提前三十年实现", isHistorical: false, effectCode: "ally:tang:nanzhao|gold:nanzhao:300"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "bohai_haidong_758",
             scenarioIds: ["tang_755"],
             triggerYear: 758, triggerMonth: 4, minDay: 290,
@@ -2235,8 +2255,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "兴建上京龙泉府 · 朝贡通商（史实）", subtitle: "渤海国财赋与国力蒸蒸日上", isHistorical: true, effectCode: "gold:bohai:420|buff:bohai:海东盛国兴盛:16:22:1.08:18:180|pact:bohai:tang:3"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "abbasid_silkroad_759",
             scenarioIds: ["tang_755"],
             triggerYear: 759, triggerMonth: 7, minDay: 360,
@@ -2250,10 +2270,10 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "通商丝路 · 兴盛河中（史实）", subtitle: "大食财赋殷实，骑兵精锐", isHistorical: true, effectCode: "gold:abbasid:460|morale:abbasid:16|buff:abbasid:阿拔斯丝路铁骑:22:18:1.15:0:180"),
             ]
-        ),
+        ))
 
         // --- 宋金对峙 · 绍兴和议（公元 1142 年 · 7 条） ---
-        EventSpec(
+        out.append(EventSpec(
             id: "shaoxing_truce_1142",
             scenarioIds: ["song_jin_1142"],
             triggerYear: 1142, triggerMonth: 5, minDay: 15,
@@ -2268,8 +2288,8 @@ extension HistoricalEvents {
                 Choice(title: "休养生息 · 广开泉州临安市舶（史实）", subtitle: "南宋财政富甲天下，水师强盛", isHistorical: true, effectCode: "gold:nsong:450|gold:jin:420|buff:nsong:江南市舶富庶:10:24:1.0:25:200|pact:nsong:jin:2"),
                 Choice(title: "拒绝屈辱和议 · 岳家军余部立刻北伐（架空）", subtitle: "大宋铁骑重渡淮河直捣汴京！", isHistorical: false, effectCode: "war:nsong:jin:1|buff:nsong:直捣黄龙壮志:32:18:1.20:0:180|morale:nsong:28"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "jin_move_yanjing_1153",
             scenarioIds: ["song_jin_1142"],
             triggerYear: 1145, triggerMonth: 3, minDay: 210,
@@ -2283,8 +2303,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "定鼎燕京 · 扩编铁浮屠重骑（史实）", subtitle: "金军南下实力大增", isHistorical: true, effectCode: "gold:jin:400|buff:jin:燕京铁浮屠:28:14:1.18:0:180|morale:jin:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "mongol_khabul_1146",
             scenarioIds: ["song_jin_1142"],
             triggerYear: 1146, triggerMonth: 8, minDay: 320,
@@ -2298,8 +2318,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "草原铁骑南掠金边（史实）", subtitle: "蒙古骑兵机动与锐气冠绝塞北", isHistorical: true, effectCode: "war:mongol:jin:1|buff:mongol:漠北苍狼铁骑:34:14:1.28:0:200|morale:mongol:25"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "caishi_1161",
             scenarioIds: ["song_jin_1142"],
             triggerYear: 1148, triggerMonth: 11, minDay: 480,
@@ -2313,8 +2333,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "霹雳炮轰沉金军渡船 · 大捷采石矶（史实）", subtitle: "大宋长江天堑固若金汤", isHistorical: true, effectCode: "war:jin:nsong:1|buff:nsong:采石矶霹雳水师:22:32:1.10:42:180|morale:nsong:28"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "xixia_tiancheng_1149",
             scenarioIds: ["song_jin_1142"],
             triggerYear: 1149, triggerMonth: 5, minDay: 560,
@@ -2328,8 +2348,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "颁行天盛律令 · 整编铁鹞子（史实）", subtitle: "西夏河西霸业鼎盛", isHistorical: true, effectCode: "gold:xixia:380|buff:xixia:铁鹞子河西劲旅:22:28:1.12:0:180"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "goryeo_sea_trade_1150",
             scenarioIds: ["song_jin_1142"],
             triggerYear: 1150, triggerMonth: 8, minDay: 640,
@@ -2343,8 +2363,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "广通明州海贸（史实）", subtitle: "宋丽海上航路繁荣富庶", isHistorical: true, effectCode: "gold:goryeo:320|gold:nsong:320|pact:goryeo:nsong:3"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "dali_tea_horse_1151",
             scenarioIds: ["song_jin_1142"],
             triggerYear: 1151, triggerMonth: 4, minDay: 720,
@@ -2358,10 +2378,10 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "繁荣茶马古道互市（史实）", subtitle: "宋理睦邻互惠，西南安泰", isHistorical: true, effectCode: "gold:dali:300|gold:nsong:300|buff:dali:大理茶马富庶:12:24:1.05:0:180"),
             ]
-        ),
+        ))
 
         // --- 日本战国 · 桶狭间（公元 1560 年 · 8 条） ---
-        EventSpec(
+        out.append(EventSpec(
             id: "okehazama_1560",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1560, triggerMonth: 5, minDay: 10,
@@ -2376,8 +2396,8 @@ extension HistoricalEvents {
                 Choice(title: "暴雨奇袭桶狭间本阵（史实）", subtitle: "以三千破两万五千，织田霸业由此启程", isHistorical: true, effectCode: "buff:oda:桶狭间奇袭神威:38:14:1.28:0:180|morale:oda:30|morale:imagawa:-25|war:oda:imagawa:0"),
                 Choice(title: "清洲笼城死守待援（架空）", subtitle: "稳健固守尾张城池，静观其变", isHistorical: false, effectCode: "buff:oda:清洲笼城死守:10:34:1.0:0:150"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "kawanakajima_1561",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1561, triggerMonth: 9, minDay: 95,
@@ -2391,8 +2411,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "龙虎血战八幡原（史实）", subtitle: "风林火山与车悬之阵名震天下", isHistorical: true, effectCode: "war:takeda:uesugi:1|buff:takeda:风林火山赤备:30:22:1.22:0:180|buff:uesugi:越后之龙车悬阵:34:18:1.25:0:180|morale:takeda:22|morale:uesugi:22"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "mino_conquest_1567",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1562, triggerMonth: 8, minDay: 220,
@@ -2406,8 +2426,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "攻略美浓 · 推行乐市乐座（史实）", subtitle: "织田开启上洛统一天下之路", isHistorical: true, effectCode: "war:oda:saito:0|gold:oda:360|buff:oda:天下布武·乐市乐座:28:16:1.20:0:180"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "itsukushima_mori_1563",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1563, triggerMonth: 5, minDay: 300,
@@ -2421,8 +2441,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "三箭同心 · 雄踞中国十国（史实）", subtitle: "毛利陆海兼备，声威大振", isHistorical: true, effectCode: "gold:mori:320|buff:mori:毛利三箭水军:22:24:1.12:35:180|morale:mori:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "odawara_hojo_1564",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1564, triggerMonth: 4, minDay: 380,
@@ -2436,8 +2456,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "固守关东善政与小田原巨城（史实）", subtitle: "相模狮子根基稳固如山", isHistorical: true, effectCode: "gold:hojo:340|buff:hojo:小田原难攻不落:16:36:1.05:0:200|morale:hojo:20"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "shimazu_kyushu_1565",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1565, triggerMonth: 7, minDay: 460,
@@ -2451,8 +2471,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "岛津北上 · 决战大友与龙造寺（史实）", subtitle: "萨摩精兵横扫九州南疆", isHistorical: true, effectCode: "war:shimazu:otomo:0|buff:shimazu:萨摩钓野伏:34:20:1.18:0:180|morale:shimazu:24"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "honnoji_1582",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1568, triggerMonth: 6, minDay: 600,
@@ -2466,8 +2486,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "推行铁炮三段击革新（史实）", subtitle: "织田军火力与机动大幅跃升", isHistorical: true, effectCode: "buff:oda:铁炮三段击:34:14:1.22:0:180|gold:oda:300"),
             ]
-        ),
-        EventSpec(
+        ))
+        out.append(EventSpec(
             id: "date_one_eyed_dragon_1570",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1570, triggerMonth: 5, minDay: 720,
@@ -2481,6 +2501,8 @@ extension HistoricalEvents {
             choices: [
                 Choice(title: "整编骑马铁炮队 · 经略奥羽（史实）", subtitle: "伊达家成为北日本霸主", isHistorical: true, effectCode: "gold:date:320|buff:date:独眼龙骑马铁炮:30:14:1.24:0:180|morale:date:22"),
             ]
-        ),
-    ]
+        ))
+        return out
+    }()
 }
+

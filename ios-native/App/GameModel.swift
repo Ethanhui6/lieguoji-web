@@ -1938,6 +1938,8 @@ import LieguojiCore
                     next.owners = previous.owners
                 }
             }
+            if next.nations.isEmpty && !previous.nations.isEmpty { next.nations = previous.nations }
+            if next.fleets == nil { next.fleets = previous.fleets }
             if next.ports == nil { next.ports = previous.ports }
             if next.forts == nil { next.forts = previous.forts }
             if next.holy == nil { next.holy = previous.holy }

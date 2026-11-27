@@ -149,6 +149,8 @@ final class StreamFrameBuffer: @unchecked Sendable {
     private var lastAcceptedSeq: UInt32 = 0
     private var baselineOwners: [Int] = []
     private var baselineArmies: [String: GameState.Army] = [:]
+    private var baselineNations: [GameState.Nation] = []
+    private var baselineFleets: [GameState.Fleet]? = nil
     private let maxBuffered = 4
     var onFrameConsumed: (@Sendable (UInt32) -> Void)?
 
@@ -164,6 +166,8 @@ final class StreamFrameBuffer: @unchecked Sendable {
         lastAcceptedSeq = 0
         baselineOwners.removeAll(keepingCapacity: true)
         baselineArmies.removeAll(keepingCapacity: true)
+        baselineNations.removeAll(keepingCapacity: true)
+        baselineFleets = nil
         lock.unlock()
     }
 
@@ -171,6 +175,8 @@ final class StreamFrameBuffer: @unchecked Sendable {
         lock.lock()
         baselineOwners.removeAll(keepingCapacity: true)
         baselineArmies.removeAll(keepingCapacity: true)
+        baselineNations.removeAll(keepingCapacity: true)
+        baselineFleets = nil
         lock.unlock()
     }
 
@@ -280,6 +286,16 @@ final class StreamFrameBuffer: @unchecked Sendable {
             } else {
                 self.baselineArmies.removeAll(keepingCapacity: true)
                 for a in decoded.armies { self.baselineArmies[a.id] = a }
+            }
+            if !decoded.nations.isEmpty {
+                self.baselineNations = decoded.nations
+            } else if !self.baselineNations.isEmpty {
+                decoded.nations = self.baselineNations
+            }
+            if let fl = decoded.fleets {
+                self.baselineFleets = fl
+            } else if let prevFl = self.baselineFleets {
+                decoded.fleets = prevFl
             }
             self.lastCompressedBytes = compSize
             self.lastRawBytes = raw.count

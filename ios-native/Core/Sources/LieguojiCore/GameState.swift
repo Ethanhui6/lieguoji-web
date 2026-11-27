@@ -95,7 +95,7 @@ public struct GameState: Codable, Equatable, Sendable {
     /// v11 疆域差量对 `[provinceIdx, ownerIdx, ...]`：推流精简帧仅在变化州郡数较少时下发，`owners` 留空以省 65%–80% 流量。
     public var ownersDelta: [Int]? = nil
     public let labels: [WorldMeta.LabelBox]?
-    public let nations: [Nation]
+    public var nations: [Nation]
     public var armies: [Army]
     public var fleets: [Fleet]? = nil
     /// Sunk fleets being rebuilt at their docks (造舰), with the months left.

@@ -485,6 +485,8 @@ extension NativeEngine {
                 x.commanderRole = cmd.title
                 x.commanderMilitary = cmd.military
                 x.tacticTag = cmd.tacticTag
+            } else if UnitKinds.enabled && !r.regimes.isNull && (!r.regimes.historicalScenarioId.isNull || !r.regimes.doctrines.isNull) {
+                x.tacticTag = MilitaryDoctrines.doctrine(r, nationId: a.nationId.asString).shortTag
             }
             x.routeNote = routeNote
             let rawFull = r.tactics.forces[id].fullStrength.optionalNumber ?? Double(safeTroops)

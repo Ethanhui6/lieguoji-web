@@ -325,7 +325,7 @@ public enum MilitaryDoctrines {
 
     /// 将各国真实史实将领（`WarCommander`/`Admiral`/高军事人物）自动编配到现役军团，确保前线主力由真实名将统率。
     public static func assignHistoricalCommanders(_ r: JS) {
-        guard UnitKinds.enabled, !r.regimes.isNull, !r.world.isNull, !r.world.armies.isNull else { return }
+        guard !r.regimes.isNull, !r.world.isNull, !r.world.armies.isNull else { return }
         if r.regimes.armyCommanders.isNull { r.regimes.armyCommanders = .object() }
 
         // 按国别收集存活的史实将领与军事人才（按军事值降序）

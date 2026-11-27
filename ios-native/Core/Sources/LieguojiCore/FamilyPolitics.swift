@@ -107,6 +107,9 @@ public enum FamilyPolitics {
             for i in 0..<keys.count {
                 for j in (i + 1)..<keys.count {
                     let a = keys[i], b = keys[j]
+                    // 严禁随机色子覆盖/冲淡 HistoricalRoster 注入的真实历史派系宿怨（如 1941 日本陆海军 -48 对立）
+                    let existing = r.nobility.relations.isNull ? 0 : (r.nobility.relations[a][b].optionalNumber ?? 0)
+                    if existing != 0 { continue }
                     let roll = Double(Opening.hash("\(seed)/house-rel/\(nid)/\(a)/\(b)") % 1000) / 1000.0
                     let delta: Double
                     if roll < 0.16 { delta = -32 }       // 宿怨/争权

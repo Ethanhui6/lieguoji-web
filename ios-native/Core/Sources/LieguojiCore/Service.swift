@@ -34,6 +34,8 @@ public final class EngineService {
         let tacticTag: String?
     }
     private var lastSlimArmies: [String: ArmyDeltaSig] = [:]
+    private var lastSlimNations: [GameState.Nation] = []
+    private var lastSlimFleets: [GameState.Fleet] = []
     private var lastSlimPorts: [GameState.Port] = []
     private var lastSlimForts: [Int] = []
     private var lastSlimHoly: [GameState.Holy] = []
@@ -63,6 +65,8 @@ public final class EngineService {
         slimFramesSinceFullStatic = 0
         lastSlimOwners = []
         lastSlimArmies.removeAll(keepingCapacity: true)
+        lastSlimNations = []
+        lastSlimFleets = []
         lastSlimEventDay = -1
         lastSlimEventText = ""
     }
@@ -81,6 +85,8 @@ public final class EngineService {
         lastSlimOwners = gs.owners
         lastSlimArmies.removeAll(keepingCapacity: true)
         for a in gs.armies { lastSlimArmies[a.id] = armySig(a) }
+        lastSlimNations = gs.nations
+        lastSlimFleets = gs.fleets ?? []
         if let lastEv = gs.events.last {
             lastSlimEventDay = lastEv.day
             lastSlimEventText = lastEv.text
@@ -136,7 +142,6 @@ public final class EngineService {
         let includeLabels = labelsDue(e, stepping: stepping)
         if !slim {
             let gs = e.gameState(includeLabels: includeLabels, slim: false)
-            recordSlimStaticBaseline(from: gs)
             return Profile.measure("s.json") { (try? JSONEncoder().encode(gs)) ?? Data() }
         }
         var gs = e.gameState(includeLabels: includeLabels, slim: true)
@@ -262,6 +267,19 @@ public final class EngineService {
             gs.armies = changedArmies
             gs.armyDeltaMode = true
             gs.removedArmyIds = removedIds
+            // v14 国家与舰队静帧零开销省略：无变化时免重复编码，确保 27 国欧洲推流帧 < 0.85 KB 落入单包 UDP 8767 MTU
+            if gs.nations == lastSlimNations && !lastSlimNations.isEmpty {
+                gs.nations = []
+            } else {
+                lastSlimNations = gs.nations
+            }
+            let curFleets = gs.fleets ?? []
+            if curFleets == lastSlimFleets {
+                gs.fleets = nil
+            } else {
+                lastSlimFleets = curFleets
+                gs.fleets = curFleets
+            }
 
             if let lastEv = gs.events.last {
                 if lastEv.day == lastSlimEventDay && lastEv.text == lastSlimEventText && lastSlimEventDay >= 0 {

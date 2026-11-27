@@ -510,7 +510,10 @@ public enum HistoricalEvents {
 
         for ev in allEvents where ev.scenarioIds.contains(scId) {
             guard r.regimes.firedEvents[ev.id].isNull else { continue }
-            let dateReached = (curYear > ev.triggerYear) || (curYear == ev.triggerYear && curMonth >= ev.triggerMonth)
+            // 剧本开局首月事件（minDay <= 45，如白色方案第3日、瓜分波兰第22日、九一八第5日、珍珠港第4日）按相对开局日直接触发，不受建世默认1月约束
+            let dateReached = (ev.minDay <= 45)
+                ? (curYear >= ev.triggerYear)
+                : ((curYear > ev.triggerYear) || (curYear == ev.triggerYear && curMonth >= ev.triggerMonth))
             guard dateReached || curDay >= ev.minDay + 90 else { continue }
             guard curDay >= ev.minDay else { continue }
             guard let actorNid = nationId(r, specId: ev.actorSpecId), Vassals.alive(r, actorNid) else { continue }

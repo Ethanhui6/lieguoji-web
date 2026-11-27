@@ -274,17 +274,17 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "forceUpdate": False,
     "maintenance": False,
     "maintenanceMessage": "九州云服正在例行修缮，稍候片刻即可重登。",
-    "releaseDate": "2026-11-26",
-    "ipaSizeMB": 44.2,
+    "releaseDate": "2026-11-27",
+    "ipaSizeMB": 44.5,
     "downloadUrl": f"https://github.com/Ethanhui6/lieguoji-web/releases/tag/v{DEFAULT_LATEST_VERSION}",
     "directIpaUrl": build_default_ipa_mirrors(DEFAULT_LATEST_VERSION, DEFAULT_LATEST_BUILD)[0],
     "ipaMirrors": build_default_ipa_mirrors(DEFAULT_LATEST_VERSION, DEFAULT_LATEST_BUILD),
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 19,
+        "patchVersion": 21,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v8.0.0 史实山河大改版：真山川河流 · 12 大精绘局部战区 · 史实事件链与闪电战 · 云服 v14 LGB2+UDP · 2.1GB+ 热更包 v7",
+        "summary": "v9.0.0 丝滑满帧与钢铁雄心级大改版：60fps 零卡顿拖屏 · 云服自动秒连顺滑行军 · 158 条史实事件 · 不可通行无人之地 · 12 剧本精确地图与 HOI4 国策",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -691,20 +691,20 @@ def init_db() -> None:
             except Exception as exc:
                 print(f"升级持久化发版配置失败，保留原值: {exc}", flush=True)
 
-        # 同步将旧版 hotpack_meta (packVersion < 7) 平滑升级至 v7（2.1 GB+ 零水分精绘战区包）
+        # 同步将旧版 hotpack_meta (packVersion < 8) 平滑升级至 v8（v9.0 精绘 12 剧本与无人之地热更包）
         hp_row = DB.execute("SELECT v FROM kv_store WHERE k = 'hotpack_meta'").fetchone()
         if hp_row:
             try:
                 hp_meta = json.loads(hp_row["v"])
-                if int(hp_meta.get("packVersion", 0)) < 7:
+                if int(hp_meta.get("packVersion", 0)) < 8:
                     DB.execute(
                         "UPDATE kv_store SET v = ?, updated_at = ? WHERE k = 'hotpack_meta'",
                         (
                             json.dumps(
                                 {
-                                    "packVersion": 7,
-                                    "releaseTag": "v8.0 · 2.2GB 零水分精绘战区与真山川河流典藏热更包 v7",
-                                    "summary": "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部战区 GIS 国界、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制 24 首交响 + 49 条实感拟音",
+                                    "packVersion": 8,
+                                    "releaseTag": "v9.0 · 2.06GB HOI4级精绘地图与无人之地典藏热更包 v8",
+                                    "summary": "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部历史战区 GIS 国界（含不可通行无人之地）、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制 24 首交响 + 49 条实感拟音",
                                 },
                                 ensure_ascii=False,
                             ),
@@ -865,15 +865,15 @@ def _get_hotpack_version_meta() -> tuple[int, str, str]:
     if row:
         try:
             d = json.loads(row["v"])
-            ver = int(d.get("packVersion", 7))
-            if ver >= 7:
-                return ver, str(d.get("releaseTag", "v8.0 · 2.2GB 零水分精绘战区与真山川河流典藏热更包 v7")), str(d.get("summary", ""))
+            ver = int(d.get("packVersion", 8))
+            if ver >= 8:
+                return ver, str(d.get("releaseTag", "v9.0 · 2.06GB HOI4级精绘地图与无人之地典藏热更包 v8")), str(d.get("summary", ""))
         except Exception:
             pass
     return (
-        7,
-        "v8.0 · 2.2GB 零水分精绘战区与真山川河流典藏热更包 v7",
-        "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部战区 GIS 国界、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制 24 首交响 + 49 条实感拟音",
+        8,
+        "v9.0 · 2.06GB HOI4级精绘地图与无人之地典藏热更包 v8",
+        "全量 7 大零水分实装模块：60K/120K 拓扑与 12 大精绘局部历史战区 GIS 国界（含不可通行无人之地）、25.6K z=0..5 真实山川河流 GPU 瓦片金字塔、100% 纯中文 15,000+ 城市与 6,000+ 名将大典、6 时代 84 套兵模、52 幅战史大事件卷轴、48 枚名将肖像徽章与工作室物理建模重制 24 首交响 + 49 条实感拟音",
     )
 
 

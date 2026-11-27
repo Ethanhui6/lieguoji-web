@@ -292,9 +292,9 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 22,
+        "patchVersion": 23,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v9.0.0 丝滑满帧与钢铁雄心级大改版：60fps 零卡顿拖屏 · 云服自动秒连顺滑行军 · 158 条史实事件 · 不可通行无人之地 · 12 剧本精确地图与 HOI4 国策",
+        "summary": "v10.0.0 终极流畅与真实史诗大改版：本机 0ms 零延迟架构与十大流畅进步 · 拖屏零闪烁 · 非均匀地理精绘 · AoH3 级 24 大名日本战国 · 真实开局兵力与五维综合国力",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },

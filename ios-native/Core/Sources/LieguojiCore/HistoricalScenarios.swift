@@ -1097,7 +1097,7 @@ public enum HistoricalScenarios {
             let techMil = Int(hp.techMil.optionalNumber ?? 3.0)
             let warSupport = hp.warSupport.optionalNumber ?? 60.0
 
-            let targetArmies: Int
+            var targetArmies: Int
             if let explicit = hp.startingArmies.optionalNumber, explicit >= 1 {
                 targetArmies = max(1, min(26, Int(explicit.rounded())))
             } else {
@@ -1108,6 +1108,12 @@ public enum HistoricalScenarios {
                 let raw = max(1, Int((Double(maxCap) * ratio).rounded()))
                 let ownedLimit = max(2, owned.count * 2)
                 targetArmies = max(1, min(22, min(raw, ownedLimit)))
+            }
+            // 袖珍小国（1–2 州）开局严格限制常备军数，杜绝单州小国叠出 4–5 支大军
+            if owned.count == 1 {
+                targetArmies = min(targetArmies, 2)
+            } else if owned.count == 2 {
+                targetArmies = min(targetArmies, 3)
             }
 
             let capPid = capitalPidByNation[nid] ?? owned.first(where: { $0.name.optionalString == capitalNameByNationId[nid] })?.id.asString ?? owned[0].id.asString

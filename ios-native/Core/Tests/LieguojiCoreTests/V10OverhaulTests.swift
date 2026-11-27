@@ -112,24 +112,27 @@ final class V10OverhaulTests: XCTestCase {
         let r = eu.run
         let provs = r.world.provinces.asArray
 
-        var westCoreCells = [Int]()
-        var eastSparseCells = [Int]()
+        let scale = max(1e-6, r.scale.asNumber)
+        var westCoreAreas = [Double]()
+        var eastSparseAreas = [Double]()
         for p in provs {
-            let cx = p.center[0].asNumber
-            let cy = p.center[1].asNumber
+            let pid = p.id.asString
+            let cx = p.center.x.asNumber / scale
+            let cy = p.center.y.asNumber / scale
             let geo = HistoricalBasemaps.unproject(x: cx, y: cy, region: .europe, width: 1600, height: 900)
-            let cellCount = p.cells.length
+            let area = r.terrainContext.provinces[pid].area.optionalNumber ?? 0.0
+            guard area > 0 else { continue }
             if geo.lon >= 2.0 && geo.lon <= 19.0 && geo.lat >= 46.5 && geo.lat <= 54.0 {
-                westCoreCells.append(cellCount)
+                westCoreAreas.append(area)
             } else if geo.lon >= 36.0 && geo.lat >= 50.0 {
-                eastSparseCells.append(cellCount)
+                eastSparseAreas.append(area)
             }
         }
-        XCTAssertFalse(westCoreCells.isEmpty)
-        XCTAssertFalse(eastSparseCells.isEmpty)
-        let avgWest = Double(westCoreCells.reduce(0, +)) / Double(westCoreCells.count)
-        let avgEast = Double(eastSparseCells.reduce(0, +)) / Double(eastSparseCells.count)
-        XCTAssertLessThan(avgWest, avgEast * 0.85, "欧洲核心区州郡应显著比东俄广袤草原更细密（西中欧均格 \(avgWest) vs 东俄均格 \(avgEast)）")
+        XCTAssertFalse(westCoreAreas.isEmpty, "应检测到西中欧核心州郡")
+        XCTAssertFalse(eastSparseAreas.isEmpty, "应检测到东俄稀疏草原州郡")
+        let avgWest = westCoreAreas.reduce(0, +) / Double(max(1, westCoreAreas.count))
+        let avgEast = eastSparseAreas.reduce(0, +) / Double(max(1, eastSparseAreas.count))
+        XCTAssertLessThan(avgWest, avgEast * 0.85, "欧洲核心区州郡应显著比东俄广袤草原更细密（西中欧均面积 \(avgWest) vs 东俄均面积 \(avgEast)）")
     }
 
     // MARK: - 3. 真实开局兵力编制与前线战略部署（杜绝苏联/广土荒原开局爆兵）

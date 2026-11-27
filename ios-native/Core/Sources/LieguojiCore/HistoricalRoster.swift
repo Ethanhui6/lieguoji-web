@@ -473,10 +473,16 @@ public enum HistoricalRoster {
             hp.nuclearProgress = JS(entry.power.nuclearProgress)
             hp.startingReactors = JS(entry.power.startingReactors)
             hp.warSupport = JS(entry.power.warSupport)
-            let resolvedStartArmies = entry.power.startingArmies
-                ?? max(2, min(16, Int((1.5 + entry.power.industryIndex * 2.4 + entry.power.manpowerScale * 1.6 + Double(entry.power.techMil) * 0.45 + (entry.power.warSupport - 55.0) * 0.04).rounded())))
+            let fallbackStartRaw = Int((0.8 + entry.power.industryIndex * 2.1 + entry.power.manpowerScale * 1.4 + Double(entry.power.techMil) * 0.4 + (entry.power.warSupport - 55.0) * 0.03).rounded())
+            let fallbackStart: Int
+            if entry.power.industryIndex < 0.9 && entry.power.manpowerScale < 0.65 {
+                fallbackStart = max(1, min(2, fallbackStartRaw))
+            } else {
+                fallbackStart = max(2, min(16, fallbackStartRaw))
+            }
+            let resolvedStartArmies = entry.power.startingArmies ?? fallbackStart
             let resolvedMaxArmies = entry.power.maxArmies
-                ?? max(resolvedStartArmies + 2, min(30, Int((Double(resolvedStartArmies) * 1.80 + 2.0).rounded())))
+                ?? max(resolvedStartArmies + 1, min(30, Int((Double(resolvedStartArmies) * 1.80 + 1.5).rounded())))
             hp.startingArmies = JS(resolvedStartArmies)
             hp.maxArmies = JS(resolvedMaxArmies)
             r.regimes.historicalPower[nid] = hp
@@ -3820,7 +3826,7 @@ public enum HistoricalRoster {
           families: [f("拿骚-魏尔堡", "卢森堡大公室", 84, 84, ruling: true)],
           parties: [pt("右翼党", 52), pt("工人党", 48)],
           power: pw(ind: 0.72, mp: 0.38, mil: 3, eco: 5, sta: 5, nav: 1, fleets: 0, ships: 0, navBonus: 0.0,
-                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 60)
+                    traits: ["CoreDefense"], lifetime: true, term: 40, warSupport: 60, startArmies: 1, maxArmies: 2)
         ),
         // 18 瑞士联邦
         n(18,

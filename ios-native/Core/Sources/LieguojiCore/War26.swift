@@ -36,23 +36,22 @@ public enum War26 {
     }
 
     public static func compositePower(_ r: JS, _ id: String) -> CompositePower {
-        // 1. 工业产能与现代经济底盘（工业指数为主体，月财政与国库为辅助，防止纯囤钱霸榜）
+        // 1. 工业产能与现代经济底盘（非线性工业指数拉开列强与农业小国代差，月财政与国库为辅）
         let indIdx = NuclearWarfare.industryIndex(r, nationId: id)
         let fin = r.finance.isNull ? JS.null : r.finance.nations[id]
         let gold = max(0.0, fin.gold.optionalNumber ?? 0.0)
         let income = max(0.0, fin.goldPerMonth.optionalNumber ?? 0.0)
         let reactors = r.regimes.isNull || r.regimes.nuclear.isNull ? 0.0 : max(0.0, r.regimes.nuclear[id].reactors.optionalNumber ?? 0.0)
-        let industryScore = indIdx * 38.0
-            + min(30.0, (income + 1.0).squareRoot() * 1.55)
-            + min(12.0, (gold + 1.0).squareRoot() * 0.12)
-            + reactors * 5.0
+        let indCore: Double = pow(max(0.15, indIdx), 1.42) * 46.0
+        let indCash: Double = min(28.0, (income + 1.0).squareRoot() * 1.45) + min(10.0, (gold + 1.0).squareRoot() * 0.10)
+        let industryScore: Double = indCore + indCash + reactors * 8.0
 
-        // 2. 四线科技现代化水平（陆军/经济/治国/海军 1..6 级）
+        // 2. 四线科技现代化水平（陆军/经济/治国/海军 1..6 级，平方阶梯体现科技代差）
         let tMil: Int = WorldDepth.techLevel(r, nation: id, branch: .military)
         let tEco: Int = WorldDepth.techLevel(r, nation: id, branch: .economy)
         let tSta: Int = WorldDepth.techLevel(r, nation: id, branch: .statecraft)
         let tNav: Int = WorldDepth.techLevel(r, nation: id, branch: .naval)
-        let techScore: Double = Double(tMil) * 9.0 + Double(tEco) * 8.0 + Double(tSta) * 6.0 + Double(tNav) * 7.0
+        let techScore: Double = Double(tMil * tMil) * 2.8 + Double(tEco * tEco) * 2.5 + Double(tSta * tSta) * 1.6 + Double(tNav * tNav) * 2.2
 
         // 3. 军队质量、海军远洋投送与战略威慑（数量递减防人海碾压，乘以科技与工业质量权重）
         var armyRaw = 0.0, navyRaw = 0.0
@@ -66,14 +65,14 @@ public enum War26 {
             navyRaw += max(0.0, min(14.0, fl.ships.asNumber)) / 4.0
         }
         let dampedArmy: Double = armyRaw <= 22.0 ? armyRaw : (22.0 + (armyRaw - 22.0) * 0.42)
-        let landQuality: Double = 0.68 + 0.17 * Double(tMil) + 0.18 * indIdx.squareRoot()
+        let landQuality: Double = 0.55 + 0.19 * Double(tMil) + 0.24 * indIdx.squareRoot()
         let navBonus: Double = (r.regimes.isNull || r.regimes.historicalPower.isNull) ? 0.0 : (r.regimes.historicalPower[id].navalPowerBonus.optionalNumber ?? 0.0)
         let nukes: Double = (r.regimes.isNull || r.regimes.nuclear.isNull) ? 0.0 : max(0.0, r.regimes.nuclear[id].nukes.optionalNumber ?? 0.0)
-        let landPart: Double = dampedArmy * landQuality * 2.15
-        let seaPart: Double = navyRaw * (3.8 + 0.85 * Double(tNav)) * (1.0 + navBonus * 1.45)
-        let militaryScore: Double = landPart + seaPart + nukes * 20.0
+        let landPart: Double = dampedArmy * landQuality * 2.35
+        let seaPart: Double = navyRaw * (4.5 + 1.15 * Double(tNav)) * (1.0 + navBonus * 1.65)
+        let militaryScore: Double = landPart + seaPart + nukes * 25.0
 
-        // 4. 有效核心人口与递减疆域（西伯利亚/荒原广土强烈递减，人口稠密核心区稳定加分）
+        // 4. 有效核心人口与递减疆域（西伯利亚/荒原广土强烈递减，避免未开发大片空地虚高国力）
         var owned = 0
         var ownedIds = Set<String>()
         for p in r.world.provinces.asArray where p.controller.asString == id {
@@ -84,9 +83,9 @@ public enum War26 {
         for sp in r.world.statecraft.provinces.asArray where ownedIds.contains(sp.provinceId.asString) {
             totalPop += max(0.0, sp.population.optionalNumber ?? 0.0)
         }
-        let dampedLand = owned <= 14 ? Double(owned) * 2.2 : (30.8 + (Double(owned) - 14.0) * 0.65)
-        let popScore = min(56.0, (totalPop / 1000.0).squareRoot() * 2.15)
-        let landPopScore = dampedLand + popScore
+        let dampedLand: Double = owned <= 14 ? Double(owned) * 1.35 : (18.9 + (Double(owned) - 14.0) * 0.42)
+        let popScore: Double = min(38.0, (totalPop / 1000.0).squareRoot() * 1.45)
+        let landPopScore: Double = dampedLand + popScore
 
         // 5. 外交阵营、政局安定、战争动员凝聚力与附庸体系
         let stability = max(0.0, min(100.0, Regimes.leverage(r, id).stability))
@@ -105,8 +104,8 @@ public enum War26 {
                 vassals += 1
             }
         }
-        let diplomacyScore = stability * 0.18 + min(12.0, destiny / 8.5) + warSupport * 0.12
-            + min(15.0, Double(allies) * 3.0) + min(12.0, Double(vassals) * 4.5)
+        let diplomacyScore: Double = stability * 0.14 + min(10.0, destiny / 10.0) + warSupport * 0.10
+            + min(16.0, Double(allies) * 3.0) + min(14.0, Double(vassals) * 5.0)
 
         let total = max(1.0, industryScore + militaryScore + techScore + landPopScore + diplomacyScore)
         return CompositePower(

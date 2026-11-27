@@ -121,7 +121,15 @@ public enum HistoricalEvents {
             }
         }
         let curYear = HistoricalEra.displayYear(r)
-        let curMonth = (!r.world.date.isNull ? r.world.date.month.asInt : 1)
+        let curMonth: Int = {
+            if !r.life.isNull && !r.life.currentDate.isNull, let m = r.life.currentDate.month.optionalNumber, m.isFinite, m >= 1 {
+                return Int(m)
+            }
+            if !r.world.date.isNull, let m = r.world.date.month.optionalNumber, m.isFinite, m >= 1 {
+                return Int(m)
+            }
+            return max(1, min(12, (curDay % 365) / 30 + 1))
+        }()
         let historical = isHistoricalRoute(r)
         if r.regimes.firedEvents.isNull { r.regimes.firedEvents = .object() }
 

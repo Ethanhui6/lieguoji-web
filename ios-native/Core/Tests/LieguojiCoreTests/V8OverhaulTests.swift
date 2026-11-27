@@ -165,8 +165,12 @@ final class V8OverhaulTests: XCTestCase {
         let gerBefore = r36.world.provinces.asArray.filter { $0.controller.optionalString == gerId }.count
         let ausBefore = r36.world.provinces.asArray.filter { $0.controller.optionalString == ausId }.count
         XCTAssertGreaterThan(ausBefore, 0, "1936 开局奥地利必须拥有独立领土")
-        // 触发德奥合并事件（1938 年 3 月，第 805 日；依次结算 1936-1937 前置事件后即触发德奥合并）
+        // 触发德奥合并事件（1938 年 3 月，第 805 日；同步更新引擎真实历法 r.life.currentDate 后依次结算前置事件）
         r36.world.day = JS(805)
+        if !r36.life.isNull && !r36.life.currentDate.isNull {
+            r36.life.currentDate.year = JS(3)
+            r36.life.currentDate.month = JS(3)
+        }
         if !r36.world.date.isNull {
             r36.world.date.year = JS(1938)
             r36.world.date.month = JS(3)

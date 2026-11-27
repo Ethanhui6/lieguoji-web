@@ -648,6 +648,9 @@ public enum Naval {
                 }
                 ids += attackFleets(c).map { JS($0) }
             }
+            let prevIds = r.portControl.attackFleetIds.asArray.map(\.asString)
+            let nextIds = ids.map(\.asString)
+            if prevIds != nextIds { portControlDirty = true }
             r.portControl.attackFleetIds = .array(ids)
             s.nextRoleTick = JS(now + Double(scheduleTicks))
         }
@@ -669,13 +672,22 @@ public enum Naval {
             let id = fl.id.asString, nation = fl.nationId.asString, row = s.fleets[id], order = r.portControl.fleets[id]
             let enemy = { (x: String) in atWar(r, nation, x) }, atWarNow = war(nation), actual = view.fleets.first { $0.fleet.id.asString == id }
             func note(_ d: String, _ reason: String) { row.decision = JS(d); row.reason = JS(reason) }
-            if let fb = order.forwardBaseId.optionalString, r.portControl.ports[fb].occupierId.optionalString != nation { order.forwardBaseId = .null }
-            if let t = order.targetId.optionalString, r.portControl.ports[t].isNull || !portTarget(r.portControl.ports[t], nation, enemy) { order.targetId = .null }
-            if order.lastWar.asBool && !atWarNow { order.active = JS(false); order.targetId = .null; order.forwardBaseId = .null; row.nextTick = JS(now) }
-            order.lastWar = JS(atWarNow)
-            guard let actual else { note("lost", "舰队已经损失，保留部署历史。"); row.assignedPortId = .null; order.active = JS(false); order.targetId = .null; continue }
+            func setOrderBool(_ k: String, _ v: Bool) {
+                if order[k].isNull || order[k].asBool != v { order[k] = JS(v); portControlDirty = true }
+            }
+            func clearOrderField(_ k: String) {
+                if !order[k].isNull { order[k] = .null; portControlDirty = true }
+            }
+            func setOrderStr(_ k: String, _ v: String?) {
+                if order[k].optionalString != v { order[k] = v.map(JS.init) ?? .null; portControlDirty = true }
+            }
+            if let fb = order.forwardBaseId.optionalString, r.portControl.ports[fb].occupierId.optionalString != nation { clearOrderField("forwardBaseId") }
+            if let t = order.targetId.optionalString, r.portControl.ports[t].isNull || !portTarget(r.portControl.ports[t], nation, enemy) { clearOrderField("targetId") }
+            if order.lastWar.asBool && !atWarNow { setOrderBool("active", false); clearOrderField("targetId"); clearOrderField("forwardBaseId"); row.nextTick = JS(now) }
+            setOrderBool("lastWar", atWarNow)
+            guard let actual else { note("lost", "舰队已经损失，保留部署历史。"); row.assignedPortId = .null; setOrderBool("active", false); clearOrderField("targetId"); continue }
             if r.voyages.manualFleets.asArray.contains(where: { $0.asString == id }) || !fl.patrol.asBool {
-                row.assignedPortId = .null; order.active = JS(false); order.targetId = .null; note("manual", "保留玩家军令；恢复自主指挥后再重新评估。"); continue
+                row.assignedPortId = .null; setOrderBool("active", false); clearOrderField("targetId"); note("manual", "保留玩家军令；恢复自主指挥后再重新评估。"); continue
             }
             if view.held.contains(fleetKey(id)) || (r.maritime.retreating[id].optionalNumber ?? -.infinity) > now { note("busy", "实际海战或撤离尚未结束，保留当前航向。"); continue }
             let moving = r.fleetPositions.records[id].status.asString == "moving", component = sea.component(actual.face)
@@ -702,11 +714,11 @@ public enum Naval {
             row.nextTick = JS(now + Double(scheduleTicks))
             if moving && (goalHome || goalAttack && !low || assigned == nil && !low) { continue }
             if !moving && goalAttack && !low && view.atPort(goal!.id).contains(where: { $0.fleet.id.asString == id }) { note("attacking", "已在目标港湾，按实际存在时间争夺海港。"); continue }
-            if moving { issue(r, id, .halt); row.assignedPortId = .null; order.targetId = .null }
+            if moving { issue(r, id, .halt); row.assignedPortId = .null; clearOrderField("targetId") }
             func atAnchor(_ p: Port) -> Bool { p.node == actual.face && jsHypot(actual.point.x - p.center.x, actual.point.y - p.center.y) <= 1e-8 }
             func start(_ pid: String, _ d: String, _ reason: String) { issue(r, id, .sail(port: pid)); row.assignedPortId = JS(pid); row.issuedTick = JS(now); note(d, reason) }
             let here = safe.first(where: atAnchor)
-            if low, let here { row.assignedPortId = JS(here.id); order.targetId = .null; note("resupply", refitNeed ? "已泊入安全船坞，加速抢修舰体与补员。" : "实际停在安全本国锚点，等待日结从当地粮储补给。"); continue }
+            if low, let here { row.assignedPortId = JS(here.id); clearOrderField("targetId"); note("resupply", refitNeed ? "已泊入安全船坞，加速抢修舰体与补员。" : "实际停在安全本国锚点，等待日结从当地粮储补给。"); continue }
             let home = candidates.first { $0.id == row.homePortId.optionalString }
             let homeLost = home.map { r.portControl.ports[$0.provinceId].occupierId.asString != nation } ?? false
             let rationNow = Double(ration(fl.crew.asInt)), food = fl.food.asNumber
@@ -790,7 +802,7 @@ public enum Naval {
                         if best == nil || rank < bestRank || rank == bestRank && c.distance < best!.distance { best = c }
                     }
                     guard let best else { return false }
-                    order.targetId = JS(best.port.provinceId); portControlDirty = true
+                    setOrderStr("targetId", best.port.provinceId)
                     if atAnchor(best.port) { row.assignedPortId = JS(best.port.id); note("attacking", activeMission == .blockade ? "死锁敌港外海，切断海运并截夺海贸岁入。" : "在实际敌港等待争夺完成。") }
                     else { start(best.port.id, "attacking", best.control.landOwnerId.asString == nation ? "驰援本国受困海港，破除敌舰封锁。" : (activeMission == .blockade ? "奉封锁令抵近敌港实施海上封锁。" : "前往可在余粮范围内抵达的敌港。")) }
                     return true

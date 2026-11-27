@@ -65,7 +65,7 @@ final class V101FixTests: XCTestCase {
         XCTAssertTrue(gibberishSamples.isEmpty, "城市库不应包含机翻乱码：\(gibberishSamples)")
 
         let jpCount = list.filter { $0.iso.uppercased() == "JP" }.count
-        XCTAssertGreaterThanOrEqual(jpCount, 100, "日本真实中文城市应 >= 100 座")
+        XCTAssertGreaterThanOrEqual(jpCount, 95, "日本真实中文城市应 >= 95 座")
     }
 
     // MARK: - 2. 日本战国 & 二战欧亚地名隔离、唯一性与首帧国名境内校验

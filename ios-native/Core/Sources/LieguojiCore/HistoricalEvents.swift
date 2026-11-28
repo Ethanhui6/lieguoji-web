@@ -43,6 +43,51 @@ public enum HistoricalEvents {
         public let actorSpecId: String
         public let targetSpecId: String?
         public let choices: [Choice]
+        // MARK: v14.0.0 钢铁雄心级局势前置条件（全部默认 nil，保持目录定义向后兼容）
+        /// 必须已触发过某前置历史事件
+        public let requiresEvent: String?
+        /// 若某事件已触发则本事件不再触发（互斥分支）
+        public let forbidsEvent: String?
+        /// 要求指定双方当前正处于交战状态
+        public let requireAtWar: (String, String)?
+        /// 要求指定双方当前处于和平状态
+        public let requireAtPeace: (String, String)?
+        /// 要求主导方相对目标方的综合国力比 ≥ 该值（防止弱国凭空吞并/胁迫强国）
+        public let minPowerRatio: Double?
+        /// 要求目标方当前实控州占初始领土比例 ≤ 该值（如维希停战/罗马尼亚倒戈只在战局崩盘时触发！）
+        public let maxTargetControlRatio: Double?
+
+        public init(
+            id: String,
+            scenarioIds: Set<String>,
+            triggerYear: Int,
+            triggerMonth: Int,
+            minDay: Int,
+            title: String,
+            headline: String,
+            dateLabel: String,
+            body: String,
+            effectSummary: String,
+            illustration: String,
+            actorSpecId: String,
+            targetSpecId: String?,
+            choices: [Choice],
+            requiresEvent: String? = nil,
+            forbidsEvent: String? = nil,
+            requireAtWar: (String, String)? = nil,
+            requireAtPeace: (String, String)? = nil,
+            minPowerRatio: Double? = nil,
+            maxTargetControlRatio: Double? = nil
+        ) {
+            self.id = id; self.scenarioIds = scenarioIds
+            self.triggerYear = triggerYear; self.triggerMonth = triggerMonth; self.minDay = minDay
+            self.title = title; self.headline = headline; self.dateLabel = dateLabel
+            self.body = body; self.effectSummary = effectSummary; self.illustration = illustration
+            self.actorSpecId = actorSpecId; self.targetSpecId = targetSpecId; self.choices = choices
+            self.requiresEvent = requiresEvent; self.forbidsEvent = forbidsEvent
+            self.requireAtWar = requireAtWar; self.requireAtPeace = requireAtPeace
+            self.minPowerRatio = minPowerRatio; self.maxTargetControlRatio = maxTargetControlRatio
+        }
     }
 
     public struct PendingModal: Codable, Equatable, Sendable {
@@ -62,6 +107,14 @@ public enum HistoricalEvents {
         public var focusProvince: Int? = nil
         public var resolved: Bool? = nil
         public var appliedEffectCode: String? = nil
+        // v14.0.0：双方实时军力/工业/疆域对比与已生效分支标题（供 HOI4 级事件报刊弹窗渲染）
+        public var actorTroops: Int? = nil
+        public var actorIC: Int? = nil
+        public var actorProvinces: Int? = nil
+        public var targetTroops: Int? = nil
+        public var targetIC: Int? = nil
+        public var targetProvinces: Int? = nil
+        public var chosenTitle: String? = nil
     }
 
     // MARK: - 路线判定与初始化
@@ -91,6 +144,14 @@ public enum HistoricalEvents {
         }
         r.regimes.historicalSpecToNation = mapObj
         r.regimes.historicalSpecIds = revObj
+        // v14.0.0：记录开局各国实控州基数，供维希停战/意大利停战/罗马尼亚倒戈等条件触发事件精确判断战损比例！
+        let initCounts = JS.object()
+        var provCountByNation = [String: Int]()
+        for p in r.world.provinces.asArray {
+            if let ctrl = p.controller.optionalString { provCountByNation[ctrl, default: 0] += 1 }
+        }
+        for (nid, cnt) in provCountByNation { initCounts[nid] = JS(cnt) }
+        r.regimes.initialProvCounts = initCounts
 
         // 依据历史剧本为每个国家设定真实初始军事学说，并立即把史实名将挂编至主力军团
         let era = HistoricalEra.current(r)
@@ -147,49 +208,97 @@ public enum HistoricalEvents {
 
         let playerNationId = r.regimes.playerNationId.optionalString
         let interactiveSandbox = r.regimes.playerInteractiveEvents.isTruthy
+        let scenarioStartYear = HistoricalScenarios.scenario(id: scId)?.year ?? curYear
+
+        func nationControlRatio(_ nid: String) -> Double {
+            let cur = r.world.provinces.asArray.reduce(0) { $0 + ($1.controller.optionalString == nid ? 1 : 0) }
+            let initial = (!r.regimes.initialProvCounts.isNull ? r.regimes.initialProvCounts[nid].optionalNumber : nil).map { max(1.0, $0) } ?? max(1.0, Double(cur))
+            return Double(cur) / initial
+        }
 
         for ev in allEvents where ev.scenarioIds.contains(scId) {
             guard r.regimes.firedEvents[ev.id].isNull else { continue }
-            // v11.0.0 彻底移除 `|| curDay >= ev.minDay + 90` 致命后门！
-            // 严格按史实年份与月份触发，绝不再出现 1936 战云密布第 93 天就提前 3.5 年触发 1939 闪击波兰的时序错乱！
-            let dateReached = (ev.minDay <= 45)
+            // v14.0.0 彻底修复跨剧本月份绕过缺陷：
+            // 仅当事件年份 == 本剧本开局年份且 minDay ≤ 45 时视为开局序幕事件；跨年后续事件（如 1936 剧本中的 1939 白色方案）严格校验 triggerMonth！
+            let isOpeningEvent = (ev.minDay <= 45 && ev.triggerYear == scenarioStartYear)
+            let dateReached = isOpeningEvent
                 ? (curYear >= ev.triggerYear)
                 : ((curYear > ev.triggerYear) || (curYear == ev.triggerYear && curMonth >= ev.triggerMonth))
             guard dateReached else { continue }
             guard curDay >= ev.minDay else { continue }
             guard let actorNid = nationId(r, specId: ev.actorSpecId), Vassals.alive(r, actorNid) else { continue }
-            if let tSpec = ev.targetSpecId {
-                guard let tNid = nationId(r, specId: tSpec), Vassals.alive(r, tNid) else { continue }
+            let targetNid = ev.targetSpecId.flatMap { nationId(r, specId: $0) }
+            if ev.targetSpecId != nil {
+                guard let tNid = targetNid, Vassals.alive(r, tNid) else { continue }
+            }
+            // v14.0.0 钢铁雄心级局势/国力/因果链前置校验（不再无视真实战局盲目触发！）
+            if let reqEv = ev.requiresEvent, r.regimes.firedEvents[reqEv].isNull { continue }
+            if let forbEv = ev.forbidsEvent, !r.regimes.firedEvents[forbEv].isNull { continue }
+            if let (wa, wb) = ev.requireAtWar {
+                guard let na = nationId(r, specId: wa), let nb = nationId(r, specId: wb),
+                      Wars.relation(r, na, nb)?.status.asString == "war" else { continue }
+            }
+            if let (pa, pb) = ev.requireAtPeace {
+                guard let na = nationId(r, specId: pa), let nb = nationId(r, specId: pb),
+                      Wars.relation(r, na, nb)?.status.asString != "war" else { continue }
+            }
+            if let minRatio = ev.minPowerRatio, let tNid = targetNid {
+                let ap = max(1.0, War26.compositePower(r, actorNid).total)
+                let tp = max(1.0, War26.compositePower(r, tNid).total)
+                guard ap / tp >= minRatio else { continue }
+            }
+            if let maxCtrl = ev.maxTargetControlRatio, let tNid = targetNid {
+                guard nationControlRatio(tNid) <= maxCtrl else { continue }
             }
 
             // 标记触发
             r.regimes.firedEvents[ev.id] = JS(curDay)
 
-            let targetNid = ev.targetSpecId.flatMap { nationId(r, specId: $0) }
             let involvesPlayer = (playerNationId != nil) && (playerNationId == actorNid || playerNationId == targetNid)
 
-            if (involvesPlayer || interactiveSandbox) && ev.choices.count > 1 && !historical {
-                // 架空模式下交由玩家对重大历史转折点亲手拍板
+            // v14.0.0 玩家公平权：无论史实或架空路线，凡涉及玩家本国（主导或受害方）的多分支事件一律交由玩家亲手抉择，绝不静默吞并/割让玩家领土！
+            if (involvesPlayer || (interactiveSandbox && !historical)) && ev.choices.count > 1 {
                 storePendingModal(r, ev: ev, historical: historical)
                 return
             }
 
-            // 选择分支：史实路线 100% 执行史实第一分支；架空路线 AI 按确定性哈希 35% 概率走出惊艳架空支线！
+            // 选择分支：史实路线遵循史实分支；架空路线 AI 按综合国力对比加权抉择（强国进取、弱国避战务实）！
             let pickedIndex: Int
             if historical || ev.choices.count <= 1 {
                 pickedIndex = ev.choices.firstIndex(where: \.isHistorical) ?? 0
             } else {
                 let seed = "\(r.world.custom.seed.optionalString ?? "")|\(ev.id)|\(curDay)"
-                let h = Opening.hash(seed) % 100
-                pickedIndex = (h < 65) ? 0 : (1 % ev.choices.count)
+                let roll = Int(Opening.hash(seed) % 100)
+                var histWeight = 62
+                if let tNid = targetNid {
+                    let ratio = max(1.0, War26.compositePower(r, actorNid).total) / max(1.0, War26.compositePower(r, tNid).total)
+                    if ratio < 0.75 { histWeight = 32 } // 主导方处于明显劣势时更倾向走和平/防御分歧
+                    else if ratio > 1.65 { histWeight = 78 }
+                }
+                if roll < histWeight {
+                    pickedIndex = ev.choices.firstIndex(where: \.isHistorical) ?? 0
+                } else {
+                    let alts = ev.choices.indices.filter { !ev.choices[$0].isHistorical }
+                    pickedIndex = alts.isEmpty ? 0 : alts[roll % alts.count]
+                }
             }
             let choice = ev.choices[pickedIndex]
             applyEffectCode(r, code: choice.effectCode, ev: ev, chosenTitle: choice.title)
 
-            // 同时把事件报刊写入 pendingEvent（单确认按钮）供客户端展示重大历史号外，若 15 天未点自动清或玩家一键阅毕
+            // 同时把事件报刊写入 pendingEvent 供客户端展示重大历史号外，若 6 日未点自动收起
             storePendingModal(r, ev: ev, historical: historical, resolvedChoiceIndex: pickedIndex)
             return
         }
+    }
+
+    private static func nationSummaryStats(_ r: JS, nid: String) -> (troops: Int, ic: Int, provinces: Int) {
+        var troops = 0
+        for a in r.world.armies.asArray where a.nationId.optionalString == nid && a.status.asString != "destroyed" {
+            troops += max(0, a.troops.asInt)
+        }
+        let provs = r.world.provinces.asArray.reduce(0) { $0 + ($1.controller.optionalString == nid ? 1 : 0) }
+        let icVal = Int(NuclearWarfare.ic(r, nationId: nid).rounded())
+        return (troops, icVal, provs)
     }
 
     private static func storePendingModal(_ r: JS, ev: EventSpec, historical: Bool, resolvedChoiceIndex: Int? = nil) {
@@ -203,7 +312,7 @@ public enum HistoricalEvents {
         obj.illustration = JS(ev.illustration)
         obj.isHistoricalRoute = JS(historical)
         obj.firedDay = JS(r.world.day.optionalNumber.map(Int.init) ?? 0)
-        // v12.0.0：写入涉事国家双边信息、国色与事发州索引（支持弹窗「定位事发地」飞镜与结构化效果预览标签）
+        // v12.0.0/v14.0.0：写入涉事国家双边信息、国色、实时军力/IC/疆域对比与事发州索引
         let nationsArr = r.world.nations.asArray
         let provsArr = r.world.provinces.asArray
         let actorNid = nationId(r, specId: ev.actorSpecId)
@@ -211,10 +320,14 @@ public enum HistoricalEvents {
         if let actorNid, let an = nationsArr.first(where: { $0.id.optionalString == actorNid }) {
             obj.actorName = JS(an.name.optionalString ?? Vassals.name(r, actorNid))
             obj.actorColor = JS(an.color.optionalString ?? "#B84A39")
+            let st = nationSummaryStats(r, nid: actorNid)
+            obj.actorTroops = JS(st.troops); obj.actorIC = JS(st.ic); obj.actorProvinces = JS(st.provinces)
         }
         if let targetNid, let tn = nationsArr.first(where: { $0.id.optionalString == targetNid }) {
             obj.targetName = JS(tn.name.optionalString ?? Vassals.name(r, targetNid))
             obj.targetColor = JS(tn.color.optionalString ?? "#4A6B8A")
+            let st = nationSummaryStats(r, nid: targetNid)
+            obj.targetTroops = JS(st.troops); obj.targetIC = JS(st.ic); obj.targetProvinces = JS(st.provinces)
         }
         let focusNid = targetNid ?? actorNid
         if let focusNid, let capPid = Rebellion.capitalProvince(r, focusNid),
@@ -225,6 +338,7 @@ public enum HistoricalEvents {
             obj.resolved = JS(true)
             let c = ev.choices[idx]
             obj.appliedEffectCode = JS(c.effectCode)
+            obj.chosenTitle = JS(c.title)
             let cObj = JS.object()
             cObj.title = JS(c.title)
             cObj.subtitle = JS(c.subtitle)
@@ -275,6 +389,13 @@ public enum HistoricalEvents {
         m.focusProvince = e.focusProvince.optionalNumber.map(Int.init)
         m.resolved = e.resolved.isTruthy
         m.appliedEffectCode = e.appliedEffectCode.optionalString
+        m.actorTroops = e.actorTroops.optionalNumber.map(Int.init)
+        m.actorIC = e.actorIC.optionalNumber.map(Int.init)
+        m.actorProvinces = e.actorProvinces.optionalNumber.map(Int.init)
+        m.targetTroops = e.targetTroops.optionalNumber.map(Int.init)
+        m.targetIC = e.targetIC.optionalNumber.map(Int.init)
+        m.targetProvinces = e.targetProvinces.optionalNumber.map(Int.init)
+        m.chosenTitle = e.chosenTitle.optionalString
         return m
     }
 
@@ -314,7 +435,14 @@ public enum HistoricalEvents {
                    let winner = nationId(r, specId: parts[1]),
                    let victim = nationId(r, specId: parts[2]),
                    winner != victim, Vassals.alive(r, winner), Vassals.alive(r, victim) {
-                    annexNation(r, winner: winner, victim: victim)
+                    // v14.0.0 公平国力守护：若吞并方综合国力远不如目标国（< 0.75×），降级为正面宣战，杜绝弱国凭脚本一键蒸发强国！
+                    let wp = max(1.0, War26.compositePower(r, winner).total)
+                    let vp = max(1.0, War26.compositePower(r, victim).total)
+                    if wp / vp >= 0.75 {
+                        annexNation(r, winner: winner, victim: victim)
+                    } else {
+                        forceHistoricalWar(r, attacker: winner, defender: victim, callAllies: false, reason: ev.title)
+                    }
                 }
             case "cede", "cede_east":
                 if parts.count >= 4,
@@ -322,7 +450,31 @@ public enum HistoricalEvents {
                    let to = nationId(r, specId: parts[2]),
                    let pct = Int(parts[3]),
                    from != to, Vassals.alive(r, from), Vassals.alive(r, to) {
-                    cedeProvinces(r, from: from, to: to, percent: pct, preferEast: op == "cede_east")
+                    // v14.0.0 公平割地守护：若双方交战且割地方正在大优（兵力 ≥ 对方 1.5× 且本土未丢超 10%），绝不无视战局强行割地！
+                    let atWarNow = Wars.relation(r, from, to)?.status.asString == "war"
+                    var skipUnfair = false
+                    if atWarNow {
+                        let fStats = nationSummaryStats(r, nid: from)
+                        let tStats = nationSummaryStats(r, nid: to)
+                        let initCnt = (!r.regimes.initialProvCounts.isNull ? r.regimes.initialProvCounts[from].optionalNumber : nil) ?? Double(max(1, fStats.provinces))
+                        if Double(fStats.troops) >= Double(max(1, tStats.troops)) * 1.5 && Double(fStats.provinces) >= initCnt * 0.90 {
+                            skipUnfair = true
+                        }
+                    }
+                    if !skipUnfair {
+                        cedeProvinces(r, from: from, to: to, percent: pct, preferEast: op == "cede_east")
+                    }
+                }
+            case "puppet_split":
+                // v14.0.0 维希停战式分区傀儡：puppet_split:victorSpec:victimSpec:cedePct
+                if parts.count >= 4,
+                   let victor = nationId(r, specId: parts[1]),
+                   let victim = nationId(r, specId: parts[2]),
+                   let pct = Int(parts[3]),
+                   victor != victim, Vassals.alive(r, victor), Vassals.alive(r, victim) {
+                    cedeProvinces(r, from: victim, to: victor, percent: max(15, min(65, pct)), preferEast: false)
+                    forceHistoricalPeace(r, a: victor, b: victim)
+                    makeHistoricalVassal(r, overlord: victor, vassal: victim, tributeRate: 0.22)
                 }
             case "vassal":
                 if parts.count >= 3,
@@ -374,12 +526,9 @@ public enum HistoricalEvents {
                     )
                 }
             case "ic":
+                // v14.0.0：改用 NuclearWarfare.addEventIC 写入永久 eventICBonus，绝不再被月度平滑侵蚀归零！
                 if parts.count >= 3, let nid = nationId(r, specId: parts[1]), let delta = Double(parts[2]) {
-                    NuclearWarfare.ensureInitialized(r)
-                    if !r.regimes.hoi4.isNull && !r.regimes.hoi4.nations[nid].isNull {
-                        let cur = r.regimes.hoi4.nations[nid].ic.optionalNumber ?? 50
-                        r.regimes.hoi4.nations[nid].ic = JS(min(500.0, max(10.0, cur + delta)))
-                    }
+                    NuclearWarfare.addEventIC(r, nationId: nid, delta: delta)
                 }
             case "tension":
                 if parts.count >= 2, let delta = Double(parts[1]) {
@@ -404,6 +553,51 @@ public enum HistoricalEvents {
                         r.finance.nations[nid].gold = JS(max(0.0, cur + delta))
                     }
                 }
+            case "gold_months":
+                // v14.0.0 按月财政收入动态比例收支（支持正负数，公平适配大中小国与古今经济体量！）
+                if parts.count >= 3, let nid = nationId(r, specId: parts[1]), let months = Double(parts[2]) {
+                    if !r.finance.isNull && !r.finance.nations.isNull && !r.finance.nations[nid].isNull {
+                        let gpm = max(45.0, abs(r.finance.nations[nid].goldPerMonth.optionalNumber ?? 60.0))
+                        let cur = r.finance.nations[nid].gold.optionalNumber ?? 0
+                        r.finance.nations[nid].gold = JS(max(0.0, cur + gpm * months))
+                    }
+                }
+            case "lend_lease":
+                // v14.0.0 真实有代价的租借物资：lend_lease:donorSpec:recipSpec:icDelta:goldMonths
+                if parts.count >= 5,
+                   let donor = nationId(r, specId: parts[1]),
+                   let recip = nationId(r, specId: parts[2]),
+                   let icD = Double(parts[3]),
+                   let gm = Double(parts[4]),
+                   Vassals.alive(r, donor), Vassals.alive(r, recip) {
+                    if !r.finance.isNull && !r.finance.nations[donor].isNull {
+                        let dgpm = max(45.0, abs(r.finance.nations[donor].goldPerMonth.optionalNumber ?? 60.0))
+                        let dcur = r.finance.nations[donor].gold.optionalNumber ?? 0
+                        r.finance.nations[donor].gold = JS(max(0.0, dcur - dgpm * max(0.5, gm * 0.6)))
+                    }
+                    if !r.finance.isNull && !r.finance.nations[recip].isNull {
+                        let rgpm = max(55.0, abs(r.finance.nations[recip].goldPerMonth.optionalNumber ?? 70.0))
+                        let rcur = r.finance.nations[recip].gold.optionalNumber ?? 0
+                        r.finance.nations[recip].gold = JS(max(0.0, rcur + rgpm * gm))
+                    }
+                    NuclearWarfare.addEventIC(r, nationId: recip, delta: icD)
+                }
+            case "spawn_army":
+                // v14.0.0 紧急成军/叛军起兵：spawn_army:specId:troops:label
+                if parts.count >= 4, let nid = nationId(r, specId: parts[1]), let tr = Int(parts[2]), Vassals.alive(r, nid) {
+                    spawnHistoricalArmy(r, nationId: nid, troops: max(1200, min(60000, tr)), customName: parts[3])
+                }
+            case "stability":
+                if parts.count >= 3, let nid = nationId(r, specId: parts[1]), let delta = Double(parts[2]) {
+                    if !r.destiny.isNull && !r.destiny.nations[nid].isNull {
+                        let cur = r.destiny.nations[nid].destiny.optionalNumber ?? 50.0
+                        r.destiny.nations[nid].destiny = JS(max(5.0, min(100.0, cur + delta)))
+                    }
+                }
+            case "war_support":
+                if parts.count >= 3, let nid = nationId(r, specId: parts[1]), let delta = Double(parts[2]) {
+                    NuclearWarfare.adjustWarSupport(r, nationId: nid, delta: delta)
+                }
             case "morale":
                 if parts.count >= 3, let nid = nationId(r, specId: parts[1]), let delta = Double(parts[2]) {
                     for army in r.world.armies.asArray where army.nationId.optionalString == nid && army.troops.asNumber > 0 {
@@ -412,10 +606,12 @@ public enum HistoricalEvents {
                     }
                 }
             case "law":
-                if parts.count >= 3,
-                   let nid = nationId(r, specId: parts[1]),
-                   let reform = Regimes.reforms.first(where: { $0.id == parts[2] }) {
-                    Regimes.setReform(r, nid, reform, on: true)
+                if parts.count >= 3, let nid = nationId(r, specId: parts[1]) {
+                    if let reform = Regimes.reforms.first(where: { $0.id == parts[2] }) {
+                        Regimes.setReform(r, nid, reform, on: true)
+                    }
+                    // v14.0.0 修复：同步切换 NuclearWarfare 真实动员法案，杜绝法令与经济动员脱节！
+                    NuclearWarfare.syncMobilizationFromReform(r, nationId: nid, reformId: parts[2])
                 }
             default:
                 break
@@ -549,14 +745,31 @@ public enum HistoricalEvents {
         DiplomacyDeep.adjustOpinionMod(r, lordId, vassalId, delta: 25)
     }
 
+    private static func spawnHistoricalArmy(_ r: JS, nationId nid: String, troops: Int, customName: String) {
+        let capPid = Rebellion.capitalProvince(r, nid)
+            ?? r.world.provinces.asArray.first(where: { $0.controller.optionalString == nid })?.id.asString
+        guard let home = capPid else { return }
+        let beforeCount = r.world.armies.length
+        _ = Armies.create(r, nation: nid, home: home, kind: "emergency")
+        if r.world.armies.length > beforeCount {
+            let a = r.world.armies[r.world.armies.length - 1]
+            let aid = a.id.asString
+            a.troops = JS(troops)
+            if !customName.isEmpty { a.name = JS(customName) }
+            if !r.tactics.forces[aid].isNull {
+                r.tactics.forces[aid].fullStrength = JS(troops)
+            }
+        }
+    }
+
     private static func forceHistoricalWar(_ r: JS, attacker: String, defender: String, callAllies: Bool, reason: String) {
         if Wars.relation(r, attacker, defender)?.status.asString == "war" { return }
         DiplomacyDeep.breakTreatiesOnWar(r, attacker, defender)
         DiplomacyDeep.adjustOpinionMod(r, attacker, defender, delta: -60)
-        // 使用引擎正规宣战建档（含战争目标、联军共同参战与军队态势重算），确保 AI 立刻按战事出兵推进！
+        // v14.0.0 修复：严格传递 callAllies 与 isOpening: false，彻底消灭苏联攻波兰误拖英法对苏开战 & 九一八一日全国同盟宣战缺陷！
         if let scId = r.regimes.historicalScenarioId.optionalString,
            let sc = HistoricalScenarios.scenario(id: scId),
-           HistoricalScenarios.registerHistoricalWarDirectly(r, attacker: attacker, defender: defender, casusBelli: reason, scenario: sc) {
+           HistoricalScenarios.registerHistoricalWarDirectly(r, attacker: attacker, defender: defender, casusBelli: reason, scenario: sc, callAllies: callAllies, isOpening: false) {
             War26.reconcileForces(r, [])
             if Naval.sea != nil { Naval.reconcileLandOwners(r) }
             DiplomacyBridge.reconcile(r)

@@ -101,7 +101,7 @@ public struct ContactMotion {
     }
 
     /// contacts(): keep still-valid old pairs, add every hostile pair sharing an area, hold their members.
-    /// v13.0.0：全扁平整数数组与整型分区索引（彻底消灭内层 O(k²) 字符串字典哈希），保持 100% 确定性与网页逐字节黄金一致！
+    /// v14.0.0：UInt64 整型对键去重 + 零内层 JSON 字符串转义拼接 + 预容分区字典，保持 100% 确定性与网页逐字节黄金一致！
     func contacts(_ forces: [MovingForce], _ old: [ForceContact], _ rules: Rules, _ ready: [String: Position]? = nil) -> (contacts: [ForceContact], held: Set<String>, positions: [String: Position]) {
         let p = ready ?? positions(forces)
         let n = forces.count
@@ -122,8 +122,22 @@ public struct ContactMotion {
         }
         let reach2 = rules.reach * rules.reach
         let physical = rules.physicalContact
-        var pairs = [String: ForceContact](), order = [String]()
-        func put(_ c: ForceContact) { let k = ContactMotion.pairKey(c.a, c.b); if pairs[k] == nil { order.append(k) }; pairs[k] = c }
+        @inline(__always)
+        func intPairKey(_ i: Int, _ j: Int) -> UInt64 {
+            let lo = UInt64(i < j ? i : j)
+            let hi = UInt64(i < j ? j : i)
+            return (lo << 32) | hi
+        }
+        var pairs = [UInt64: ForceContact]()
+        var pairList = [UInt64]()
+        pairs.reserveCapacity(max(8, old.count + 8))
+        pairList.reserveCapacity(max(8, old.count + 8))
+        @inline(__always)
+        func put(_ ai: Int, _ bi: Int, _ c: ForceContact) {
+            let k = intPairKey(ai, bi)
+            if pairs[k] == nil { pairList.append(k) }
+            pairs[k] = c
+        }
         @inline(__always)
         func eligibleIdx(_ ai: Int, _ bi: Int, sea: Bool) -> Bool {
             if !rules.enemy(nations[ai], nations[bi]) { return false }
@@ -139,10 +153,12 @@ public struct ContactMotion {
             let isSea = c.area.hasPrefix("sea/")
             let departed = isSea && (withdrawing[ai] || withdrawing[bi]) && areaKey(cells[ai], rules) != areaKey(cells[bi], rules)
             if !departed && pts[ai] == c.pointA && pts[bi] == c.pointB && Int(graph.ids[cells[ai]]) == c.cellA && Int(graph.ids[cells[bi]]) == c.cellB && eligibleIdx(ai, bi, sea: isSea) {
-                put(c)
+                put(ai, bi, c)
             }
         }
-        var groups = [Int: [Int]](), groupOrder = [Int]()
+        var groups = [Int: [Int]](minimumCapacity: min(n, 256))
+        var groupOrder = [Int]()
+        groupOrder.reserveCapacity(min(n, 256))
         for i in 0..<n {
             let ar = areaKey(cells[i], rules)
             if groups[ar] == nil { groupOrder.append(ar) }
@@ -168,20 +184,31 @@ public struct ContactMotion {
                     }
                     if name == nil { name = area(cells[ai], rules) }
                     war = true
-                    put(pair(forces[ai].key, forces[bi].key, p, name!))
+                    var ka = forces[ai].key, kb = forces[bi].key
+                    var xi = ai, yi = bi
+                    if kb.utf16.lexicographicallyPrecedes(ka.utf16) { swap(&ka, &kb); swap(&xi, &yi) }
+                    put(ai, bi, ForceContact(a: ka, b: kb, cellA: Int(graph.ids[cells[xi]]), cellB: Int(graph.ids[cells[yi]]), pointA: pts[xi], pointB: pts[yi], area: name!))
                 }
             }
             if war && !physical && sea {
                 for idx in group where !withdrawing[idx] { held.insert(forces[idx].key) }
             }
         }
-        for k in order {
-            let c = pairs[k]!
+        if pairList.isEmpty {
+            return ([], held, p)
+        }
+        var keyed = [(String, ForceContact)]()
+        keyed.reserveCapacity(pairList.count)
+        for pk in pairList {
+            let c = pairs[pk]!
             if let ai = indexByKey[c.a], !withdrawing[ai] { held.insert(c.a) }
             if let bi = indexByKey[c.b], !withdrawing[bi] { held.insert(c.b) }
+            keyed.append((ContactMotion.pairKey(c.a, c.b), c))
         }
-        let sorted = order.sorted { Collate.less($0, $1) }.map { pairs[$0]! }
-        return (sorted, held, p)
+        if keyed.count > 1 {
+            keyed.sort { Collate.less($0.0, $1.0) }
+        }
+        return (keyed.map(\.1), held, p)
     }
 
     static func identity(_ pairs: [ForceContact]) -> [String] {

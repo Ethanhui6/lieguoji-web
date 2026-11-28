@@ -21,11 +21,48 @@ public final class JS: CustomStringConvertible {
                 guard let newValue else { if values.removeValue(forKey: key) != nil { keys.removeAll { $0 == key } }; return }
                 if values.updateValue(newValue, forKey: key) == nil {
                     if let i = Object.index(key) {
-                        let at = keys.firstIndex { k in guard let j = Object.index(k) else { return true }; return j > i } ?? keys.count
-                        keys.insert(key, at: at)
+                        // v14.0.0：数组下标前缀有序区二分查找插入位，消灭 O(N²) 线性扫描！
+                        var lo = 0, hi = keys.count
+                        while lo < hi {
+                            let mid = (lo + hi) >> 1
+                            if let j = Object.index(keys[mid]), j < i {
+                                lo = mid + 1
+                            } else {
+                                hi = mid
+                            }
+                        }
+                        keys.insert(key, at: lo)
                     } else { keys.append(key) }
                 }
             }
+        }
+        /// 仅用于 `JS.parse` 批量构建：直接追加并最后一次性归并排序数组下标键，彻底消除解析 3500+ 人物字典时的 O(N²) 插入与频繁移位。
+        mutating func parseInsert(_ key: String, _ value: JS, hasNumeric: inout Bool) {
+            if values.updateValue(value, forKey: key) == nil {
+                keys.append(key)
+                if !hasNumeric, let b = key.utf8.first, b >= 48 && b <= 57, Object.index(key) != nil {
+                    hasNumeric = true
+                }
+            }
+        }
+        mutating func finalizeParsedKeys() {
+            var idxKeys: [(UInt32, String)] = []
+            var strKeys: [String] = []
+            idxKeys.reserveCapacity(keys.count)
+            strKeys.reserveCapacity(keys.count)
+            for k in keys {
+                if let i = Object.index(k) {
+                    idxKeys.append((i, k))
+                } else {
+                    strKeys.append(k)
+                }
+            }
+            if idxKeys.count > 1 {
+                idxKeys.sort { $0.0 < $1.0 }
+            }
+            keys.removeAll(keepingCapacity: true)
+            for p in idxKeys { keys.append(p.1) }
+            keys.append(contentsOf: strKeys)
         }
         public var entries: [(String, JS)] { keys.map { ($0, values[$0]!) } }
     }
@@ -282,11 +319,14 @@ public final class JS: CustomStringConvertible {
             case 123:
                 i += 1; var o = Object(); skip()
                 if bytes[i] == 125 { i += 1; return JS(.object(o)) }
+                var hasNumeric = false
                 while true {
                     skip(); let k = try string(); skip(); guard bytes[i] == 58 else { throw ParseError(at: i) }; i += 1
-                    o[k] = try value(); skip()
+                    o.parseInsert(k, try value(), hasNumeric: &hasNumeric); skip()
                     if bytes[i] == 44 { i += 1; continue }
-                    guard bytes[i] == 125 else { throw ParseError(at: i) }; i += 1; return JS(.object(o))
+                    guard bytes[i] == 125 else { throw ParseError(at: i) }; i += 1
+                    if hasNumeric { o.finalizeParsedKeys() }
+                    return JS(.object(o))
                 }
             case 91:
                 i += 1; var a = [JS](); skip()
@@ -301,24 +341,103 @@ public final class JS: CustomStringConvertible {
             case 102: i += 5; return JS(.bool(false))
             case 110: i += 4; return JS(.null)
             default:
-                let start = i
-                while i < bytes.count, (bytes[i] >= 48 && bytes[i] <= 57) || bytes[i] == 45 || bytes[i] == 43 || bytes[i] == 46 || bytes[i] == 101 || bytes[i] == 69 { i += 1 }
-                guard let n = Double(String(decoding: bytes[start..<i], as: UTF8.self)) else { throw ParseError(at: start) }
-                return JS(.number(n))
+                return JS(.number(try number()))
             }
+        }
+        /// v14.0.0 零 String 分配快速数字解析：常见整数与短小数直接累加，仅科学计数法或超长有效位回退标准 `Double(String)` 保证 IEEE-754 精确舍入。
+        mutating func number() throws -> Double {
+            let start = i
+            let count = bytes.count
+            var neg = false
+            if i < count && bytes[i] == 45 { neg = true; i += 1 }
+            else if i < count && bytes[i] == 43 { i += 1 }
+            var intVal: UInt64 = 0
+            var intDigits = 0
+            while i < count {
+                let b = bytes[i]
+                if b >= 48 && b <= 57 {
+                    if intDigits < 15 { intVal = intVal &* 10 &+ UInt64(b &- 48) }
+                    intDigits += 1
+                    i += 1
+                } else {
+                    break
+                }
+            }
+            var hasDot = false
+            var fracVal: UInt64 = 0
+            var fracDigits = 0
+            if i < count && bytes[i] == 46 {
+                hasDot = true
+                i += 1
+                while i < count {
+                    let b = bytes[i]
+                    if b >= 48 && b <= 57 {
+                        if intDigits + fracDigits < 15 { fracVal = fracVal &* 10 &+ UInt64(b &- 48) }
+                        fracDigits += 1
+                        i += 1
+                    } else {
+                        break
+                    }
+                }
+            }
+            var hasExp = false
+            if i < count && (bytes[i] == 101 || bytes[i] == 69) {
+                hasExp = true
+                i += 1
+                if i < count && (bytes[i] == 45 || bytes[i] == 43) { i += 1 }
+                while i < count && bytes[i] >= 48 && bytes[i] <= 57 { i += 1 }
+            }
+            guard i > start else { throw ParseError(at: start) }
+            if !hasExp && intDigits > 0 && intDigits + fracDigits <= 15 && (!hasDot || fracDigits > 0) {
+                if !hasDot {
+                    let d = Double(intVal)
+                    return neg ? -d : d
+                }
+                // 10^1 ... 10^14 精确可由 Double 表示，單次除法满足 IEEE-754 最近舍入
+                var p10 = 1.0
+                switch fracDigits {
+                case 1: p10 = 1e1; case 2: p10 = 1e2; case 3: p10 = 1e3; case 4: p10 = 1e4
+                case 5: p10 = 1e5; case 6: p10 = 1e6; case 7: p10 = 1e7; case 8: p10 = 1e8
+                case 9: p10 = 1e9; case 10: p10 = 1e10; case 11: p10 = 1e11; case 12: p10 = 1e12
+                case 13: p10 = 1e13; case 14: p10 = 1e14
+                default: p10 = pow(10.0, Double(fracDigits))
+                }
+                let combined = Double(intVal) * p10 + Double(fracVal)
+                let d = combined / p10
+                return neg ? -d : d
+            }
+            guard let n = Double(String(decoding: bytes[start..<i], as: UTF8.self)) else { throw ParseError(at: start) }
+            return n
         }
         mutating func string() throws -> String {
             guard bytes[i] == 34 else { throw ParseError(at: i) }
-            i += 1; var out = [UInt8](), start = i
-            while bytes[i] != 34 {
+            i += 1; let firstStart = i
+            let count = bytes.count
+            // v14.0.0 99.9% 无转义快速通道：零临时 [UInt8] 堆分配直接切片解码 UTF-8！
+            while i < count {
+                let b = bytes[i]
+                if b == 34 {
+                    let s = String(decoding: bytes[firstStart..<i], as: UTF8.self)
+                    i += 1
+                    return s
+                }
+                if b == 92 { break }
+                i += 1
+            }
+            guard i < count else { throw ParseError(at: i) }
+            var out = [UInt8]()
+            out.reserveCapacity((i - firstStart) + 16)
+            var start = firstStart
+            while i < count && bytes[i] != 34 {
                 if bytes[i] == 92 {
                     out.append(contentsOf: bytes[start..<i]); i += 1
+                    guard i < count else { throw ParseError(at: i) }
                     switch bytes[i] {
                     case 110: out.append(10); case 116: out.append(9); case 114: out.append(13); case 98: out.append(8); case 102: out.append(12)
                     case 117:
-                        guard i + 4 < bytes.count, let parsed = UInt32(String(decoding: bytes[(i + 1)...(i + 4)], as: UTF8.self), radix: 16) else { throw ParseError(at: i) }
+                        guard i + 4 < count, let parsed = UInt32(String(decoding: bytes[(i + 1)...(i + 4)], as: UTF8.self), radix: 16) else { throw ParseError(at: i) }
                         var code = parsed; i += 4
-                        if code >= 0xD800 && code < 0xDC00, i + 6 < bytes.count, bytes[i + 1] == 92, bytes[i + 2] == 117, let low = UInt32(String(decoding: bytes[(i + 3)...(i + 6)], as: UTF8.self), radix: 16) {
+                        if code >= 0xD800 && code < 0xDC00, i + 6 < count, bytes[i + 1] == 92, bytes[i + 2] == 117, let low = UInt32(String(decoding: bytes[(i + 3)...(i + 6)], as: UTF8.self), radix: 16) {
                             code = 0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00); i += 6
                         }
                         out.append(contentsOf: Array(String(Character(Unicode.Scalar(code) ?? "\u{FFFD}")).utf8))
@@ -327,6 +446,7 @@ public final class JS: CustomStringConvertible {
                     i += 1; start = i
                 } else { i += 1 }
             }
+            guard i < count else { throw ParseError(at: i) }
             out.append(contentsOf: bytes[start..<i]); i += 1
             return String(decoding: out, as: UTF8.self)
         }

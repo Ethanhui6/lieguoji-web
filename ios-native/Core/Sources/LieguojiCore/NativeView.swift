@@ -24,14 +24,14 @@ extension NativeEngine {
     /// `owners`：每州所属分组（国家图为国家序号；文化、家族等视图为图例序号）。`name` 给出分组名用于估算字数；
     /// 不给时按国家序号取国名（序号越界则按空名）。以前视图分组直接拿去取国家数组，分组多于国家时越界闪退。
     func labels(_ owners: [Int], name: ((Int) -> String)? = nil) -> JS {
-        let grid = statics.labelGrid
-        if grid.isNull { return .array() }
-        // The label grid is fixed for a world: read into arrays once.
-        let cache: (points: [Double], cells: [Int])
+        // v14.0.0：支持 LGST v2 二进制 labelGrid（labelGridCache 已在 decodeCompactEnvelope 预填，即使 statics.labelGrid 剥离也零开销直接可用！）
+        let cache: (cellsX: Int, points: [Double], cells: [Int])
         if let existing = labelGridCache {
             cache = existing
         } else {
-            let built = (grid.points.asArray.map(\.asNumber), grid.cells.asArray.map(\.asInt))
+            let grid = statics.labelGrid
+            if grid.isNull { return .array() }
+            let built = (grid.cellsX.asInt, grid.points.asArray.map(\.asNumber), grid.cells.asArray.map(\.asInt))
             labelGridCache = built
             cache = built
         }
@@ -53,7 +53,7 @@ extension NativeEngine {
             }
         }
         return Self.computeStateLabelBoxes(
-            cellsX: grid.cellsX.asInt,
+            cellsX: cache.cellsX,
             points: cache.points,
             cells: cache.cells,
             owners: owners,
@@ -200,19 +200,24 @@ extension NativeEngine {
                     }
                     addPlace(nearCenter)
                     for q in quadBest where q >= 0 { addPlace(q) }
-                    let stride = max(1, inner.count / 14)
-                    for idx in Swift.stride(from: 0, to: inner.count, by: stride) where places.count < 20 {
-                        addPlace(inner[idx])
+                    // v14.0.0：确定性均匀采点（消除 inner.count / 14 离散阶跃跳变）
+                    let sampleCount = min(16, inner.count)
+                    if sampleCount > 1 {
+                        for kIdx in 0..<sampleCount where places.count < 22 {
+                            let idx = (kIdx * (inner.count - 1)) / (sampleCount - 1)
+                            addPlace(inner[idx])
+                        }
                     }
                 }
-                // 仅当领土呈明显狭长斜带（主轴/次轴特征比 ≥ 2.1）时才考虑 ±14° 温和倾角；其余一律端正水平排版！
+                // v14.0.0：连续柔化倾角策略（特征比 ≥ 2.0 且明显倾斜时平滑纳入小倾角，杜绝单州得失引发 0° ↔ ±14° 突变）
                 let trace = sxx + syy
                 let disc = max(0.0, (sxx - syy) * (sxx - syy) + 4 * sxy * sxy).squareRoot()
                 let lambdaMax = max(1e-6, (trace + disc) * 0.5)
                 let lambdaMin = max(1e-6, (trace - disc) * 0.5)
                 let eigenRatio = (lambdaMax / lambdaMin).squareRoot()
-                let gentleTheta = max(-0.24, min(0.24, theta))
-                let candidateAngles: [Double] = (eigenRatio >= 2.1 && abs(gentleTheta) >= 0.10) ? [0, gentleTheta] : [0]
+                let tiltWeight = max(0.0, min(1.0, (eigenRatio - 1.85) / 0.85))
+                let gentleTheta = max(-0.26, min(0.26, theta * tiltWeight))
+                let candidateAngles: [Double] = abs(gentleTheta) >= 0.08 ? [0, gentleTheta] : [0]
 
                 let letters = Double(max(1, MapLayers.stateLabel(nameOf(k), full: true).count))
                 let step = min(dx, dy) * 0.55
@@ -267,8 +272,9 @@ extension NativeEngine {
                         let height = chosenH / unit
                         let away = ((x - cx) * (x - cx) + (y - cy) * (y - cy)).squareRoot() / unit
                         let baseSize = min(width / letters, height)
-                        let orientationBonus: Double = angle == 0 ? 1.35 : 1.0
-                        let insideFactor = chosenInside >= 0.86 ? (0.85 + chosenInside * 0.15) : (chosenInside * chosenInside * chosenInside * 0.55)
+                        let orientationBonus: Double = angle == 0 ? 1.28 : 1.0
+                        // v14.0.0：用连续平滑 S 曲线替代 0.86 悬崖阈值，避免一格失守导致国名整体跳飞
+                        let insideFactor = pow(max(0.05, min(1.0, chosenInside)), 2.2)
                         let depthBonus = 1.0 + min(0.28, Double(depth[centerCell]) / max(4.0, Double(deepestDepth)) * 0.28)
                         var score = baseSize * orientationBonus * insideFactor * depthBonus - away * 0.008
                         if let cap = capPos {
@@ -430,9 +436,12 @@ extension NativeEngine {
         var banners = [String: (kind: String, mark: String, name: String)]()
         if !r.regimes.isNull {
             func label(_ p: JS) -> (mark: String, name: String) {
-                let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? "", culture = p.cultureName.optionalString ?? ""
-                let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
-                return (String((last.isEmpty ? first : last).prefix(1)), familyFirst ? last + first : last.isEmpty ? first : first + "·" + last)
+                // v14.0.0：统一调用 displayPersonName（尊重 identity.name 与 NamingCatalog.formatPerson 全部 26 文化格式），不再硬编码中/日姓前！
+                let full = Self.displayPersonName(p)
+                let last = NamingCatalog.cleanSurname(p.lastName.optionalString ?? "")
+                let first = p.firstName.optionalString ?? ""
+                let markSrc = !last.isEmpty ? last : (!first.isEmpty ? first : full)
+                return (String(markSrc.prefix(1)), full)
             }
             // 各国最大的一支军队：一次遍历得出（原先每国都把全部军队筛一遍）。
             var largest = [String: JS]()
@@ -474,8 +483,9 @@ extension NativeEngine {
             }
             let rawRx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
             let rawRy = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
-            let rx = slim ? (rawRx * 10.0).rounded() / 10.0 : rawRx
-            let ry = slim ? (rawRy * 10.0).rounded() / 10.0 : rawRy
+            // v14.0.0：保留原生亚像素坐标（取消 0.1 阶梯取整），配合 GPU Hermite 轨迹缓冲实现 120Hz 丝滑行军！
+            let rx = rawRx
+            let ry = rawRy
             armyPoint.append((rx, ry))
             // Destination province of a march (last travel node), for the army panel, plus O(1) fast terrain route & ETA.
             var dest = -1

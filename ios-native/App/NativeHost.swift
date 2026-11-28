@@ -16,9 +16,9 @@ struct ComputeRouteInfo: Identifiable, Equatable, Sendable {
     var active: Bool
 
     static let builtInRoutes: [ComputeRouteInfo] = [
-        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 v17 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "推荐主线 · LGC2 极速直连", rttMs: nil, active: false),
-        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 v17 · 8443 高速容灾专线", address: "111.230.153.235:8443", tag: "高速容灾 · LGC2 极速直连", rttMs: nil, active: false),
-        ComputeRouteInfo(id: "tencent-443", name: "九州云服 v17 · 443 备用穿透专线", address: "111.230.153.235:443", tag: "企业网/校园网穿透备用", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 v18 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "推荐主线 · LGC2 极速直连", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 v18 · 8443 高速容灾专线", address: "111.230.153.235:8443", tag: "高速容灾 · LGC2 极速直连", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-443", name: "九州云服 v18 · 443 备用穿透专线", address: "111.230.153.235:443", tag: "企业网/校园网穿透备用", rttMs: nil, active: false),
         ComputeRouteInfo(id: "lan-udp", name: "同 Wi-Fi 电脑端直连（可选）", address: "lan", tag: "仅在电脑运行服务端时可用", rttMs: nil, active: false),
     ]
 
@@ -599,7 +599,7 @@ actor NativeHost {
     }
 
     /// 轻量级非驱逐直连 TCP 探针（硬截止 + 取消立即销毁 socket，绝不在黑洞端口挂死 `withTaskGroup`），返回真实往返 RTT（毫秒）。
-    nonisolated static func probeDirectTCP(_ address: String, timeout: Double = 1.4) async -> Int? {
+    nonisolated static func probeDirectTCP(_ address: String, timeout: Double = 2.2) async -> Int? {
         let clean = address.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return nil }
         var host = clean
@@ -708,11 +708,31 @@ actor NativeHost {
         return (day, wid, hasCat)
     }
 
+    private final class DisplayedDayBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var day: Int = 0
+        var value: Int {
+            lock.lock(); defer { lock.unlock() }; return day
+        }
+        func update(_ d: Int) {
+            lock.lock()
+            if d > day { day = d }
+            lock.unlock()
+        }
+        func reset(_ d: Int = 0) {
+            lock.lock()
+            day = d
+            lock.unlock()
+        }
+    }
+    private let displayedDayBox = DisplayedDayBox()
+    nonisolated func noteDisplayedDay(_ day: Int) { displayedDayBox.update(day) }
+
     private func knownWorldMeta() -> (worldId: String, day: Int) {
         let svcWid = service.currentWorldId
         let wid = !svcWid.isEmpty ? svcWid : currentWorldId
         let svcDay = service.engine != nil ? service.currentDay : 0
-        let day = max(svcDay, currentKnownDay, streamBuffer.lastDay)
+        let day = max(svcDay, currentKnownDay, streamBuffer.lastDay, displayedDayBox.value)
         return (wid, day)
     }
 
@@ -817,33 +837,39 @@ actor NativeHost {
                         }
                     }
                 }
-                // v8.0.0 永不锁死玩家：云服掉线时立刻无缝回落本机引擎继续可玩（绝不再逼玩家手动重连才能点地图！）
-                if service.engine == nil, let snap = lastWorld {
-                    _ = service.handle("open", [:], payload: snap)
-                    service.engine?.enableAppRules()
-                }
-                if service.engine != nil {
-                    lost = false
+                // v14.0.0 零时间回退铁律：云服断链后绝不静默打开旧版 lastWorld 在本机倒退推演！
+                // 保持屏幕当前云端日期冻结待命并触发自动多端口重连（仅在玩家显式点击「切回本机」时才切换本地）。
+                if !parked {
+                    lost = true
                     onLinkLost?()
-                    return service.handle(name, args, payload: payload)
                 }
-                lost = true
-                return EngineService.Reply(ok: false, reason: "与服务器的连接中断")
+                return EngineService.Reply(ok: false, reason: "云服重连中，已保留当前进度")
             }
         }
         if parked { return EngineService.Reply(ok: false, reason: "已暂存后台，返回前台即自动续连") }
         if lost {
-            if service.engine == nil, let snap = lastWorld {
-                _ = service.handle("open", [:], payload: snap)
-                service.engine?.enableAppRules()
-            }
-            if service.engine != nil {
-                lost = false
-                return service.handle(name, args, payload: payload)
-            }
-            return EngineService.Reply(ok: false, reason: "与服务器的连接中断，正在重连")
+            return EngineService.Reply(ok: false, reason: "云服重连中，已保留当前进度")
         }
         return service.handle(name, args, payload: payload)
+    }
+
+    /// 主动丢弃僵死远程链路以进入零回退云服重连，不回退或污染本地 `service.engine`。
+    func dropRemoteForReconnect() {
+        remote?.cancel()
+        remote = nil
+        remoteAddress = nil
+        remoteTransport = ""
+        activeRouteId = ""
+        activeDirectAddress = ""
+        serverSupportsStream = false
+        serverSupportsPush = false
+        serverSupportsLZ4 = false
+        rttBox.reset(nil)
+        lastRTTMs = nil
+        streamBuffer.onFrameConsumed = nil
+        streamEpoch &+= 1
+        streamBuffer.reset(epoch: streamEpoch)
+        lost = true
     }
 
     /// 原子切换至已握手的新远程链接：立即关闭旧链接、推进推流 epoch 并重置差量基线，杜绝跨线路僵尸套接字泄漏与基线污染。
@@ -1279,10 +1305,14 @@ actor NativeHost {
     private var lastAddress: String?
 
     private func reattachQuick() async -> String? {
-        guard let address = lastAddress else { return nil }
-        if let label = try? await connect(address, timeout: 2.0, reattach: true) { return label }
+        if let address = lastAddress, let label = try? await connect(address, timeout: 2.5, reattach: true) {
+            return label
+        }
+        if let label = await reattachBest() {
+            return label
+        }
         let room = Self.activeRoomCode
-        if Self.hasCustomRelayRoomCode && address != room, let label = try? await connect(room, timeout: 2.8, reattach: true) { return label }
+        if Self.hasCustomRelayRoomCode && lastAddress != room, let label = try? await connect(room, timeout: 3.2, reattach: true) { return label }
         return nil
     }
 
@@ -1336,7 +1366,7 @@ actor NativeHost {
         return custom.count >= 6
     }
 
-    /// v12.0.0 多端口有序容灾重连：先只读 ping 竞速排序，再按延迟由低到高依次单一连接（绝不同时对多端口发 enableMux 互相踢线！）。
+    /// v14.0.0 多端口有序容灾重连：先只读 ping 竞速排序（2.4s 兼容 4G/5G 抖动），再按延迟由低到高依次单一连接（绝不同时对多端口发 enableMux 互相踢线！）。
     private func reattachBest() async -> String? {
         if let existing = remoteAddress, remote != nil { return existing }
         guard !reattaching else { return nil }
@@ -1346,7 +1376,7 @@ actor NativeHost {
         let room = Self.activeRoomCode
         let directCandidates = directRaceCandidates()
         var ordered: [String] = []
-        if let winner = await Self.raceDirectAndLAN(directCandidates: directCandidates, roomCode: room, timeout: 1.8) {
+        if let winner = await Self.raceDirectAndLAN(directCandidates: directCandidates, roomCode: room, timeout: 2.4) {
             if winner.isLAN { discoveredLANAddress = winner.address } else { fastestRouteHint = winner.address }
             ordered.append(winner.address)
         }
@@ -1354,12 +1384,12 @@ actor NativeHost {
             ordered.append(addr)
         }
         for addr in ordered {
-            if let label = try? await connect(addr, timeout: 3.2, reattach: true) {
+            if let label = try? await connect(addr, timeout: 4.5, reattach: true) {
                 return label
             }
         }
         if Self.hasCustomRelayRoomCode, let status = await RelayLink.probeStatus(code: room), status.online {
-            if let label = try? await connect(room, timeout: 3.5, reattach: true) { return label }
+            if let label = try? await connect(room, timeout: 4.5, reattach: true) { return label }
         }
         return nil
     }
@@ -1421,7 +1451,7 @@ actor NativeHost {
         ])
     }
 
-    /// v12.0.0 多端口有序容灾接入：先只读 ping 选出最快端口，失败则依次回退 8765 → 8443 → 443，杜绝单点误死与并发互踢。
+    /// v14.0.0 多端口有序容灾接入：先只读 ping 选出最快端口（2.4s 抗 4G/5G 抖动），失败则依次回退 8765 → 8443 → 443，杜绝单点误死与并发互踢。
     func connectAuto() async -> (label: String, transport: String, rttMs: Int?)? {
         guard !cloudHandingOff else { return nil }
         cloudHandingOff = true
@@ -1434,7 +1464,7 @@ actor NativeHost {
         let room = Self.activeRoomCode
         let directCandidates = directRaceCandidates()
         var ordered: [String] = []
-        if let winner = await Self.raceDirectAndLAN(directCandidates: directCandidates, roomCode: room, timeout: 1.8) {
+        if let winner = await Self.raceDirectAndLAN(directCandidates: directCandidates, roomCode: room, timeout: 2.4) {
             if winner.isLAN { discoveredLANAddress = winner.address } else { fastestRouteHint = winner.address }
             ordered.append(winner.address)
         }
@@ -1442,12 +1472,12 @@ actor NativeHost {
             ordered.append(addr)
         }
         for addr in ordered {
-            if let label = try? await connect(addr, timeout: 3.2) {
+            if let label = try? await connect(addr, timeout: 4.5) {
                 return (label, remoteTransport, liveRTTMs ?? lastRTTMs)
             }
         }
         if Self.hasCustomRelayRoomCode, let status = await RelayLink.probeStatus(code: room), status.online {
-            if let label = try? await connect(room, timeout: 3.5) { return (label, remoteTransport, liveRTTMs ?? lastRTTMs) }
+            if let label = try? await connect(room, timeout: 4.5) { return (label, remoteTransport, liveRTTMs ?? lastRTTMs) }
         }
         return nil
     }
@@ -1473,7 +1503,8 @@ actor NativeHost {
         guard localReply.ok else { throw EngineError.message(localReply.reason) }
         currentWorldId = service.currentWorldId
         currentKnownDay = service.currentDay
-        // 若此前已连着远程云服，以紧凑 LGC2 / run-only 安全同步新世界到云服；同步失败则静默切回本机继续 0ms 畅玩
+        displayedDayBox.reset(currentKnownDay)
+        // 若此前已连着远程云服，以紧凑 LGC2 / run-only 安全同步新世界到云服；同步失败则标记失联等待重连
         if let link = remote, let localEngine = service.engine {
             do {
                 try await uploadCompactWorldToRemote(engine: localEngine, link: link)
@@ -1567,6 +1598,7 @@ actor NativeHost {
         guard r.ok else { throw EngineError.message(r.reason) }
         currentWorldId = runId
         currentKnownDay = 0
+        displayedDayBox.reset(0)
         if let link = remote, let localEngine = service.engine {
             lastWorld = autoreleasepool { Data(built.json.utf8) }
             do {
@@ -1592,12 +1624,18 @@ actor NativeHost {
         lastResumedState = nil
         currentWorldId = ""
         currentKnownDay = 0
+        displayedDayBox.reset(0)
+        lost = false
+        parked = false
         streamBuffer.resetDay()
         streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         if remote != nil, serverSupportsStream {
             _ = try? await remote?.call("streamConfig", ["playing": false, "days": 3, "push": false], payload: nil)
         }
-        _ = await call("close")
+        if remote != nil {
+            _ = try? await remote?.call("close", [:], payload: nil)
+        }
+        _ = service.handle("close", [:], payload: nil)
     }
 
     /// v11.0.0：随每步结果一并返回网络元信息，令 `GameModel.apply(step:)` 0 次 `await native.*`，彻底消除预取流水线串行死锁！
@@ -2218,7 +2256,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
                             guard let self, !viable else { return }
                             self.queue.asyncAfter(deadline: .now() + 2.5) { [weak self] in
                                 guard let self, self.isMuxActive, self.connection.state != .ready || !self.isViableNow() else { return }
-                                self.failAll(EngineError.message("网络链路中断，已快速切换回本机"))
+                                self.failAll(EngineError.message("网络链路中断，正在自动重连云服"))
                                 self.connection.cancel()
                             }
                         }

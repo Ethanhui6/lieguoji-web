@@ -354,27 +354,27 @@ private struct HubProfileTabView: View {
             let detail = !custom.isEmpty
                 ? custom
                 : ((model.remoteTransport.isEmpty ? "全双工主动推流" : model.remoteTransport) + kb)
-            return ("九州云服 v17 · 实时在线", detail, bars, tone, true)
+            return ("九州云服 v18 · 实时在线", detail, bars, tone, true)
         }
         if model.remoteReconnecting {
             let custom = model.remoteConnectionDetail.trimmingCharacters(in: .whitespacesAndNewlines)
-            let detail = custom.isEmpty ? "世界进度安全托管云端，切回即自动续推" : custom
+            let detail = custom.isEmpty ? "世界进度安全托管云端不回退，切回即自动续推" : custom
             return ("自动重连中 · 第 \(max(1, model.remoteReconnectAttempt)) 次", detail, 1, Theme.seal, false)
         }
         if model.remoteOfflineManual {
-            return ("本机极致流畅 · 0ms 直演", "最高 64× 看海（账号/云档/热更全程在线 · 随时可切云服 v17）", 3, Theme.jade, false)
+            return ("本机离线演算 · 0ms", "已手动切回本机（账号/云档/热更在线 · 随时可切回云服 v18）", 3, Theme.jade, false)
         }
         if model.state == nil {
             let online = platform.server?.computeOnline == true
             return (
-                online ? "本机 0ms 优先 · 云服 v17 待命" : "云端行宫 · 本机 0ms 待命",
-                online ? "默认本机 0ms 满帧直演（64×），可随时一键接入云服 v17 极速推流" : "云服暂休整，进图默认本机 0ms 满帧直演",
+                online ? "九州云服 v18 · 弹性在线就绪" : "云端行宫 · 云服待命",
+                online ? "默认优先九州云服 v18 极速推流（LGC2 零卡顿 · 断线不跳时间）" : "云服暂休整，网络就绪后自动续连",
                 online ? 3 : 0,
                 online ? Theme.jade : Theme.ink2,
                 false
             )
         }
-        return ("本机 0ms 极致流畅中", "最高 64× 零延迟直演 · 可随时一键切换至九州云服 v17 省电挂机", 3, Theme.jade, false)
+        return ("九州云服 v18 待命中", "已锁定当前进度不回退 · 点下方一键重连最快云服专线", 1, Theme.gold, false)
     }
 
     private var bestMirrorHint: String {
@@ -862,20 +862,20 @@ private struct HubProfileTabView: View {
                 // 在线云服 / 离线单机清晰切换
                 HStack(spacing: 8) {
                     linkModeChip(
-                        title: "本机 0ms 极速",
-                        subtitle: "推荐 · 最高 64×",
-                        active: isOfflineSelected
-                    ) {
-                        model.switchToOfflineLocal()
-                        onToast("已切换至本机 0ms 极致流畅模式（账号/云档/热更保持在线）")
-                    }
-                    linkModeChip(
-                        title: "云服 v17 省电",
-                        subtitle: "LGC2 · 双差量流",
+                        title: "云服 v18 主算",
+                        subtitle: "推荐 · LGC2 零跳时",
                         active: !isOfflineSelected
                     ) {
                         model.reconnectFastestRoute()
-                        onToast("正在竞速连接九州云服 v17 最快直连专线…")
+                        onToast("正在竞速连接九州云服 v18 最快直连专线…")
+                    }
+                    linkModeChip(
+                        title: "本机 0ms 备用",
+                        subtitle: "离线单机 · 最高 64×",
+                        active: isOfflineSelected
+                    ) {
+                        model.switchToOfflineLocal()
+                        onToast("已切换至本机 0ms 离线演算（账号/云档/热更保持在线）")
                     }
                 }
 

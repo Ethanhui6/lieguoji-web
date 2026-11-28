@@ -7,6 +7,7 @@ public final class ForceBridge {
     public let graph: TravelGraph
     let index: [Int: Int]
     var staticRegions: [Int: Int]?
+    var staticRegionArray: [Int] = []
     var staticProvinceIds = [String]()
     public init(graph: TravelGraph) {
         self.graph = graph
@@ -76,25 +77,47 @@ public final class ForceBridge {
     public static func engageReach(_ r: JS) -> Double { 18 * max(0.0001, r.scale.optionalNumber ?? 1) }
     /// The motion rules of the run: war between nations, water province of a sea face, province ids.
     public func rules(_ r: JS, canEnter: @escaping (MovingForce, Int) -> Bool = { _, _ in false }, speed: @escaping (MovingForce, Int) -> Double = { _, _ in 0 }) -> ContactMotion.Rules {
-        let nations = r.world.nations.asArray.map(\.id.asString)
-        var nationAt = [String: Int](); for (i, n) in nations.enumerated() where nationAt[n] == nil { nationAt[n] = i }
-        var war = Set<Int>()
+        let nations = r.world.nations.asArray
+        let nCount = nations.count
+        var nationAt = [String: Int](minimumCapacity: nCount)
+        for (i, n) in nations.enumerated() {
+            let id = n.id.asString
+            if nationAt[id] == nil { nationAt[id] = i }
+        }
+        // v14.0.0：扁平 N×N Bool 交战矩阵 + 扁平海域表数组，消灭 contacts 内层 Set/Dictionary 哈希开销！
+        var warMatrix = [Bool](repeating: false, count: nCount * nCount)
         for p in r.world.statecraft.relations.asArray where p.status.asString == "war" {
-            if let a = nationAt[p.a.asString], let b = nationAt[p.b.asString] { war.insert(min(a, b) * 4096 + max(a, b)) }
+            if let a = nationAt[p.a.asString], let b = nationAt[p.b.asString], a != b {
+                warMatrix[a * nCount + b] = true
+                warMatrix[b * nCount + a] = true
+            }
         }
         // The water region of each sea face and the province ids are fixed for a world.
         if staticRegions == nil || staticProvinceIds.count != r.world.provinces.length {
             var regions = [Int: Int]()
-            for w in r.diplomaticGeography.water.asArray { for face in w.faces.asArray { regions[face.asInt] = w.id.asInt } }
-            staticRegions = regions; staticProvinceIds = r.world.provinces.asArray.map(\.id.asString)
+            var maxFace = -1
+            for w in r.diplomaticGeography.water.asArray {
+                let wid = w.id.asInt
+                for face in w.faces.asArray {
+                    let fi = face.asInt
+                    regions[fi] = wid
+                    if fi > maxFace { maxFace = fi }
+                }
+            }
+            var regArr = [Int](repeating: Int.min, count: max(0, maxFace + 1))
+            for (fi, wid) in regions where fi >= 0 && fi < regArr.count { regArr[fi] = wid }
+            staticRegions = regions
+            staticRegionArray = regArr
+            staticProvinceIds = r.world.provinces.asArray.map(\.id.asString)
         }
-        let regions = staticRegions!, provinceIds = staticProvinceIds
-        var rules = ContactMotion.Rules(enemy: { a, b in a != b && war.contains(min(a, b) * 4096 + max(a, b)) }, canEnter: canEnter, speed: speed,
-                                   seaRegion: { regions[$0]! }, provinceID: { provinceIds[$0] })
-        // The original fights by province (Army.AddDamageToEnemyArmyInProvince). This map's provinces
-        // are far larger than the original's, so app worlds engage by distance instead: enemies in one
-        // province meet when they come within about two army icons (the AI closes on the battle), not
-        // from opposite ends of the province, and not only when their points coincide exactly.
+        let regions = staticRegions!, regArr = staticRegionArray, provinceIds = staticProvinceIds
+        var rules = ContactMotion.Rules(
+            enemy: { a, b in a >= 0 && b >= 0 && a < nCount && b < nCount && warMatrix[a * nCount + b] },
+            canEnter: canEnter,
+            speed: speed,
+            seaRegion: { f in (f >= 0 && f < regArr.count && regArr[f] != Int.min) ? regArr[f] : regions[f]! },
+            provinceID: { provinceIds[$0] }
+        )
         rules.physicalContact = r.regimes.enabled.isTruthy
         rules.reach = Self.engageReach(r)
         return rules

@@ -11,13 +11,22 @@ public final class NativeEngine {
     /// The original province battle arrows (presentation state, kept between days).
     let battleArrows = BattleArrows()
     let statics: JS
+    /// v14.0.0：已解码静态几何缓存对象（RAM LRU 跨 open 零重复解码 TravelGraph / restJSON / labelGrid！）。
+    public final class DecodedStatics: @unchecked Sendable {
+        public let graph: TravelGraph
+        public let statics: JS
+        public let labelGrid: (cellsX: Int, points: [Double], cells: [Int])?
+        public init(graph: TravelGraph, statics: JS, labelGrid: (cellsX: Int, points: [Double], cells: [Int])?) {
+            self.graph = graph; self.statics = statics; self.labelGrid = labelGrid
+        }
+    }
     /// v13.0.0：直接持有的二进制行军图（避免 LGC2 编解码再绕道 48 MB Base64 JSON）。
     private var travelGraph: TravelGraph?
     private var cachedStaticsHash: String?
     /// v13.0.0：推流精简帧国家科技/工业/空优/综合国力缓存（每 5 日或格局变动刷新）。
     var nationTechCache: (key: Int, rows: [String: (milTech: Int, navTech: Int, ic: Int, airPower: Int, doctrine: String, compositePower: Double, quality: Double)])?
-    /// The statics' label grid as arrays (NativeView.labels).
-    var labelGridCache: (points: [Double], cells: [Int])?
+    /// The statics' label grid as arrays (NativeView.labels; v14.0.0 同时保存 cellsX 以支持 LGST v2 二进制 labelGrid).
+    var labelGridCache: (cellsX: Int, points: [Double], cells: [Int])?
     /// 同盟图：每个同盟用过的墨色序号（只供显示，不入存档）。同一局里同盟颜色不因别的同盟解散或成立而改变。
     var allianceInk = [String: Int]()
 
@@ -37,17 +46,26 @@ public final class NativeEngine {
         Founding.cultures = try JSONDecoder().decode([Opening.Culture].self, from: cultures)
     }
 
-    /// `{run, statics}` from the web bridge (nativeWorld) or a save of this format, OR v13 `LGC2` compact binary envelope.
+    /// `{run, statics}` from the web bridge (nativeWorld) or a save of this format, OR v13/v14 `LGC2` compact binary envelope.
     public init(
         world data: Data,
         staticsResolver: ((String) -> Data?)? = nil,
-        onStaticsDecoded: ((String, Data) -> Void)? = nil
+        onStaticsDecoded: ((String, Data) -> Void)? = nil,
+        decodedStaticsResolver: ((String) -> DecodedStatics?)? = nil,
+        onStaticsParsed: ((String, DecodedStatics) -> Void)? = nil
     ) throws {
         if Self.isCompactComputeFormat(data) {
-            let parsed = try Self.decodeCompactEnvelope(data, staticsResolver: staticsResolver, onStaticsDecoded: onStaticsDecoded)
+            let parsed = try Self.decodeCompactEnvelope(
+                data,
+                staticsResolver: staticsResolver,
+                onStaticsDecoded: onStaticsDecoded,
+                decodedStaticsResolver: decodedStaticsResolver,
+                onStaticsParsed: onStaticsParsed
+            )
             self.run = parsed.run
             self.statics = parsed.statics
             self.travelGraph = parsed.graph
+            self.labelGridCache = parsed.labelGrid
             self.cachedStaticsHash = parsed.hash.isEmpty ? nil : parsed.hash
         } else {
             let o = try JS.parse(data)
@@ -159,7 +177,10 @@ public final class NativeEngine {
         mix(UInt64(statics.borders.length))
         mix(UInt64(statics.seaPorts.length))
         mix(UInt64(statics.homeCells.objectEntries.count))
-        if !statics.labelGrid.isNull {
+        if let lg = labelGridCache {
+            mix(UInt64(lg.cellsX))
+            mix(UInt64(lg.cells.count))
+        } else if !statics.labelGrid.isNull {
             mix(UInt64(statics.labelGrid.cellsX.asInt))
             mix(UInt64(statics.labelGrid.cells.length))
         }
@@ -168,7 +189,7 @@ public final class NativeEngine {
         return hex
     }
 
-    /// 将当前静态几何（Float32 v2 行军图 + 去 map/travel 后的其余 statics）打包为二进制 `LGST` 块。
+    /// v14.0.0：将静态几何打包为二进制 `LGST v2` 块（Float32 v2 行军图 + 剥离 4.93 MB `labelGrid` JSON 改用紧致 Float32/Int32 二进制表！）。
     public func encodeStaticsBlob() -> Data {
         let travelBytes: Data
         if let g = travelGraph {
@@ -179,18 +200,40 @@ public final class NativeEngine {
         } else {
             travelBytes = Data()
         }
+        // 提取 labelGrid 转为二进制（零 JSON 序列化/解析开销）
+        let lgTuple: (cellsX: Int, points: [Double], cells: [Int])?
+        if let cached = labelGridCache {
+            lgTuple = cached
+        } else if !statics.labelGrid.isNull {
+            let grid = statics.labelGrid
+            let built = (grid.cellsX.asInt, grid.points.asArray.map(\.asNumber), grid.cells.asArray.map(\.asInt))
+            labelGridCache = built
+            lgTuple = built
+        } else {
+            lgTuple = nil
+        }
         let rest = JS.object()
-        for (k, v) in statics.objectEntries where k != "map" && k != "travel" {
+        for (k, v) in statics.objectEntries where k != "map" && k != "travel" && k != "labelGrid" {
             rest[k] = v
         }
-        let restJSON = rest.jsonData(reserveCapacity: 524_288)
-        var out = Data(capacity: 13 + travelBytes.count + restJSON.count)
+        let restJSON = rest.jsonData(reserveCapacity: 262_144)
+        let lgCap = lgTuple.map { 12 + $0.points.count * 4 + $0.cells.count * 4 } ?? 12
+        var out = Data(capacity: 13 + travelBytes.count + restJSON.count + lgCap)
         out.append(contentsOf: Self.staticsMagic)
-        out.append(1)
+        out.append(2) // LGST v2: binary labelGrid tail
         Self.appendU32LE(&out, UInt32(travelBytes.count))
         out.append(travelBytes)
         Self.appendU32LE(&out, UInt32(restJSON.count))
         out.append(restJSON)
+        if let lg = lgTuple {
+            Self.appendU32LE(&out, UInt32(max(0, lg.cellsX)))
+            Self.appendU32LE(&out, UInt32(lg.points.count))
+            Self.appendU32LE(&out, UInt32(lg.cells.count))
+            for p in lg.points { Self.appendU32LE(&out, Float(p).bitPattern) }
+            for c in lg.cells { Self.appendU32LE(&out, UInt32(bitPattern: Int32(c))) }
+        } else {
+            Self.appendU32LE(&out, 0); Self.appendU32LE(&out, 0); Self.appendU32LE(&out, 0)
+        }
         return out
     }
 
@@ -298,8 +341,10 @@ public final class NativeEngine {
     private static func decodeCompactEnvelope(
         _ data: Data,
         staticsResolver: ((String) -> Data?)?,
-        onStaticsDecoded: ((String, Data) -> Void)?
-    ) throws -> (run: JS, statics: JS, graph: TravelGraph, hash: String) {
+        onStaticsDecoded: ((String, Data) -> Void)?,
+        decodedStaticsResolver: ((String) -> DecodedStatics?)?,
+        onStaticsParsed: ((String, DecodedStatics) -> Void)?
+    ) throws -> (run: JS, statics: JS, graph: TravelGraph, labelGrid: (cellsX: Int, points: [Double], cells: [Int])?, hash: String) {
         guard data.count >= 12 else { throw NativeEngineError.message("LGC2 封包过短。") }
         let s = data.startIndex
         let version = data[s + 4]
@@ -316,6 +361,11 @@ public final class NativeEngine {
         let runBytes = (flags & 0x02) != 0 ? WireCodec.decompressIfNeeded(rawRunSlice) : rawRunSlice
         let runObj = try JS.parse(runBytes)
 
+        // v14.0.0：若 RAM 命中已解码的 DecodedStatics，彻底跳过 TravelGraph + restJSON + labelGrid 解析！
+        if !hash.isEmpty, (flags & 0x01) == 0, let hit = decodedStaticsResolver?(hash) {
+            return (runObj, hit.statics, hit.graph, hit.labelGrid, hash)
+        }
+
         let rawStaticsBlob: Data
         if (flags & 0x01) != 0 {
             let stLenOff = runStart + runLen
@@ -327,6 +377,9 @@ public final class NativeEngine {
             if !hash.isEmpty && !rawStaticsBlob.isEmpty {
                 onStaticsDecoded?(hash, rawStaticsBlob)
             }
+            if !hash.isEmpty, let hit = decodedStaticsResolver?(hash) {
+                return (runObj, hit.statics, hit.graph, hit.labelGrid, hash)
+            }
         } else {
             guard !hash.isEmpty, let cached = staticsResolver?(hash), !cached.isEmpty else {
                 throw NativeEngineError.message("statics_miss:\(hash)")
@@ -334,12 +387,13 @@ public final class NativeEngine {
             rawStaticsBlob = cached
         }
 
-        // 解码 LGST 二进制静态块
+        // 解码 LGST 二进制静态块（同时兼容 v1 JSON labelGrid 与 v2 二进制 labelGrid！）
         guard rawStaticsBlob.count >= 13 else { throw NativeEngineError.message("LGST 静态块损坏。") }
         let bs = rawStaticsBlob.startIndex
+        let lgstVer = rawStaticsBlob[bs + 4]
         guard rawStaticsBlob[bs] == staticsMagic[0], rawStaticsBlob[bs + 1] == staticsMagic[1],
               rawStaticsBlob[bs + 2] == staticsMagic[2], rawStaticsBlob[bs + 3] == staticsMagic[3],
-              rawStaticsBlob[bs + 4] == 1 else {
+              (lgstVer == 1 || lgstVer == 2) else {
             throw NativeEngineError.message("LGST 魔数或版本无效。")
         }
         let travelLen = Int(try readU32LE(rawStaticsBlob, at: 5))
@@ -354,7 +408,44 @@ public final class NativeEngine {
 
         let graph = try TravelGraph(data: travelBytes)
         let staticsObj = try JS.parse(restJSON)
-        return (runObj, staticsObj, graph, hash)
+        var labelGrid: (cellsX: Int, points: [Double], cells: [Int])? = nil
+        if lgstVer == 2 {
+            let lgOff = restStart + restLen
+            if lgOff + 12 <= rawStaticsBlob.count {
+                let cellsX = Int(try readU32LE(rawStaticsBlob, at: lgOff))
+                let ptCount = Int(try readU32LE(rawStaticsBlob, at: lgOff + 4))
+                let cellCount = Int(try readU32LE(rawStaticsBlob, at: lgOff + 8))
+                let dataOff = lgOff + 12
+                let needBytes = ptCount * 4 + cellCount * 4
+                if cellsX > 0 && ptCount > 0 && cellCount > 0 && dataOff + needBytes <= rawStaticsBlob.count {
+                    var pts = [Double]()
+                    var cls = [Int]()
+                    pts.reserveCapacity(ptCount)
+                    cls.reserveCapacity(cellCount)
+                    rawStaticsBlob.withUnsafeBytes { buf in
+                        var pOff = dataOff
+                        for _ in 0..<ptCount {
+                            let bits = UInt32(littleEndian: buf.loadUnaligned(fromByteOffset: pOff, as: UInt32.self))
+                            pts.append(Double(Float(bitPattern: bits)))
+                            pOff += 4
+                        }
+                        for _ in 0..<cellCount {
+                            let bits = UInt32(littleEndian: buf.loadUnaligned(fromByteOffset: pOff, as: UInt32.self))
+                            cls.append(Int(Int32(bitPattern: bits)))
+                            pOff += 4
+                        }
+                    }
+                    labelGrid = (cellsX, pts, cls)
+                }
+            }
+        } else if !staticsObj.labelGrid.isNull {
+            let g = staticsObj.labelGrid
+            labelGrid = (g.cellsX.asInt, g.points.asArray.map(\.asNumber), g.cells.asArray.map(\.asInt))
+        }
+        if !hash.isEmpty {
+            onStaticsParsed?(hash, DecodedStatics(graph: graph, statics: staticsObj, labelGrid: labelGrid))
+        }
+        return (runObj, staticsObj, graph, labelGrid, hash)
     }
 }
 

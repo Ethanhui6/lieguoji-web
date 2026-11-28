@@ -78,12 +78,12 @@ final class V9OverhaulTests: XCTestCase {
                         let parts = rawCmd.split(separator: ":").map(String.init)
                         guard let op = parts.first else { continue }
                         switch op {
-                        case "annex", "war", "ally", "peace", "vassal", "pact", "cede", "cede_east":
+                        case "annex", "war", "ally", "peace", "vassal", "pact", "cede", "cede_east", "lend_lease", "puppet_split":
                             if parts.count >= 3 {
                                 XCTAssertTrue(nationIds.contains(parts[1]), "事件 \(ev.id) (\(sid)) 效果 \(rawCmd) 的 \(parts[1]) 不存在")
                                 XCTAssertTrue(nationIds.contains(parts[2]), "事件 \(ev.id) (\(sid)) 效果 \(rawCmd) 的 \(parts[2]) 不存在")
                             }
-                        case "buff", "gold", "morale", "law", "ic", "nuke":
+                        case "buff", "gold", "gold_months", "morale", "law", "ic", "nuke", "spawn_army", "stability", "war_support":
                             if parts.count >= 2 {
                                 XCTAssertTrue(nationIds.contains(parts[1]), "事件 \(ev.id) (\(sid)) 效果 \(rawCmd) 的 \(parts[1]) 不存在")
                             }

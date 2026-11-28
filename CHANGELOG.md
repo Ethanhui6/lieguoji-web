@@ -1,5 +1,30 @@
 # 更新日志
 
+## 14.0.0 (Build 199)
+
+### 终极深度引擎与云服 v18 弹性零跳时重构 × 纯 Metal GPU 世界空间地名国名 × 60/120Hz 样条丝滑行军 × HOI4 级事件公平性重构与羊皮纸弹窗重制
+- **九州云服 v18 Cloud-First 弹性连接与零时间回退（`NativeHost.swift`、`GameModel.swift`、`GameView.swift`、`OnlineHubViews.swift`、`LieguojiServer/main.swift`）**：
+  - **恢复默认 Cloud-First 优先接入**：一次性迁移 `v1400.cloudFirstResilient` 恢复默认自动接入广州云服 v18（8765 → 8443 → 443 多端口有序竞速，移动蜂窝探针超时放宽至 2.2s/2.4s、握手 4.5s）；
+  - **彻底根除重连切回本机导致时间倒跳**：云服断链/切网或点击重连时，**严禁**静默调用 `fallbackLocal()` 加载旧档覆盖屏幕，始终锁定当前云端日序与战局画面、保持地图自由浏览，启动 8 轮指数退避（0s → 0.6s → 1.2s → 2.0s → 3.2s → 4.5s → 6.0s → 8.0s）+ `NWPathMonitor` 切网瞬时唤醒 + `resumeWorld` 权威续连；仅在玩家显式点击「切回本机」时才切入本机单机并明确提示当前日序；
+  - 服务端升级至 `lieguoji-server/v18` / `mux-v18`：移除 `open` 路径同步阻塞的 `saveForCompute()`（直接后台异步落盘已压缩 `LGC2` 载荷，省下 ~800–1,000 ms）；新增 `DecodedStatics` 内存 LRU（热开局零重复解析 `TravelGraph` / `restJSON` / `labelGrid`）；放宽 `resumeWorld` 权威日序衔接窗口。
+- **纯 Metal GPU 世界空间地名国名与人名统一（`MetalLabelRenderer.swift`、`MapRenderer.swift`、`MapView.swift`、`NativeView.swift`、`ArmyCommands.swift`）**：
+  - **彻底废除 UIKit 地图地名/兵牌层**：新建 `MetalLabelRenderer`，基于 CoreText `2048×2048` 双通道 `(R=墨心, G=宣纸光晕)` 硬件 mipmap 字图集在 GPU 世界空间直绘国名（置于羊皮纸滤镜前，呈现真实印在地图上的松烟墨质感）、都城/州城名（全视口无关预计算 `revealScale` 分级显隐，滑屏/缩放 0 变位、0 碰撞跳字、0 假粗发糊）与同帧锁定的 GPU 军团兵牌/士气条；
+  - **修复将领/提督命名异常**：`ArmyCommands.assignFleetAdmiral` 修复误读空字段 `r.people.people` 的缺陷，改为读取真实存活人物表 `r.kin.persons` 并与 `NativeView.banners` 统一走 `NativeEngine.displayPersonName`。
+- **60/120Hz 丝滑军队行军与帧律重构（`MapRenderer.swift`、`MapView.swift`、`GameModel.swift`、`NativeView.swift`、`Service.swift`）**：
+  - **根治 16–30Hz 随机动画抖动与截断顿挫**：修复 `MapRenderer` 每步重建随机动画相位种子导致的肉眼抽搐（改为稳定 FNV1a 种子 + 64B 对齐 `SpriteVertex` 透传 `dir / moveBlend / seed`）；移除本机 `slim` 坐标 `0.1` 粗糙舍入并将云端差量量化收紧至 `1/16`（与 `LGB2` 精确一致）；
+  - **Render-Behind 单调三次样条轨迹**：每支军团维护 4 点时间戳轨迹环，以自适应延迟采样 **Fritsch-Carlson 单调三次 Hermite 样条** 并对朝向/编队展开/行军混合做指数阻尼，配合锁定 `60–120Hz` 的 `CADisplayLink`、`GameModel` 等时缓冲控速与封顶 55ms 的本机月结热节流保护，行军移动彻底连贯顺滑。
+- **核心推演引擎与热开局极限压榨（`JSValue.swift`、`CombatReader.swift`、`RunWindow.swift`、`Travel.swift`、`ArmyOrders.swift`、`ForceBridge.swift`、`Combat.swift`、`Daily.swift`、`NativeEngine.swift`）**：
+  - **零分配高速 JSON 解析**：`JS.parse` 对无转义字符串与 ASCII 整数/小数实现零临时 `String` 分配快路径，数字索引键采用二分/批量落序彻底消除 `O(N²)` 建表开销；
+  - **2 级省域走廊 HPA* 寻路 + 全轮共享 `SupplyContext`**：`TravelGraph` 预建省邻接图并新增 App 专属 `corridorPath` 省域走廊 A*（跨省长途寻路剪枝 85%+ 节点，并按 `bestF` 弹堆零 `sqrt`）；`RunWindow.occupy` 与 `volley` 全轮共享单一 `SupplyContext` 与扁平 `N×N` 交战矩阵；`ForceBridge` 全面扁平化、`ContactMotion` 用 `UInt64` 键去重；`Daily.fiscalMonth` 预建 `FiscalArmyContext` 消除 40× 重复全图扫描；
+  - **`LGST v2` 二进制 `labelGrid`**：静态几何包升级二进制 `Float32/Int32` 网格尾块（完全向下兼容 v1 磁盘缓存）。
+- **HOI4 级历史事件公平性与史实度大重构（`HistoricalEvents.swift`、`HistoricalEventsCatalog.swift`、`HistoricalScenarios.swift`、`NuclearWarfare.swift`、`MilitaryDoctrines.swift`）**：
+  - **修复 5 大事件机制缺陷**：跨年事件严格校验 `(year, month)`（彻底根除 1936 剧本在 1939 年 1 月提前触发闪击波兰）；支持 `callAllies=0` 单独宣战（苏联东进波兰不再拖英法向苏宣战）；`ic:` 写入永久 `eventICBonus` 不再被月结侵蚀归零；`campaignBuffs` 升级为最多 3 槽安全叠加（封顶 ±30%/+45%）；`law:` 实时同步 `NuclearWarfare.mobilization` 动员等级；`annex:` / `cede:` 新增国力与守军胜势公平守卫；
+  - **全新高史实分支与动态效果码**：新增 `gold_months / lend_lease / spawn_army / puppet_split / stability / war_support` 6 种效果码；新增「维希法国分治 vs 自由法国」、「九一八事变三向抉择」、「珍珠港真南进/北进分叉（移除 1941 开局预宣战）」、「日本印度洋反势」、「安史之乱真实冲击」、「修正宋金海陵南侵年份」与「长筱合战/本能寺之变拆分」。
+- **钢铁雄心级历史事件弹窗、快讯与顶栏时间/紧张度 HUD 全面重制（`HistoricalEventModal.swift`、`GameView.swift`、`GameModel.swift`）**：
+  - 修复效果徽章误按 `;` 切割导致全部事件后果丢失的缺陷，全量解析 `|` 分隔的 20+ 种真实效果并标注具体国名与红绿有符号数值；
+  - 重构双布局羊皮纸弹窗（`GeometryReader` 安全区自适应、实时双方「兵力 / 疆域 / 工业 IC」拔河对比条、等权宣纸选项卡、舆图罗盘矢量无图头图、弹簧入场音效），实装真正可用的「暂隐看战区」收起遮罩并解冻地图自由勘察 + 顶部「继续抉择」返卷条；严禁快讯模式静默代选未决议的玩家/架空抉择；
+  - 顶栏日期胶囊新增实时「世界紧张度（危 XX%）」徽章，倍速胶囊补全 `64×` 并新增 HOI4 五格速率指示条。
+
 ## 13.0.0 (Build 198)
 
 ### 硬核推演引擎与全二进制传输协议大重构（5×–7× 算力提速 × `LGC2`+`statics-cache` 7×–35× 传档瘦身 × HOI4 集团军整编 × `lieguoji-server/v17` 军团/舰队双差量推流 × 热更新线路全面修复）

@@ -39,6 +39,11 @@ public enum CombatReader {
     }
     /// inputsAt: the army as if standing in province `index` (nil: at sea).
     public static func inputs(_ r: JS, _ a: JS, _ index: Int?) -> MilitaryState.Combat {
+        var ctx: ArmyTactics.SupplyContext? = nil
+        return inputs(r, a, index, supplyCtx: &ctx)
+    }
+    /// v14.0.0：支持调用方（`RunWindow.occupy` / `RunWindow.volley`）在同一轮结算内复用同一份全图 835 州 `SupplyContext`，消除每军重复 BFS 建图！
+    public static func inputs(_ r: JS, _ a: JS, _ index: Int?, supplyCtx sharedSupply: inout ArmyTactics.SupplyContext?) -> MilitaryState.Combat {
         let nation = a.nationId.asString, state = r.upperCombat.nations[nation], snapshot = r.combatPersonnel.armies[a.id.asString], base = r.upperCombat.armies[a.id.asString]
         let p: JS? = index.map { r.world.provinces[$0] }
         let owner = p.map { r.upperCombat.nations[$0.controller.asString] }, defense = p.map { r.upperCombat.provinces[$0.id.asString] }
@@ -165,10 +170,10 @@ public enum CombatReader {
                 polAtk = f(polAtk * f(0.88))
                 polDef = f(polDef * f(0.88))
             }
-            // v11.0.0 复用单次 SupplyContext 消除每军团齐射重复建两遍全图 280 州补给字典
-            var supplyCtx = ArmyTactics.SupplyContext(r)
+            // v14.0.0 跨军团复用单次 SupplyContext（占领/齐射全轮共享同一 835 州补给图，彻底消除重复 BFS！）
+            if sharedSupply == nil { sharedSupply = ArmyTactics.SupplyContext(r) }
             // 合围断道战力重挫（−22%）：孤军被敌包围且无海路接济时陷入绝境
-            if ArmyTactics.isEncircled(r, army: a, provinceIndex: index, ctx: &supplyCtx) {
+            if ArmyTactics.isEncircled(r, army: a, provinceIndex: index, ctx: &sharedSupply!) {
                 polAtk = f(polAtk * f(0.78))
                 polDef = f(polDef * f(0.78))
             }
@@ -191,7 +196,7 @@ public enum CombatReader {
             let form = ArmyTactics.formation(r, armyId: aid)
             let fldOrder = ArmyTactics.fieldOrder(r, armyId: aid)
             let vet = ArmyTactics.veterancyInfo(r, armyId: aid, nationId: nation)
-            let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: index, ctx: &supplyCtx)
+            let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: index, ctx: &sharedSupply!)
             let role = UnitKinds.byKey[unitKey]?.role
             var formAtk = form.attackFactor
             if form == .wedge && (role == .cavalry || role == .heavy || role == .horseArcher) { formAtk += 0.06 }

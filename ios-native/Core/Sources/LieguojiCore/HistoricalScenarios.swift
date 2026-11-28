@@ -1862,16 +1862,25 @@ public enum HistoricalScenarios {
         attacker aNid: String,
         defender dNid: String,
         casusBelli: String,
-        scenario: HistoricalScenario
+        scenario: HistoricalScenario,
+        callAllies: Bool = true,
+        isOpening: Bool = true
     ) -> Bool {
         guard Vassals.alive(r, aNid), Vassals.alive(r, dNid),
               Wars.relation(r, aNid, dNid) != nil else { return false }
 
-        let members = Vassals.buildParticipants(r, attacker: aNid, defender: dNid)
-        Vassals.openCoalitionRelations(r, members)
-
         let attackerStateId = Wars.stateNumber(r, aNid)
         let defenderStateId = Wars.stateNumber(r, dNid)
+        // v14.0.0 修复：callAllies == false 时仅登记双边局部战事，不再强行拖拽英法与苏联开战或九一八一日触发全国同盟大战！
+        let members: JS
+        if callAllies {
+            members = Vassals.buildParticipants(r, attacker: aNid, defender: dNid)
+        } else {
+            let p0 = JS.object(); p0.stateId = JS(attackerStateId); p0.side = JS(0); p0.isLeader = JS(true)
+            let p1 = JS.object(); p1.stateId = JS(defenderStateId); p1.side = JS(1); p1.isLeader = JS(true)
+            members = .array([p0, p1])
+        }
+        Vassals.openCoalitionRelations(r, members)
         let defenderProvs = Wars.orderedProvinces(r, dNid)
         let targetProvIds = Array(defenderProvs.prefix(max(1, min(3, defenderProvs.count))))
             .map { Wars.provinceNumber(r.nativeWars, $0.id.asString) }
@@ -1920,7 +1929,9 @@ public enum HistoricalScenarios {
             r,
             kind: "diplomacy",
             text: headline,
-            reason: "历史剧本「\(scenario.title)」开局战事（\(scenario.yearDisplayText) · \(casusBelli)）。",
+            reason: isOpening
+                ? "历史剧本「\(scenario.title)」开局战事（\(scenario.yearDisplayText) · \(casusBelli)）。"
+                : "历史事件「\(casusBelli)」触发战事（\(scenario.title)）。",
             nations: members.asArray.map { Wars.nationOf(r.nativeWars, $0.stateId.asInt) },
             province: nil
         )
@@ -3582,7 +3593,8 @@ public enum HistoricalScenarios {
         ],
         openingWars: [],
         openingAlliances: [
-            HistoricalAllianceSpec(name: "国民政府国防协定", memberIds: ["roc", "northeast", "shanxi", "sichuan", "yunnan", "ma_clique"]),
+            // v14.0.0 史实还原：九一八前夜东北军独立驻防关外，不预设全国捆绑同盟；待西安事变/七七事变或玩家拍板后方结成抗日统一战线！
+            HistoricalAllianceSpec(name: "国民政府国防协定", memberIds: ["roc", "shanxi", "sichuan", "yunnan", "ma_clique"]),
             HistoricalAllianceSpec(name: "苏蒙互助协定", memberIds: ["ussr_fe", "mongolia"]),
         ],
         tags: ["民国", "九一八事变", "抗战史实链", "15势力精绘"],
@@ -4547,16 +4559,13 @@ public enum HistoricalScenarios {
             ),
         ],
         openingWars: [
+            // v14.0.0 史实分歧修复：1941 年 12 月初开局仅中日已全面交战；第 4 日「偷袭珍珠港」事件真正拍板南进太平洋大战或北进苏联远东！
             HistoricalWarSpec(attackerId: "japan", defenderId: "roc", casusBelli: "全面抗日战争"),
             HistoricalWarSpec(attackerId: "japan", defenderId: "yanan", casusBelli: "华北敌后抗战"),
-            HistoricalWarSpec(attackerId: "japan", defenderId: "philippines", casusBelli: "太平洋战争 · 吕宋战役"),
-            HistoricalWarSpec(attackerId: "japan", defenderId: "uk_burma", casusBelli: "香港与缅甸战役"),
-            HistoricalWarSpec(attackerId: "japan", defenderId: "uk_malaya", casusBelli: "马来亚与新加坡战役"),
-            HistoricalWarSpec(attackerId: "japan", defenderId: "dutch_ei", casusBelli: "南进石油 · 荷印战役"),
-            HistoricalWarSpec(attackerId: "japan", defenderId: "usa_pacific", casusBelli: "偷袭珍珠港 · 太平洋决战"),
         ],
         openingAlliances: [
-            HistoricalAllianceSpec(name: "世界反法西斯同盟", memberIds: ["roc", "yanan", "uk_burma", "uk_malaya", "dutch_ei", "philippines", "usa_pacific"]),
+            HistoricalAllianceSpec(name: "中国抗日民族统一战线", memberIds: ["roc", "yanan"]),
+            HistoricalAllianceSpec(name: "太平洋盟国防卫协定", memberIds: ["uk_burma", "uk_malaya", "dutch_ei", "philippines", "usa_pacific"]),
             HistoricalAllianceSpec(name: "东亚轴心", memberIds: ["japan", "manchukuo", "thailand"]),
             HistoricalAllianceSpec(name: "苏蒙互助同盟", memberIds: ["ussr_fe", "mongolia"]),
         ],

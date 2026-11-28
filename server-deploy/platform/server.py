@@ -99,16 +99,16 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
-DEFAULT_LATEST_VERSION = "13.0.0"
-DEFAULT_LATEST_BUILD = 198
+DEFAULT_LATEST_VERSION = "14.0.0"
+DEFAULT_LATEST_BUILD = 199
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【硬核引擎 5×–7× 算力提速 × 零卡顿大地图推演】深度重写接敌/交锋扁平数组、海权单遍预索引、零堆分配 jsHypot、海陆分域 A* 寻路、舰队寻路缓存与 App 大图 120 整除步长对齐，835 州超大图无论云端还是手机本机均告别 PPT 级卡顿。",
-    "【HOI4 集团军整编（100% 守恒总兵力）】月结及每 5 日自动将同州空闲碎团整编为高编制主力军团（超大地图上限 45,000 人），完整保留总兵力、历史名将与更高战力主战兵种，根治后期 550+ 碎团雪崩。",
-    "【LGC2 全二进制封包 + 云服 statics-cache 35× 瘦身 × lieguoji-server/v17 双差量推流 × 热更线路全修】冷上传从 65.8 MB 暴降至 ~9–11 MB，重连命中静态几何缓存仅传 ~1.8 MB 秒级开推；新增军团/舰队双差量稳态推流与热更 404 故障修复，置顶实测最快的 hk.gh-proxy.org 镜像。",
+    "【纯 Metal GPU 世界空间国名/地名 + 零跳动 60/120Hz 丝滑行军】全面废除 UIKit 地图地名层，改由 Metal 2048×2048 硬件 mipmap 双通道图集在世界空间直绘国名、都城与兵牌（拖拽/缩放 0 延迟、0 变位、0 模糊）；重写军队 4 点时间轨迹环与 Fritsch-Carlson 单调三次样条 Render-Behind 平滑插值，修复随机帧种子抖动与 0.1 坐标截断，行军过渡如丝顺滑。",
+    "【九州云服 v18 弹性优先接入 · 断线零时间回退】恢复默认 Cloud-First 多端口（8765 → 8443 → 443）容灾接入，断链/切网时彻底禁止静默回落本机旧档引发时间倒跳，锁定屏幕当前日序并指数退避 + resumeWorld 秒续，随时可自由浏览地图或手动切回本机。",
+    "【深度引擎极限压榨 × 钢铁雄心级历史事件公平重构与弹窗重制】实装零分配 ASCII JSON 解析、LGST v2 二进制 labelGrid 与服务端 RAM DecodedStatics LRU（热开局毫秒级）、2 级省域走廊 HPA* 寻路、全轮共享 SupplyContext 与月结上下文；修复 5 大事件机制缺陷（跨年月份门控、独宣隔盟、永久事件 IC、多槽战役 Buff、法案联动动员），新增维希法国/九一八三向抉择/珍珠港真南进北进分叉，并全面重制 HOI4 羊皮纸事件弹窗（实时双方兵力/疆域/IC 对比条、暂隐看战区、全量 20+ 效果徽章、顶栏世界紧张度与 64× 五格控速条）。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 28,
+    "version": 29,
     "notice": "",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16, "64": 32},
@@ -159,8 +159,18 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
     {
         "version": DEFAULT_LATEST_VERSION,
         "build": DEFAULT_LATEST_BUILD,
-        "date": "2026-11-27",
+        "date": "2026-11-28",
         "lines": list(DEFAULT_RELEASE_NOTES),
+    },
+    {
+        "version": "13.0.0",
+        "build": 198,
+        "date": "2026-11-27",
+        "lines": [
+            "【硬核引擎 5×–7× 算力提速】扁平数组交锋、海权单遍预索引、零堆分配 jsHypot、分域 A* 与 120 整除步长对齐。",
+            "【HOI4 集团军整编】100% 守恒总兵力合并同州空闲碎团，根治 550+ 碎团雪崩。",
+            "【LGC2 + statics-cache 35× 瘦身 × v17 双差量推流 × 热更线路全修】冷上传 65.8MB → 9–11MB，热续连 1.8MB。",
+        ],
     },
     {
         "version": "12.0.0",

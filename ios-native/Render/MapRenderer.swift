@@ -93,6 +93,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let reliefTilePipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
+    /// v14.0.0：纯 Metal 世界空间国名/城名/军牌渲染器（零滑屏飘移、与羊皮纸光照原生融合、120Hz 锁死军队）
+    let metalLabels: MetalLabelRenderer?
+    var troopBadgeTexts: [String: String] = [:]
+    var troopBadgeRatios: [String: Float] = [:]
+    var troopBadgeColors: [String: RGB] = [:]
+    var showTroopBadges = true
     private let landDepthState: MTLDepthStencilState?
     private let seaDepthState: MTLDepthStencilState?
     private let noDepthState: MTLDepthStencilState?
@@ -180,6 +186,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let pixelFormat: MTLPixelFormat
         let depthFormat: MTLPixelFormat
         let sampleCount: Int
+        let library: MTLLibrary
         let cellPipeline: MTLRenderPipelineState
         let revealPipeline: MTLRenderPipelineState
         let veilPipeline: MTLRenderPipelineState
@@ -255,7 +262,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             assets = cached
         } else {
             do {
-                let library = try device.makeLibrary(source: MapRenderer.shaders + MapRenderer.sweepShaders + InkPipelines.shaders, options: nil)
+                let library = try device.makeLibrary(source: MapRenderer.shaders + MapRenderer.sweepShaders + InkPipelines.shaders + MetalLabelRenderer.shaders, options: nil)
                 enum Blend { case none, alpha, multiply }
                 func pipeline(_ vertex: String, _ fragment: String, _ blend: Blend) throws -> MTLRenderPipelineState {
                     let d = MTLRenderPipelineDescriptor()
@@ -379,6 +386,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     pixelFormat: view.colorPixelFormat,
                     depthFormat: view.depthStencilPixelFormat,
                     sampleCount: view.sampleCount,
+                    library: library,
                     cellPipeline: try pipeline("cellVertex", "landFragment", .none),
                     revealPipeline: try pipeline("revealVertex", "revealFragment", .none),
                     veilPipeline: try pipeline("quadVertex", "veilFragment", .alpha),
@@ -419,6 +427,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         reliefTilePipeline = assets.reliefTilePipeline
         multiplyPipeline = assets.multiplyPipeline
         spritePipeline = assets.spritePipeline
+        metalLabels = MetalLabelRenderer(
+            device: device,
+            library: assets.library,
+            colorPixelFormat: view.colorPixelFormat,
+            depthPixelFormat: view.depthStencilPixelFormat,
+            sampleCount: view.sampleCount
+        )
+        metalLabels?.setWorld(map: map, fullNames: true, animated: false)
         sweepPipeline = assets.sweepPipeline
         inkPipes = assets.inkPipes
         landDepthState = assets.landDepthState
@@ -915,6 +931,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var dying: [ArmySprite] = []
     var deathDelays: [String: Double] = [:]
     private var routePoints: [SIMD2<Float>] = []
+    /// v14.0.0：每军 4 点时间戳轨迹环 + Render-Behind Fritsch-Carlson 单调三次 Hermite 插值 + 平滑航向/散开阻尼 + 稳定 FNV1a 动画相位种子！
+    private struct TrajectorySample {
+        let t: CFTimeInterval
+        let pos: SIMD2<Float>
+    }
+    private var trajectories: [String: [TrajectorySample]] = [:]
+    private var stableSeeds: [String: Float] = [:]
+    private var smoothSpread: [String: SIMD2<Float>] = [:]
+    private var smoothHeading: [String: SIMD2<Float>] = [:]
+    private var smoothMoveBlend: [String: Float] = [:]
+    private var lastEvalFrameTime: CFTimeInterval = 0
+    private var emaStepInterval: Double = 0.085
+    private var emaJitter: Double = 0.014
+    private var lastArrivalTime: CFTimeInterval = 0
+    private var activeUntilTime: CFTimeInterval = 0
+    private var lastEvaluatedSprites: [(sprite: ArmySprite, pos: SIMD2<Float>, dir: SIMD2<Float>, moveBlend: Float, spread: SIMD2<Float>, seed: Float, fade: Float)] = []
+
     private var legFrom: [String: SIMD2<Float>] = [:]
     private var legTo: [String: SIMD2<Float>] = [:]
     private var legStart: CFTimeInterval = 0
@@ -923,55 +956,118 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var chasing = false
     var tweenDuration: CFTimeInterval = 0.3
     var tweenEase = true
-    var isAnimating: Bool { chasing || fading || washesAnimating }
+    var isAnimating: Bool { chasing || fading || washesAnimating || (metalLabels?.isAnimating == true) }
 
     private var cachedPlacedSprites: [(sprite: ArmySprite, x: Float, y: Float)] = []
     private var cachedPlacedSpritesTime: CFTimeInterval = -1
     private var cachedPlacedSpritesRevision: UInt64 = 0
     private var armySpritesRevision: UInt64 = 0
 
+    /// Render-Behind 自适应延迟窗口：平滑吸收云端/本机推演抖动，彻底消除超调回拉与刹车顿挫！
+    private var renderDelay: Double {
+        let base = min(0.28, max(0.042, emaStepInterval + 1.15 * emaJitter))
+        return tweenDuration.isFinite && tweenDuration > 0 ? min(0.32, max(base, min(0.18, tweenDuration * 0.72))) : base
+    }
+
+    private func stableSeed(for key: String) -> Float {
+        if let s = stableSeeds[key] { return s }
+        var h: UInt32 = 2166136261
+        for b in key.utf8 { h = (h ^ UInt32(b)) &* 16777619 }
+        let phase = Float(h & 0xFFFF) / 65536.0 * (Float.pi * 2.0)
+        if stableSeeds.count > 4096 { stableSeeds.removeAll(keepingCapacity: true) }
+        stableSeeds[key] = phase
+        return phase
+    }
+
+    /// Fritsch-Carlson 单调三次 Hermite 轨迹采样：C¹ 速度连续、绝对无超调、无折返回弹！
+    private func sampleTrajectory(_ samples: [TrajectorySample], at evalT: CFTimeInterval) -> (pos: SIMD2<Float>, vel: SIMD2<Float>, moving: Bool) {
+        guard let first = samples.first, let last = samples.last else { return (.zero, .zero, false) }
+        if samples.count == 1 || evalT <= first.t {
+            return (first.pos, .zero, false)
+        }
+        if evalT >= last.t {
+            // 到达最新样本后平稳停驻，禁止老版本 coast 超调回拉！
+            let n = samples.count
+            let dt = max(1e-4, last.t - samples[n - 2].t)
+            let d = last.pos - samples[n - 2].pos
+            let speed = (d.x * d.x + d.y * d.y).squareRoot() / Float(dt)
+            let decay = max(0.0, 1.0 - Float((evalT - last.t) / 0.14))
+            return (last.pos, (d / Float(dt)) * decay, speed > 0.35 && decay > 0.05)
+        }
+        // 查找包围 evalT 的区间 [i, i+1]
+        var idx = samples.count - 2
+        for k in 0..<(samples.count - 1) {
+            if evalT >= samples[k].t && evalT <= samples[k + 1].t { idx = k; break }
+        }
+        let p1 = samples[idx], p2 = samples[idx + 1]
+        let h = max(1e-4, p2.t - p1.t)
+        let u = Float(max(0.0, min(1.0, (evalT - p1.t) / h)))
+        let sec = (p2.pos - p1.pos) / Float(h)
+        let secLen = (sec.x * sec.x + sec.y * sec.y).squareRoot()
+
+        func clampedTangent(_ prev: SIMD2<Float>?, _ next: SIMD2<Float>?) -> SIMD2<Float> {
+            switch (prev, next) {
+            case (let a?, let b?):
+                // 折角过大或反向时衰减切线，保证 Fritsch-Carlson 单调性
+                let la = (a.x * a.x + a.y * a.y).squareRoot()
+                let lb = (b.x * b.x + b.y * b.y).squareRoot()
+                if la < 1e-4 || lb < 1e-4 { return .zero }
+                let cosAng = (a.x * b.x + a.y * b.y) / (la * lb)
+                if cosAng < -0.2 { return .zero }
+                var avg = (a + b) * 0.5
+                let avgLen = (avg.x * avg.x + avg.y * avg.y).squareRoot()
+                let cap = min(la, lb) * 1.35
+                if avgLen > cap && avgLen > 1e-5 { avg *= cap / avgLen }
+                return avg
+            case (let a?, nil): return a * 0.85
+            case (nil, let b?): return b * 0.85
+            case (nil, nil): return .zero
+            }
+        }
+        let prevSec: SIMD2<Float>? = idx > 0 ? (p1.pos - samples[idx - 1].pos) / Float(max(1e-4, p1.t - samples[idx - 1].t)) : nil
+        let nextSec: SIMD2<Float>? = (idx + 2 < samples.count) ? (samples[idx + 2].pos - p2.pos) / Float(max(1e-4, samples[idx + 2].t - p2.t)) : nil
+        let m1 = clampedTangent(prevSec, sec) * Float(h)
+        let m2 = clampedTangent(sec, nextSec) * Float(h)
+
+        let u2 = u * u, u3 = u2 * u
+        let pos = p1.pos * (2 * u3 - 3 * u2 + 1)
+            + m1 * (u3 - 2 * u2 + u)
+            + p2.pos * (3 * u2 - 2 * u3)
+            + m2 * (u3 - u2)
+        let dPosDu = p1.pos * (6 * u2 - 6 * u)
+            + m1 * (3 * u2 - 4 * u + 1)
+            + p2.pos * (6 * u - 6 * u2)
+            + m2 * (3 * u2 - 2 * u)
+        let vel = dPosDu / Float(h)
+        let safePos = (pos.x.isFinite && pos.y.isFinite) ? pos : p2.pos
+        return (safePos, vel, secLen > 0.25)
+    }
+
     private func progress(_ now: CFTimeInterval) -> Float {
         guard now.isFinite, legStart.isFinite, legLength.isFinite, legLength > 1e-6 else { return 1 }
-        let elapsed = now - legStart
-        if elapsed <= 0 { return 0 }
-        if elapsed <= legLength { return Float(elapsed / legLength) }
-        // v9.0.0 阻尼惯性滑行窗（最多 0.12s / 0.32 步长）：吸收云端推流网络抖动，消除军队每步顿挫刹车感！
-        let grace = min(0.12, legLength * 0.65)
-        guard grace > 1e-5 else { return 1 }
-        let extra = min(grace, elapsed - legLength)
-        let damped = extra * (1.0 - 0.5 * (extra / grace))
-        return min(1.32, 1.0 + Float(damped / legLength))
+        return Float(max(0.0, min(1.0, (now - legStart) / legLength)))
     }
     func displayedPoint(_ s: ArmySprite) -> SIMD2<Float> { displayed(s) }
     private func displayed(_ s: ArmySprite) -> SIMD2<Float> {
-        displayed(s, progress: progress(pinnedFrameTime ?? CACurrentMediaTime()))
-    }
-    private func displayed(_ s: ArmySprite, progress t: Float) -> SIMD2<Float> {
-        guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else {
-            return (s.x.isFinite && s.y.isFinite) ? SIMD2(s.x, s.y) : .zero
+        let now = pinnedFrameTime ?? CACurrentMediaTime()
+        if !s.key.isEmpty, let samples = trajectories[s.key] {
+            return sampleTrajectory(samples, at: now - renderDelay).pos
         }
-        return Self.hermite(a, b, legLead[s.key] ?? (b - a), t)
+        return (s.x.isFinite && s.y.isFinite) ? SIMD2(s.x, s.y) : .zero
     }
     static func hermite(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ m0: SIMD2<Float>, _ t: Float) -> SIMD2<Float> {
         let fallback = (b.x.isFinite && b.y.isFinite) ? b : ((a.x.isFinite && a.y.isFinite) ? a : SIMD2<Float>(0, 0))
         guard a.x.isFinite, a.y.isFinite, b.x.isFinite, b.y.isFinite, m0.x.isFinite, m0.y.isFinite, t.isFinite else { return fallback }
-        if t > 1 {
-            let coast = min(0.32, t - 1)
-            let p = b + (b - a) * coast
-            return (p.x.isFinite && p.y.isFinite) ? p : fallback
-        }
         let clamped = min(1, max(0, t))
         let t2 = clamped * clamped, t3 = t2 * clamped
         let p = a * (2 * t3 - 3 * t2 + 1) + m0 * (t3 - 2 * t2 + clamped) + b * (3 * t2 - 2 * t3) + (b - a) * (t3 - t2)
         return (p.x.isFinite && p.y.isFinite) ? p : fallback
     }
     private var legLead: [String: SIMD2<Float>] = [:]
-    private var lastLegVelocity: [String: (vel: SIMD2<Float>, time: CFTimeInterval)] = [:]
     private(set) var spread: [String: SIMD2<Float>] = [:]
     private func advanceChase(at time: CFTimeInterval) -> Float {
         let t = progress(time)
-        let grace = legLength > 1e-6 ? min(0.12, legLength * 0.65) : 0
-        chasing = legLength > 1e-6 && (time - legStart) < (legLength + grace)
+        chasing = time < activeUntilTime || !dying.isEmpty && t < 1.0
         return t
     }
 
@@ -983,43 +1079,25 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let safeIcon = (iconScale.isFinite && iconScale > 0) ? iconScale : 1
         return 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * safeIcon * iconZoom(scale)
     }
-    /// Returns current army world positions, caching settled positions (when spline animation has completed)
-    /// and same-frame queries so interactive pan/fling never recomputes Hermite splines for every army.
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
         guard !armySprites.isEmpty else { return [] }
         let now = pinnedFrameTime ?? CACurrentMediaTime()
-        let t = progress(now)
         if cachedPlacedSpritesRevision == armySpritesRevision && cachedPlacedSpritesTime >= 0 {
-            if (t >= 1 && cachedPlacedSpritesTime == .infinity) || cachedPlacedSpritesTime == now || (pinnedFrameTime == nil && abs(now - cachedPlacedSpritesTime) < 0.004) {
+            if (!chasing && cachedPlacedSpritesTime == .infinity) || abs(now - cachedPlacedSpritesTime) < 0.003 {
                 return cachedPlacedSprites
             }
         }
-        let result: [(sprite: ArmySprite, x: Float, y: Float)]
-        let settled = !chasing && t >= 1
-        if settled {
-            result = armySprites.map { s in
-                let p: SIMD2<Float>
-                if !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] {
-                    p = Self.hermite(a, b, legLead[s.key] ?? (b - a), t)
-                } else if s.x.isFinite && s.y.isFinite {
-                    p = SIMD2(s.x, s.y)
-                } else {
-                    p = .zero
-                }
+        let evalT = now - renderDelay
+        let result = armySprites.map { s -> (sprite: ArmySprite, x: Float, y: Float) in
+            if !s.key.isEmpty, let samples = trajectories[s.key] {
+                let p = sampleTrajectory(samples, at: evalT).pos
                 return (s, p.x, p.y)
             }
-            cachedPlacedSprites = result
-            cachedPlacedSpritesRevision = armySpritesRevision
-            cachedPlacedSpritesTime = .infinity
-        } else {
-            result = armySprites.map { s in
-                let p = displayed(s, progress: t)
-                return (s, p.x, p.y)
-            }
-            cachedPlacedSprites = result
-            cachedPlacedSpritesRevision = armySpritesRevision
-            cachedPlacedSpritesTime = now
+            return (s, s.x, s.y)
         }
+        cachedPlacedSprites = result
+        cachedPlacedSpritesRevision = armySpritesRevision
+        cachedPlacedSpritesTime = chasing ? now : .infinity
         return result
     }
 
@@ -1027,88 +1105,94 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let sprites = rawSprites.filter { $0.x.isFinite && $0.y.isFinite }
         let points = rawPoints.filter { $0.x.isFinite && $0.y.isFinite }
         if snap || sprites != armySprites {
-            let now = CACurrentMediaTime(), t = progress(now)
-            let previous = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
-            var from = [String: SIMD2<Float>](), to = [String: SIMD2<Float>](), fading = Set<String>(), lead = [String: SIMD2<Float>]()
-            var nextVel = [String: (vel: SIMD2<Float>, time: CFTimeInterval)]()
-            let safeTween = tweenDuration.isFinite ? tweenDuration : 0.3
-            let newLength = snap ? 0 : max(0.055, safeTween)
-            for s in sprites where !s.key.isEmpty {
-                let target = SIMD2(s.x, s.y)
-                if !snap, let sx = s.startX, let sy = s.startY, sx.isFinite, sy.isFinite {
-                    let origin = SIMD2(sx, sy)
-                    from[s.key] = origin; to[s.key] = target
-                    lead[s.key] = (target - origin) * 0.55
-                    continue
-                }
-                let here: SIMD2<Float>? = snap ? nil : legFrom[s.key].flatMap { a in legTo[s.key].map { b in Self.hermite(a, b, legLead[s.key] ?? (b - a), t) } }
-                guard let p = here, p.x.isFinite, p.y.isFinite else {
-                    from[s.key] = target; to[s.key] = target
-                    if !snap && !armySprites.isEmpty { fading.insert(s.key) }
-                    continue
-                }
-                if s.reorganizing && previous[s.key] != true {
-                    from[s.key] = target; to[s.key] = target; fading.insert(s.key)
-                } else {
-                    let chord = target - p, along = (chord.x * chord.x + chord.y * chord.y).squareRoot()
-                    if !along.isFinite || along > 120 {
-                        // 军团远距重整/瞬移时直接落位，避免拖出横贯全图的残影。
-                        from[s.key] = target; to[s.key] = target
-                        continue
-                    }
-                    from[s.key] = p; to[s.key] = target
-                    if newLength > 1e-5, along > 0.001 {
-                        nextVel[s.key] = (chord / Float(newLength), now)
-                    }
-                    var carriedPerSec: SIMD2<Float>? = nil
-                    if let a = legFrom[s.key], let b = legTo[s.key], legLength > 1e-5, t < 0.995 {
-                        let m0 = legLead[s.key] ?? (b - a), t2 = t * t
-                        let v = a * (6 * t2 - 6 * t) + m0 * (3 * t2 - 4 * t + 1) + b * (6 * t - 6 * t2) + (b - a) * (3 * t2 - 2 * t)
-                        carriedPerSec = v / Float(legLength)
-                    } else if let prev = lastLegVelocity[s.key], now - prev.time < 0.45 {
-                        carriedPerSec = prev.vel
-                    }
-                    if let vPerSec = carriedPerSec, newLength > 1e-5 {
-                        var m = vPerSec * Float(newLength)
-                        let k = (m.x * m.x + m.y * m.y).squareRoot()
-                        let denom = k * along
-                        if along < 0.001 || k < 0.0001 || !k.isFinite || !denom.isFinite || denom < 1e-9 {
-                            m = .zero
-                        } else {
-                            let cos = (m.x * chord.x + m.y * chord.y) / denom
-                            if !cos.isFinite || cos < 0.45 {
-                                m = chord
-                            } else {
-                                let w = (cos - 0.45) / 0.55
-                                m = m * w + chord * (1 - w)
-                                let k2 = (m.x * m.x + m.y * m.y).squareRoot()
-                                if k2.isFinite && k2 > 1e-6 && k2 > along * 1.05 { m *= (along * 1.05) / k2 }
-                            }
-                        }
-                        if m.x.isFinite && m.y.isFinite { lead[s.key] = m }
-                    }
+            let now = CACurrentMediaTime()
+            if !snap && lastArrivalTime > 0 {
+                let dt = now - lastArrivalTime
+                if dt > 0.015 && dt < 1.2 {
+                    let jitter = abs(dt - emaStepInterval)
+                    emaStepInterval = emaStepInterval * 0.82 + dt * 0.18
+                    emaJitter = emaJitter * 0.80 + jitter * 0.20
                 }
             }
-            lastLegVelocity = nextVel
+            lastArrivalTime = now
+            let previousReorg = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
+            let safeTween = tweenDuration.isFinite ? tweenDuration : 0.3
+            let newLength = snap ? 0 : max(0.045, safeTween)
+            var nextTraj = [String: [TrajectorySample]]()
+            nextTraj.reserveCapacity(sprites.count)
+            var fading = Set<String>()
+            var from = [String: SIMD2<Float>](), to = [String: SIMD2<Float>]()
+
+            for s in sprites where !s.key.isEmpty {
+                let target = SIMD2(s.x, s.y)
+                if snap {
+                    nextTraj[s.key] = [TrajectorySample(t: now, pos: target)]
+                    from[s.key] = target; to[s.key] = target
+                    continue
+                }
+                if let sx = s.startX, let sy = s.startY, sx.isFinite, sy.isFinite {
+                    let origin = SIMD2(sx, sy)
+                    nextTraj[s.key] = [TrajectorySample(t: now - renderDelay, pos: origin), TrajectorySample(t: now, pos: target)]
+                    from[s.key] = origin; to[s.key] = target
+                    continue
+                }
+                if s.reorganizing && previousReorg[s.key] != true {
+                    nextTraj[s.key] = [TrajectorySample(t: now, pos: target)]
+                    from[s.key] = target; to[s.key] = target
+                    fading.insert(s.key)
+                    continue
+                }
+                if var ring = trajectories[s.key], let last = ring.last {
+                    let d = target - last.pos
+                    let dist = (d.x * d.x + d.y * d.y).squareRoot()
+                    if !dist.isFinite || dist > 120 {
+                        ring = [TrajectorySample(t: now, pos: target)]
+                    } else {
+                        // 仅追加时间严格递增的新样本；若停驻超长后突然起步，插入起跑锚点消除瞬移
+                        if dist > 0.002 && (now - last.t) > max(0.28, renderDelay * 2.2) {
+                            ring = [TrajectorySample(t: now - max(0.05, emaStepInterval), pos: last.pos), TrajectorySample(t: now, pos: target)]
+                        } else {
+                            if now <= last.t {
+                                ring[ring.count - 1] = TrajectorySample(t: last.t + 0.001, pos: target)
+                            } else {
+                                ring.append(TrajectorySample(t: now, pos: target))
+                                if ring.count > 4 { ring.removeFirst(ring.count - 4) }
+                            }
+                        }
+                    }
+                    nextTraj[s.key] = ring
+                    from[s.key] = last.pos; to[s.key] = target
+                } else {
+                    nextTraj[s.key] = [TrajectorySample(t: now, pos: target)]
+                    from[s.key] = target; to[s.key] = target
+                    if !armySprites.isEmpty { fading.insert(s.key) }
+                }
+            }
+
             var gone = [ArmySprite]()
             if !snap {
                 let keys = Set(sprites.map(\.key))
+                let evalT = now - renderDelay
                 for s in armySprites where !s.key.isEmpty && !keys.contains(s.key) && s.army > -100_000 && gone.count < 40 {
                     var g = s
-                    let p = legFrom[s.key].flatMap { a in legTo[s.key].map { b in Self.hermite(a, b, legLead[s.key] ?? (b - a), t) } } ?? SIMD2(s.x, s.y)
+                    let p = trajectories[s.key].map { sampleTrajectory($0, at: evalT).pos } ?? SIMD2(s.x, s.y)
                     g.key = "✝" + s.key; g.x = p.x; g.y = p.y; g.selected = false; g.fighting = false
+                    nextTraj[g.key] = [TrajectorySample(t: now, pos: p)]
                     from[g.key] = p; to[g.key] = p; gone.append(g)
                 }
             }
+            trajectories = nextTraj
             dying = gone
-            legFrom = from; legTo = to; legLead = lead; fresh = fading
+            legFrom = from; legTo = to; fresh = fading
             legStart = now; legLength = newLength
+            // 动画保活窗口覆盖 Render-Behind 延迟 + 平滑收尾缓冲，CADisplayLink 不再中途误关重开！
+            activeUntilTime = snap ? now : (now + renderDelay + max(0.22, newLength))
             armySprites = sprites
             armySpritesRevision &+= 1
             cachedPlacedSprites.removeAll(keepingCapacity: true)
             cachedPlacedSpritesTime = -1
             chasing = !snap
-            rebuildArmies()
+            rebuildArmies(at: now)
         }
         if points != routePoints {
             routePoints = points
@@ -1121,40 +1205,66 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     private var armyRoleBuffers: [String: [Float]] = [:]
 
-    private func rebuildArmies() {
+    private func rebuildArmies(at frameNow: CFTimeInterval = CACurrentMediaTime()) {
         let sprites = armySprites + dying
         let ghosts = Set(dying.map(\.key))
         let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6)
-        // v11.0.0：原地复用角色顶点缓冲，彻底消除旧版 `var arr = byRole[role] ?? []; ...; byRole[role] = arr` 的 O(K²) CoW 拷贝风暴（每步省 7MB+）！
+        let dt = lastEvalFrameTime > 0 ? min(0.05, max(0.001, frameNow - lastEvalFrameTime)) : (1.0 / 60.0)
+        lastEvalFrameTime = frameNow
+        let dampFactor = Float(1.0 - exp(-dt * 14.0))
+        let evalT = frameNow - renderDelay
+
         for key in armyRoleBuffers.keys {
             armyRoleBuffers[key]?.removeAll(keepingCapacity: true)
         }
-        let reserveHint = max(90, sprites.count * 30)
-        var fade: Float = 1
-        var end = SIMD2<Float>(0, 0)
-        var lead = SIMD2<Float>(0, 0)
-        func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
+        let reserveHint = max(96, sprites.count * 32)
+        // 16 floats/vertex (64B 对齐): pos(2), corner(2), tint(4), size(1), dir(2), shift(2), anim(3: moveBlend, seed, unused)
+        func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ fade: Float, _ size: Float, _ dir: SIMD2<Float>, _ sx: Float, _ sy: Float, _ moveBlend: Float, _ seed: Float) {
             if armyRoleBuffers[role] == nil {
                 var freshArr = [Float]()
                 freshArr.reserveCapacity(reserveHint)
                 armyRoleBuffers[role] = freshArr
             }
             let corners: [(Float, Float)] = [(-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)]
-            armyRoleBuffers[role]!.reserveCapacity(armyRoleBuffers[role]!.count + 90)
+            armyRoleBuffers[role]!.reserveCapacity(armyRoleBuffers[role]!.count + 96)
             for (cx, cy) in corners {
                 armyRoleBuffers[role]!.append(at.x); armyRoleBuffers[role]!.append(at.y)
                 armyRoleBuffers[role]!.append(cx); armyRoleBuffers[role]!.append(cy)
                 armyRoleBuffers[role]!.append(c.r); armyRoleBuffers[role]!.append(c.g); armyRoleBuffers[role]!.append(c.b); armyRoleBuffers[role]!.append(fade)
-                armyRoleBuffers[role]!.append(size); armyRoleBuffers[role]!.append(end.x); armyRoleBuffers[role]!.append(end.y); armyRoleBuffers[role]!.append(sx)
-                armyRoleBuffers[role]!.append(sy); armyRoleBuffers[role]!.append(lead.x); armyRoleBuffers[role]!.append(lead.y)
+                armyRoleBuffers[role]!.append(size)
+                armyRoleBuffers[role]!.append(dir.x); armyRoleBuffers[role]!.append(dir.y)
+                armyRoleBuffers[role]!.append(sx); armyRoleBuffers[role]!.append(sy)
+                armyRoleBuffers[role]!.append(moveBlend); armyRoleBuffers[role]!.append(seed); armyRoleBuffers[role]!.append(0)
             }
         }
-        var spread = [String: SIMD2<Float>]()
+
+        // 1. 逐军评估 Render-Behind 单调三次 Hermite 精确坐标、速度与平滑航向
+        var evaluatedPos = [SIMD2<Float>]()
+        var evaluatedVel = [SIMD2<Float>]()
+        var evaluatedMoving = [Bool]()
+        evaluatedPos.reserveCapacity(sprites.count)
+        evaluatedVel.reserveCapacity(sprites.count)
+        evaluatedMoving.reserveCapacity(sprites.count)
+        for a in sprites {
+            if let ring = trajectories[a.key] {
+                let s = sampleTrajectory(ring, at: evalT)
+                evaluatedPos.append(s.pos)
+                evaluatedVel.append(s.vel)
+                evaluatedMoving.append(s.moving)
+            } else {
+                evaluatedPos.append(SIMD2(a.x, a.y))
+                evaluatedVel.append(.zero)
+                evaluatedMoving.append(false)
+            }
+        }
+
+        // 2. 平滑阻尼散开偏移（杜绝驻停/启程瞬间棋子横跳！）
+        var targetSpread = [String: SIMD2<Float>]()
         do {
             let cell = max(0.001, iconSize * iconScale * 0.6)
             var cluster = [SIMD2<Int32>: [Int]]()
-            for (i, a) in sprites.enumerated() where a.army >= 0 && !ghosts.contains(a.key) && (legFrom[a.key] ?? SIMD2(a.x, a.y)) == (legTo[a.key] ?? SIMD2(a.x, a.y)) {
-                let e = legTo[a.key] ?? SIMD2(a.x, a.y)
+            for (i, a) in sprites.enumerated() where a.army >= 0 && !ghosts.contains(a.key) && !evaluatedMoving[i] {
+                let e = evaluatedPos[i]
                 guard e.x.isFinite && e.y.isFinite else { continue }
                 let gx = max(-1_000_000, min(1_000_000, (e.x / cell).rounded()))
                 let gy = max(-1_000_000, min(1_000_000, (e.y / cell).rounded()))
@@ -1165,35 +1275,67 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let radius: Float = list.count <= 3 ? 0.42 : list.count <= 6 ? 0.6 : 0.78
                 for (j, i) in list.enumerated() {
                     let angle = Float(j) / Float(list.count) * 2 * .pi - .pi / 2
-                    spread[sprites[i].key] = SIMD2(cos(angle) * radius, sin(angle) * radius)
+                    targetSpread[sprites[i].key] = SIMD2(cos(angle) * radius, sin(angle) * radius)
                 }
             }
         }
-        for a in sprites where a.army >= 0 && spread[a.key] == nil && !ghosts.contains(a.key) {
-            if let was = self.spread[a.key], (legFrom[a.key] ?? .zero) != (legTo[a.key] ?? .zero) { spread[a.key] = was }
+        var nextSpread = [String: SIMD2<Float>]()
+        nextSpread.reserveCapacity(sprites.count)
+        for a in sprites where a.army >= 0 && !ghosts.contains(a.key) {
+            let tgt = targetSpread[a.key] ?? .zero
+            let cur = smoothSpread[a.key] ?? tgt
+            let blended = cur + (tgt - cur) * dampFactor
+            if (blended.x * blended.x + blended.y * blended.y) > 1e-5 {
+                nextSpread[a.key] = blended
+            }
         }
-        self.spread = spread
-        for a in sprites {
-            fade = ghosts.contains(a.key) ? -2 - Float(min(0.85, max(0, (deathDelays[String(a.key.dropFirst())] ?? 0) / max(0.05, legLength)))) : fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.retreating ? 0.55 : a.army <= -100_000 ? 0.99 : 1
-            let o = spread[a.key] ?? SIMD2<Float>(0, 0)
+        smoothSpread = nextSpread
+        self.spread = nextSpread
+
+        lastEvaluatedSprites.removeAll(keepingCapacity: true)
+        lastEvaluatedSprites.reserveCapacity(sprites.count)
+
+        for (idx, a) in sprites.enumerated() {
+            let isGhost = ghosts.contains(a.key)
+            let fade: Float = isGhost ? -2 - Float(min(0.85, max(0, (deathDelays[String(a.key.dropFirst())] ?? 0) / max(0.05, legLength)))) : fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.retreating ? 0.55 : a.army <= -100_000 ? 0.99 : 1
+            let o = nextSpread[a.key] ?? .zero
             let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
-            let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
-            end = legTo[a.key] ?? at
-            lead = legLead[a.key] ?? (end - at)
+            let role = UnitArt.role(a.unit)
+            let at = evaluatedPos[idx]
+            let vel = evaluatedVel[idx]
+            let speed = (vel.x * vel.x + vel.y * vel.y).squareRoot()
+            var dir = smoothHeading[a.key] ?? SIMD2(1, 0)
+            if speed > 0.15 {
+                let targetDir = vel / speed
+                let mixed = dir + (targetDir - dir) * min(1.0, dampFactor * 1.15)
+                let ml = (mixed.x * mixed.x + mixed.y * mixed.y).squareRoot()
+                if ml > 1e-4 { dir = mixed / ml }
+                smoothHeading[a.key] = dir
+            }
+            let targetBlend: Float = (evaluatedMoving[idx] && !isGhost) ? min(1.0, speed / 2.2) : 0.0
+            let prevBlend = smoothMoveBlend[a.key] ?? targetBlend
+            let moveBlend = prevBlend + (targetBlend - prevBlend) * dampFactor
+            smoothMoveBlend[a.key] = moveBlend
+            let seed = stableSeed(for: a.key)
+
+            if !isGhost {
+                lastEvaluatedSprites.append((a, at, dir, moveBlend, o, seed, fade))
+            }
+
             let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
             let resolvedRole: String = (a.embarked || a.unit == "Transport") ? "Transport" : role
             let isNavalPiece = (resolvedRole == "Fleet" || resolvedRole == "Transport")
 
             if a.banner > 0 {
                 let k: Float = 0.62
-                quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.78, 0.20, 0.14), size * k, (0.52 + o.x) / k, (-0.42 + o.y) / k)
+                quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.78, 0.20, 0.14), fade, size * k, dir, (0.52 + o.x) / k, (-0.42 + o.y) / k, moveBlend, seed)
             }
             if isNavalPiece, unitTextures["0fleetwake"] != nil {
-                quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * 1.24, o.x / 1.24, (0.22 + o.y) / 1.24)
+                quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), fade, size * 1.24, dir, o.x / 1.24, (0.22 + o.y) / 1.24, moveBlend, seed)
             }
             let token = !isNavalPiece && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
             if token {
-                quad("0plate", at, c, size * 0.98, o.x / 0.98, (0.14 + o.y) / 0.98)
+                quad("0plate", at, c, fade, size * 0.98, dir, o.x / 0.98, (0.14 + o.y) / 0.98, moveBlend, seed)
             }
             let piece: RGB = token
                 ? RGB(0.86 + c.r * 0.14, 0.86 + c.g * 0.14, 0.86 + c.b * 0.14)
@@ -1210,7 +1352,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             }()
             for (i, (dx, dy, k)) in layout.enumerated() {
                 let shade: Float = i < layout.count - 1 && n > 1 ? 0.90 : 1
-                quad(resolvedRole, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
+                quad(resolvedRole, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), fade, size * k, dir, (dx + o.x) / k, (dy + o.y) / k, moveBlend, seed)
             }
         }
         func roleLayerOrder(_ key: String) -> Int {
@@ -1235,7 +1377,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
             }
             guard let buffer = uploaded else { return nil }
-            return (texture: texture, buffer: buffer, count: data.count / 15, pool: pool)
+            return (texture: texture, buffer: buffer, count: data.count / 16, pool: pool)
         }
     }
     private var unitBufferPool: [String: MapBufferPool] = [:]
@@ -1386,6 +1528,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let sy1 = Int(max(Double(sy0), min(Double(dh), ceil(rawY1))))
         let mapScissor = MTLScissorRect(x: sx0, y: sy0, width: sx1 - sx0, height: sy1 - sy0)
         let deskVisible = sx0 > 0 || sy0 > 0 || sx1 < dw || sy1 < dh
+
+        // v14.0.0：每帧动画态按 VSync 实时以单调三次 Hermite 评估军团轨迹，并刷新字形图集 Mipmap！
+        if showArmies && !armySprites.isEmpty && (chasing || !dying.isEmpty) {
+            rebuildArmies(at: frameTime)
+        }
+        metalLabels?.flushMipmapsIfNeeded(commandBuffer: buffer)
 
         // 深度缓冲纯片上 SRAM 暂态使用（.dontCare 零 DRAM 带宽写回）
         pass.depthAttachment.clearDepth = 1.0
@@ -1570,6 +1718,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
             }
 
+            // 5.5. v14.0.0 纯 Metal 世界空间国名大字（位于羊皮纸正片叠底之前，与地图肌理/主光天然贴合，滑屏 0.00px 漂移！）
+            if let ml = metalLabels {
+                let lblAlpha = Float(max(0, min(1, (Double(stage) - 0.80) / 0.20)))
+                ml.revealAlpha = lblAlpha
+                ml.drawNations(encoder: encoder, commandBuffer: buffer, uniforms: &u, camera: camera, viewport: size, now: frameTime)
+            }
+
             // 6. 原作羊皮纸正片叠底 + 高倍缩放双尺度无缝宣纸纤维（远景单采样、近景纤毫毕现无糊块）
             if display.parchment, let parchment {
                 var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
@@ -1582,6 +1737,44 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 encoder.setFragmentSamplerState(sampler, index: 0)
                 encoder.setFragmentSamplerState(repeatSampler ?? sampler, index: 1)
                 encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+            }
+
+            // 6.5. v14.0.0 纯 Metal 都城/城名 + 120Hz 零延迟军牌兵力条（位于羊皮纸之上保证细字锐利，与军队同帧同矩阵锁死！）
+            if let ml = metalLabels {
+                ml.drawCities(encoder: encoder, commandBuffer: buffer, uniforms: &u, camera: camera, viewport: size)
+                if stage >= 0.99 && showArmies && showTroopBadges && !lastEvaluatedSprites.isEmpty {
+                    let iconPx = Float(Self.iconPoints(camera.scale, iconScale: Double(iconScale)))
+                    if iconPx >= 17.5 {
+                        var badges: [MetalLabelRenderer.TroopBadgeInput] = []
+                        badges.reserveCapacity(min(lastEvaluatedSprites.count, 160))
+                        for item in lastEvaluatedSprites where item.sprite.army > -100_000 {
+                            let k = item.sprite.key
+                            guard let ratio = troopBadgeRatios[k], ratio.isFinite, ratio > 0 else { continue }
+                            let txt = troopBadgeTexts[k] ?? ""
+                            let barC: RGB
+                            if ratio < 0.25 { barC = RGB(0.84, 0.24, 0.18) }
+                            else if ratio < 0.48 { barC = RGB(0.88, 0.68, 0.22) }
+                            else if let cc = troopBadgeColors[k] { barC = cc }
+                            else { barC = RGB(0.32, 0.66, 0.36) }
+                            let isFl = item.sprite.unit == "Fleet" || item.sprite.embarked
+                            badges.append(MetalLabelRenderer.TroopBadgeInput(
+                                worldX: item.pos.x,
+                                worldY: item.pos.y,
+                                spreadPxX: item.spread.x * iconPx,
+                                spreadPxY: item.spread.y * iconPx,
+                                text: txt,
+                                ratio: ratio,
+                                barR: barC.r,
+                                barG: barC.g,
+                                barB: barC.b,
+                                isFleet: isFl
+                            ))
+                        }
+                        if !badges.isEmpty {
+                            ml.drawTroopBadges(badges, encoder: encoder, commandBuffer: buffer, uniforms: &u, camera: camera, viewport: size, iconPixels: iconPx)
+                        }
+                    }
+                }
             }
         }
 
@@ -2057,7 +2250,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         return float4(clamp(rgb, 0.0, 1.0), p.a * u.alpha);
     }
 
-    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 target; packed_float2 shift; packed_float2 lead; };
+    // v14.0.0：64B 对齐 SpriteVertex（含稳定 FNV1a 动画相位 seed 与连续平滑 moveBlend，彻底根治 16–30Hz 随机相位抽搐！）
+    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 dir; packed_float2 shift; packed_float3 anim; };
     struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
     vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                   constant float& time [[buffer(5)]]) {
@@ -2078,44 +2272,36 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         } else if (fighting) {
             tint.a = 1.0;
         }
-        float2 a = float2(s.center), b = float2(s.target);
-        float2 delta = b - a;
-        float dist = length(delta);
-        bool moving = (dist > 0.06);
-        float2 dir = moving ? (delta / dist) : float2(1.0, 0.0);
-        float2 walk;
-        if (progress > 1.0) {
-            walk = b + delta * min(0.32, progress - 1.0);
-        } else {
-            float t = fadeP, t2 = t * t, t3 = t2 * t;
-            walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + delta * (t3 - t2);
-        }
-        // 真实航向踏步倾身、弹性呼吸与交战双向冲锋回弹（仅顶点着色器运算，零片元负担，完整保留 4.1 雕漆兵牌造型）
-        float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2831853;
+        float2 walk = float2(s.center);
+        float2 dir = float2(s.dir);
+        float moveBlend = clamp(s.anim[0], 0.0, 1.0);
+        float seed = s.anim[1]; // 军团全寿命恒定相位种子（不再随 s.center 乱跳！）
         float2 corner = float2(s.corner);
         float2 extraPx = float2(0.0, sinkY);
         if (fighting) {
             float beat = sin(time * 8.4 + seed);
             float lunge = pow(max(0.0, beat), 3.0) - 0.25 * max(0.0, -beat);
-            float2 thrustDir = moving ? dir : float2((fract(seed * 1.7) > 0.5) ? 1.0 : -1.0, (fract(seed * 3.1) - 0.5) * 0.45);
+            float2 thrustDir = (moveBlend > 0.15) ? dir : float2((fract(seed * 1.7) > 0.5) ? 1.0 : -1.0, (fract(seed * 3.1) - 0.5) * 0.45);
             extraPx += thrustDir * (lunge * pixels * 0.12) + float2(0.0, -abs(lunge) * pixels * 0.05);
             float squash = 1.0 + lunge * 0.055;
             corner = float2(corner.x * squash, corner.y / squash);
             float ang = clamp(thrustDir.x * lunge * 0.11, -0.16, 0.16);
             float ca = cos(ang), sa = sin(ang);
             corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
-        } else if (moving && !dying) {
-            float stride = sin(time * 9.2 + seed);
-            float stepLift = abs(stride);
-            extraPx += dir * (stride * min(1.1, pixels * 0.036)) + float2(0.0, -stepLift * min(1.8, pixels * 0.062));
-            float stretchY = 1.0 + (stepLift - 0.5) * 0.055;
-            corner = float2(corner.x / sqrt(stretchY), corner.y * stretchY);
-            float lean = clamp(dir.x * 0.085 + dir.y * 0.035 + stride * 0.042, -0.15, 0.15);
-            float ca = cos(lean), sa = sin(lean);
-            corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
         } else if (!dying) {
-            float breath = sin(time * 2.4 + seed) * 0.016;
+            // 连续平滑过渡：静止呼吸 ↔ 行军稳步踏步倾身，0 跳变、0 抽搐！
+            float breath = sin(time * 2.4 + seed) * 0.014 * (1.0 - moveBlend);
             corner *= float2(1.0 - breath * 0.5, 1.0 + breath);
+            if (moveBlend > 0.01) {
+                float stride = sin(time * 8.6 + seed);
+                float stepLift = abs(stride) * moveBlend;
+                extraPx += dir * (stride * moveBlend * min(1.0, pixels * 0.032)) + float2(0.0, -stepLift * min(1.6, pixels * 0.054));
+                float stretchY = 1.0 + (stepLift - 0.5 * moveBlend) * 0.048;
+                corner = float2(corner.x / sqrt(max(0.5, stretchY)), corner.y * stretchY);
+                float lean = clamp((dir.x * 0.075 + dir.y * 0.030 + stride * 0.036) * moveBlend, -0.14, 0.14);
+                float ca = cos(lean), sa = sin(lean);
+                corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
+            }
         }
         SpriteOut o;
         o.position = clip(walk, u, (corner + float2(s.shift)) * pixels + extraPx);

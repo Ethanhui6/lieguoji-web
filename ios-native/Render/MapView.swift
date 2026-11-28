@@ -798,6 +798,8 @@ struct MapView: UIViewRepresentable {
                 self.requestAsyncMetalRedraw()
             }
             let labelsView = MapLabelsView(map: map)
+            // v14.0.0：若 MetalLabelRenderer 就绪，国名与城名全部交由纯 GPU 世界空间管线绘制（0.00px 漂移），UIKit 仅保留自定义贴图/贴纸
+            labelsView.metalBackendActive = (renderer?.metalLabels != nil)
             self.labels = labelsView
             labelsView.alpha = CGFloat(max(0, min(1, (initialReveal - 0.85) / 0.15)))
             effects.alpha = CGFloat(max(0, min(1, (initialReveal - 0.9) / 0.1)))
@@ -886,7 +888,10 @@ struct MapView: UIViewRepresentable {
                 guard let self, self.worldID == self.controller.activeWorldID else { return }
                 self.applyFramingRequests()
             }
-            controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
+            controller.nameFrame = { [weak self] in
+                if let ml = self?.renderer?.metalLabels { return ml.nameFrame() }
+                return self?.labels?.nameFrame() ?? [:]
+            }
             controller.renderer = { [weak self] in self?.renderer }
             controller.placed = { [weak self] key in
                 guard let p = self?.renderer?.placedSprites().first(where: { $0.sprite.key == key }) else { return nil }
@@ -1308,6 +1313,24 @@ struct MapView: UIViewRepresentable {
         private func updateTroops(fastPan: Bool = false) {
             guard let renderer, let mtk else { return }
             let allow = renderer.reveal >= 0.99 && (controller.play.showArmies || controller.replayLocked) && controller.play.showTroopBars
+            if appliedTroopsRevision != controller.troopsRevision {
+                appliedTroopsRevision = controller.troopsRevision
+                troops.texts = controller.troopTexts
+                troops.ratios = controller.troopRatios
+                troops.colors = controller.troopBarColors
+                // v14.0.0：同步给 MetalLabelRenderer，由 GPU 同帧零延迟绘制兵力牌
+                renderer.troopBadgeTexts = controller.troopTexts
+                renderer.troopBadgeRatios = controller.troopRatios
+                renderer.troopBadgeColors = controller.troopBarColors.mapValues { RGB(hex: $0) }
+            }
+            renderer.showTroopBadges = allow
+            if renderer.metalLabels != nil {
+                // GPU 军牌已完全接管，关闭 UIKit CALayer 兵力条消除主线程每帧 churn 与滑屏滞后
+                troops.alpha = 0
+                troops.isHidden = true
+                if !troops.isEmpty { troops.clear() }
+                return
+            }
             guard allow else {
                 troops.alpha = 0
                 troops.isHidden = true
@@ -1320,12 +1343,6 @@ struct MapView: UIViewRepresentable {
             }
             if troops.alpha != 1 { troops.alpha = 1 }
             if troops.isHidden { troops.isHidden = false }
-            if appliedTroopsRevision != controller.troopsRevision {
-                appliedTroopsRevision = controller.troopsRevision
-                troops.texts = controller.troopTexts
-                troops.ratios = controller.troopRatios
-                troops.colors = controller.troopBarColors
-            }
             _ = fastPan
             troops.update(renderer.placedSprites(), camera: renderer.camera, viewport: mtk.bounds.size, spread: renderer.spread)
         }
@@ -1668,16 +1685,14 @@ struct MapView: UIViewRepresentable {
         private static func range(_ fps: Int, interactive: Bool = false) -> CAFrameRateRange {
             let f = Float(max(15, min(120, fps)))
             if interactive {
-                if f >= 90 {
-                    return CAFrameRateRange(minimum: 60, maximum: f, preferred: f)
-                }
                 if f >= 60 {
                     return CAFrameRateRange(minimum: 60, maximum: f, preferred: f)
                 }
                 let lo = min(f, max(30, f - 5))
                 return CAFrameRateRange(minimum: lo, maximum: f, preferred: f)
             }
-            let floor: Float = f >= 60 ? 45 : max(24, f * 0.75)
+            // v14.0.0：行军动画锁满 60–120Hz VSync 节拍（消除旧版 floor=45 引发 ProMotion 45/48/60 变频微抖！）
+            let floor: Float = f >= 60 ? 60 : max(24, f * 0.85)
             return CAFrameRateRange(minimum: min(f, floor), maximum: f, preferred: f)
         }
         private var frameRange: CAFrameRateRange {
@@ -1920,14 +1935,21 @@ struct MapView: UIViewRepresentable {
                     shownRevision = controller.worldRevision
                     map = next
                     renderer?.setMap(next, skipStatic: controller.replayLocked, skipOutlines: controller.replayScrubbing, animateColors: !controller.replayLocked || controller.replayAnimate)
-                    // v10.0.0：城池与国家数未变时跳过昂贵的 CoreText 全城重绘，彻底消除疆域易主时的文字卡顿与闪烁。
+                    // v10.0.0/v14.0.0：城池与国家数未变时跳过全城重建，同步刷新纯 Metal 世界空间国名与城名
                     let citySig = (next.meta.cities.count, next.meta.nations.count)
                     if !controller.replayLocked && citySig != lastCitiesSignature {
                         lastCitiesSignature = citySig
                         labels?.setCities(map: next)
+                        renderer?.metalLabels?.setCities(map: next)
                     }
                     if !controller.replayScrubbing {
-                        if let groups = controller.viewLabels { labels?.setGroups(groups, animated: false) } else { labels?.setNations(map: next, animated: false) }
+                        if let groups = controller.viewLabels {
+                            labels?.setGroups(groups, animated: false)
+                            renderer?.metalLabels?.setGroups(groups, animated: false)
+                        } else {
+                            labels?.setNations(map: next, animated: false)
+                            renderer?.metalLabels?.setNations(map: next, animated: true)
+                        }
                         if !mapFrozenForSheet, let renderer, let mtk {
                             labels?.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
                         }
@@ -1966,6 +1988,7 @@ struct MapView: UIViewRepresentable {
                 controller.editorSeaDirty = false
                 labels?.setNations(map: next, animated: false)
                 labels?.setCities(map: next)
+                renderer?.metalLabels?.setWorld(map: next, fullNames: controller.display.fullNationNames, animated: false)
                 if !mapFrozenForSheet, let renderer, let mtk {
                     labels?.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
                 }
@@ -2006,7 +2029,13 @@ struct MapView: UIViewRepresentable {
                 } else {
                     let animated = !mapFrozenForSheet && (controller.viewLabels?.map(\.name) != shownViewLabels?.map(\.name))
                     shownViewLabels = controller.viewLabels
-                    if let groups = shownViewLabels { labels?.setGroups(groups, animated: animated) } else { labels?.setNations(map: map, animated: animated) }
+                    if let groups = shownViewLabels {
+                        labels?.setGroups(groups, animated: animated)
+                        renderer?.metalLabels?.setGroups(groups, animated: animated)
+                    } else {
+                        labels?.setNations(map: map, animated: animated)
+                        renderer?.metalLabels?.setNations(map: map, animated: animated)
+                    }
                     if !mapFrozenForSheet, let renderer, let mtk {
                         labels?.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
                     }
@@ -2025,6 +2054,7 @@ struct MapView: UIViewRepresentable {
                 }
             }
             labels?.setSelected(controller.selectedProvince)
+            renderer?.metalLabels?.selectedProvince = controller.selectedProvince
             if let renderer {
                 var wide = Set<Int>()
                 if let n = controller.relationsNation { wide.insert(n) }
@@ -2078,7 +2108,12 @@ struct MapView: UIViewRepresentable {
                 labels.nameScale = controller.display.nationNameScale
                 let namesChanged = labels.fullNames != controller.display.fullNationNames
                 labels.fullNames = controller.display.fullNationNames
-                if namesChanged, controller.viewLabels == nil { labels.setNations(map: map, animated: false) }
+                renderer?.metalLabels?.nameScale = Float(controller.display.nationNameScale)
+                renderer?.metalLabels?.fullNames = controller.display.fullNationNames
+                if namesChanged, controller.viewLabels == nil {
+                    labels.setNations(map: map, animated: false)
+                    renderer?.metalLabels?.setNations(map: map, animated: false)
+                }
                 if !mapFrozenForSheet, let renderer, let mtk {
                     labels.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
                 }
@@ -2086,6 +2121,7 @@ struct MapView: UIViewRepresentable {
             }
             if let labels, labels.showCities != controller.display.cityNames {
                 labels.showCities = controller.display.cityNames
+                renderer?.metalLabels?.showCities = controller.display.cityNames
                 if !mapFrozenForSheet, let renderer, let mtk {
                     labels.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size))
                 }
@@ -2538,6 +2574,14 @@ final class MapLabelsView: UIView {
     }
 
     var showCities = true
+    /// v14.0.0：纯 Metal 世界空间国名/城名接管标志；开启时 UIKit 隐藏国名与城名视图，仅保留自定义贴图/贴纸，彻底消灭双绘与滑屏跳动！
+    var metalBackendActive = false {
+        didSet {
+            if metalBackendActive {
+                for l in nations + cities { l.view.isHidden = true }
+            }
+        }
+    }
     /// Multiplies state-name size. 1 leaves the label boxes as they are.
     var nameScale = 1.0
     var fullNames = true
@@ -2983,9 +3027,13 @@ final class MapLabelsView: UIView {
         }
         }
         layoutGroup(custom)
-        layoutGroup(nations)
-        layoutGroup(capitalNames)
-        layoutGroup(otherCities)
+        if !metalBackendActive {
+            layoutGroup(nations)
+            layoutGroup(capitalNames)
+            layoutGroup(otherCities)
+        } else {
+            for l in nations + cities where !l.view.isHidden { l.view.isHidden = true }
+        }
         visibleCacheValid = true
     }
 }

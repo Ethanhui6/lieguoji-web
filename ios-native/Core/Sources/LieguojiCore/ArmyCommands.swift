@@ -268,15 +268,19 @@ extension NativeEngine {
         var bestScore = -1.0
         var bestBonus = 10
         var bestSkill = SeaDominion.AdmiralSkill.fireAttack
-        if !r.people.isNull, !r.people.people.isNull {
-            for p in r.people.people.asArray where p.nationId.optionalString == nation && p.alive.asBool && (p.age.optionalNumber ?? 0) >= 18 {
-                let mil = p.skills.military.optionalNumber ?? 40
-                let traits = p.traits.isNull ? [] : p.traits.asArray.map(\.asString)
+        // v14.0.0 修复：读取真实人物表 r.kin.persons（旧版误读空字段 r.people.people 导致永远回退「镇海都督」），并统一走 NativeEngine.displayPersonName！
+        let sid = Offices.stateId(r, nation)
+        if !r.kin.isNull, !r.kin.persons.isNull {
+            for p in r.kin.persons.objectValues {
+                guard case .object = p.storage, p.isAlive.optionalBool == true else { continue }
+                guard p.stateId.asInt == sid, (p.age.optionalNumber ?? 0) >= 18 else { continue }
+                let mil = People.skills(p).military
+                let traits = p.traits.isNull ? [] : p.traits.asArray.compactMap(\.optionalString)
                 let navalTrait = traits.contains("NavalMastery") ? 35.0 : (traits.contains("ShipMaster") ? 20.0 : 0.0)
                 let score = mil + navalTrait
                 if score > bestScore {
                     bestScore = score
-                    bestName = p.name.optionalString ?? (p.firstName.optionalString ?? "无名")
+                    bestName = NativeEngine.displayPersonName(p)
                     bestBonus = max(8, min(32, Int((mil / 4.2 + (navalTrait > 0 ? 10 : 0)).rounded())))
                     bestSkill = SeaDominion.AdmiralSkill.pick(traits: traits, military: mil, seed: p.id.asInt)
                 }

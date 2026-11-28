@@ -79,8 +79,50 @@ public enum ArmyOrders {
         return Profile.measure("o.resolve") { resolve0(r, id, action) }
     }
     nonisolated(unsafe) static var lastResolve: (run: JS, id: String, action: Action, revision: Double, tick: Double, value: Result<(travel: JS, name: String), Refused>)?
-    /// v13.0.0：单 tick 级海港可用集与当前空间快照缓存，避免同一批 15–30 支军令反复全图扫 835 州 × 200 港！
+    /// v13.0.0/v14.0.0：单 tick 级海港可用集与各国州级通行许可表缓存，消除同一批军令反复 O(同盟+附庸+交战) 线性扫描！
     private static var embarkPortCache: (run: ObjectIdentifier, tick: Double, rev: Double, byNation: [String: Set<Int>])?
+    private static var traverseTableCache: (run: ObjectIdentifier, tick: Double, provCount: Int, relCount: Int, tables: [String: [UInt8]])?
+    private static func cachedTraverseTable(_ r: JS, nation: String, anchor: String?, retreat: Bool) -> [UInt8] {
+        let rid = ObjectIdentifier(r), tick = r.clock.tick.asNumber
+        let provs = r.world.provinces.asArray
+        let relCount = r.world.statecraft.relations.length
+        if traverseTableCache == nil || traverseTableCache!.run != rid || traverseTableCache!.tick != tick || traverseTableCache!.provCount != provs.count || traverseTableCache!.relCount != relCount {
+            traverseTableCache = (rid, tick, provs.count, relCount, [:])
+        }
+        let key = "\(nation)|\(retreat ? 1 : 0)|\(anchor ?? "")"
+        if let hit = traverseTableCache!.tables[key] { return hit }
+        // 一次预计算该国所有外交状态集合，再单遍填充 835 州 UInt8 通行表（O(P) 取代每州 O(Alliances+Vassals+Relations)！）
+        var warNations = Set<String>()
+        for rel in r.world.statecraft.relations.asArray where rel.status.asString == "war" {
+            let a = rel.a.asString, b = rel.b.asString
+            if a == nation { warNations.insert(b) } else if b == nation { warNations.insert(a) }
+        }
+        var accessNations = Set<String>([nation])
+        if let anchor { accessNations.insert(anchor) }
+        for al in r.alliances.records.asArray where al.endedTick.isNull {
+            let members = al.members.asArray.map(\.asString)
+            if members.contains(nation) {
+                for m in members where !warNations.contains(m) { accessNations.insert(m) }
+            }
+        }
+        for vs in r.vassals.records.asArray where vs.endedTick.isNull && vs.overlordId.asString == nation {
+            let vId = vs.vassalId.asString
+            if !warNations.contains(vId) { accessNations.insert(vId) }
+        }
+        let regimesOn = r.regimes.enabled.isTruthy
+        var table = [UInt8](repeating: 0, count: provs.count)
+        for i in 0..<provs.count {
+            let ctrl = provs[i].controller.asString
+            if accessNations.contains(ctrl) {
+                table[i] = 1
+            } else {
+                let hostile = warNations.contains(ctrl)
+                if retreat ? (regimesOn && !hostile) : hostile { table[i] = 1 }
+            }
+        }
+        traverseTableCache!.tables[key] = table
+        return table
+    }
     private static func cachedEmbarkPorts(_ r: JS, nation: String) -> Set<Int> {
         let rid = ObjectIdentifier(r), tick = r.clock.tick.asNumber, rev = r.portControl.isNull ? 0 : r.portControl.revision.asNumber
         if embarkPortCache == nil || embarkPortCache!.run != rid || embarkPortCache!.tick != tick || embarkPortCache!.rev != rev {
@@ -139,20 +181,26 @@ public enum ArmyOrders {
                 let ports = portProvinces(r), cost = embarkPenalty(g)
                 return { q in ports.contains(q) ? 0 : cost }
             }() : nil
-            // v13.0.0 同大陆直连快路径：若起点与终点在同一陆地连通块且均在陆地上，先走纯陆路紧致 A*（启发率 2× 紧致，搜索耗时骤降 4×！），
-            // 仅当纯陆路被敌国/中立国阻断时再开启跨海搜索！
+            // v14.0.0：预计算单 tick O(1) 查表通行表 + 同大陆 2 级州走廊 HPA*（节点扩展直降 6×–10×），非 App 金标准测试完全不动！
             let appFast = r.regimes.enabled.isTruthy
             let geo = appFast ? geography(r, bridge) : nil
             let sameLandComp = appFast && !g.isSea(here.cell) && !g.isSea(target) && (geo!.cellFeature[here.cell] == geo!.cellFeature[target])
+            let allowTbl = cachedTraverseTable(r, nation: nation, anchor: anchor, retreat: v)
             var foundPath: (nodes: [Int], cost: Double)? = nil
             if sameLandComp {
-                foundPath = g.path(from: here.cell, to: target, allowSea: false, canEnterProvince: { q in
-                    canTraverse(r, nation: nation, controller: r.world.provinces[q].controller.asString, anchor: anchor, retreat: v)
-                }, embark: nil, aStar: true, seaRate: 1, terrainCost: true)
+                if UnitKinds.enabled {
+                    foundPath = g.corridorPath(from: here.cell, to: target, canEnterProvince: { q in
+                        q >= 0 && q < allowTbl.count && allowTbl[q] == 1
+                    }, terrainCost: true)
+                } else {
+                    foundPath = g.path(from: here.cell, to: target, allowSea: false, canEnterProvince: { q in
+                        q >= 0 && q < allowTbl.count && allowTbl[q] == 1
+                    }, embark: nil, aStar: true, seaRate: 1, terrainCost: true)
+                }
             }
             if foundPath == nil {
                 foundPath = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in
-                    canTraverse(r, nation: nation, controller: r.world.provinces[q].controller.asString, anchor: anchor, retreat: v)
+                    q >= 0 && q < allowTbl.count && allowTbl[q] == 1
                 }, embark: embark, aStar: appFast, seaRate: appFast ? 0.5 : 1, terrainCost: appFast)
             }
             guard let path = foundPath else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }

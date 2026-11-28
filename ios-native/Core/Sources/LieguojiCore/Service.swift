@@ -13,9 +13,11 @@ public final class EngineService {
     public private(set) var catalogsLoaded = false
     /// 云端专属计算服极速模式：在大型地图（≥140 州）上自动启用智能国名节流与单帧高效步进，显著提速 280 州等超大图。
     public var cloudTurbo = false
-    /// v13.0.0：服务端静态几何内容寻址缓存钩子（`LGC2` run-only 解析与首次 `LGC2` 写入）。
+    /// v13.0.0/v14.0.0：服务端静态几何内容寻址缓存钩子（磁盘 `LGST v2` + RAM 已解码 `DecodedStatics` 零重复解析）。
     public var staticsResolver: ((String) -> Data?)?
     public var onStaticsDecoded: ((String, Data) -> Void)?
+    public var decodedStaticsResolver: ((String) -> NativeEngine.DecodedStatics?)?
+    public var onStaticsParsed: ((String, NativeEngine.DecodedStatics) -> Void)?
     private var lastOwners: [Int] = []
     private var lastNationSig: [String] = []
     private var slimStaticInitialized = false
@@ -90,9 +92,9 @@ public final class EngineService {
     }
 
     private func armySig(_ a: GameState.Army) -> ArmyDeltaSig {
-        // v13.0.0：坐标 0.25 地图单位量化 + 补给/士气分桶，彻底滤除静止/缓行军团的微噪抖动更新，推流帧体积再降 40%！
-        let xQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((a.x * 4.0).rounded()))))
-        let yQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((a.y * 4.0).rounded()))))
+        // v14.0.0：与 LGB2 1/16 线精度完全对齐（消除旧版 0.25 粗量化吞掉缓行军团多步位移引发的停-跳顿挫！）
+        let xQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((a.x * 16.0).rounded()))))
+        let yQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((a.y * 16.0).rounded()))))
         return ArmyDeltaSig(
             nation: a.nation, troops: a.troops, status: a.status, province: a.province,
             suppliesBucket: a.supplies / 5, moraleBucket: a.morale / 3, xQ: xQ, yQ: yQ, dest: a.destination,
@@ -101,8 +103,8 @@ public final class EngineService {
     }
 
     private func fleetSig(_ f: GameState.Fleet) -> FleetDeltaSig {
-        let xQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((f.x * 4.0).rounded()))))
-        let yQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((f.y * 4.0).rounded()))))
+        let xQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((f.x * 16.0).rounded()))))
+        let yQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((f.y * 16.0).rounded()))))
         let hullQ = UInt8(max(0, min(250, Int((f.hull * 50.0).rounded()))))
         var fl: UInt8 = 0
         if f.manual { fl |= 1 << 0 }
@@ -501,7 +503,7 @@ public final class EngineService {
             resetSlimStaticCache()
             return Reply(ok: true, reason: "ok")
         case "enableMux":
-            return Reply(ok: true, reason: "mux-v17")
+            return Reply(ok: true, reason: "mux-v18")
         case "pullLatest":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
             let days = max(1, min(64, optInt("days") ?? 3))
@@ -526,7 +528,13 @@ public final class EngineService {
             // v12.0.0：先释放旧引擎（1–2 GB 内存）再解析新世界，彻底根除 4C4G 轻量云换局 OOM 崩溃死循环！
             engine = nil; lastOwners = []; lastNationSig = []; resetSlimStaticCache()
             do {
-                let e = try NativeEngine(world: unpacked, staticsResolver: staticsResolver, onStaticsDecoded: onStaticsDecoded)
+                let e = try NativeEngine(
+                    world: unpacked,
+                    staticsResolver: staticsResolver,
+                    onStaticsDecoded: onStaticsDecoded,
+                    decodedStaticsResolver: decodedStaticsResolver,
+                    onStaticsParsed: onStaticsParsed
+                )
                 engine = e
                 // 远程同步无需倒传 2–30MB 的 mapJSON 与完整 state()，支持 withoutMap / withoutState 毫秒级回包！
                 let replyData: Data? = bool("withoutState") ? nil : state(slim: bool("slim"))

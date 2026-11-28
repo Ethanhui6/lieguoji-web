@@ -238,8 +238,45 @@ public enum NuclearWarfare {
         row.nukes = JS(m.nukes)
         row.nukesDropped = JS(0)
         row.nukesHit = JS(0)
+        row.eventICBonus = JS(0)
         r.regimes.hoi4.nations[nid] = row
         return row
+    }
+
+    /// v14.0.0：永久增加/削减历史事件带来的工业产能修正（纳入月度 targetIC 基线，绝不再被 18%/月平滑抹除！）。
+    public static func addEventIC(_ r: JS, nationId nid: String, delta: Double) {
+        guard delta != 0 else { return }
+        ensureInitialized(r)
+        let row = ensureNation(r, nationId: nid)
+        let prevBonus = row.eventICBonus.optionalNumber ?? 0.0
+        row.eventICBonus = JS(clamp(prevBonus + delta, -120.0, 220.0))
+        let cur = row.ic.optionalNumber ?? 50.0
+        row.ic = JS((clamp(cur + delta, 10.0, 500.0) * 10).rounded() / 10)
+    }
+
+    /// v14.0.0：直接调节某国战争支持度（用于历史事件宣战振奋、战败受挫或战时演说）。
+    public static func adjustWarSupport(_ r: JS, nationId nid: String, delta: Double) {
+        guard delta != 0 else { return }
+        ensureInitialized(r)
+        let row = ensureNation(r, nationId: nid)
+        let cur = row.warSupport.optionalNumber ?? 50.0
+        row.warSupport = JS((clamp(cur + delta, 0.0, 100.0) * 10).rounded() / 10)
+    }
+
+    /// v14.0.0：事件 enact `law:`（`econ_civilian`/`econ_partial`/`econ_war`/`econ_total` 及 HOI4 别名）时同步切换真实动员法案，消除两套系统脱节！
+    public static func syncMobilizationFromReform(_ r: JS, nationId nid: String, reformId: String) {
+        let mapped: MobilizationLaw?
+        switch reformId {
+        case "econ_civilian", "civilian_economy", "civilian": mapped = .civilian
+        case "econ_partial", "partial_mobilization", "early": mapped = .early
+        case "econ_war", "war_economy": mapped = .warEconomy
+        case "econ_total", "total_mobilization", "total": mapped = .total
+        default: mapped = nil
+        }
+        guard let law = mapped else { return }
+        ensureInitialized(r)
+        let row = ensureNation(r, nationId: nid)
+        row.mobilization = JS(law.rawValue)
     }
 
     /// 初始化 `r.regimes.hoi4` 账本及全部国家的工业产能、战争支持度、制空权、反应堆与核武初值。
@@ -441,10 +478,11 @@ public enum NuclearWarfare {
                 r.destiny.nations[nid].destiny = JS(max(0.0, curD - drag))
             }
 
-            // 3b. 工业产能 IC 平滑演进
+            // 3b. 工业产能 IC 平滑演进（v14.0.0：永久累加历史事件带来的 eventICBonus，彻底修复事件 +IC 被月度平滑以 18%/月侵蚀回原值的缺陷！）
             let baseMetrics = computeBaseNationMetrics(r, nationId: nid, era: era)
             let acadPts = Double(WorldDepth.nationAcademyPoints(r, nation: nid))
-            let targetIC = clamp((baseMetrics.ic + acadPts * 0.45) * law.icFactor, 10.0, 500.0)
+            let eventBonus = row.eventICBonus.optionalNumber ?? 0.0
+            let targetIC = clamp((baseMetrics.ic + acadPts * 0.45 + eventBonus) * law.icFactor, 10.0, 500.0)
             let curIC = row.ic.optionalNumber ?? baseMetrics.ic
             let nextIC = clamp(curIC + (targetIC - curIC) * 0.18, 10.0, 500.0)
             row.ic = JS((nextIC * 10).rounded() / 10)

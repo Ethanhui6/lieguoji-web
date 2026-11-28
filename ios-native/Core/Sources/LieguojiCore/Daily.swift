@@ -361,41 +361,90 @@ public enum Daily {
 
     // MARK: Month end (settleFiscalMonth47, settleDestinyMonth)
     static let goldProduction: [String: Double] = ["Kingdom": 1, "Empire": 1, "Federation": Native.fr(1.05), "Republic": Native.fr(1.1), "Tribal": Native.fr(0.9), "Theocracy": Native.fr(0.95)]
-    static func armyFees(_ r: JS, _ nation: String) -> (cost: Int, suspended: Bool) {
-        var ids = [String: Int](); for (i, p) in r.world.provinces.asArray.enumerated() { ids[p.id.asString] = i + 1 }
-        struct P { let id: Int; let owner: String?; let land: Bool; let distance: Int; let neighbors: [Int] }
-        var provinces = r.world.provinces.asArray.map { p -> P in
-            let d = r.upperCombat.provinces[p.id.asString].distance.asInt
-            return P(id: ids[p.id.asString]!, owner: p.controller.asString, land: true, distance: d == 2147483647 ? 0 : d, neighbors: p.neighbors.asArray.map { ids[$0.asString]! })
-        }
-        let held = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
-        var armies = [Int](), seaIds = [Int: Int]()
-        guard let bridge = Armies.bridge else { return (0, false) }
-        for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" && a.nationId.asString == nation {
-            let t = r.armyPositions.records[a.id.asString], loc = bridge.graph.location(bridge.travel(t)), q = Int(bridge.graph.provinces[loc.cell])
-            let province: JS? = q >= 0 ? r.world.provinces[q] : nil
-            let moving = ["moving", "blocked"].contains(t.status.asString)
-            let active = moving || held.contains(key("army", a.id.asString)) || (province.map { $0.controller.asString != nation && Wars.relation(r, nation, $0.controller.asString)?.status.asString == "war" } ?? false)
-            let reorganizing = r.reorganization.active.has(a.id.asString)
-            if !reorganizing && !(a.status.asString != "retreating" && active) { continue }
-            var pid: Int
-            if let province { pid = ids[province.id.asString]! }
-            else {
-                let face = Int(bridge.graph.faces[loc.cell])
-                if let s = seaIds[face] { pid = s } else { pid = r.world.provinces.length + 1 + face; seaIds[face] = pid; provinces.append(P(id: pid, owner: nil, land: false, distance: 0, neighbors: [])) }
+    private struct FiscalProvinceInfo {
+        let id: Int
+        let owner: String?
+        let land: Bool
+        let distance: Int
+        let neighbors: [Int]
+    }
+    /// v14.0.0：全图月度军费共享上下文（一次遍历构建 835 州表 + 548 军团按国分组，消灭旧版 40 国 × 全图重扫！）
+    private struct FiscalArmyContext {
+        let byId: [Int: FiscalProvinceInfo]
+        let armiesByNation: [String: [Int]]
+        init(_ r: JS) {
+            let provs = r.world.provinces.asArray
+            let pCount = provs.count
+            var ids = [String: Int](minimumCapacity: pCount)
+            for (i, p) in provs.enumerated() { ids[p.id.asString] = i + 1 }
+            var map = [Int: FiscalProvinceInfo](minimumCapacity: pCount + 32)
+            for (i, p) in provs.enumerated() {
+                let pidStr = p.id.asString
+                let d = r.upperCombat.provinces[pidStr].distance.asInt
+                let nbs = p.neighbors.asArray.compactMap { ids[$0.asString] }
+                map[i + 1] = FiscalProvinceInfo(id: i + 1, owner: p.controller.asString, land: true, distance: d == 2147483647 ? 0 : d, neighbors: nbs)
             }
-            armies.append(pid)
+            var grouped = [String: [Int]]()
+            guard let bridge = Armies.bridge else {
+                self.byId = map; self.armiesByNation = grouped; return
+            }
+            let held = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
+            var warPairs = Set<String>()
+            for rel in r.world.statecraft.relations.asArray where rel.status.asString == "war" {
+                let a = rel.a.asString, b = rel.b.asString
+                warPairs.insert(a + "|" + b); warPairs.insert(b + "|" + a)
+            }
+            var seaIds = [Int: Int]()
+            for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
+                let aid = a.id.asString
+                let nation = a.nationId.asString
+                let t = r.armyPositions.records[aid]
+                let loc = bridge.graph.location(bridge.travel(t))
+                let q = Int(bridge.graph.provinces[loc.cell])
+                let province: JS? = (q >= 0 && q < pCount) ? provs[q] : nil
+                let ts = t.status.asString
+                let moving = ts == "moving" || ts == "blocked"
+                let active = moving || held.contains(key("army", aid)) || (province.map { let ctrl = $0.controller.asString; return ctrl != nation && warPairs.contains(nation + "|" + ctrl) } ?? false)
+                let reorganizing = r.reorganization.active.has(aid)
+                if !reorganizing && !(a.status.asString != "retreating" && active) { continue }
+                let pid: Int
+                if q >= 0 && q < pCount {
+                    pid = q + 1
+                } else {
+                    let face = Int(bridge.graph.faces[loc.cell])
+                    if let s = seaIds[face] {
+                        pid = s
+                    } else {
+                        pid = pCount + 1 + face
+                        seaIds[face] = pid
+                        map[pid] = FiscalProvinceInfo(id: pid, owner: nil, land: false, distance: 0, neighbors: [])
+                    }
+                }
+                grouped[nation, default: []].append(pid)
+            }
+            self.byId = map
+            self.armiesByNation = grouped
         }
-        var byId = [Int: P](); for p in provinces { byId[p.id] = p }
-        var cost = 0
-        for pid in armies {
-            let p = byId[pid]!
-            if p.owner == nation { if p.distance > 4 { cost = Native.iadd(cost, Native.idiv(Native.imul(p.distance, min(p.distance, 12)), 2)) } }
-            else if !p.land { cost = Native.iadd(cost, 420) }
-            else if let n = p.neighbors.lazy.compactMap({ byId[$0] }).first(where: { $0.owner == nation }), n.id != 0 { cost = Native.iadd(cost, Native.imul(n.distance, 60)) }
+        func fees(_ r: JS, _ nation: String) -> (cost: Int, suspended: Bool) {
+            var cost = 0
+            if let armies = armiesByNation[nation] {
+                for pid in armies {
+                    guard let p = byId[pid] else { continue }
+                    if p.owner == nation {
+                        if p.distance > 4 { cost = Native.iadd(cost, Native.idiv(Native.imul(p.distance, min(p.distance, 12)), 2)) }
+                    } else if !p.land {
+                        cost = Native.iadd(cost, 420)
+                    } else if let n = p.neighbors.lazy.compactMap({ byId[$0] }).first(where: { $0.owner == nation }), n.id != 0 {
+                        cost = Native.iadd(cost, Native.imul(n.distance, 60))
+                    }
+                }
+            }
+            let suspended = r.upperCombat.nations[nation].provinceOrder.asArray.contains { !r.upperCombat.provinces[$0.asString].connected.isTruthy }
+            return (cost, suspended)
         }
-        let suspended = r.upperCombat.nations[nation].provinceOrder.asArray.contains { !r.upperCombat.provinces[$0.asString].connected.isTruthy }
-        return (cost, suspended)
+    }
+    static func armyFees(_ r: JS, _ nation: String) -> (cost: Int, suspended: Bool) {
+        FiscalArmyContext(r).fees(r, nation)
     }
     static func taxMultiplier(_ r: JS, _ nation: String) -> Double {
         let n = r.people.nations[nation]
@@ -420,10 +469,11 @@ public enum Daily {
         for s in r.world.statecraft.provinces.asArray { stockById[s.provinceId.asString] = s }
         let appTerrain = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
         let seasonTax = appTerrain ? WorldSeason.of(month: r.life.currentDate.month.asInt).taxMultiplier : 1.0
+        let fiscalCtx = FiscalArmyContext(r)
         for nation in r.world.nations.asArray {
             let id = nation.id.asString, n = r.finance.nations[id], u = r.upperCombat.nations[id]
             if n.lastMonth.asInt >= month || u.provinceOrder.length == 0 { continue }
-            let ethnic = r.economy.nations[id].ethnic.asString, fees = armyFees(r, id), openingGold = n.gold.asInt
+            let ethnic = r.economy.nations[id].ethnic.asString, fees = fiscalCtx.fees(r, id), openingGold = n.gold.asInt
             let incomes = u.provinceOrder.asArray.map { pidJS -> Int in
                 let pid = pidJS.asString, p = r.finance.provinces[pid]
                 guard let data = stockById[pid] else { return 0 }

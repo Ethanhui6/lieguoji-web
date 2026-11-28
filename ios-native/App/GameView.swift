@@ -641,8 +641,8 @@ private struct GameHudCanvas: View {
                 )
             }
             .overlay {
-                // v12.0.0：将历史重大抉择弹窗提升至最顶层（zIndex 130 > Toast 120），支持「定位战区」直飞事发地，弹出 0 抖动零卡顿！
-                if let modal = model.pendingHistoricalModal {
+                // v14.0.0：钢铁雄心级历史重大抉择弹窗（支持「暂隐看战区」真正收起遮罩并解冻地图镜头自由勘察）
+                if let modal = model.pendingHistoricalModal, !model.eventModalMinimized {
                     HistoricalEventModalOverlay(
                         modal: modal,
                         route: model.activeHistoricalRoute,
@@ -651,7 +651,10 @@ private struct GameHudCanvas: View {
                             Task { await model.resolveHistoricalEvent(choiceIndex: idx) }
                         },
                         onLocate: { pIdx in
-                            controller.fly(to: pIdx)
+                            model.minimizeHistoricalEventModal(focusProvince: pIdx)
+                        },
+                        onMinimize: { pIdx in
+                            model.minimizeHistoricalEventModal(focusProvince: pIdx)
                         }
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.97)))
@@ -841,6 +844,22 @@ private struct GameTopChrome: View {
                 )
             }
 
+            // v14.0.0 暂隐历史事件勘察地图期间挂在顶部的返卷续阅条
+            if let minimized = model.pendingHistoricalModal, model.eventModalMinimized {
+                MinimizedHistoricalEventBanner(
+                    modal: minimized,
+                    onRestore: {
+                        model.restoreHistoricalEventModal()
+                    },
+                    onLocate: {
+                        if let pIdx = minimized.focusProvince { controller.fly(to: pIdx) }
+                    }
+                )
+                .padding(.leading, leadSafe)
+                .padding(.trailing, trailSafe)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
             // v12.0.0 正式挂载高速看海 / 快讯不暂停模式顶部历史号外条：零暂停零卡顿，轻点可展开完整战史画卷弹窗！
             if hudVisible, let express = model.expressEventToast, model.pendingHistoricalModal == nil {
                 HistoricalExpressBanner(
@@ -849,6 +868,7 @@ private struct GameTopChrome: View {
                         GameFeel.shared.tap()
                         if let pIdx = express.focusProvince { controller.fly(to: pIdx) }
                         model.expressEventToast = nil
+                        model.eventModalMinimized = false
                         model.controller.modalOpen = true
                         model.pendingHistoricalModal = express
                     },
@@ -866,6 +886,7 @@ private struct GameTopChrome: View {
         .animation(GameView.hudSpring, value: model.remoteReconnecting)
         .animation(GameView.hudSpring, value: model.remoteOfflineManual)
         .animation(GameView.hudSpring, value: model.remoteAddress != nil)
+        .animation(GameView.hudSpring, value: model.eventModalMinimized)
         .animation(GameView.hudSpring, value: model.expressEventToast?.id)
         .opacity(hiddenByMode ? 0 : 1)
         .allowsHitTesting(!hiddenByMode)
@@ -1000,11 +1021,37 @@ private struct GameTopDateCapsule: View {
                 .buttonStyle(PressStyle())
                 .transition(.scale(scale: 0.86).combined(with: .opacity))
             }
+
+            if let wt = model.state?.worldTension, wt > 0 {
+                let wtColor: Color = wt >= 60 ? Theme.seal : (wt >= 25 ? Theme.gold : Theme.ink2)
+                Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.75, height: 14)
+                Button {
+                    GameFeel.shared.tap()
+                    show(.diplomacy)
+                } label: {
+                    HStack(spacing: 2.5) {
+                        Circle().fill(wtColor).frame(width: 5, height: 5)
+                        Text(tightLandscape ? "\(wt)%" : "危\(wt)%")
+                            .font(Theme.sans(10.5, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(wtColor)
+                    }
+                    .padding(.horizontal, 5.5)
+                    .padding(.vertical, 2)
+                    .background(wtColor.opacity(0.11), in: Capsule())
+                    .fixedSize(horizontal: true, vertical: false)
+                    .frame(height: height)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PressStyle())
+                .transition(.scale(scale: 0.86).combined(with: .opacity))
+            }
         }
         .padding(.horizontal, tightLandscape ? 8 : 10)
         .frame(height: height)
         .glass(Capsule())
         .animation(Motion.panel, value: (model.state?.wars.count ?? 0) > 0)
+        .animation(Motion.panel, value: (model.state?.worldTension ?? 0) > 0)
     }
 }
 
@@ -1037,7 +1084,9 @@ private struct GameOnlineSignalPill: View {
 
     private var signalStrength: (bars: Int, color: Color) {
         guard model.remoteAddress != nil else {
-            return model.remoteReconnecting ? (1, Theme.gold) : (3, Theme.jade)
+            if model.remoteReconnecting { return (1, Theme.seal) }
+            if !model.remoteOfflineManual { return (1, Theme.gold) }
+            return (3, Theme.jade)
         }
         guard let rtt = model.remoteRTTMs else { return (3, Theme.jade) }
         if rtt < 85 { return (3, Theme.jade) }
@@ -1053,6 +1102,9 @@ private struct GameOnlineSignalPill: View {
         }
         if model.remoteReconnecting {
             return "重连中…"
+        }
+        if !model.remoteOfflineManual {
+            return "云服待命"
         }
         return "本机 0ms"
     }
@@ -1120,14 +1172,17 @@ private struct ComputeRouteSheet: View {
 
     private var statusSubtitle: String {
         if model.remoteAddress != nil {
-            let transport = model.remoteTransport.isEmpty ? "九州云服 v17" : model.remoteTransport
+            let transport = model.remoteTransport.isEmpty ? "九州云服 v18" : model.remoteTransport
             let rttPart = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
-            return "当前云端推流：\(transport)\(rttPart)"
+            return "当前云端推流：\(transport)\(rttPart) · 断线不跳时间"
         }
         if model.remoteReconnecting {
-            return "正在尝试连接云服线路…"
+            return "正在自动多端口续连云服 v18（进度已锁定不回退）"
         }
-        return "当前：本机 Apple Silicon 0ms 推演（最流畅 · 零网络抖动）"
+        if !model.remoteOfflineManual {
+            return "云服待命中（已锁定当前进度，点下方一键接入最快专线）"
+        }
+        return "当前：本机 Apple Silicon 0ms 推演（离线单机）"
     }
 
     var body: some View {
@@ -1444,15 +1499,16 @@ private struct GameReconnectBanner: View {
             .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("九州云服自动重连中 · 第 \(attemptNumber) 次")
+                Text("九州云服重连中 · 第 \(attemptNumber) 次")
                     .font(Theme.serif(13.5))
                     .foregroundStyle(Theme.ink)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
-                Text("世界进度已安全托管云端，切回即续推")
+                Text("已锁定第 \(model.state?.day ?? 0) 日进度不回退 · 可自由浏览地图")
                     .font(Theme.sans(11))
                     .foregroundStyle(Theme.ink2)
+                    .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -1464,9 +1520,9 @@ private struct GameReconnectBanner: View {
             Button {
                 GameFeel.shared.tap()
                 model.reconnectCloudNow()
-                say("正在立即重连九州云服…")
+                say("正在立即多端口重连九州云服…")
             } label: {
-                Text("立即重连")
+                Text("立即重试")
                     .font(Theme.sans(11.5))
                     .foregroundStyle(Theme.paperLight)
                     .padding(.horizontal, 10)
@@ -1478,9 +1534,9 @@ private struct GameReconnectBanner: View {
             Button {
                 GameFeel.shared.tap()
                 model.switchToOfflineLocal()
-                say("已暂切离线单机，可随时轻点上方重连云服")
+                say("已切回本机演算，恢复网络后可随时连回云服")
             } label: {
-                Text("离线单机")
+                Text("切回本机")
                     .font(Theme.sans(11.5))
                     .foregroundStyle(Theme.ink2)
                     .padding(.horizontal, 9)
@@ -1886,29 +1942,55 @@ private struct GameCleanMapChip: View {
 private struct GameTransportPill: View {
     @ObservedObject var model: GameModel
     let landscape: Bool
-    private static let speedSteps = [1, 2, 4, 8, 16, 32]
+    private static let speedSteps = [1, 2, 4, 8, 16, 32, 64]
+
+    private var speedPipCount: Int {
+        switch model.speed {
+        case ..<2: return 1
+        case 2..<4: return 2
+        case 4..<8: return 3
+        case 8..<16: return 4
+        default: return 5
+        }
+    }
+
     var body: some View {
         let sealSize: CGFloat = landscape ? 28 : Theme.Control.sealButtonSize
         let isUltra = model.speed >= 32
+        let pips = speedPipCount
         HStack(spacing: 4) {
             Button {
                 GameFeel.shared.tap()
                 model.cycleSpeed()
             } label: {
-                Text("\(model.speed)×")
-                    .font(landscape ? Theme.kai(12.5) : Theme.kai(13.5))
-                    .foregroundStyle(isUltra ? Theme.paperLight : (model.speed > 1 ? Theme.seal : Theme.ink))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .frame(width: landscape ? 36 : 42, height: sealSize)
-                    .background(
-                        isUltra ? Theme.seal : (model.speed > 1 ? Theme.seal.opacity(0.11) : Color.clear),
-                        in: Capsule()
-                    )
-                    .contentShape(Capsule())
-                    .contentTransition(.numericText())
-                    .animation(Motion.tap, value: model.speed)
+                VStack(spacing: 1.5) {
+                    Text("\(model.speed)×")
+                        .font(landscape ? Theme.kai(12) : Theme.kai(13))
+                        .foregroundStyle(isUltra ? Theme.paperLight : (model.speed > 1 ? Theme.seal : Theme.ink))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .contentTransition(.numericText())
+                    HStack(spacing: 1.8) {
+                        ForEach(0..<5, id: \.self) { i in
+                            let lit = i < pips
+                            RoundedRectangle(cornerRadius: 0.8)
+                                .fill(
+                                    isUltra
+                                        ? (lit ? Theme.paperLight : Theme.paperLight.opacity(0.30))
+                                        : (lit ? (model.playing ? Theme.seal : Theme.ink2.opacity(0.68)) : Theme.ink.opacity(0.16))
+                                )
+                                .frame(width: 4.0, height: 2.0)
+                        }
+                    }
+                }
+                .frame(width: landscape ? 38 : 44, height: sealSize)
+                .background(
+                    isUltra ? Theme.seal : (model.speed > 1 ? Theme.seal.opacity(0.11) : Color.clear),
+                    in: Capsule()
+                )
+                .contentShape(Capsule())
+                .animation(Motion.tap, value: model.speed)
             }
             .buttonStyle(PressStyle())
             .contextMenu {
@@ -1917,7 +1999,7 @@ private struct GameTransportPill: View {
                         GameFeel.shared.tap()
                         model.speed = step
                     } label: {
-                        Text(step == 32 ? "\(step)× 极速看海" : "\(step)× 倍速")
+                        Text(step == 64 ? "\(step)× 超高速看海" : (step == 32 ? "\(step)× 极速看海" : "\(step)× 倍速"))
                     }
                 }
             }

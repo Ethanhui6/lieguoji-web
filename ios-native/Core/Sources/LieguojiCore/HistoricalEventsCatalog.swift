@@ -122,13 +122,15 @@ extension HistoricalEvents {
             headline: "维也纳欢呼与铁蹄：德意志宣布合并奥地利",
             dateLabel: "1938 年 3 月 12 日",
             body: "德国国防军越过边境开进维也纳，柏林宣布将奥地利纳入德意志帝国版图，彻底撕毁《凡尔赛和约》中禁止德奥合并的条款。",
-            effectSummary: "德意志和平吞并奥地利全境，获得奥地利工业产能 +28 与兵源；全球紧张度 +15。",
+            effectSummary: "德意志和平吞并奥地利全境，获得奥地利工业产能 +24 与动用外汇储备；全球紧张度 +15。",
             illustration: "event_anschluss_1938",
             actorSpecId: "germany", targetSpecId: "austria",
             choices: [
-                Choice(title: "履行德奥合并（史实）", subtitle: "和平吞并奥地利全境，德国工业与兵源暴涨", isHistorical: true, effectCode: "annex:germany:austria|tension:15|ic:germany:28|gold:germany:350"),
-                Choice(title: "奥地利拒绝并武装抵抗（架空）", subtitle: "德奥爆发战争，欧洲提前陷入战火", isHistorical: false, effectCode: "war:germany:austria:1|tension:22"),
-            ]
+                Choice(title: "履行德奥合并（史实）", subtitle: "和平吞并奥地利全境，德国工业跃升并震动欧陆", isHistorical: true, effectCode: "annex:germany:austria|tension:15|ic:germany:24|gold_months:germany:2|war_support:germany:8"),
+                Choice(title: "奥地利拒绝并武装抵抗（架空）", subtitle: "德奥爆发战争，维也纳紧急动员死守阿尔卑斯", isHistorical: false, effectCode: "war:germany:austria:1|spawn_army:austria:12000:维也纳卫戍师|buff:austria:阿尔卑斯护国死战:10:28:1.0:0:150|tension:22"),
+            ],
+            requireAtPeace: ("germany", "austria"),
+            minPowerRatio: 1.2
         ))
         out.append(EventSpec(
             id: "munich_1938",
@@ -138,13 +140,15 @@ extension HistoricalEvents {
             headline: "绥靖巅峰：苏台德地区割让德意志",
             dateLabel: "1938 年 9 月 30 日",
             body: "英、法、德、意四国首脑在慕尼黑签署协定，强迫捷克斯洛伐克将布满边境要塞与军工厂的苏台德地区割让德国，以换取「我们时代的和平」。",
-            effectSummary: "捷克斯洛伐克割让西部 45% 州郡给德国，德国工业产能 +24；全球紧张度 +14。",
+            effectSummary: "捷克斯洛伐克割让西部 45% 州郡给德国，德国工业产能 +20；全球紧张度 +14。",
             illustration: "event_munich_1938",
             actorSpecId: "germany", targetSpecId: "czechoslovakia",
             choices: [
-                Choice(title: "签署慕尼黑协定割让苏台德（史实）", subtitle: "德国不战而夺捷克边防要塞与军工区", isHistorical: true, effectCode: "cede:czechoslovakia:germany:45|tension:14|ic:germany:24"),
-                Choice(title: "英法拒绝绥靖、联手保卫捷克（架空）", subtitle: "捷克抗德，英法立即介入全面大战", isHistorical: false, effectCode: "war:germany:czechoslovakia:1|war:uk:germany:1|war:france:germany:1|tension:28"),
-            ]
+                Choice(title: "签署慕尼黑协定割让苏台德（史实）", subtitle: "德国不战而夺捷克边防要塞与军工区，英法战争支持度受挫", isHistorical: true, effectCode: "cede:czechoslovakia:germany:45|tension:14|ic:germany:20|war_support:uk:-6|war_support:france:-6"),
+                Choice(title: "英法拒绝绥靖、联手保卫捷克（架空）", subtitle: "捷克依托苏台德要塞抗德，英法立即介入全面大战", isHistorical: false, effectCode: "war:germany:czechoslovakia:1|war:uk:germany:1|war:france:germany:1|buff:czechoslovakia:苏台德要塞防线:12:30:1.0:0:150|tension:28"),
+            ],
+            requireAtPeace: ("germany", "czechoslovakia"),
+            minPowerRatio: 1.2
         ))
         out.append(EventSpec(
             id: "first_vienna_award_1938",
@@ -169,13 +173,16 @@ extension HistoricalEvents {
             headline: "德军开进布拉格，英法绥靖梦碎紧急保障波兰",
             dateLabel: "1939 年 3 月 15 日",
             body: "德国撕毁慕尼黑承诺，全面吞并波希米亚与摩拉维亚并接收斯柯达军工厂；英法绥靖梦碎，紧急向波兰提供正式军事保障。",
-            effectSummary: "德意志吞并捷克斯洛伐克余部并增产 +26 IC；英法波紧急结成同盟；全球紧张度 +16。",
+            effectSummary: "德意志吞并捷克斯洛伐克余部并增产 +24 IC；英法波紧急结成同盟；全球紧张度 +16。",
             illustration: "event_bohemia_1939",
             actorSpecId: "germany", targetSpecId: "czechoslovakia",
             choices: [
-                Choice(title: "吞并波希米亚·接收斯柯达军工（史实）", subtitle: "德国军力大增，英法波紧急结盟", isHistorical: true, effectCode: "annex:germany:czechoslovakia|ic:germany:26|ally:uk:poland|tension:16"),
+                Choice(title: "吞并波希米亚·接收斯柯达军工（史实）", subtitle: "德国军力大增，英法波紧急结盟", isHistorical: true, effectCode: "annex:germany:czechoslovakia|ic:germany:24|ally:uk:poland|war_support:uk:10|tension:16"),
                 Choice(title: "仅迫使捷克称臣纳贡（架空）", subtitle: "捷克成为德国附庸国，保留自治", isHistorical: false, effectCode: "vassal:germany:czechoslovakia|tension:10"),
-            ]
+            ],
+            requiresEvent: "munich_1938",
+            requireAtPeace: ("germany", "czechoslovakia"),
+            minPowerRatio: 1.2
         ))
         out.append(EventSpec(
             id: "memel_1939",
@@ -264,14 +271,15 @@ extension HistoricalEvents {
             title: "苏军西进 · 瓜分波兰",
             headline: "苏联红军越过东部边境，按苏德密约瓜分波兰",
             dateLabel: "1939 年 9 月 17 日",
-            body: "华沙战线崩解之际，苏联红军以保卫西乌克兰与西白俄罗斯为名出兵波兰东部，随后按苏德秘密议定书划定新国界。",
-            effectSummary: "苏联立即接管波兰东部 45% 疆域（利沃夫、布列斯特线）并对波兰残部宣战，苏德建立短暂缓冲。",
+            body: "华沙战线崩解之际，苏联红军以保卫西乌克兰与西白俄罗斯为名出兵波兰东部，随后按苏德秘密议定书划定新国界（英法未对苏宣战）。",
+            effectSummary: "苏联接管波兰东部 40% 疆域并对波兰单独作战（不触发英法盟约宣战），苏德建立短暂缓冲。",
             illustration: "event_poland_partition",
             actorSpecId: "ussr", targetSpecId: "poland",
             choices: [
-                Choice(title: "出兵西进、按密约瓜分波兰（史实）", subtitle: "苏联接管波兰东部疆域，建立西方战略纵深", isHistorical: true, effectCode: "cede_east:poland:ussr:45|war:ussr:poland:0|pact:germany:ussr:2|tension:10"),
-                Choice(title: "严守中立、不参与瓜分（架空）", subtitle: "苏联按兵不动，保持对波兰中立", isHistorical: false, effectCode: "tension:-4"),
-            ]
+                Choice(title: "出兵西进、按密约瓜分波兰（史实）", subtitle: "苏联接管波兰东部疆域，与德缔结缓冲条约", isHistorical: true, effectCode: "cede_east:poland:ussr:40|war:ussr:poland:0|pact:germany:ussr:2|tension:10"),
+                Choice(title: "严守中立、不参与瓜分（架空）", subtitle: "苏联按兵不动，维持外交声誉与西方缓和", isHistorical: false, effectCode: "stability:ussr:6|tension:-4"),
+            ],
+            requireAtWar: ("germany", "poland")
         ))
         out.append(EventSpec(
             id: "phony_war_atlantic_1939",
@@ -389,14 +397,35 @@ extension HistoricalEvents {
             title: "意大利宣战 · 地中海全面燃火",
             headline: "罗马向英法宣战，阿尔卑斯与北非战线同步打响",
             dateLabel: "1940 年 6 月 10 日",
-            body: "眼见法国败局已定，墨索里尼迫不及待宣布向英法宣战，企图在阿尔卑斯山与地中海分享胜利果实，战火骤然蔓延至南欧与北非。",
+            body: "眼见法国战线告急，墨索里尼决定宣布向英法宣战，企图在阿尔卑斯山与地中海分享胜利果实，战火骤然蔓延至南欧与北非。",
             effectSummary: "意大利正式锁定轴心国并向法国与英国宣战；全球紧张度 +10。",
             illustration: "scroll_el_alamein_1942",
             actorSpecId: "italy", targetSpecId: "france",
             choices: [
                 Choice(title: "意大利履行钢铁条约参战（史实）", subtitle: "对英法宣战，开辟地中海战区", isHistorical: true, effectCode: "ally:germany:italy|war:italy:france:1|war:italy:uk:1|law:italy:econ_war|tension:10"),
-                Choice(title: "墨索里尼继续观望中立（架空）", subtitle: "意大利暂不出兵，避免过早耗尽海军", isHistorical: false, effectCode: "gold:italy:250|tension:-3"),
-            ]
+                Choice(title: "墨索里尼继续观望中立（架空）", subtitle: "意大利暂不出兵，积蓄海军与财政实力", isHistorical: false, effectCode: "gold_months:italy:2|tension:-3"),
+            ],
+            requireAtWar: ("germany", "france"),
+            maxTargetControlRatio: 0.90
+        ))
+        // v14.0.0 新增 HOI4 标志性重大转折：贡比涅停战与维希法国 vs 自由法国流亡死战！
+        out.append(EventSpec(
+            id: "vichy_france_1940",
+            scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
+            triggerYear: 1940, triggerMonth: 6, minDay: 270,
+            title: "贡比涅森林停战 · 维希政权或自由法国",
+            headline: "巴黎危急！贝当主张停战保南部，戴高乐疾呼继续流亡死战",
+            dateLabel: "1940 年 6 月 22 日",
+            body: "德军突破塞纳河防线直逼法国腹地，法国内阁陷入空前分裂：贝当元帅提议在贡比涅签署停战协定以保存法国南部自治；戴高乐则高举洛林十字旗，呼吁绝不投降、与大英帝国并肩死战到底！",
+            effectSummary: "史实：德占法国北部与大西洋岸、南部建立维希附庸；架空：戴高乐重整自由法军死战到底！",
+            illustration: "scroll_dunkirk_1940",
+            actorSpecId: "france", targetSpecId: "germany",
+            choices: [
+                Choice(title: "签署贡比涅停战 · 设立维希政府（史实）", subtitle: "割让北部与大西洋海岸并停战附庸，德国释放西线主力", isHistorical: true, effectCode: "puppet_split:germany:france:45|ic:germany:18|war_support:france:-18|tension:10"),
+                Choice(title: "戴高乐呼吁绝不投降 · 坚持死战（架空）", subtitle: "紧急编组自由法国纵队依托南方与英军顽抗", isHistorical: false, effectCode: "spawn_army:france:16000:自由法国第一纵队|buff:france:自由法国誓死不屈:18:26:1.08:0:180|war_support:france:16|gold_months:france:-2"),
+            ],
+            requireAtWar: ("germany", "france"),
+            maxTargetControlRatio: 0.80
         ))
         out.append(EventSpec(
             id: "baltic_annexation_1940",
@@ -531,13 +560,14 @@ extension HistoricalEvents {
             headline: "零下四十度极寒降临！朱可夫挥师发动莫斯科冬季大反攻",
             dateLabel: "1941 年 12 月 5 日",
             body: "严酷的俄罗斯寒冬令缺乏冬装与防冻液的德军装甲部队寸步难行，朱可夫调动西伯利亚生力军在莫斯科城下发起排山倒海的冬季反攻！",
-            effectSummary: "苏联获得 150 日【红军冬季大反攻】（攻击 +32%、防御 +28%、行军 ×1.20），工业产能 +35。",
+            effectSummary: "苏联耗军费调集西伯利亚预备师并获 150 日【红军冬季大反攻】，工业产能 +24。",
             illustration: "event_moscow_winter",
             actorSpecId: "ussr", targetSpecId: "germany",
             choices: [
-                Choice(title: "朱可夫发动莫斯科大反攻（史实）", subtitle: "西伯利亚精锐全线反击，粉碎德军闪电战神话", isHistorical: true, effectCode: "buff:ussr:莫斯科冬季反攻:32:28:1.20:0:150|ic:ussr:35|morale:ussr:22"),
-                Choice(title: "固守伏尔加与莫斯科防线（架空）", subtitle: "积蓄重炮与坦克兵团等待春季总攻", isHistorical: false, effectCode: "buff:ussr:纵深筑垒:8:36:1.0:0:150|ic:ussr:25"),
-            ]
+                Choice(title: "朱可夫发动莫斯科大反攻（史实）", subtitle: "调动西伯利亚精锐全线反击，粉碎闪电战神话", isHistorical: true, effectCode: "buff:ussr:莫斯科冬季反攻:26:22:1.15:0:150|spawn_army:ussr:18000:西伯利亚近卫军|ic:ussr:24|gold_months:ussr:-2|morale:ussr:18"),
+                Choice(title: "固守伏尔加与莫斯科防线（架空）", subtitle: "稳健休整、积蓄重炮与坦克兵团等待春季反击", isHistorical: false, effectCode: "buff:ussr:纵深筑垒:8:32:1.0:0:150|ic:ussr:20"),
+            ],
+            requireAtWar: ("germany", "ussr")
         ))
         out.append(EventSpec(
             id: "case_blue_1942",
@@ -546,13 +576,15 @@ extension HistoricalEvents {
             title: "蓝色方案 · 德军南下高加索",
             headline: "南方集团军群直指顿河大弯曲部与高加索巴库油田",
             dateLabel: "1942 年 6 月 28 日",
-            body: "为彻底解决轴心国战略石油危机，德军集中最后一批精锐装甲集群在乌克兰草原发动「蓝色方案」夏季总攻，兵锋直指斯大林格勒与高加索！",
-            effectSummary: "德国获 120 日【蓝色方案夏季攻势】（攻击 +26%、行军 ×1.22），国库 +300。",
+            body: "为彻底解决轴心国战略石油危机，德军集中精锐装甲集群在乌克兰草原发动「蓝色方案」夏季总攻，兵锋直指斯大林格勒与高加索！",
+            effectSummary: "德国耗军费发动 120 日【蓝色方案夏季攻势】（攻击 +24%、行军 ×1.20）。",
             illustration: "event_barbarossa_1941",
             actorSpecId: "germany", targetSpecId: "ussr",
             choices: [
-                Choice(title: "集中装甲主力南下高加索与伏尔加（史实）", subtitle: "德军再度发起大规模夏季攻势", isHistorical: true, effectCode: "buff:germany:蓝色方案夏季攻势:26:0:1.22:0:120|gold:germany:300"),
-            ]
+                Choice(title: "集中装甲主力南下高加索与伏尔加（史实）", subtitle: "德军发起夏季突击争夺巴库油田，军费吃紧", isHistorical: true, effectCode: "buff:germany:蓝色方案夏季攻势:24:0:1.20:0:120|gold_months:germany:-2"),
+                Choice(title: "转入全线弹性防御巩固占领区（架空）", subtitle: "节约装甲油料，巩固现有东欧防线", isHistorical: false, effectCode: "buff:germany:东壁弹性防御:6:22:1.0:0:150|ic:germany:14"),
+            ],
+            requireAtWar: ("germany", "ussr")
         ))
         out.append(EventSpec(
             id: "el_alamein_1942",
@@ -562,12 +594,13 @@ extension HistoricalEvents {
             headline: "蒙哥马利重炮轰开沙漠防线，隆美尔非洲军团全线西撤",
             dateLabel: "1942 年 10 月 23 日",
             body: "英国第八集团军在阿拉曼以绝对炮火与制空优势击败德意非洲军团，丘吉尔誉之为「开始的结束」，地中海战局彻底逆转。",
-            effectSummary: "英国获 180 日【阿拉曼反攻】（攻击 +24%、海战 +20%）、国库 +380。",
+            effectSummary: "英国获 180 日【阿拉曼反攻】（攻击 +22%、海战 +18%）、士气 +15。",
             illustration: "scroll_el_alamein_1942",
             actorSpecId: "uk", targetSpecId: "italy",
             choices: [
-                Choice(title: "蒙哥马利发动阿拉曼反攻（史实）", subtitle: "盟军重夺地中海与南欧战略主动权", isHistorical: true, effectCode: "buff:uk:阿拉曼胜利反攻:24:14:1.14:20:180|gold:uk:380|morale:uk:18"),
-            ]
+                Choice(title: "蒙哥马利发动阿拉曼反攻（史实）", subtitle: "盟军重夺地中海与南欧战略主动权", isHistorical: true, effectCode: "buff:uk:阿拉曼胜利反攻:22:12:1.12:18:180|gold_months:uk:2|morale:uk:15"),
+            ],
+            requireAtWar: ("uk", "italy")
         ))
         out.append(EventSpec(
             id: "stalingrad_uranus_1942",
@@ -576,28 +609,31 @@ extension HistoricalEvents {
             title: "斯大林格勒 · 天王星反包围行动",
             headline: "红军南北双钳合拢伏尔加！第六集团军陷入铁桶合围",
             dateLabel: "1942 年 11 月 19 日",
-            body: "在废墟焦土中血战数月后，苏军发起惊天动地的「天王星行动」，从顿河与斯大林格勒南翼双路突破轴心侧翼，全歼并合围德军主力，二战迎来决定性转折！",
-            effectSummary: "苏联获 180 日【天王星大合围】（攻击 +35%、防御 +24%、行军 ×1.20）、工业 +30。",
+            body: "在废墟焦土中血战数月后，苏军发起惊天动地的「天王星行动」，从顿河与斯大林格勒南翼双路突破轴心侧翼，二战迎来决定性转折！",
+            effectSummary: "苏联获 160 日【天王星大合围】（攻击 +28%、防御 +20%、行军 ×1.18）、工业 +22。",
             illustration: "scroll_stalingrad_1942",
             actorSpecId: "ussr", targetSpecId: "germany",
             choices: [
-                Choice(title: "发动天王星双钳合围（史实）", subtitle: "苏军彻底夺回东线战略主动权", isHistorical: true, effectCode: "buff:ussr:斯大林格勒·天王星反击:35:24:1.20:0:180|ic:ussr:30|morale:ussr:25"),
-            ]
+                Choice(title: "发动天王星双钳合围（史实）", subtitle: "苏军全力反击夺回东线战略主动权", isHistorical: true, effectCode: "buff:ussr:斯大林格勒·天王星反击:28:20:1.18:0:160|ic:ussr:22|gold_months:ussr:-1|morale:ussr:20"),
+            ],
+            requireAtWar: ("germany", "ussr")
         ))
         out.append(EventSpec(
             id: "total_war_1943",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1943, triggerMonth: 2, minDay: 1140,
             title: "德国宣布全面总体战",
-            headline: "斯大林格勒惨败震撼柏林，施佩尔接管全国军工转入总体战",
+            headline: "施佩尔接管全国军工转入总体战，虎豹重坦加速走下产线",
             dateLabel: "1943 年 2 月 18 日",
-            body: "德意志第三帝国被迫动员全部民用产能与预备役兵员，虎式与黑豹重型坦克加速走下生产线，企图在夏季东线扳回一城。",
-            effectSummary: "德国切换【总体战动员】与【全民皆兵】，工业产能 +32、士气 +12。",
+            body: "德意志第三帝国被迫动员全部民用产能与预备役兵员，虎式与黑豹重型坦克加速走下生产线，企图在东线扳回一城，但国内民生与安定承压。",
+            effectSummary: "德国切换【总体战动员】与【全民皆兵】，工业产能 +28、安定 −6。",
             illustration: "scroll_kursk_1943",
             actorSpecId: "germany", targetSpecId: "ussr",
             choices: [
-                Choice(title: "启动全面总体战与重坦量产（史实）", subtitle: "德国军工达到战时最高峰", isHistorical: true, effectCode: "law:germany:econ_total|law:germany:draft_alladults|ic:germany:32|morale:germany:12"),
-            ]
+                Choice(title: "启动全面总体战与重坦量产（史实）", subtitle: "德国军工达到战时最高峰，但民心与安定承压", isHistorical: true, effectCode: "law:germany:econ_total|law:germany:draft_alladults|ic:germany:28|stability:germany:-6|morale:germany:10"),
+                Choice(title: "维持有限动员保后方安定（架空）", subtitle: "放缓增兵速度但保持较高工业良率与安定", isHistorical: false, effectCode: "ic:germany:12|stability:germany:6"),
+            ],
+            requireAtWar: ("germany", "ussr")
         ))
         out.append(EventSpec(
             id: "kursk_1943",
@@ -607,27 +643,31 @@ extension HistoricalEvents {
             headline: "普罗霍罗夫卡钢铁洪流对撞！虎豹重坦迎面撞上红军纵深防线",
             dateLabel: "1943 年 7 月 5 日",
             body: "数千辆坦克在库尔斯克突出部展开人类战争史上最壮烈的装甲大决战。苏军依托多道反坦克纵深防线顶住「堡垒行动」后，立刻转入全线战略大反攻！",
-            effectSummary: "苏联获 180 日【库尔斯克大纵深反攻】（攻击 +30%、防御 +30%），德国装甲锐气受挫。",
+            effectSummary: "苏联获 160 日【库尔斯克大纵深反攻】（攻击 +24%、防御 +24%）；若德军东线占优则以重坦突击反制。",
             illustration: "scroll_kursk_1943",
             actorSpecId: "ussr", targetSpecId: "germany",
             choices: [
-                Choice(title: "纵深消耗后全线装甲反击（史实）", subtitle: "苏军彻底粉碎德军东线最后一次战略进攻", isHistorical: true, effectCode: "buff:ussr:库尔斯克装甲反攻:30:30:1.18:0:180|morale:ussr:20"),
-            ]
+                Choice(title: "纵深消耗后全线装甲反击（史实）", subtitle: "苏军粉碎德军东线最后一次战略进攻", isHistorical: true, effectCode: "buff:ussr:库尔斯克装甲反攻:24:24:1.15:0:160|morale:ussr:16"),
+            ],
+            requireAtWar: ("germany", "ussr"),
+            minPowerRatio: 0.65
         ))
         out.append(EventSpec(
             id: "italy_armistice_1943",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1943, triggerMonth: 9, minDay: 1335,
-            title: "西西里登陆与意大利停战",
-            headline: "盟军跨海攻入亚平宁半岛，墨索里尼倒台、罗马寻求停战",
+            title: "西西里登陆与意大利停战危机",
+            headline: "盟军跨海逼近亚平宁半岛，罗马动摇寻求停战",
             dateLabel: "1943 年 9 月 8 日",
-            body: "英美盟军登陆西西里并进逼意大利本土，罗马爆发政变宣布停战；德军紧急南下接管意北防线，轴心同盟出现首道巨大裂痕。",
-            effectSummary: "英国与盟军士气 +18、获南欧登陆加成；轴心南翼防线承压。",
+            body: "在意大利战局明显吃紧之际，英美盟军登陆西西里并进逼亚平宁半岛，罗马政坛动荡，轴心南翼防线陷入重大危机。",
+            effectSummary: "英国与盟军士气 +15、获南欧登陆加成；意大利士气受挫。",
             illustration: "scroll_normandy_1944",
             actorSpecId: "uk", targetSpecId: "italy",
             choices: [
-                Choice(title: "盟军强攻亚平宁软肋（史实）", subtitle: "轴心南线动摇，盟军牵制大批德军", isHistorical: true, effectCode: "buff:uk:亚平宁两栖推进:22:12:1.15:25:150|morale:uk:18|morale:italy:-20"),
-            ]
+                Choice(title: "盟军强攻亚平宁软肋（史实）", subtitle: "轴心南线动摇，盟军牵制大批德军", isHistorical: true, effectCode: "buff:uk:亚平宁两栖推进:20:10:1.12:20:150|morale:uk:15|morale:italy:-16"),
+            ],
+            requireAtWar: ("uk", "italy"),
+            maxTargetControlRatio: 0.88
         ))
         out.append(EventSpec(
             id: "normandy_1944",
@@ -637,27 +677,30 @@ extension HistoricalEvents {
             headline: "史上最大规模两栖登陆！盟军开辟西欧第二战场",
             dateLabel: "1944 年 6 月 6 日",
             body: "数千艘舰船与万架战机蔽空而来，英美加联军冒着枪林弹雨强登诺曼底海滩，正式开辟欧洲第二战场，第三帝国陷入东西两线铁钳合围！",
-            effectSummary: "英国与自由法国获 200 日【霸王行动·开辟第二战场】（攻击 +34%、海战 +30%、行军 ×1.25）、国库 +500。",
+            effectSummary: "英国耗军费发动 180 日【霸王行动·开辟第二战场】（攻击 +28%、海战 +24%、行军 ×1.20）。",
             illustration: "scroll_normandy_1944",
             actorSpecId: "uk", targetSpecId: "germany",
             choices: [
-                Choice(title: "发动霸王行动 · 登陆诺曼底（史实）", subtitle: "开辟欧洲西线第二战场，直指莱茵河", isHistorical: true, effectCode: "buff:uk:霸王行动·诺曼底登陆:34:15:1.25:30:200|buff:france:自由法国解放本土:28:15:1.22:0:200|gold:uk:500|morale:uk:25"),
-            ]
+                Choice(title: "发动霸王行动 · 登陆诺曼底（史实）", subtitle: "开辟欧洲西线第二战场，直指莱茵河", isHistorical: true, effectCode: "buff:uk:霸王行动·诺曼底登陆:28:12:1.20:24:180|buff:france:自由法国解放本土:24:14:1.18:0:180|gold_months:uk:-2|morale:uk:20"),
+            ],
+            requireAtWar: ("uk", "germany")
         ))
         out.append(EventSpec(
             id: "bagration_1944",
             scenarioIds: ["ww2_eve_1936", "ww2_europe_1939"],
             triggerYear: 1944, triggerMonth: 6, minDay: 1620,
             title: "巴格拉季昂行动 · 红军大纵深总攻",
-            headline: "钢铁洪流横扫白俄罗斯！德军中央集团军群全线崩溃",
+            headline: "钢铁洪流横扫白俄罗斯！德军中央集团军群全线承压",
             dateLabel: "1944 年 6 月 22 日",
-            body: "巴巴罗萨三周年之际，苏军集中四个方面军实施完美的大纵深机械化突击，一举粉碎德军中央集团军群，红军先头部队直抵维斯瓦河与东普鲁士边境！",
-            effectSummary: "苏联获 200 日【巴格拉季昂·大纵深铁流】（攻击 +38%、行军 ×1.30），工业产能 +30。",
+            body: "巴巴罗萨三周年之际，苏军集中四个方面军实施大纵深机械化突击，重创德军中央集团军群，红军先头部队直抵维斯瓦河与东普鲁士边境！",
+            effectSummary: "苏联获 180 日【巴格拉季昂·大纵深铁流】（攻击 +30%、行军 ×1.24），工业产能 +22。",
             illustration: "scroll_bagration_1944",
             actorSpecId: "ussr", targetSpecId: "germany",
             choices: [
-                Choice(title: "启动巴格拉季昂大纵深攻势（史实）", subtitle: "红军摧枯拉朽横扫东线直逼柏林", isHistorical: true, effectCode: "buff:ussr:巴格拉季昂大纵深:38:16:1.30:0:200|ic:ussr:30|morale:ussr:25"),
-            ]
+                Choice(title: "启动巴格拉季昂大纵深攻势（史实）", subtitle: "红军摧枯拉朽横扫东线直逼柏林", isHistorical: true, effectCode: "buff:ussr:巴格拉季昂大纵深:30:14:1.24:0:180|ic:ussr:22|morale:ussr:20"),
+            ],
+            requireAtWar: ("germany", "ussr"),
+            minPowerRatio: 0.75
         ))
         out.append(EventSpec(
             id: "berlin_1945",
@@ -667,12 +710,14 @@ extension HistoricalEvents {
             headline: "红旗插上帝国大厦！反法西斯战争迎来最终总决战",
             dateLabel: "1945 年 4 月 16 日",
             body: "苏军强渡奥得河，英美盟军跨过莱茵河与易北河，东西两路反法西斯大军合围柏林，欧陆长达六年的浩劫终将画上句点！",
-            effectSummary: "苏英法全线获得 180 日【柏林终局总攻】加成（攻击 +40%、士气 +30）。",
+            effectSummary: "苏英两军获 160 日【柏林终局总攻】加成（攻击 +30%、士气 +22）。",
             illustration: "scroll_berlin_1945",
             actorSpecId: "ussr", targetSpecId: "germany",
             choices: [
-                Choice(title: "总攻柏林 · 解放欧洲（史实）", subtitle: "东西联军齐头并进终结纳粹霸权", isHistorical: true, effectCode: "buff:ussr:柏林终局总攻:40:20:1.25:0:180|buff:uk:莱茵河大推进:34:18:1.22:0:180|morale:ussr:30|morale:uk:25"),
-            ]
+                Choice(title: "总攻柏林 · 解放欧洲（史实）", subtitle: "东西联军齐头并进终结轴心霸权", isHistorical: true, effectCode: "buff:ussr:柏林终局总攻:30:16:1.20:0:160|buff:uk:莱茵河大推进:26:14:1.18:0:160|morale:ussr:22|morale:uk:18"),
+            ],
+            requireAtWar: ("germany", "ussr"),
+            maxTargetControlRatio: 0.85
         ))
 
         // --- 额外真实外交与战区补强事件（中立国/土耳其/瑞典/瑞士） ---
@@ -729,14 +774,16 @@ extension HistoricalEvents {
             title: "罗马尼亚八·二三倒戈",
             headline: "布加勒斯特倒向盟军，第三帝国痛失普洛耶什蒂油田",
             dateLabel: "1944 年 8 月 23 日",
-            body: "苏军雅西—基什尼奥夫攻势席卷东欧之际，罗马尼亚宣布退出轴心阵营并对德宣战，德国装甲部队最后的天然石油供应彻底断绝！",
+            body: "苏军雅西—基什尼奥夫攻势席卷东欧且罗马尼亚本土告警之际，布加勒斯特宣布退出轴心阵营并对德宣战，德国装甲部队最后的天然石油供应彻底断绝！",
             effectSummary: "罗马尼亚与苏联停战并对德宣战；苏军获 120 日巴尔干推进加成。",
             illustration: "scroll_bagration_1944",
             actorSpecId: "romania", targetSpecId: "germany",
             choices: [
-                Choice(title: "罗马尼亚阵前倒戈（史实）", subtitle: "巴尔干轴心崩盘，德军彻底断油", isHistorical: true, effectCode: "peace:romania:ussr|war:romania:germany:0|buff:ussr:巴尔干大捷:24:10:1.20:0:120"),
+                Choice(title: "罗马尼亚阵前倒戈（史实）", subtitle: "巴尔干轴心崩盘，德军彻底断油", isHistorical: true, effectCode: "peace:romania:ussr|war:romania:germany:0|buff:ussr:巴尔干大捷:20:10:1.16:0:120"),
                 Choice(title: "死守普洛耶什蒂油田（架空）", subtitle: "罗马尼亚继续为轴心苦战", isHistorical: false, effectCode: "buff:romania:死守喀尔巴阡:10:25:1.0:0:120"),
-            ]
+            ],
+            requireAtWar: ("ussr", "romania"),
+            maxTargetControlRatio: 0.92
         ))
         return out
     }()
@@ -754,12 +801,13 @@ extension HistoricalEvents {
             headline: "炮轰北大营！日本关东军悍然发动九一八事变",
             dateLabel: "1931 年 9 月 18 日",
             body: "日本关东军自行炸毁沈阳北郊柳条湖一段南满铁路并诬陷中国守军，随即连夜炮轰北大营、攻占沈阳，拉开中国人民十四年浴血抗战的序幕！",
-            effectSummary: "大日本帝国携 120 日【关东军突袭】加成向东北军宣战；全球紧张度 +18。",
+            effectSummary: "史实：关东军单独向东北军开战（不立即卷入全国同盟）；架空：东北军死战或中央挥师出关驰援！",
             illustration: "event_mukden_1931",
             actorSpecId: "japan", targetSpecId: "northeast",
             choices: [
-                Choice(title: "关东军全面出击东北（史实）", subtitle: "日军突袭沈阳、长春，进逼松花江", isHistorical: true, effectCode: "buff:japan:关东军突袭:28:0:1.28:15:120|war:japan:northeast:1|tension:18"),
-                Choice(title: "东北军就地全军死战抵抗（架空）", subtitle: "张学良下令全军誓死守土，全国援军驰援关外", isHistorical: false, effectCode: "buff:northeast:誓死守卫白山黑水:25:35:1.15:0:180|war:japan:northeast:1|war:roc:japan:1|tension:24"),
+                Choice(title: "关东军突袭东北 · 局部事变（史实）", subtitle: "日军向东北军宣战并获奇袭加成，暂未引爆全面中日大战", isHistorical: true, effectCode: "buff:japan:关东军突袭:24:0:1.22:12:110|war:japan:northeast:0|gold_months:japan:-1|tension:18"),
+                Choice(title: "东北军全军死战 · 国民政府挥师出关（架空）", subtitle: "张学良誓死守土，全面抗战提前六年打响！", isHistorical: false, effectCode: "buff:northeast:誓死守卫白山黑水:20:30:1.12:0:160|ally:roc:northeast|war:japan:northeast:0|war:roc:japan:0|gold_months:roc:-2|tension:24"),
+                Choice(title: "外交妥协划定南满缓冲区（架空）", subtitle: "东北军忍辱割让辽南换取喘息整军", isHistorical: false, effectCode: "cede:northeast:japan:30|pact:japan:northeast:1|morale:northeast:-15|tension:10"),
             ]
         ))
         out.append(EventSpec(
@@ -1035,15 +1083,15 @@ extension HistoricalEvents {
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1941, triggerMonth: 12, minDay: 4,
             title: "偷袭珍珠港 · 虎！虎！虎！",
-            headline: "联合舰队奇袭夏威夷与南洋！太平洋战争全面爆发",
+            headline: "南进太平洋或北进西伯利亚？东京大本营面临决定命运的最终抉择",
             dateLabel: "1941 年 12 月 7 日",
-            body: "山本五十六统筹的六艘航空母舰特混编队发来「虎！虎！虎！」奇袭密电，日军同时扑向珍珠港、菲律宾、香港、马来亚、新加坡与荷属东印度油田！",
-            effectSummary: "大日本帝国获得 150 日【虎！虎！虎！海空奇袭】（海战 +35%、突击 +28%、行军 ×1.25），向美、英、荷、菲全面宣战！",
+            body: "山本五十六统筹的六艘航空母舰特混编队已秘密潜航至夏威夷外海；同时陆军主战派亦力主趁苏德激战北上西伯利亚。帝国的命运取决于今日一念之间！",
+            effectSummary: "史实南进：突袭珍珠港与东南亚、美英荷菲与中国合流反法西斯；架空北进：突袭苏联远东而暂与美英维持和平！",
             illustration: "event_pearl_harbor_1941",
             actorSpecId: "japan", targetSpecId: "usa_pacific",
             choices: [
-                Choice(title: "执行南进战略 · 偷袭珍珠港（史实）", subtitle: "联合舰队全线南下，夺取东南亚石油橡胶", isHistorical: true, effectCode: "buff:japan:虎！虎！虎！海空奇袭:28:0:1.25:35:150|war:japan:usa_pacific:1|war:japan:philippines:1|war:japan:uk_burma:1|war:japan:uk_malaya:1|war:japan:dutch_ei:1|tension:30"),
-                Choice(title: "放弃南进 · 转向北进突击苏联远东（架空）", subtitle: "联合关东军北上西伯利亚，暂不惹怒美国", isHistorical: false, effectCode: "buff:japan:关东军北进突击:26:0:1.22:10:150|war:japan:ussr_fe:1|war:japan:mongolia:1|tension:22"),
+                Choice(title: "执行南进战略 · 偷袭珍珠港（史实）", subtitle: "联合舰队全线南下，中美英荷菲结成反法西斯同盟", isHistorical: true, effectCode: "buff:japan:虎！虎！虎！海空奇袭:26:0:1.22:32:140|ally:roc:usa_pacific|war:japan:usa_pacific:1|war:japan:philippines:1|war:japan:uk_burma:1|war:japan:uk_malaya:1|war:japan:dutch_ei:1|war_support:usa_pacific:25|tension:30"),
+                Choice(title: "放弃南进 · 转向北进突击苏联远东（架空）", subtitle: "关东军北上西伯利亚，暂不惹怒美英太平洋舰队！", isHistorical: false, effectCode: "buff:japan:关东军北进突击:26:0:1.22:10:150|war:japan:ussr_fe:1|war:japan:mongolia:1|tension:22"),
             ]
         ))
         out.append(EventSpec(
@@ -1058,8 +1106,9 @@ extension HistoricalEvents {
             illustration: "scroll_singapore_1942",
             actorSpecId: "japan", targetSpecId: "uk_malaya",
             choices: [
-                Choice(title: "泰国借道 · 日军闪击马来与香港（史实）", subtitle: "轴心掌控南海与马来半岛主动权", isHistorical: true, effectCode: "ally:japan:thailand|buff:japan:银轮闪击南洋:20:0:1.22:20:90|tension:8"),
-            ]
+                Choice(title: "泰国借道 · 日军闪击马来与香港（史实）", subtitle: "轴心掌控南海与马来半岛主动权", isHistorical: true, effectCode: "ally:japan:thailand|buff:japan:银轮闪击南洋:20:0:1.20:18:90|tension:8"),
+            ],
+            requireAtWar: ("japan", "uk_malaya")
         ))
         out.append(EventSpec(
             id: "third_changsha_1942",
@@ -1114,12 +1163,13 @@ extension HistoricalEvents {
             headline: "B-25 轰炸机自大黄蜂号航母起飞奇袭东京，迫使日军孤注一掷",
             dateLabel: "1942 年 4 月 18 日",
             body: "美军十六架中型轰炸机破天荒从航空母舰起飞轰炸东京、横滨与名古屋后飞抵中国浙江降落，极大震慑东京大本营并促使其仓促发动中途岛决战。",
-            effectSummary: "美军太平洋舰队士气 +25、获 120 日奇袭加成；日本被迫提前消耗航母主力。",
+            effectSummary: "美军太平洋舰队士气 +20、获 100 日奇袭加成（需日美已交战）。",
             illustration: "event_pearl_harbor_1941",
             actorSpecId: "usa_pacific", targetSpecId: "japan",
             choices: [
-                Choice(title: "实施杜立特东京空袭（史实）", subtitle: "极大振奋盟军士气，打乱日本战略节奏", isHistorical: true, effectCode: "morale:usa_pacific:25|buff:usa_pacific:杜立特奇袭士气:18:10:1.12:22:120|morale:japan:-10"),
-            ]
+                Choice(title: "实施杜立特东京空袭（史实）", subtitle: "极大振奋盟军士气，打乱日本战略节奏", isHistorical: true, effectCode: "morale:usa_pacific:20|buff:usa_pacific:杜立特奇袭士气:14:8:1.10:18:100|morale:japan:-8"),
+            ],
+            requireAtWar: ("japan", "usa_pacific")
         ))
         out.append(EventSpec(
             id: "coral_sea_1942",
@@ -1129,28 +1179,30 @@ extension HistoricalEvents {
             headline: "舰载机群跨越数百海里对攻，挫败日军登陆莫尔兹比港企图",
             dateLabel: "1942 年 5 月 7 日",
             body: "美澳联合特混舰队在珊瑚海截击日军南下巴布亚的登陆编队，双方军舰全程未见一面全凭舰载机生死相搏，成功守住西南太平洋桥头堡！",
-            effectSummary: "美军太平洋舰队获 120 日【珊瑚海防卫】（海战 +24%、防御 +24%）。",
+            effectSummary: "美军太平洋舰队获 120 日【珊瑚海防卫】（海战 +20%、防御 +20%）。",
             illustration: "event_midway_1942",
             actorSpecId: "usa_pacific", targetSpecId: "japan",
             choices: [
-                Choice(title: "截击日军登陆编队 · 守住巴布亚（史实）", subtitle: "阻断日军南进澳新航道", isHistorical: true, effectCode: "buff:usa_pacific:珊瑚海航母决战:16:24:1.05:24:120|morale:usa_pacific:16"),
-            ]
+                Choice(title: "截击日军登陆编队 · 守住巴布亚（史实）", subtitle: "阻断日军南进澳新航道", isHistorical: true, effectCode: "buff:usa_pacific:珊瑚海航母决战:14:20:1.05:20:120|morale:usa_pacific:12"),
+            ],
+            requireAtWar: ("japan", "usa_pacific")
         ))
         out.append(EventSpec(
             id: "midway_1942",
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1942, triggerMonth: 6, minDay: 185,
             title: "中途岛海战 · 太平洋战局转折",
-            headline: "尼米兹破译密电奇袭机动部队！联合舰队四大航母葬身海底",
+            headline: "尼米兹破译密电奇袭机动部队！联合舰队四大航母命悬一线",
             dateLabel: "1942 年 6 月 4 日",
-            body: "美国太平洋舰队破译日军「AF」密码在中途岛伏击重创联合舰队航母主力，同时美国战时工业产能全面爆发，盟军在太平洋与印缅战区展开战略反攻！",
-            effectSummary: "美军太平洋舰队工业产能 +65 并获 240 日【跳岛海空反攻】（海战 +36%、攻防 +26%），中国战区获强力补给！",
+            body: "美国太平洋舰队破译日军「AF」密码在中途岛伏击联合舰队航母主力，同时美国战时工业产能全面爆发，太平洋海权迎来决战转折！",
+            effectSummary: "美军工业产能 +45 并获 200 日【跳岛海空反攻】，但需投入重金爆舰；若日军实力压制美军则另辟印度洋战局！",
             illustration: "event_midway_1942",
             actorSpecId: "usa_pacific", targetSpecId: "japan",
             choices: [
-                Choice(title: "发起太平洋跳岛大反攻（史实）", subtitle: "美军航母产能暴涨，全面压制联合舰队", isHistorical: true, effectCode: "ic:usa_pacific:65|gold:usa_pacific:600|law:usa_pacific:focus_carrier_fleet|buff:usa_pacific:太平洋海空大反攻:26:16:1.22:36:240|buff:roc:驼峰航线与远征反攻:18:16:1.08:0:180|morale:japan:-18"),
-                Choice(title: "稳健固守西南太平洋防线（架空）", subtitle: "优先积蓄两栖与航母舰队力量", isHistorical: false, effectCode: "ic:usa_pacific:45|buff:usa_pacific:重工爆舰:12:24:1.05:28:200"),
-            ]
+                Choice(title: "发起太平洋跳岛大反攻（史实）", subtitle: "美军航母产能大涨，全力压制联合舰队", isHistorical: true, effectCode: "ic:usa_pacific:45|gold_months:usa_pacific:-2|law:usa_pacific:focus_carrier_fleet|buff:usa_pacific:太平洋海空大反攻:22:14:1.18:28:200|lend_lease:usa_pacific:roc:12:2|morale:japan:-12"),
+                Choice(title: "稳健固守西南太平洋防线（架空）", subtitle: "优先积蓄两栖与航母舰队力量", isHistorical: false, effectCode: "ic:usa_pacific:35|buff:usa_pacific:重工爆舰:10:22:1.05:24:180"),
+            ],
+            requireAtWar: ("japan", "usa_pacific")
         ))
         out.append(EventSpec(
             id: "guadalcanal_1942",
@@ -1160,12 +1212,31 @@ extension HistoricalEvents {
             headline: "陆战队强登亨德森机场，半年血战耗尽日本海军航空精锐",
             dateLabel: "1942 年 8 月 7 日",
             body: "美军发起首次大型两栖反攻直插所罗门群岛，日美双方在酷热丛林与铁底湾展开长达半年的立体拉锯战，日本精锐飞行员消耗殆尽。",
-            effectSummary: "美军太平洋舰队获 150 日【两栖跳岛突击】（进攻 +24%、海战 +24%），士气 +18。",
+            effectSummary: "美军太平洋舰队获 140 日【两栖跳岛突击】（进攻 +18%、海战 +18%，多槽位可与中途岛并存）。",
             illustration: "scroll_leyte_1944",
             actorSpecId: "usa_pacific", targetSpecId: "japan",
             choices: [
-                Choice(title: "血战铁底湾 · 夺取所罗门制空权（史实）", subtitle: "美军彻底转入战略反攻", isHistorical: true, effectCode: "buff:usa_pacific:瓜岛两栖反攻:24:14:1.15:24:150|morale:usa_pacific:18"),
-            ]
+                Choice(title: "血战铁底湾 · 夺取所罗门制空权（史实）", subtitle: "美军彻底转入战略反攻", isHistorical: true, effectCode: "buff:usa_pacific:瓜岛两栖反攻:18:12:1.12:18:140|morale:usa_pacific:14"),
+            ],
+            requireAtWar: ("japan", "usa_pacific")
+        ))
+        // v14.0.0 新增日军反制/优势势能事件：若 1943 年日军国力/军力反压美军，可发动印度洋纵深攻势，不再单边偏袒美军！
+        out.append(EventSpec(
+            id: "japan_indian_ocean_1943",
+            scenarioIds: ["ww2_asia_1941"],
+            triggerYear: 1943, triggerMonth: 3, minDay: 440,
+            title: "印度洋大舰队西进 · 帝国南洋霸权",
+            headline: "联合舰队稳控西太平洋！机动部队西出马六甲直逼锡兰",
+            dateLabel: "1943 年 3 月",
+            body: "由于大日本帝国在太平洋顶住了盟军反扑并保持舰队优势，联合舰队主力得以西出马六甲海峡压制印度洋航道，巩固大东亚资源供给线！",
+            effectSummary: "日本获 160 日【联合舰队印度洋霸权】（海战 +26%、进攻 +18%）、工业 +18。",
+            illustration: "scroll_singapore_1942",
+            actorSpecId: "japan", targetSpecId: "usa_pacific",
+            choices: [
+                Choice(title: "机动部队西出印度洋 · 巩固制海权（架空势能）", subtitle: "以海空优势压制英美补给线", isHistorical: true, effectCode: "buff:japan:印度洋制海霸权:18:12:1.14:26:160|ic:japan:18|gold_months:japan:2"),
+            ],
+            requireAtWar: ("japan", "usa_pacific"),
+            minPowerRatio: 1.15
         ))
         out.append(EventSpec(
             id: "yanan_production_1942",
@@ -1232,15 +1303,17 @@ extension HistoricalEvents {
             scenarioIds: ["ww2_asia_1941"],
             triggerYear: 1944, triggerMonth: 6, minDay: 890,
             title: "马里亚纳海空大决战",
-            headline: "「马里亚纳猎火鸡」！日本海军航空兵彻底覆灭，B-29 进驻塞班",
+            headline: "「马里亚纳猎火鸡」！日本海军航空兵折损殆尽，B-29 进驻塞班",
             dateLabel: "1944 年 6 月 19 日",
-            body: "美军埃塞克斯级航母编队在菲律宾海一战击落数百架日机，迅速攻占塞班岛与关岛，日本本土全境从此暴露在 B-29 超级空中堡垒航程之下！",
-            effectSummary: "美军太平洋舰队工业产能 +45、获 180 日【马里亚纳制空制海】（海战 +40%、进攻 +28%）。",
+            body: "美军埃塞克斯级航母编队在菲律宾海重创日军航空舰队，迅速攻占塞班岛与关岛，日本本土全境从此暴露在 B-29 超级空中堡垒航程之下！",
+            effectSummary: "美军工业产能 +32、获 160 日【马里亚纳制空制海】（需日美交战且美军未处于劣势）。",
             illustration: "event_midway_1942",
             actorSpecId: "usa_pacific", targetSpecId: "japan",
             choices: [
-                Choice(title: "彻底歼灭日军航母舰载机群（史实）", subtitle: "西太平洋海空控制权完全易手", isHistorical: true, effectCode: "ic:usa_pacific:45|buff:usa_pacific:马里亚纳制空霸权:28:18:1.20:40:180|morale:japan:-20"),
-            ]
+                Choice(title: "决战马里亚纳 · 夺取西太平洋制空权（史实）", subtitle: "西太平洋海空控制权彻底易手", isHistorical: true, effectCode: "ic:usa_pacific:32|buff:usa_pacific:马里亚纳制空霸权:22:14:1.16:30:160|morale:japan:-14"),
+            ],
+            requireAtWar: ("japan", "usa_pacific"),
+            minPowerRatio: 0.75
         ))
         out.append(EventSpec(
             id: "leyte_gulf_1944",
@@ -1250,12 +1323,14 @@ extension HistoricalEvents {
             headline: "人类史上最大规模海战！武藏号沉没，联合舰队从此丧失作战能力",
             dateLabel: "1944 年 10 月 23 日",
             body: "麦克阿瑟涉水登岸莱特岛宣告「我回来了」，日军孤注一掷发动「捷一号作战」，却在苏里高海峡与萨马岛外海遭美军压倒性火力摧毁，巨舰时代终结！",
-            effectSummary: "美军太平洋舰队与菲律宾获 180 日【重返吕宋】（海战 +42%、进攻 +34%）。",
+            effectSummary: "美军与菲律宾获 160 日【重返吕宋】（海战 +32%、进攻 +26%）。",
             illustration: "scroll_leyte_1944",
             actorSpecId: "usa_pacific", targetSpecId: "japan",
             choices: [
-                Choice(title: "决战莱特湾 · 解放菲律宾（史实）", subtitle: "联合舰队彻底瓦解，日本海运断绝", isHistorical: true, effectCode: "buff:usa_pacific:莱特湾决胜:34:16:1.24:42:180|buff:philippines:菲律宾游击光复:24:22:1.15:0:180|morale:usa_pacific:25"),
-            ]
+                Choice(title: "决战莱特湾 · 解放菲律宾（史实）", subtitle: "联合舰队彻底瓦解，日本海运断绝", isHistorical: true, effectCode: "buff:usa_pacific:莱特湾决胜:26:14:1.20:32:160|buff:philippines:菲律宾游击光复:22:20:1.12:0:160|morale:usa_pacific:18"),
+            ],
+            requireAtWar: ("japan", "usa_pacific"),
+            minPowerRatio: 0.80
         ))
         out.append(EventSpec(
             id: "iwo_okinawa_1945",
@@ -1269,8 +1344,9 @@ extension HistoricalEvents {
             illustration: "scroll_leyte_1944",
             actorSpecId: "usa_pacific", targetSpecId: "japan",
             choices: [
-                Choice(title: "攻克冲绳门户 · 湘西雪峰山大捷（史实）", subtitle: "盟军兵临日本本土与华南门户", isHistorical: true, effectCode: "buff:usa_pacific:冲绳海空压制:34:16:1.20:38:150|buff:roc:湘西雪峰山大捷:28:22:1.15:0:150"),
-            ]
+                Choice(title: "攻克冲绳门户 · 湘西雪峰山大捷（史实）", subtitle: "盟军兵临日本本土与华南门户", isHistorical: true, effectCode: "buff:usa_pacific:冲绳海空压制:26:14:1.16:28:150|buff:roc:湘西雪峰山大捷:24:20:1.12:0:150"),
+            ],
+            requireAtWar: ("japan", "usa_pacific")
         ))
         out.append(EventSpec(
             id: "august_storm_1945",
@@ -2163,7 +2239,7 @@ extension HistoricalEvents {
             ]
         ))
 
-        // --- 盛唐天宝（公元 755 年 · 7 条） ---
+        // --- 盛唐天宝（公元 755 年 · 8 条，真实还原安史动乱代价与朔方平叛） ---
         out.append(EventSpec(
             id: "anshi_755",
             scenarioIds: ["tang_755"],
@@ -2171,13 +2247,13 @@ extension HistoricalEvents {
             title: "渔阳鼙鼓动地来 · 安史之乱震动海内",
             headline: "范阳铁骑南下惊破霓裳羽衣曲，郭子仪李光弼临危受命平叛！",
             dateLabel: "天宝十四载冬（755 年 12 月）",
-            body: "平卢范阳河东三镇动乱惊破开元天宝盛世，长安震动！朔方名将郭子仪、李光弼火速东出井陉，张巡许远死守睢阳，誓死护卫大唐江山！",
-            effectSummary: "大唐紧急总动员获 180 日【朔方忠义平叛】（防御 +28%、进攻 +22%），吐蕃与南诏乘机窥边。",
+            body: "平卢范阳河东三镇节度使安禄山反于范阳，河北望风瓦解、两京震动！朔方名将郭子仪、李光弼急领铁骑东出井陉，然朝廷财赋与安定骤遭重创，吐蕃亦乘虚窥视河陇！",
+            effectSummary: "大唐安定 −12、紧急动用国库编练【朔方平叛铁骑】并可联回纥共抗强敌；吐蕃乘机东进。",
             illustration: "scroll_anshi_755",
             actorSpecId: "tang", targetSpecId: "tibet",
             choices: [
-                Choice(title: "起用郭子仪李光弼 · 联回纥稳中原（史实）", subtitle: "大唐与回纥同盟共抗强敌，死守关中江淮", isHistorical: true, effectCode: "ally:tang:uyghur|buff:tang:朔方平叛忠勇:22:28:1.10:0:180|buff:tibet:吐蕃乘虚东进:24:12:1.15:0:150|war:tibet:tang:1"),
-                Choice(title: "盛唐兵锋不减 · 先西击吐蕃稳河陇（架空）", subtitle: "哥舒翰潼关出击，全线反推吐蕃", isHistorical: false, effectCode: "buff:tang:天宝铁骑西征:30:18:1.18:0:180|war:tang:tibet:1"),
+                Choice(title: "起用郭子仪李光弼 · 联回纥稳中原（史实）", subtitle: "紧急征募朔方忠义军平叛，但大唐元气与安定受损", isHistorical: true, effectCode: "ally:tang:uyghur|spawn_army:tang:14000:朔方忠义平叛军|stability:tang:-12|gold_months:tang:-2|buff:tang:朔方平叛忠勇:20:24:1.10:0:180|buff:tibet:吐蕃乘虚东进:22:12:1.14:0:150|war:tibet:tang:1"),
+                Choice(title: "天宝禁军全力死守潼关 · 先稳河陇（架空）", subtitle: "哥舒翰据险固守潼关，力拒吐蕃东出", isHistorical: false, effectCode: "stability:tang:-8|buff:tang:潼关坚壁死守:22:26:1.12:0:180|war:tang:tibet:1"),
             ]
         ))
         out.append(EventSpec(
@@ -2292,16 +2368,16 @@ extension HistoricalEvents {
         out.append(EventSpec(
             id: "jin_move_yanjing_1153",
             scenarioIds: ["song_jin_1142"],
-            triggerYear: 1145, triggerMonth: 3, minDay: 210,
+            triggerYear: 1153, triggerMonth: 3, minDay: 210,
             title: "大金迁都燕京中都 · 铁浮屠重整军备",
-            headline: "完颜氏大兴土木定鼎燕京，女真铁骑与汉地重甲严阵以待",
-            dateLabel: "金皇统年间",
-            body: "金廷将政治中心南迁燕京中都，加速吸收中原典章与冶铁工艺，打造出威震南北的重装铁浮屠与拐子马骑兵集群。",
-            effectSummary: "金朝国库 +400、获 180 日【中都铁浮屠】（进攻 +28%、行军 ×1.18）。",
+            headline: "海陵王大兴土木定鼎燕京，女真铁骑与汉地重甲严阵以待",
+            dateLabel: "贞元元年（1153 年）",
+            body: "金廷将政治中心正式南迁燕京中都，加速吸收中原典章与冶铁工艺，打造出威震南北的重装铁浮屠与拐子马骑兵集群。",
+            effectSummary: "金朝耗费迁都财力、获 180 日【中都铁浮屠】（进攻 +26%、行军 ×1.16）。",
             illustration: "scroll_yancheng_1140",
             actorSpecId: "jin", targetSpecId: "nsong",
             choices: [
-                Choice(title: "定鼎燕京 · 扩编铁浮屠重骑（史实）", subtitle: "金军南下实力大增", isHistorical: true, effectCode: "gold:jin:400|buff:jin:燕京铁浮屠:28:14:1.18:0:180|morale:jin:20"),
+                Choice(title: "定鼎燕京 · 扩编铁浮屠重骑（史实）", subtitle: "金军南下实力大增，然迁都耗资颇巨", isHistorical: true, effectCode: "gold_months:jin:-1|buff:jin:燕京铁浮屠:26:14:1.16:0:180|morale:jin:18"),
             ]
         ))
         out.append(EventSpec(
@@ -2322,16 +2398,16 @@ extension HistoricalEvents {
         out.append(EventSpec(
             id: "caishi_1161",
             scenarioIds: ["song_jin_1142"],
-            triggerYear: 1148, triggerMonth: 11, minDay: 480,
+            triggerYear: 1161, triggerMonth: 11, minDay: 480,
             title: "采石矶大捷 · 虞允文火器车船破金兵",
             headline: "霹雳炮震响长江！书生虞允文指挥宋军车船水师大破完颜亮！",
-            dateLabel: "采石江防决战",
-            body: "金兵六十万倾巢南渡长江，千钧一发之际中书舍人虞允文临危统兵，以踏车海鳅战船与霹雳火药炮猛轰金军渡船，一战粉碎大金灭宋野心！",
-            effectSummary: "南宋获 180 日【采石霹雳水师】（海战 +42%、防御 +32%、进攻 +22%）。",
+            dateLabel: "绍兴三十一年（1161 年 11 月）",
+            body: "金兵倾巢南渡长江，千钧一发之际中书舍人虞允文临危统兵，以踏车海鳅战船与霹雳火药炮猛轰金军渡船，一战粉碎大金灭宋野心！",
+            effectSummary: "南宋获 180 日【采石霹雳水师】（海战 +38%、防御 +28%、进攻 +20%）。",
             illustration: "event_chibi_208",
             actorSpecId: "nsong", targetSpecId: "jin",
             choices: [
-                Choice(title: "霹雳炮轰沉金军渡船 · 大捷采石矶（史实）", subtitle: "大宋长江天堑固若金汤", isHistorical: true, effectCode: "war:jin:nsong:1|buff:nsong:采石矶霹雳水师:22:32:1.10:42:180|morale:nsong:28"),
+                Choice(title: "霹雳炮轰沉金军渡船 · 大捷采石矶（史实）", subtitle: "大宋长江天堑固若金汤", isHistorical: true, effectCode: "war:jin:nsong:1|buff:nsong:采石矶霹雳水师:20:28:1.08:38:180|morale:nsong:24"),
             ]
         ))
         out.append(EventSpec(
@@ -2473,18 +2549,34 @@ extension HistoricalEvents {
             ]
         ))
         out.append(EventSpec(
-            id: "honnoji_1582",
+            id: "nagashino_1575",
             scenarioIds: ["sengoku_1560"],
             triggerYear: 1568, triggerMonth: 6, minDay: 600,
             title: "长筱铁炮三段击 · 战国兵法大革新",
             headline: "三千铁炮队立栅齐射，火器时代彻底改写扶桑合战！",
             dateLabel: "战国火器革新",
-            body: "尾张奇袭与铁炮三段击彻底改写日本战国兵法，各大名纷纷扩编铁炮常备军与职业足轻，逐鹿京都上洛之争进入终局高潮。",
-            effectSummary: "织田家获得 180 日【天下布武·铁炮三段击】（进攻 +34%、行军 ×1.22）。",
+            body: "尾张奇袭与铁炮三段击彻底改写日本战国兵法，各大名纷纷扩编铁炮常备军与职业足轻，逐鹿京都上洛之争进入高潮。",
+            effectSummary: "织田家耗军费列装铁炮队，获得 180 日【天下布武·铁炮三段击】（进攻 +28%、行军 ×1.18）。",
             illustration: "event_sengoku_gun",
             actorSpecId: "oda", targetSpecId: nil,
             choices: [
-                Choice(title: "推行铁炮三段击革新（史实）", subtitle: "织田军火力与机动大幅跃升", isHistorical: true, effectCode: "buff:oda:铁炮三段击:34:14:1.22:0:180|gold:oda:300"),
+                Choice(title: "倾力列装铁炮三段击（史实）", subtitle: "织田军火力与机动大幅跃升，军费支出增加", isHistorical: true, effectCode: "buff:oda:铁炮三段击:28:12:1.18:0:180|gold_months:oda:-1"),
+            ]
+        ))
+        out.append(EventSpec(
+            id: "honnoji_1582",
+            scenarioIds: ["sengoku_1560"],
+            triggerYear: 1574, triggerMonth: 6, minDay: 900,
+            title: "本能寺之变 · 天下霸业骤起惊变",
+            headline: "「敌在本能寺！」京都烈焰惊破天下布武梦，群雄重夺霸权",
+            dateLabel: "京都惊变",
+            body: "就在织田霸业如日中天之际，京都本能寺骤燃冲天大火！大名群雄闻变而动，近畿秩序瞬间动摇，关东与西国诸侯纷纷整军问鼎中原。",
+            effectSummary: "史实惊变：织田家安定 −14、士气震荡，周边大名借机整备；架空：织田及时识破伏兵、震慑全岛！",
+            illustration: "scroll_sekigahara_1600",
+            actorSpecId: "oda", targetSpecId: nil,
+            choices: [
+                Choice(title: "本能寺惊变 · 清洲会议重整家业（史实）", subtitle: "织田家元气大伤，战国群雄再起风云", isHistorical: true, effectCode: "stability:oda:-14|morale:oda:-16|buff:oda:山崎勤王反击:18:16:1.16:0:120"),
+                Choice(title: "织田识破叛谋 · 铁腕清肃近畿（架空）", subtitle: "耗尽重金稳住家臣团，天下布武一往无前", isHistorical: false, effectCode: "gold_months:oda:-3|stability:oda:8|buff:oda:天下布武威震列岛:24:16:1.18:0:150"),
             ]
         ))
         out.append(EventSpec(

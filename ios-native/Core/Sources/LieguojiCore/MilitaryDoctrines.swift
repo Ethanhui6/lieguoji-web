@@ -238,9 +238,9 @@ public enum MilitaryDoctrines {
         return (true, "已切换为「\(sp.name)」")
     }
 
-    // MARK: - 战役限时奇袭 / 闪电战 Buff
+    // MARK: - 战役限时奇袭 / 闪电战 Buff（v14.0.0 多槽位叠加，上限 3 槽 + 攻防软上限 +45%，兼顾旧档单对象格式！）
 
-    /// 赋予某国限时战役突击/防御/行军/海空加成（由真实历史事件触发，如白色方案闪电战、偷袭珍珠港、莫斯科反攻）。
+    /// 赋予某国限时战役突击/防御/行军/海空加成（同标签刷新时长，不同战役并存最多 3 槽，不再发生瓜岛覆盖削弱中途岛的冲突）。
     public static func grantCampaignBuff(
         _ r: JS,
         nationId: String,
@@ -253,7 +253,8 @@ public enum MilitaryDoctrines {
     ) {
         guard !r.regimes.isNull else { return }
         if r.regimes.campaignBuffs.isNull { r.regimes.campaignBuffs = .object() }
-        let untilDay = (r.world.day.optionalNumber.map(Int.init) ?? 0) + max(15, durationDays)
+        let nowDay = r.world.day.optionalNumber.map(Int.init) ?? 0
+        let untilDay = nowDay + max(15, durationDays)
         let b = JS.object()
         b.label = JS(label)
         b.attackPct = JS(attackPct)
@@ -261,22 +262,46 @@ public enum MilitaryDoctrines {
         b.speedMult = JS(speedMult)
         b.navalPct = JS(navalPct)
         b.untilDay = JS(untilDay)
-        r.regimes.campaignBuffs[nationId] = b
+
+        let existing = r.regimes.campaignBuffs[nationId]
+        var list = [JS]()
+        if existing.isArray {
+            for item in existing.asArray where item.untilDay.asInt >= nowDay && item.label.optionalString != label {
+                list.append(item)
+            }
+        } else if !existing.isNull, existing.untilDay.asInt >= nowDay, existing.label.optionalString != label {
+            list.append(existing)
+        }
+        list.append(b)
+        if list.count > 3 { list = Array(list.suffix(3)) }
+        r.regimes.campaignBuffs[nationId] = .array(list)
     }
 
     public static func activeCampaignBuff(_ r: JS, nationId: String) -> (label: String, attackPct: Double, defensePct: Double, speedMult: Double, navalPct: Double)? {
         guard !r.regimes.isNull, !r.regimes.campaignBuffs.isNull else { return nil }
-        let b = r.regimes.campaignBuffs[nationId]
-        guard !b.isNull else { return nil }
+        let entry = r.regimes.campaignBuffs[nationId]
+        guard !entry.isNull else { return nil }
         let nowDay = r.world.day.optionalNumber.map(Int.init) ?? 0
-        let untilDay = b.untilDay.asInt
-        guard nowDay <= untilDay else { return nil }
+        let items: [JS] = entry.isArray ? entry.asArray : [entry]
+        var labels = [String]()
+        var atk = 0.0, def = 0.0, spd = 1.0, nav = 0.0
+        for b in items {
+            guard nowDay <= b.untilDay.asInt else { continue }
+            labels.append(b.label.optionalString ?? "战役突击")
+            atk += b.attackPct.optionalNumber ?? 0
+            def += b.defensePct.optionalNumber ?? 0
+            let sm = b.speedMult.optionalNumber ?? 1.0
+            if sm > 0 { spd *= sm }
+            nav += b.navalPct.optionalNumber ?? 0
+        }
+        guard !labels.isEmpty else { return nil }
+        // 公平软上限：多 Buff 叠加不超过 +45% 攻防/海战与 1.45× 行军，杜绝数值爆炸
         return (
-            label: b.label.optionalString ?? "战役突击",
-            attackPct: b.attackPct.optionalNumber ?? 0,
-            defensePct: b.defensePct.optionalNumber ?? 0,
-            speedMult: b.speedMult.optionalNumber ?? 1.0,
-            navalPct: b.navalPct.optionalNumber ?? 0
+            label: labels.joined(separator: " · "),
+            attackPct: max(-30.0, min(45.0, atk)),
+            defensePct: max(-30.0, min(45.0, def)),
+            speedMult: max(0.75, min(1.45, spd)),
+            navalPct: max(-30.0, min(45.0, nav))
         )
     }
 

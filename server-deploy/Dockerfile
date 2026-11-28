@@ -1,8 +1,8 @@
-# 列国纪在线计算服务器 v13（LGB1 <1KB 二进制差量 + UDP 8767 零队头阻塞 + 4C4G 3Mbps 精准防拥塞整形 + 逐包 TCP_QUICKACK）
+# 列国纪在线计算服务器 v18（LGC2 + LGST v2 + RAM DecodedStatics LRU + HPA* 走廊寻路 + LGB2 1/16 双差量推流）
 FROM swift:5.10-jammy AS builder
 WORKDIR /src
 COPY ios-native/Core ./ios-native/Core
-RUN swift build -c release --product LieguojiServer --package-path ios-native/Core
+RUN swift build -c release --jobs 2 -Xswiftc -num-threads -Xswiftc 2 --product LieguojiServer --package-path ios-native/Core
 
 FROM swift:5.10-jammy-slim
 WORKDIR /app

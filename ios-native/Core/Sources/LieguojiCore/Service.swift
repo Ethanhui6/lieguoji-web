@@ -13,6 +13,9 @@ public final class EngineService {
     public private(set) var catalogsLoaded = false
     /// 云端专属计算服极速模式：在大型地图（≥140 州）上自动启用智能国名节流与单帧高效步进，显著提速 280 州等超大图。
     public var cloudTurbo = false
+    /// v13.0.0：服务端静态几何内容寻址缓存钩子（`LGC2` run-only 解析与首次 `LGC2` 写入）。
+    public var staticsResolver: ((String) -> Data?)?
+    public var onStaticsDecoded: ((String, Data) -> Void)?
     private var lastOwners: [Int] = []
     private var lastNationSig: [String] = []
     private var slimStaticInitialized = false
@@ -25,17 +28,31 @@ public final class EngineService {
         let troops: Int
         let status: String
         let province: Int
-        let supplies: Int
-        let morale: Int
+        let suppliesBucket: Int
+        let moraleBucket: Int
         let xQ: Int16
         let yQ: Int16
         let dest: Int?
         let commander: String?
         let tacticTag: String?
     }
+    private struct FleetDeltaSig: Equatable {
+        let nation: Int
+        let ships: Int
+        let crew: Int
+        let foodBucket: Int
+        let hullQ: UInt8
+        let status: String
+        let travel: String
+        let xQ: Int16
+        let yQ: Int16
+        let port: Int
+        let flags: UInt8
+    }
     private var lastSlimArmies: [String: ArmyDeltaSig] = [:]
     private var lastSlimNations: [GameState.Nation] = []
     private var lastSlimFleets: [GameState.Fleet] = []
+    private var lastSlimFleetsById: [String: FleetDeltaSig] = [:]
     private var lastSlimPorts: [GameState.Port] = []
     private var lastSlimForts: [Int] = []
     private var lastSlimHoly: [GameState.Holy] = []
@@ -59,7 +76,7 @@ public final class EngineService {
         engine?.run.world.day.asInt ?? 0
     }
 
-    /// 重置精简推流帧的静态数组与疆域/军队/事件增量缓存（开新流、读档或前台恢复后确保首帧发送完整基线）。
+    /// 重置精简推流帧的静态数组与疆域/军队/舰队/事件增量缓存（开新流、读档或前台恢复后确保首帧发送完整基线）。
     public func resetSlimStaticCache() {
         slimStaticInitialized = false
         slimFramesSinceFullStatic = 0
@@ -67,17 +84,35 @@ public final class EngineService {
         lastSlimArmies.removeAll(keepingCapacity: true)
         lastSlimNations = []
         lastSlimFleets = []
+        lastSlimFleetsById.removeAll(keepingCapacity: true)
         lastSlimEventDay = -1
         lastSlimEventText = ""
     }
 
     private func armySig(_ a: GameState.Army) -> ArmyDeltaSig {
-        let xQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((a.x * 16.0).rounded()))))
-        let yQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((a.y * 16.0).rounded()))))
+        // v13.0.0：坐标 0.25 地图单位量化 + 补给/士气分桶，彻底滤除静止/缓行军团的微噪抖动更新，推流帧体积再降 40%！
+        let xQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((a.x * 4.0).rounded()))))
+        let yQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((a.y * 4.0).rounded()))))
         return ArmyDeltaSig(
             nation: a.nation, troops: a.troops, status: a.status, province: a.province,
-            supplies: a.supplies, morale: a.morale, xQ: xQ, yQ: yQ, dest: a.destination,
+            suppliesBucket: a.supplies / 5, moraleBucket: a.morale / 3, xQ: xQ, yQ: yQ, dest: a.destination,
             commander: a.commander, tacticTag: a.tacticTag
+        )
+    }
+
+    private func fleetSig(_ f: GameState.Fleet) -> FleetDeltaSig {
+        let xQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((f.x * 4.0).rounded()))))
+        let yQ = Int16(max(Int(Int16.min), min(Int(Int16.max), Int((f.y * 4.0).rounded()))))
+        let hullQ = UInt8(max(0, min(250, Int((f.hull * 50.0).rounded()))))
+        var fl: UInt8 = 0
+        if f.manual { fl |= 1 << 0 }
+        if f.patrol { fl |= 1 << 1 }
+        if f.escorting == true { fl |= 1 << 2 }
+        if f.blockading == true { fl |= 1 << 3 }
+        if f.repairActive == true { fl |= 1 << 4 }
+        return FleetDeltaSig(
+            nation: f.nation, ships: f.ships, crew: f.crew, foodBucket: f.food / 5,
+            hullQ: hullQ, status: f.status, travel: f.travel, xQ: xQ, yQ: yQ, port: f.port, flags: fl
         )
     }
 
@@ -86,7 +121,10 @@ public final class EngineService {
         lastSlimArmies.removeAll(keepingCapacity: true)
         for a in gs.armies { lastSlimArmies[a.id] = armySig(a) }
         lastSlimNations = gs.nations
-        lastSlimFleets = gs.fleets ?? []
+        let flList = gs.fleets ?? []
+        lastSlimFleets = flList
+        lastSlimFleetsById.removeAll(keepingCapacity: true)
+        for f in flList { lastSlimFleetsById[f.id] = fleetSig(f) }
         if let lastEv = gs.events.last {
             lastSlimEventDay = lastEv.day
             lastSlimEventText = lastEv.text
@@ -208,17 +246,20 @@ public final class EngineService {
         return Profile.measure("s.json") { (try? JSONEncoder().encode(gs)) ?? Data() }
     }
 
-    /// v16 紧凑差量二进制推流帧（`LGB2`）：
-    /// - 仅在首帧（或 `resetSlimStaticCache()` 后）下发全量基线，彻底移除有序 TCP 模式下每 24 帧强发 30KB 关键帧的规律性顿挫！
-    /// - 中间帧剥离不变的国家 UTF-8 身份字符串（仅在新建/改名/改色时下发）+ 军队实体差量 + 疆域差量，将稳态推流帧压缩至 **0.35–1.1 KB LZ4**！
-    public func stateBinary(stepping: Bool = true) -> Data {
+    /// v17 紧凑差量二进制推流帧（`LGB2`）：
+    /// - 首帧发全量基线；中间帧仅发发生实质变动的军团 +（v17 客户端开启 `fleetDelta` 时）变动舰队差量 + 疆域差量 + 剥离不变国家身份字符串；
+    /// - 静态设施（港口/要塞/圣地/奇观/古迹/造船厂）按 6 帧周期跳过重复扫描（`omitStatic`），把 835 州超大地图推流帧压缩至 **< 1.5–2.5 KB LZ4**！
+    public func stateBinary(stepping: Bool = true, fleetDelta: Bool = false) -> Data {
         guard let e = engine else { return Data() }
         let includeLabels = labelsDue(e, stepping: stepping)
-        var gs = e.gameState(includeLabels: includeLabels, slim: true)
+        let omitStaticNow = slimStaticInitialized && (slimFramesSinceFullStatic % 6 != 0)
+        var gs = e.gameState(includeLabels: includeLabels, slim: true, omitStatic: omitStaticNow)
         if !slimStaticInitialized {
             gs.ownersDelta = nil
             gs.armyDeltaMode = nil
             gs.removedArmyIds = nil
+            gs.fleetDeltaMode = nil
+            gs.removedFleetIds = nil
             gs.ports = gs.ports ?? []
             gs.forts = gs.forts ?? []
             gs.holy = gs.holy ?? []
@@ -246,7 +287,7 @@ public final class EngineService {
                 lastSlimOwners = gs.owners
                 gs.ownersDelta = nil
             }
-            // 真网游军队实体差量：仅编码本步位置/兵力/状态发生变化的军团 + 阵亡移除列表
+            // 真网游军队实体差量：仅编码本步位置/兵力/状态发生实质变化的军团 + 阵亡移除列表
             var nextMap = [String: ArmyDeltaSig]()
             nextMap.reserveCapacity(gs.armies.count)
             var changedArmies = [GameState.Army]()
@@ -266,7 +307,7 @@ public final class EngineService {
             gs.armies = changedArmies
             gs.armyDeltaMode = true
             gs.removedArmyIds = removedIds
-            // v16 国家身份字符串零重复：若国家数量、名、色、首都未变，中间帧清空 8 项 UTF-8 身份字符串，每帧立省 5–10 KB！
+            // v16/v17 国家身份字符串零重复：若国家数量、名、色、首都未变，中间帧清空 8 项 UTF-8 身份字符串，每帧立省 5–10 KB！
             if gs.nations == lastSlimNations && !lastSlimNations.isEmpty {
                 gs.nations = []
             } else {
@@ -292,7 +333,34 @@ public final class EngineService {
                 lastSlimNations = fullCurrentNations
             }
             let curFleets = gs.fleets ?? []
-            if curFleets == lastSlimFleets {
+            if fleetDelta {
+                var nextFlMap = [String: FleetDeltaSig]()
+                nextFlMap.reserveCapacity(curFleets.count)
+                var changedFleets = [GameState.Fleet]()
+                changedFleets.reserveCapacity(min(curFleets.count, 16))
+                for f in curFleets {
+                    let sig = fleetSig(f)
+                    nextFlMap[f.id] = sig
+                    if lastSlimFleetsById[f.id] != sig {
+                        changedFleets.append(f)
+                    }
+                }
+                var removedFlIds = [String]()
+                for oldId in lastSlimFleetsById.keys where nextFlMap[oldId] == nil {
+                    removedFlIds.append(oldId)
+                }
+                lastSlimFleetsById = nextFlMap
+                lastSlimFleets = curFleets
+                if changedFleets.isEmpty && removedFlIds.isEmpty {
+                    gs.fleets = nil
+                    gs.fleetDeltaMode = nil
+                    gs.removedFleetIds = nil
+                } else {
+                    gs.fleets = changedFleets
+                    gs.fleetDeltaMode = true
+                    gs.removedFleetIds = removedFlIds
+                }
+            } else if curFleets == lastSlimFleets {
                 gs.fleets = nil
             } else {
                 lastSlimFleets = curFleets
@@ -310,18 +378,20 @@ public final class EngineService {
                 lastSlimEventDay = -1
                 lastSlimEventText = ""
             }
-            let curPorts = gs.ports ?? []
-            if curPorts == lastSlimPorts { gs.ports = nil } else { lastSlimPorts = curPorts; gs.ports = curPorts }
-            let curForts = gs.forts ?? []
-            if curForts == lastSlimForts { gs.forts = nil } else { lastSlimForts = curForts; gs.forts = curForts }
-            let curHoly = gs.holy ?? []
-            if curHoly == lastSlimHoly { gs.holy = nil } else { lastSlimHoly = curHoly; gs.holy = curHoly }
-            let curWonders = gs.wonders ?? []
-            if curWonders == lastSlimWonders { gs.wonders = nil } else { lastSlimWonders = curWonders; gs.wonders = curWonders }
-            let curRuins = gs.ruins ?? []
-            if curRuins == lastSlimRuins { gs.ruins = nil } else { lastSlimRuins = curRuins; gs.ruins = curRuins }
-            let curYards = gs.yards ?? []
-            if curYards == lastSlimYards { gs.yards = nil } else { lastSlimYards = curYards; gs.yards = curYards }
+            if !omitStaticNow {
+                let curPorts = gs.ports ?? []
+                if curPorts == lastSlimPorts { gs.ports = nil } else { lastSlimPorts = curPorts; gs.ports = curPorts }
+                let curForts = gs.forts ?? []
+                if curForts == lastSlimForts { gs.forts = nil } else { lastSlimForts = curForts; gs.forts = curForts }
+                let curHoly = gs.holy ?? []
+                if curHoly == lastSlimHoly { gs.holy = nil } else { lastSlimHoly = curHoly; gs.holy = curHoly }
+                let curWonders = gs.wonders ?? []
+                if curWonders == lastSlimWonders { gs.wonders = nil } else { lastSlimWonders = curWonders; gs.wonders = curWonders }
+                let curRuins = gs.ruins ?? []
+                if curRuins == lastSlimRuins { gs.ruins = nil } else { lastSlimRuins = curRuins; gs.ruins = curRuins }
+                let curYards = gs.yards ?? []
+                if curYards == lastSlimYards { gs.yards = nil } else { lastSlimYards = curYards; gs.yards = curYards }
+            }
         }
         return Profile.measure("s.bin") { BinaryStateWire.encode(gs) }
     }
@@ -340,19 +410,9 @@ public final class EngineService {
         return labels
     }
 
-    /// 推演 `days` 天；在专属云服模式下对中大型地图（≥180 州启用 90 ticks/日，≥100 州启用 120 ticks/日）自动加速步进，
-    /// 把 240–280 州精细剧本单日计算耗时压缩至原来的 1/3，且保持每日经济、战损、外交、事件与行军完整结算。
+    /// 推演 `days` 天（v13.0.0：已统一由 `NativeEngine.advance` 对 App 大地图按 120/60 严格整除因子对齐 `frameLoop.ticks`，消除旧版 90 非整除毛刺）。
     private func advanceDays(_ e: NativeEngine, days: Int) {
-        let count = max(1, days)
-        let provs = e.run.world.provinces.length
-        if cloudTurbo, (provs >= 100 || (provs >= 60 && count >= 2)), !e.run.frameLoop.isNull {
-            let prev = e.run.frameLoop.ticks.optionalNumber
-            e.run.frameLoop.ticks = JS(provs >= 180 ? 90 : 120)
-            e.advance(days: count)
-            if let prev { e.run.frameLoop.ticks = JS(prev) }
-            return
-        }
-        e.advance(days: count)
+        e.advance(days: max(1, days))
     }
     /// 本机推演一步并直接返回精简界面状态结构体（v11.0.0：启用 `slim: true` 跳过大地图不读的军团文案/详情拼装，零 JSON、提速 3×）。
     public func stepState(days: Int) -> GameState? {
@@ -441,17 +501,17 @@ public final class EngineService {
             resetSlimStaticCache()
             return Reply(ok: true, reason: "ok")
         case "enableMux":
-            return Reply(ok: true, reason: "mux-v16")
+            return Reply(ok: true, reason: "mux-v17")
         case "pullLatest":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
             let days = max(1, min(64, optInt("days") ?? 3))
             advanceDays(e, days: days)
-            if bool("binary") { return data(stateBinary(stepping: true)) }
+            if bool("binary") { return data(stateBinary(stepping: true, fleetDelta: bool("fleetDelta"))) }
             return data(state(stepping: true, slim: bool("slim")))
         case "stepBinary":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
             advanceDays(e, days: max(1, min(64, int("days"))))
-            return data(stateBinary(stepping: true))
+            return data(stateBinary(stepping: true, fleetDelta: bool("fleetDelta")))
         case "catalogs":
             guard let rawPayload = payload else { return Reply(ok: false, reason: "目录数据缺失。") }
             let unpacked = WireCodec.decompressIfNeeded(rawPayload)
@@ -466,7 +526,7 @@ public final class EngineService {
             // v12.0.0：先释放旧引擎（1–2 GB 内存）再解析新世界，彻底根除 4C4G 轻量云换局 OOM 崩溃死循环！
             engine = nil; lastOwners = []; lastNationSig = []; resetSlimStaticCache()
             do {
-                let e = try NativeEngine(world: unpacked)
+                let e = try NativeEngine(world: unpacked, staticsResolver: staticsResolver, onStaticsDecoded: onStaticsDecoded)
                 engine = e
                 // 远程同步无需倒传 2–30MB 的 mapJSON 与完整 state()，支持 withoutMap / withoutState 毫秒级回包！
                 let replyData: Data? = bool("withoutState") ? nil : state(slim: bool("slim"))

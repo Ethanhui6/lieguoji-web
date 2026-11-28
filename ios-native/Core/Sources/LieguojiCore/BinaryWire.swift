@@ -141,9 +141,10 @@ public enum BinaryStateWire {
         var w = Writer(capacity: 768 + gs.armies.count * 26 + gs.nations.count * 20)
         w.buf.append(contentsOf: magic)
         w.u8(2) // version 2 (LGB2)
-        // flags bit0..8 同 v1；bit9: armyDeltaMode；bit10: hasHistoricalRoute；bit11: hasPendingHistoricalEvent
+        // flags bit0..8 同 v1；bit9: armyDeltaMode；bit10: hasHistoricalRoute；bit11: hasPendingHistoricalEvent；bit12: fleetDeltaMode
         let hasTail = (gs.era != nil || gs.labels != nil || gs.ports != nil || gs.forts != nil || gs.holy != nil || gs.wonders != nil || gs.ruins != nil || gs.yards != nil)
         let isArmyDelta = (gs.armyDeltaMode == true)
+        let isFleetDelta = (gs.fleetDeltaMode == true)
         var hdrFlags: UInt16 = 0
         if gs.yearOffset != nil { hdrFlags |= 1 << 0 }
         if gs.worldTension != nil { hdrFlags |= 1 << 1 }
@@ -157,6 +158,7 @@ public enum BinaryStateWire {
         if isArmyDelta { hdrFlags |= 1 << 9 }
         if let hr = gs.historicalRoute, !hr.isEmpty { hdrFlags |= 1 << 10 }
         if gs.pendingHistoricalEvent != nil { hdrFlags |= 1 << 11 }
+        if isFleetDelta { hdrFlags |= 1 << 12 }
         w.u16(hdrFlags)
 
         // Core header scalars
@@ -323,6 +325,11 @@ public enum BinaryStateWire {
                 if f.repairActive == true { ff |= 1 << 4 }
                 w.u8(ff)
             }
+        }
+        if isFleetDelta {
+            let removedFl = gs.removedFleetIds ?? []
+            w.u16(w.clampU16(removedFl.count))
+            for rid in removedFl { w.str8(rid) }
         }
 
         // Wars
@@ -664,6 +671,18 @@ public enum BinaryStateWire {
             }
             fleets = list
         }
+        let isFleetDelta = (version >= 2) && ((hdrFlags & (1 << 12)) != 0)
+        var removedFleetIds: [String]? = nil
+        if isFleetDelta {
+            guard let rc = r.u16() else { return nil }
+            var rem = [String]()
+            rem.reserveCapacity(Int(rc))
+            for _ in 0..<rc {
+                guard let rid = r.str8() else { return nil }
+                rem.append(rid)
+            }
+            removedFleetIds = rem
+        }
 
         // Wars
         guard let wc = r.u16() else { return nil }
@@ -825,6 +844,10 @@ public enum BinaryStateWire {
         if isArmyDelta {
             outState.armyDeltaMode = true
             outState.removedArmyIds = removedArmyIds
+        }
+        if isFleetDelta {
+            outState.fleetDeltaMode = true
+            outState.removedFleetIds = removedFleetIds
         }
         return outState
     }

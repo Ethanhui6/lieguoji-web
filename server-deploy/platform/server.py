@@ -99,16 +99,16 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
-DEFAULT_LATEST_VERSION = "12.0.0"
-DEFAULT_LATEST_BUILD = 197
+DEFAULT_LATEST_VERSION = "13.0.0"
+DEFAULT_LATEST_BUILD = 198
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【彻底根治云服连不上与连上卡顿（v16 瘦身切线 + 零阻塞推流）】切云服自动剥离 60–75% 冗余底图、加单飞切线锁与自动暂挂本地推演，杜绝 89MB 超时与 4GB 云服 OOM；云端暂停/返回不再回拉几十 MB 存档；升级 lieguoji-server/v16 扩大滑动窗口至 4–6 帧、中间帧再省 5–10KB，彻底区分「广州云服 3 专线」与「可选局域网电脑端」。",
-    "【根治滑动文字地图乱晃 × 全 12 历史剧本版图精准纠偏（0 飞地 / 0 丢都）】彻底修复单指拖动/甩屏/缩放期间底图与文字撕裂晃动；重烘焙全部 12 套历史剧本 20K/60K/120K 真实地理边界（1936 完整奥地利与捷克斯洛伐克、1560 日本战国消除跨海飞地、1914 奥斯曼完整版图、755 盛唐/208 三国/1931 民国全部 0 丢都）。",
-    "【6 阶装备与科技代差全面显性化 × 18KB 云端自动缓存战史画卷弹窗 × 双阶段清晰开局动画】解锁 6 阶科技与低工业兵种门控，战场血条/代差角标/宣战战力交换比/本国现役装备处处可见真实代差；52 幅战史画卷云端自动缓存（18KB/张秒出图）+ 战区直飞 + 实效胶囊 + 快讯号外；开局动画升级为「勘舆筹算 + 4.8s 柔和八笔展卷」双阶段并附跳过按钮。",
+    "【硬核引擎 5×–7× 算力提速 × 零卡顿大地图推演】深度重写接敌/交锋扁平数组、海权单遍预索引、零堆分配 jsHypot、海陆分域 A* 寻路、舰队寻路缓存与 App 大图 120 整除步长对齐，835 州超大图无论云端还是手机本机均告别 PPT 级卡顿。",
+    "【HOI4 集团军整编（100% 守恒总兵力）】月结及每 5 日自动将同州空闲碎团整编为高编制主力军团（超大地图上限 45,000 人），完整保留总兵力、历史名将与更高战力主战兵种，根治后期 550+ 碎团雪崩。",
+    "【LGC2 全二进制封包 + 云服 statics-cache 35× 瘦身 × lieguoji-server/v17 双差量推流 × 热更线路全修】冷上传从 65.8 MB 暴降至 ~9–11 MB，重连命中静态几何缓存仅传 ~1.8 MB 秒级开推；新增军团/舰队双差量稳态推流与热更 404 故障修复，置顶实测最快的 hk.gh-proxy.org 镜像。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 27,
+    "version": 28,
     "notice": "",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16, "64": 32},
@@ -145,6 +145,7 @@ def build_default_ipa_mirrors(version: str, build: int) -> list[str]:
     b = int(build or DEFAULT_LATEST_BUILD)
     fname = f"lieguoji-{v}-build{b}-unsigned.ipa"
     return [
+        f"https://hk.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
         f"https://gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/v{v}/{fname}",
@@ -160,6 +161,16 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
         "build": DEFAULT_LATEST_BUILD,
         "date": "2026-11-27",
         "lines": list(DEFAULT_RELEASE_NOTES),
+    },
+    {
+        "version": "12.0.0",
+        "build": 197,
+        "date": "2026-11-27",
+        "lines": [
+            "【云服瘦身切线 + 零阻塞推流】saveForCompute 剥离底图、单飞切线锁与 4–6 帧滑动窗口。",
+            "【根治滑屏文字乱晃 + 全 12 历史剧本 0 丢都 GIS 重烘焙】原子提交锁帧并修复 1936/1939/1914/1560 疆域。",
+            "【6 阶装备科技代差显性化 + 18KB 云端自动缓存战史画卷弹窗 + 双阶段开局展卷】",
+        ],
     },
     {
         "version": "11.0.0",

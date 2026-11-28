@@ -25,7 +25,7 @@ import Darwin
 //    以及服务端每 60 秒自动双写热备（`autosave.lgj` + 最多 10 份 `world-<id>.lgj`）与 SIGTERM/SIGINT 优雅落盘退出。
 
 setvbuf(stdout, nil, _IONBF, 0)
-let serverVersionTag = "lieguoji-server/v16"
+let serverVersionTag = "lieguoji-server/v17"
 let env = ProcessInfo.processInfo.environment
 let enableUDPPush = (env["LGJ_ENABLE_UDP"] == "1" || env["LGJ_ENABLE_UDP"]?.lowercased() == "true")
 let udpPushPort: UInt16 = enableUDPPush ? (UInt16(env["LGJ_UDP_PORT"] ?? "") ?? 8767) : 0
@@ -148,6 +148,104 @@ func writeCatalogsCache(_ data: Data) {
     try? FileManager.default.createDirectory(at: saveDirURL, withIntermediateDirectories: true)
     try? data.write(to: catalogsCacheURL, options: .atomic)
 }
+
+/// v13.0.0 静态几何内容寻址缓存（RAM LRU 4 份 + SSD `/data/saves/statics-cache/<hash>.lgst` 24 份）：
+/// 玩家重连或重启同地图剧本时，`hasStatics` 0 锁秒命中，客户端仅上传 ~1.8 MB 运行态，彻底免除 65 MB 重传！
+final class StaticsCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private let dirURL: URL
+    private var ram: [String: Data] = [:]
+    private var ramOrder: [String] = []
+    private let maxRam = 4
+    private let maxDisk = 24
+
+    init(baseDir: URL) {
+        self.dirURL = baseDir.appendingPathComponent("statics-cache", isDirectory: true)
+    }
+
+    private func cleanHash(_ raw: String) -> String {
+        let filtered = raw.lowercased().unicodeScalars.filter {
+            ($0.value >= 48 && $0.value <= 57) || ($0.value >= 97 && $0.value <= 102)
+        }
+        return String(String(String.UnicodeScalarView(filtered)).prefix(64))
+    }
+
+    private func fileURL(for clean: String) -> URL {
+        dirURL.appendingPathComponent("\(clean).lgst")
+    }
+
+    func has(hash raw: String) -> Bool {
+        let key = cleanHash(raw)
+        guard key.count >= 16 else { return false }
+        lock.lock()
+        if ram[key] != nil { lock.unlock(); return true }
+        lock.unlock()
+        return FileManager.default.fileExists(atPath: fileURL(for: key).path)
+    }
+
+    func get(hash raw: String) -> Data? {
+        let key = cleanHash(raw)
+        guard key.count >= 16 else { return nil }
+        lock.lock()
+        if let hit = ram[key] {
+            if let idx = ramOrder.firstIndex(of: key) { ramOrder.remove(at: idx) }
+            ramOrder.append(key)
+            lock.unlock()
+            return hit
+        }
+        lock.unlock()
+        guard let disk = try? Data(contentsOf: fileURL(for: key)), !disk.isEmpty else { return nil }
+        lock.lock()
+        ram[key] = disk
+        if let idx = ramOrder.firstIndex(of: key) { ramOrder.remove(at: idx) }
+        ramOrder.append(key)
+        while ramOrder.count > maxRam {
+            let evict = ramOrder.removeFirst()
+            ram.removeValue(forKey: evict)
+        }
+        lock.unlock()
+        return disk
+    }
+
+    func put(hash raw: String, data: Data) {
+        let key = cleanHash(raw)
+        guard key.count >= 16, !data.isEmpty else { return }
+        lock.lock()
+        ram[key] = data
+        if let idx = ramOrder.firstIndex(of: key) { ramOrder.remove(at: idx) }
+        ramOrder.append(key)
+        while ramOrder.count > maxRam {
+            let evict = ramOrder.removeFirst()
+            ram.removeValue(forKey: evict)
+        }
+        lock.unlock()
+        let url = fileURL(for: key)
+        let dir = dirURL
+        let cap = maxDisk
+        diskSaveQueue.async {
+            let fm = FileManager.default
+            try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+            try? data.write(to: url, options: .atomic)
+            guard let items = try? fm.contentsOfDirectory(
+                at: dir,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ) else { return }
+            let lgst = items.filter { $0.pathExtension == "lgst" }
+            guard lgst.count > cap else { return }
+            let sorted = lgst.sorted { a, b in
+                let da = (try? a.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                let db = (try? b.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                return da > db
+            }
+            for old in sorted.dropFirst(cap) { try? fm.removeItem(at: old) }
+        }
+    }
+}
+
+let staticsCache = StaticsCache(baseDir: saveDirURL)
+service.staticsResolver = { hash in staticsCache.get(hash: hash) }
+service.onStaticsDecoded = { hash, blob in staticsCache.put(hash: hash, data: blob) }
 
 #if os(Windows)
 typealias Socket = SOCKET
@@ -600,6 +698,7 @@ final class SimStreamer {
     private var pushEnabled = false
     private var windowEnabled = false
     private var binaryEnabled = false
+    private var fleetDeltaEnabled = false
     private var daysPerStep = 1
     private var intervalSec: Double = 0.068
     private var streamEpoch: UInt32 = 1
@@ -650,13 +749,14 @@ final class SimStreamer {
         cond.unlock()
     }
 
-    func configure(playing: Bool, days: Int, intervalMs: Int, epoch: Int?, push: Bool, window: Bool, binary: Bool = false) {
+    func configure(playing: Bool, days: Int, intervalMs: Int, epoch: Int?, push: Bool, window: Bool, binary: Bool = false, fleetDelta: Bool = false) {
         cond.lock()
         let wasPlaying = self.playing
         self.playing = playing
         self.pushEnabled = push
         self.windowEnabled = window
         self.binaryEnabled = binary
+        self.fleetDeltaEnabled = fleetDelta
         self.daysPerStep = max(1, min(64, days))
         self.intervalSec = Double(max(24, min(900, intervalMs))) / 1000.0
         if let e = epoch, e >= 0 {
@@ -777,6 +877,7 @@ final class SimStreamer {
                 let doPush = self.pushEnabled
                 let useWindow = self.windowEnabled
                 let useBinary = self.binaryEnabled
+                let useFleetDelta = self.fleetDeltaEnabled
                 let needsLegacyBuf = !doPush && (self.bufferedFrame == nil)
                 let reqDays = self.daysPerStep
                 let isFirst = self.firstFramePending
@@ -825,7 +926,7 @@ final class SimStreamer {
                 engineLock.lock()
                 if isFirst { service.resetSlimStaticCache() }
                 let reply = (doPush && useBinary)
-                    ? service.handle("stepBinary", ["days": sliceDays], payload: nil)
+                    ? service.handle("stepBinary", ["days": sliceDays, "fleetDelta": useFleetDelta], payload: nil)
                     : service.handle("step", ["days": sliceDays, "slim": doPush], payload: nil)
                 let pCount = service.engine?.run.world.provinces.length ?? 0
                 let curDay = service.currentDay
@@ -865,7 +966,7 @@ final class SimStreamer {
                                 let avgKB = Double(self.pushedBytes) / Double(max(1, self.pushedCount)) / 1024.0
                                 let kbps = Double(self.pushedBytes) * 8.0 / 30.0 / 1000.0
                                 let udpPct = self.pushedCount > 0 ? Int((Double(self.pushedUDPCount) * 100.0 / Double(self.pushedCount)).rounded()) : 0
-                                print(String(format: "（v14 %@ 推流）近30秒 %d 帧（UDP %d%%）· %.2f KB/帧（%.0f kbps）· 步进 %.0f ms（%.1f ms/日）", useBinary ? "LGB2+UDP" : "LZ4", self.pushedCount, udpPct, avgKB, kbps, self.avgStepMs, self.avgDayMs))
+                                print(String(format: "（v17 %@ 推流）近30秒 %d 帧（UDP %d%%）· %.2f KB/帧（%.0f kbps）· 步进 %.0f ms（%.1f ms/日）", useBinary ? (useFleetDelta ? "LGB2+Δ舰" : "LGB2") : "LZ4", self.pushedCount, udpPct, avgKB, kbps, self.avgStepMs, self.avgDayMs))
                                 self.pushedCount = 0; self.pushedUDPCount = 0; self.pushedBytes = 0; self.statStarted = tickStart
                             }
                         }
@@ -1027,6 +1128,12 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         let t = streamer.telemetry()
         return EngineService.Reply(ok: t.open)
     }
+    if call == "hasStatics" {
+        // 0 锁瞬查：绝不等待 engineLock，客户端建连前 14ms 内确认是否命中云服静态几何缓存
+        let h = (args["hash"] as? String) ?? ""
+        let hit = staticsCache.has(hash: h)
+        return EngineService.Reply(ok: hit, reason: hit ? "hit" : "miss")
+    }
     streamer.touch()
     if call == "streamConfig" {
         let on = (args["playing"] as? NSNumber)?.boolValue ?? (args["playing"] as? Bool) ?? false
@@ -1036,7 +1143,8 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         let push = (args["push"] as? NSNumber)?.boolValue ?? (args["push"] as? Bool) ?? false
         let window = (args["window"] as? NSNumber)?.boolValue ?? (args["window"] as? Bool) ?? false
         let binary = (args["binary"] as? NSNumber)?.boolValue ?? (args["binary"] as? Bool) ?? false
-        streamer.configure(playing: on, days: days, intervalMs: intervalMs, epoch: epoch, push: push, window: window, binary: binary)
+        let fleetDelta = (args["fleetDelta"] as? NSNumber)?.boolValue ?? (args["fleetDelta"] as? Bool) ?? false
+        streamer.configure(playing: on, days: days, intervalMs: intervalMs, epoch: epoch, push: push, window: window, binary: binary, fleetDelta: fleetDelta)
         return EngineService.Reply(ok: true, reason: "stream:\(on ? days : 0):\(binary ? "bin" : (push ? "push" : "pull"))")
     }
     if call == "pullLatest" {
@@ -1050,7 +1158,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         return service.handle("park", args, payload: nil)
     }
     if call == "enableMux" {
-        var r = EngineService.Reply(ok: true, reason: "mux-v16")
+        var r = EngineService.Reply(ok: true, reason: "mux-v17")
         if enableUDPPush {
             let tok = udpGateway.issueToken()
             let uPort = udpGateway.boundPort
@@ -1081,7 +1189,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
             guard service.catalogsLoaded else {
                 return EngineService.Reply(ok: false, reason: "need_catalogs")
             }
-            if let candidate = try? NativeEngine(world: diskData) {
+            if let candidate = try? NativeEngine(world: diskData, staticsResolver: { staticsCache.get(hash: $0) }) {
                 let candDay = candidate.run.world.day.asInt
                 let candWid: String = {
                     if let s = candidate.run.world.custom.id.optionalString, !s.isEmpty { return s }
@@ -1112,7 +1220,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         "regime", "posts", "postCandidates", "officeCandidates", "allianceList", "districtList",
         "familyList", "placeNames", "mapExtras", "extraUnits", "unitProfile", "catalogEdits",
         "mapLabels", "throneCandidates", "nationProvinces", "profileReport", "worldInfo",
-        "nuclearInfo", "eraMilitaryInfo", "doctrineInfo"
+        "nuclearInfo", "eraMilitaryInfo", "doctrineInfo", "hasStatics"
     ]
     if !readOnly.contains(call) { streamer.invalidatePending() }
 
@@ -1132,11 +1240,9 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         let curDay = service.currentDay
         let wid = service.currentWorldId
         streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: wid)
-        if let rawPayload = payload {
-            let snap = WireCodec.decompressIfNeeded(rawPayload)
-            if !snap.isEmpty {
-                diskSaveQueue.async { writeWorldSnapshot(snap, worldId: wid) }
-            }
+        // 若收到的是 run-only LGC2，落盘时写入自包含紧凑 LGC2（~8MB），保证服务端重启后 resumeWorld 100% 可独立恢复
+        if let snap = service.engine?.saveForCompute(), !snap.isEmpty {
+            diskSaveQueue.async { writeWorldSnapshot(snap, worldId: wid) }
         }
     } else if call == "close" {
         streamer.setWorldMeta(open: false, provinces: 0, day: 0, worldId: "")
@@ -1566,7 +1672,7 @@ installShutdownSignals()
 #endif
 
 let allListeningPorts = ([port] + extraListeners.map(\.port)).map(String.init).joined(separator: " / ")
-print("列国纪在线计算服务器 v13（\(serverVersionTag) · LGB1 超紧凑二进制差量 <1KB/帧 + UDP 零队头阻塞 + 3Mbps 防拥塞整形 \(Int(configuredMaxBytesPerSec / 125))kbps + 逐包 TCP_QUICKACK + 64× 爽看海）已启动")
+print("列国纪在线计算服务器 v17（\(serverVersionTag) · LGC2 全二进制极速载入 + statics-cache 免传静态图 + LGB2 军团/舰队双差量 + 3Mbps 防拥塞整形 \(Int(configuredMaxBytesPerSec / 125))kbps + 逐包 TCP_QUICKACK）已启动")
 print("配对码：\(code)\(disableRelay ? "（纯直连专属云服模式）" : "")")
 print("手机打开游戏即自动接入；支持多端口 443/8765/8443 + UDP \(udpGateway.boundPort) 零队头阻塞专线，切后台再返回秒级无感重连。")
 installStartup()
@@ -1641,7 +1747,7 @@ func handleLANClient(_ conn: DirectClient) {
             if v >= 6 { conn.compress = true }
         }
         let reply = serve(call, args, payload.isEmpty ? nil : payload)
-        if call != "health" && call != "ping" && call != "worldInfo" && reply.ok && !promoted {
+        if call != "health" && call != "ping" && call != "worldInfo" && call != "hasStatics" && reply.ok && !promoted {
             promoted = true
             setSocketTimeouts(client, seconds: 180)
             promoteToActiveDirect(conn)

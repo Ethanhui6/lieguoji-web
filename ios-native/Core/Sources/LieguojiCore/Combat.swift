@@ -101,37 +101,85 @@ public struct ContactMotion {
     }
 
     /// contacts(): keep still-valid old pairs, add every hostile pair sharing an area, hold their members.
+    /// v13.0.0：全扁平整数数组与整型分区索引（彻底消灭内层 O(k²) 字符串字典哈希），保持 100% 确定性与网页逐字节黄金一致！
     func contacts(_ forces: [MovingForce], _ old: [ForceContact], _ rules: Rules, _ ready: [String: Position]? = nil) -> (contacts: [ForceContact], held: Set<String>, positions: [String: Position]) {
         let p = ready ?? positions(forces)
-        var byKey = [String: MovingForce](); for f in forces { byKey[f.key] = f }
+        let n = forces.count
+        var pts = [TravelPoint]()
+        var cells = [Int]()
+        var nations = [Int]()
+        var withdrawing = [Bool]()
+        pts.reserveCapacity(n); cells.reserveCapacity(n); nations.reserveCapacity(n); withdrawing.reserveCapacity(n)
+        var indexByKey = [String: Int](minimumCapacity: n)
+        for i in 0..<n {
+            let f = forces[i]
+            indexByKey[f.key] = i
+            let pos = p[f.key]!
+            pts.append(pos.point)
+            cells.append(pos.cell)
+            nations.append(f.nation)
+            withdrawing.append(f.withdrawing)
+        }
+        let reach2 = rules.reach * rules.reach
+        let physical = rules.physicalContact
         var pairs = [String: ForceContact](), order = [String]()
         func put(_ c: ForceContact) { let k = ContactMotion.pairKey(c.a, c.b); if pairs[k] == nil { order.append(k) }; pairs[k] = c }
-        func eligible(_ a: MovingForce, _ b: MovingForce, sea: Bool) -> Bool {
-            rules.enemy(a.nation, b.nation) && (sea || !a.withdrawing && !b.withdrawing)
-                && (!rules.physicalContact || EncounterGeometry.touching(p[a.key]!.point, p[b.key]!.point, reach: rules.reach))
+        @inline(__always)
+        func eligibleIdx(_ ai: Int, _ bi: Int, sea: Bool) -> Bool {
+            if !rules.enemy(nations[ai], nations[bi]) { return false }
+            if !sea && (withdrawing[ai] || withdrawing[bi]) { return false }
+            if physical {
+                let dx = pts[ai].x - pts[bi].x, dy = pts[ai].y - pts[bi].y
+                return dx * dx + dy * dy <= reach2
+            }
+            return true
         }
         for c in old {
-            guard let a = p[c.a], let b = p[c.b], let fa = byKey[c.a], let fb = byKey[c.b] else { continue }
-            let departed = c.area.hasPrefix("sea/") && (fa.withdrawing || fb.withdrawing) && area(a.cell, rules) != area(b.cell, rules)
-            if !departed && a.point == c.pointA && b.point == c.pointB && Int(graph.ids[a.cell]) == c.cellA && Int(graph.ids[b.cell]) == c.cellB && eligible(fa, fb, sea: c.area.hasPrefix("sea/")) { put(c) }
+            guard let ai = indexByKey[c.a], let bi = indexByKey[c.b] else { continue }
+            let isSea = c.area.hasPrefix("sea/")
+            let departed = isSea && (withdrawing[ai] || withdrawing[bi]) && areaKey(cells[ai], rules) != areaKey(cells[bi], rules)
+            if !departed && pts[ai] == c.pointA && pts[bi] == c.pointB && Int(graph.ids[cells[ai]]) == c.cellA && Int(graph.ids[cells[bi]]) == c.cellB && eligibleIdx(ai, bi, sea: isSea) {
+                put(c)
+            }
         }
-        var groups = [Int: [String]](), groupOrder = [Int]()
-        for f in forces { let ar = areaKey(p[f.key]!.cell, rules); if groups[ar] == nil { groupOrder.append(ar) }; groups[ar, default: []].append(f.key) }
+        var groups = [Int: [Int]](), groupOrder = [Int]()
+        for i in 0..<n {
+            let ar = areaKey(cells[i], rules)
+            if groups[ar] == nil { groupOrder.append(ar) }
+            groups[ar, default: []].append(i)
+        }
         var held = Set<String>()
         for ar in groupOrder {
             let group = groups[ar]!
-            if group.count < 2 { continue }
+            let gc = group.count
+            if gc < 2 { continue }
             let sea = ar < 0
             var war = false, name: String?
-            for i in 0..<group.count { for j in (i + 1)..<max(i + 1, group.count) {
-                let a = group[i], b = group[j]
-                if !eligible(byKey[a]!, byKey[b]!, sea: sea) { continue }
-                if name == nil { name = area(p[a]!.cell, rules) }
-                war = true; put(pair(a, b, p, name!))
-            } }
-            if war && !rules.physicalContact && sea { for id in group where !byKey[id]!.withdrawing { held.insert(id) } }
+            for i in 0..<(gc - 1) {
+                let ai = group[i]
+                let na = nations[ai], wa = withdrawing[ai], pa = pts[ai]
+                for j in (i + 1)..<gc {
+                    let bi = group[j]
+                    if !rules.enemy(na, nations[bi]) { continue }
+                    if !sea && (wa || withdrawing[bi]) { continue }
+                    if physical {
+                        let dx = pa.x - pts[bi].x, dy = pa.y - pts[bi].y
+                        if dx * dx + dy * dy > reach2 { continue }
+                    }
+                    if name == nil { name = area(cells[ai], rules) }
+                    war = true
+                    put(pair(forces[ai].key, forces[bi].key, p, name!))
+                }
+            }
+            if war && !physical && sea {
+                for idx in group where !withdrawing[idx] { held.insert(forces[idx].key) }
+            }
         }
-        for k in order { let c = pairs[k]!; for id in [c.a, c.b] where !(byKey[id]?.withdrawing ?? true) { held.insert(id) } }
+        for k in order {
+            let c = pairs[k]!
+            if let ai = indexByKey[c.a], !withdrawing[ai] { held.insert(c.a) }
+            if let bi = indexByKey[c.b], !withdrawing[bi] { held.insert(c.b) }
+        }
         let sorted = order.sorted { Collate.less($0, $1) }.map { pairs[$0]! }
         return (sorted, held, p)
     }
@@ -223,37 +271,61 @@ public struct ContactMotion {
             var meetingHit = false
             let t1 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             if rules.physicalContact && dt > 0 {
-                // Each segment is linear until the next gate. Solve the relative motion before
-                // stepping, so fast opposing columns cannot tunnel through each other.
+                // v13.0.0：扁平数组化相遇求解（零 String 哈希字典查询），杜绝千军交错时 148ms/5日热点。
                 let positions = current.positions
                 let zero = TravelPoint(x: 0, y: 0)
+                var movingAreas = Set<Int>(minimumCapacity: movers.count)
+                for m in movers { movingAreas.insert(areaOf[m.f]) }
                 var groups = [Int: [Int]]()
-                // Only areas a mover stands in: two forces standing still cannot come to meet (a touching
-                // pair would already be in contact).
-                let moving = Set(movers.map { areaOf[$0.f] })
-                for i in forces.indices where moving.contains(areaOf[i]) { groups[areaOf[i], default: []].append(i) }
-                // Only areas where hostile forces meet need the relative-motion solve.
-                groups = groups.filter { _, list in
-                    list.count > 1 && list.indices.dropLast().contains { k in list[(k + 1)...].contains { rules.enemy(forces[list[k]].nation, forces[$0].nation) } }
+                for i in forces.indices {
+                    let ar = areaOf[i]
+                    if movingAreas.contains(ar) { groups[ar, default: []].append(i) }
                 }
-                // Velocities only for the movers in those areas (they used to be worked out for every mover).
-                var velocities = [String: TravelPoint]()
-                if !groups.isEmpty {
-                    let hot = Set(groups.values.joined())
-                    for m in movers where m.time > 0 && m.time.isFinite && hot.contains(m.f) {
-                        let key = forces[m.f].key, p = positions[key]!.point
-                        let end = m.seg.local || forces[m.f].travel.crossed ? m.seg.end : m.seg.gate
-                        velocities[key] = TravelPoint(x: (end.x - p.x) / m.time, y: (end.y - p.y) / m.time)
+                var hotGroups = [[Int]]()
+                var hotFlags = [Bool](repeating: false, count: forces.count)
+                for list in groups.values where list.count > 1 {
+                    var hasWar = false
+                    outer: for k in 0..<(list.count - 1) {
+                        let na = forces[list[k]].nation
+                        for l in (k + 1)..<list.count {
+                            if rules.enemy(na, forces[list[l]].nation) { hasWar = true; break outer }
+                        }
+                    }
+                    if hasWar {
+                        hotGroups.append(list)
+                        for idx in list { hotFlags[idx] = true }
                     }
                 }
-                for group in groups.values { for k in group.indices { for l in (k + 1)..<group.count {
-                    let a = forces[group[k]], b = forces[group[l]]
-                    guard rules.enemy(a.nation, b.nation), !a.withdrawing, !b.withdrawing,
-                          !current.held.contains(a.key), !current.held.contains(b.key) else { continue }
-                    let pa = positions[a.key]!, pb = positions[b.key]!
-                    guard areaKey(pa.cell, rules) == areaKey(pb.cell, rules) else { continue }
-                    if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt, reach: rules.reach) { dt = min(dt, t); meetingHit = true }
-                } } }
+                if !hotGroups.isEmpty {
+                    var vel = [TravelPoint](repeating: zero, count: forces.count)
+                    var pts = [TravelPoint](repeating: zero, count: forces.count)
+                    var isHeld = [Bool](repeating: false, count: forces.count)
+                    for idx in forces.indices where hotFlags[idx] {
+                        let key = forces[idx].key
+                        pts[idx] = positions[key]!.point
+                        isHeld[idx] = current.held.contains(key)
+                    }
+                    for m in movers where m.time > 0 && m.time.isFinite && hotFlags[m.f] {
+                        let p = pts[m.f]
+                        let end = m.seg.local || forces[m.f].travel.crossed ? m.seg.end : m.seg.gate
+                        vel[m.f] = TravelPoint(x: (end.x - p.x) / m.time, y: (end.y - p.y) / m.time)
+                    }
+                    for group in hotGroups {
+                        let gc = group.count
+                        for k in 0..<(gc - 1) {
+                            let ai = group[k]
+                            if forces[ai].withdrawing || isHeld[ai] { continue }
+                            let na = forces[ai].nation, pa = pts[ai], va = vel[ai]
+                            for l in (k + 1)..<gc {
+                                let bi = group[l]
+                                if forces[bi].withdrawing || isHeld[bi] || !rules.enemy(na, forces[bi].nation) { continue }
+                                if let t = EncounterGeometry.meetingTime(pa, va, pts[bi], vel[bi], limit: dt, reach: rules.reach) {
+                                    dt = min(dt, t); meetingHit = true
+                                }
+                            }
+                        }
+                    }
+                }
                 // Two columns a rounding error from engaging were stepped towards each other by rounding
                 // errors, tens of thousands of whole-map passes in one call: a meeting takes a real step.
                 if meetingHit { dt = min(remaining, max(dt, seconds / 4096)) }

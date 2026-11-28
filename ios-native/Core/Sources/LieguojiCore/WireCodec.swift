@@ -19,11 +19,18 @@ public enum WireCodec {
         return data[s] == magic[0] && data[s + 1] == magic[1] && data[s + 2] == magic[2] && data[s + 3] == magic[3]
     }
 
-    /// 压缩二进制载荷；极短数据或压缩收益不足 10% 时返回原文，避免负压缩。
+    /// 压缩二进制载荷；极短数据、已压缩载荷（`LZ4!` / 内部已分块 LZ4 的 `LGC2`）或压缩收益不足 10% 时返回原文，避免负压缩与重复扫描。
     public static func compress(_ data: Data) -> Data {
         let srcLen = data.count
         guard srcLen >= 128 else { return data }
         if isCompressed(data) { return data }
+        if data.count >= 4 {
+            let s = data.startIndex
+            // LGC2 内部 run 与 statics 已各自按块 LZ4 压缩，直接零拷贝透传
+            if data[s] == 0x4C && data[s + 1] == 0x47 && data[s + 2] == 0x43 && data[s + 3] == 0x32 {
+                return data
+            }
+        }
 
         var out = [UInt8]()
         out.reserveCapacity(srcLen / 2 + 16)

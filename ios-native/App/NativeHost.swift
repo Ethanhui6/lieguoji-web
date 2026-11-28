@@ -16,9 +16,9 @@ struct ComputeRouteInfo: Identifiable, Equatable, Sendable {
     var active: Bool
 
     static let builtInRoutes: [ComputeRouteInfo] = [
-        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 v16 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "推荐主线 · 有序 TCP MUX", rttMs: nil, active: false),
-        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 v16 · 8443 高速容灾专线", address: "111.230.153.235:8443", tag: "高速容灾 · 有序 TCP MUX", rttMs: nil, active: false),
-        ComputeRouteInfo(id: "tencent-443", name: "九州云服 v16 · 443 备用穿透专线", address: "111.230.153.235:443", tag: "企业网/校园网穿透备用", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8765", name: "九州云服 v17 · 8765 原生直连主线", address: "111.230.153.235:8765", tag: "推荐主线 · LGC2 极速直连", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-8443", name: "九州云服 v17 · 8443 高速容灾专线", address: "111.230.153.235:8443", tag: "高速容灾 · LGC2 极速直连", rttMs: nil, active: false),
+        ComputeRouteInfo(id: "tencent-443", name: "九州云服 v17 · 443 备用穿透专线", address: "111.230.153.235:443", tag: "企业网/校园网穿透备用", rttMs: nil, active: false),
         ComputeRouteInfo(id: "lan-udp", name: "同 Wi-Fi 电脑端直连（可选）", address: "lan", tag: "仅在电脑运行服务端时可用", rttMs: nil, active: false),
     ]
 
@@ -151,6 +151,8 @@ final class StreamFrameBuffer: @unchecked Sendable {
     private var baselineArmyOrder: [String] = []
     private var baselineNations: [GameState.Nation] = []
     private var baselineFleets: [GameState.Fleet]? = nil
+    private var baselineFleetsMap: [String: GameState.Fleet] = [:]
+    private var baselineFleetOrder: [String] = []
     private let maxBuffered = 6
     var onFrameConsumed: (@Sendable (UInt32) -> Void)?
 
@@ -169,6 +171,8 @@ final class StreamFrameBuffer: @unchecked Sendable {
         baselineArmyOrder.removeAll(keepingCapacity: true)
         baselineNations.removeAll(keepingCapacity: true)
         baselineFleets = nil
+        baselineFleetsMap.removeAll(keepingCapacity: true)
+        baselineFleetOrder.removeAll(keepingCapacity: true)
         lock.unlock()
     }
 
@@ -179,6 +183,8 @@ final class StreamFrameBuffer: @unchecked Sendable {
         baselineArmyOrder.removeAll(keepingCapacity: true)
         baselineNations.removeAll(keepingCapacity: true)
         baselineFleets = nil
+        baselineFleetsMap.removeAll(keepingCapacity: true)
+        baselineFleetOrder.removeAll(keepingCapacity: true)
         lock.unlock()
     }
 
@@ -330,8 +336,37 @@ final class StreamFrameBuffer: @unchecked Sendable {
             } else if !self.baselineNations.isEmpty {
                 decoded.nations = self.baselineNations
             }
-            if let fl = decoded.fleets {
+            if decoded.fleetDeltaMode == true {
+                if let fl = decoded.fleets {
+                    for f in fl {
+                        if self.baselineFleetsMap[f.id] == nil {
+                            self.baselineFleetOrder.append(f.id)
+                        }
+                        self.baselineFleetsMap[f.id] = f
+                    }
+                }
+                if let rem = decoded.removedFleetIds, !rem.isEmpty {
+                    let remSet = Set(rem)
+                    for rid in rem { self.baselineFleetsMap.removeValue(forKey: rid) }
+                    self.baselineFleetOrder.removeAll { remSet.contains($0) }
+                }
+                var orderedFleets = [GameState.Fleet]()
+                orderedFleets.reserveCapacity(self.baselineFleetOrder.count)
+                for fid in self.baselineFleetOrder {
+                    if let f = self.baselineFleetsMap[fid] { orderedFleets.append(f) }
+                }
+                decoded.fleets = orderedFleets
+                decoded.fleetDeltaMode = false
+                decoded.removedFleetIds = nil
+                self.baselineFleets = orderedFleets
+            } else if let fl = decoded.fleets {
                 self.baselineFleets = fl
+                self.baselineFleetsMap.removeAll(keepingCapacity: true)
+                self.baselineFleetOrder.removeAll(keepingCapacity: true)
+                for f in fl {
+                    self.baselineFleetsMap[f.id] = f
+                    self.baselineFleetOrder.append(f.id)
+                }
             } else if let prevFl = self.baselineFleets {
                 decoded.fleets = prevFl
             }
@@ -969,7 +1004,7 @@ actor NativeHost {
                 installConnectedLink(link, label: label, transport: finalTransport, text: text, address: address, rtt: rtt, supportsStream: isV5OrNewer, supportsPush: pushCapable, supportsLZ4: isV6)
                 return label
             }
-            if let backup = lastWorld ?? service.engine?.save() {
+            if let backup = (service.engine != nil ? nil : lastWorld) {
                 if !serverHasCatalogs {
                     let c = try Self.catalogData()
                     let catalogs = try JSONSerialization.data(withJSONObject: [
@@ -982,7 +1017,6 @@ actor NativeHost {
                         throw EngineError.message("服务器重启后加载目录失败")
                     }
                 }
-                // v11.0.0：open 携带 withoutMap+withoutState，省去 2–30MB 无用地图回传，3Mbps 广州服重连直降 ~1s！
                 guard (try await link.call("open", ["withoutMap": true, "withoutState": true], payload: backup)).ok else {
                     link.cancel()
                     throw EngineError.message("服务器重启后恢复世界失败")
@@ -991,15 +1025,32 @@ actor NativeHost {
                 installConnectedLink(link, label: label, transport: finalTransport, text: text, address: address, rtt: rtt, supportsStream: isV5OrNewer, supportsPush: pushCapable, supportsLZ4: isV6)
                 return label
             }
+            if let localEngine = service.engine {
+                if !serverHasCatalogs {
+                    let c = try Self.catalogData()
+                    let catalogs = try JSONSerialization.data(withJSONObject: [
+                        "traits": c.traits.base64EncodedString(),
+                        "nobleCultures": c.noble.base64EncodedString(),
+                        "cultures": c.cultures.base64EncodedString()
+                    ])
+                    guard (try await link.call("catalogs", [:], payload: catalogs)).ok else {
+                        link.cancel()
+                        throw EngineError.message("服务器重启后加载目录失败")
+                    }
+                }
+                try await uploadCompactWorldToRemote(engine: localEngine, link: link)
+                installConnectedLink(link, label: label, transport: finalTransport, text: text, address: address, rtt: rtt, supportsStream: isV5OrNewer, supportsPush: pushCapable, supportsLZ4: isV6)
+                return label
+            }
             link.cancel(); throw EngineError.message("服务器上的世界已关闭")
         }
 
-        // v12.0.0 核心提速：使用 saveForCompute() 彻底剔除 20–45 MB Base64 渲染底图 statics.map（云服推演 0 字节使用），
-        // 载荷直降 60%–75%，彻底消灭 45s 上传超时与 4GB 云服 OOM！
+        // v13.0.0 全二进制 LGC2 + statics-cache 极速上传：
+        // 先 0 锁探测 hasStatics(hash)（14ms）：命中时仅传 ~1.8 MB run-only；未命中时传 ~9 MB Float32 v2 LGC2（较旧版 66 MB 缩减 7×–35×）！
         let startRev = advances.revision
         let startDay = service.engine?.run.world.day.asInt ?? 0
-        var latestSave = service.engine?.saveForCompute()
-        let initialSave = latestSave
+        let hasEngine = (service.engine != nil)
+        let staticsHash = service.engine?.computeStaticsHash
         let catalogsPayload: Data?
         if serverHasCatalogs {
             catalogsPayload = nil
@@ -1012,7 +1063,18 @@ actor NativeHost {
             ])
         }
 
-        try await Task.detached(priority: .userInitiated) {
+        let staticsHit: Bool
+        if let hash = staticsHash, !hash.isEmpty {
+            staticsHit = (try? await link.call("hasStatics", ["hash": hash], payload: nil))?.ok == true
+        } else {
+            staticsHit = false
+        }
+        let initialSave: Data? = {
+            guard let e = service.engine else { return nil }
+            return staticsHit ? e.saveRunOnlyForCompute(staticsHash: staticsHash) : e.saveForCompute()
+        }()
+
+        let needsFullRetry: Bool = try await Task.detached(priority: .userInitiated) {
             do {
                 if let catalogs = catalogsPayload {
                     let loaded = try await link.call("catalogs", [:], payload: catalogs)
@@ -1020,14 +1082,29 @@ actor NativeHost {
                 }
                 if let save = initialSave {
                     let opened = try await link.call("open", ["withoutMap": true, "withoutState": true], payload: save)
+                    if !opened.ok && staticsHit && opened.reason.contains("statics_miss") {
+                        return true
+                    }
                     guard opened.ok else { throw EngineError.message("服务器载入世界失败：\(opened.reason)") }
                     _ = try? await link.call("enableAppRules", [:], payload: nil)
                 }
+                return false
             } catch {
                 link.cancel()
                 throw error
             }
         }.value
+
+        if needsFullRetry, let full = service.engine?.saveForCompute() {
+            do {
+                let opened = try await link.call("open", ["withoutMap": true, "withoutState": true], payload: full)
+                guard opened.ok else { link.cancel(); throw EngineError.message("服务器载入世界失败：\(opened.reason)") }
+                _ = try? await link.call("enableAppRules", [:], payload: nil)
+            } catch {
+                link.cancel()
+                throw error
+            }
+        }
 
         // 若上传途中玩家已切到其他世界，礼貌释放这条旧连接。
         guard advances.revision == startRev else {
@@ -1036,7 +1113,7 @@ actor NativeHost {
         }
 
         // 若后台上传期间本机仍有少量推进，按 ≤25 日小切片平滑追齐（杜绝二次 60MB 重传与 10s step(365) 自杀超时！）
-        if initialSave != nil {
+        if hasEngine {
             let nowDay = service.engine?.run.world.day.asInt ?? startDay
             var remainDays = max(0, min(120, nowDay - startDay))
             while remainDays > 0 {
@@ -1065,7 +1142,23 @@ actor NativeHost {
         return label
     }
 
-    /// Back to the phone: the computer's world comes home first (LZ4-compressed for speed).
+    /// v13.0.0 统一紧凑上传助手：先 0 锁探测云服 `hasStatics(hash)`，命中传 ~1.8 MB run-only，未命中传 ~9 MB LGC2（若被淘汰则自动回落完整 LGC2）。
+    private func uploadCompactWorldToRemote(engine: NativeEngine, link: EngineLink) async throws {
+        let hash = engine.computeStaticsHash
+        let hit = (try? await link.call("hasStatics", ["hash": hash], payload: nil))?.ok == true
+        let primary = hit ? engine.saveRunOnlyForCompute(staticsHash: hash) : engine.saveForCompute()
+        var opened = try await link.call("open", ["withoutMap": true, "withoutState": true], payload: primary)
+        if !opened.ok && hit && opened.reason.contains("statics_miss") {
+            opened = try await link.call("open", ["withoutMap": true, "withoutState": true], payload: engine.saveForCompute())
+        }
+        guard opened.ok else {
+            link.cancel()
+            throw EngineError.message("服务器载入世界失败：\(opened.reason)")
+        }
+        _ = try? await link.call("enableAppRules", [:], payload: nil)
+    }
+
+    /// Back to the phone: the computer's world comes home first (LZ4-compressed / LGC2 for speed, preserving local `statics.map`).
     func disconnect() async {
         parked = false; lost = false
         lastResumedState = nil
@@ -1077,10 +1170,17 @@ actor NativeHost {
         guard let link = remote else { remoteAddress = nil; remoteTransport = ""; return }
         _ = try? await link.call("streamConfig", ["playing": false, "days": 1, "push": false], payload: nil)
         if let save = try? await link.call("save", [:], payload: nil), let data = save.data {
-            _ = service.handle("open", [:], payload: data); service.engine?.enableAppRules()
-            currentWorldId = service.currentWorldId
-            currentKnownDay = service.currentDay
-            lastWorld = data
+            if let local = service.engine, local.mapJSON != nil, (try? local.replaceRun(fromRemoteSave: data)) != nil {
+                local.enableAppRules()
+                currentWorldId = service.currentWorldId
+                currentKnownDay = service.currentDay
+                lastWorld = local.save()
+            } else {
+                _ = service.handle("open", [:], payload: data); service.engine?.enableAppRules()
+                currentWorldId = service.currentWorldId
+                currentKnownDay = service.currentDay
+                lastWorld = data
+            }
         }
         link.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""; lastAddress = nil
     }
@@ -1316,7 +1416,8 @@ actor NativeHost {
             "epoch": Int(streamEpoch),
             "push": serverSupportsPush && playing,
             "window": useWindow,
-            "binary": serverSupportsPush && serverSupportsLZ4
+            "binary": serverSupportsPush && serverSupportsLZ4,
+            "fleetDelta": serverSupportsPush && serverSupportsLZ4
         ])
     }
 
@@ -1372,12 +1473,11 @@ actor NativeHost {
         guard localReply.ok else { throw EngineError.message(localReply.reason) }
         currentWorldId = service.currentWorldId
         currentKnownDay = service.currentDay
-        // 若此前已连着远程云服，安全同步新世界到云服（免回传地图与全量态）；同步失败则静默切回本机继续 0ms 畅玩
-        if let link = remote {
-            let syncReply = try? await link.call("open", ["withoutMap": true, "withoutState": true], payload: data)
-            if syncReply?.ok == true {
-                _ = try? await link.call("enableAppRules", [:], payload: nil)
-            } else {
+        // 若此前已连着远程云服，以紧凑 LGC2 / run-only 安全同步新世界到云服；同步失败则静默切回本机继续 0ms 畅玩
+        if let link = remote, let localEngine = service.engine {
+            do {
+                try await uploadCompactWorldToRemote(engine: localEngine, link: link)
+            } catch {
                 link.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""
                 activeRouteId = ""; activeDirectAddress = ""
                 serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
@@ -1467,13 +1567,11 @@ actor NativeHost {
         guard r.ok else { throw EngineError.message(r.reason) }
         currentWorldId = runId
         currentKnownDay = 0
-        if let link = remote {
-            let snap = autoreleasepool { Data(built.json.utf8) }
-            lastWorld = snap
-            let syncOk = (try? await link.call("open", ["withoutMap": true, "withoutState": true], payload: snap))?.ok ?? false
-            if syncOk {
-                _ = try? await link.call("enableAppRules", [:], payload: nil)
-            } else {
+        if let link = remote, let localEngine = service.engine {
+            lastWorld = autoreleasepool { Data(built.json.utf8) }
+            do {
+                try await uploadCompactWorldToRemote(engine: localEngine, link: link)
+            } catch {
                 link.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""
                 activeRouteId = ""; activeDirectAddress = ""
                 serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
@@ -1636,7 +1734,14 @@ actor NativeHost {
     func route(armyId: String) async -> [[Double]] { await call("route", ["armyId": armyId]).points ?? [] }
     func save() async -> Data? {
         let d = await call("save").data
-        if remote != nil, let d { lastWorld = d }
+        if remote != nil, let d {
+            if let local = service.engine, local.mapJSON != nil, (try? local.replaceRun(fromRemoteSave: d)) != nil {
+                let full = local.save()
+                lastWorld = full
+                return full
+            }
+            lastWorld = d
+        }
         return d
     }
     func enableAppRules() async { _ = await call("enableAppRules") }

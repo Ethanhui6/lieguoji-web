@@ -1120,7 +1120,7 @@ private struct ComputeRouteSheet: View {
 
     private var statusSubtitle: String {
         if model.remoteAddress != nil {
-            let transport = model.remoteTransport.isEmpty ? "九州云服 v16" : model.remoteTransport
+            let transport = model.remoteTransport.isEmpty ? "九州云服 v17" : model.remoteTransport
             let rttPart = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
             return "当前云端推流：\(transport)\(rttPart)"
         }

@@ -130,11 +130,12 @@ public enum Daily {
         }
     }
     public static func reconcileMilitaryClock(_ r: JS) { reconcileAttackClock(r, frame(r).eligible, now: r.clock.tick.asNumber) }
-    /// finishDailyForces47.
+    /// finishDailyForces47（v13.0.0：单次 frame() 复用于 held 与 attackClock，消除双倍 frame 扫描）。
     static func finishForces(_ r: JS, commit: Bool = false) {
-        let held = frame(r).held
+        let f = frame(r)
+        let held = f.held
         for a in r.world.armies.asArray where a.status.asString == "fighting" && !held.contains(key("army", a.id.asString)) { a.status = JS("idle") }
-        reconcileMilitaryClock(r)
+        reconcileAttackClock(r, f.eligible, now: r.clock.tick.asNumber)
         for (id, m) in r.voyages.missions.objectEntries {
             let fleetAlive = r.navy.fleets.asArray.contains { $0.id.optionalString == m.fleetId.optionalString && $0.status.asString != "lost" }
             let armyAlive = r.world.armies.asArray.contains { $0.id.optionalString == m.armyId.optionalString && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
@@ -316,19 +317,34 @@ public enum Daily {
         r.forceContacts.pairs.asArray = r.forceContacts.pairs.asArray.filter { !keys.contains($0.a.asString) && !keys.contains($0.b.asString) }
         Vassals.bump(r.armyPositions); Vassals.bump(r.armyAutonomy)
     }
-    /// recoverArmiesOwned47.
+    /// recoverArmiesOwned47（v13.0.0：预建州驻军索引、国别账本与战表，将 O(A²) 300K 次扫描压至 O(A)）。
     static func recover(_ r: JS) {
         if r.armyRecovery.isNull { return }
         let space = Armies.space(r)
-        var stock = [String: JS](); for p in r.world.statecraft.provinces.asArray { stock[p.provinceId.asString] = p }
+        var stock = [String: JS](minimumCapacity: r.world.statecraft.provinces.length)
+        for p in r.world.statecraft.provinces.asArray { stock[p.provinceId.asString] = p }
+        var ledgerByNation = [String: JS](minimumCapacity: r.world.statecraft.nations.length)
+        for n in r.world.statecraft.nations.asArray { ledgerByNation[n.nationId.asString] = n.lastLedger }
+        var holdersByProv = [String: [String]]()
+        for v in space where v.army.status.asString != "retreating" {
+            if let pid = v.province?.id.asString {
+                holdersByProv[pid, default: []].append(v.army.nationId.asString)
+            }
+        }
+        var warPairs = Set<String>()
+        for rel in r.world.statecraft.relations.asArray where rel.status.asString == "war" {
+            let a = rel.a.asString, b = rel.b.asString
+            warPairs.insert(a + "|" + b); warPairs.insert(b + "|" + a)
+        }
         for v in space.sorted(by: { Array($0.army.id.asString.utf16).lexicographicallyPrecedes(Array($1.army.id.asString.utf16)) }) {
             let a = v.army, id = a.id.asString, formation = r.tactics.forces[id]
-            guard !formation.isNull, formation.kind.asString == "regular", canRefill(v), let province = v.province,
-                  province.controller.asString == a.nationId.asString, province.legalOwner.asString == a.nationId.asString,
-                  !Armies.landHolders(space, province.id.asString).contains(where: { $0.nationId.asString != a.nationId.asString && Wars.relation(r, a.nationId.asString, $0.nationId.asString)?.status.asString == "war" }) else { continue }
+            guard !formation.isNull, formation.kind.asString == "regular", canRefill(v), let province = v.province else { continue }
+            let nation = a.nationId.asString, pid = province.id.asString
+            guard province.controller.asString == nation, province.legalOwner.asString == nation else { continue }
+            if !warPairs.isEmpty, let present = holdersByProv[pid], present.contains(where: { $0 != nation && warPairs.contains(nation + "|" + $0) }) { continue }
             let missing = max(0, formation.fullStrength.asNumber - a.troops.asNumber)
             if missing == 0 { continue }
-            let resource = stock[province.id.asString]!, ledger = r.world.statecraft.nations.asArray.first { $0.nationId.asString == a.nationId.asString }!.lastLedger
+            guard let resource = stock[pid], let ledger = ledgerByNation[nation] else { continue }
             let available = max(0, resource.grain.asNumber - resource.population.asNumber * 10)
             let limit = max(40, min(120, (formation.fullStrength.asNumber * 0.06).rounded(.up)))
             let recruits = min(missing, limit, resource.population.asNumber * 10, available)
@@ -484,7 +500,14 @@ public enum Daily {
         Profile.measure("d.forces") { finishForces(r); retire(r); recover(r) }
         Profile.measure("d.fiscal") { fiscalMonth(r) }
         dailyOrders?(r)
-        Profile.measure("d.muster") { Armies.muster(r) }; Profile.measure("d.destiny") { destinyMonth(r) }; Profile.measure("d.forces") { finishForces(r, commit: true); retire(r) }
+        Profile.measure("d.muster") { Armies.muster(r) }; Profile.measure("d.destiny") { destinyMonth(r) }
+        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy && r.world.day.asInt % 5 == 0 {
+            let liveCount = r.world.armies.asArray.reduce(0) { $0 + ($1.troops.asNumber > 0 && $1.status.asString != "destroyed" ? 1 : 0) }
+            if liveCount > 260 {
+                Profile.measure("d.corps") { _ = Armies.consolidateCorps(r) }
+            }
+        }
+        Profile.measure("d.forces") { finishForces(r, commit: true); retire(r) }
         r.dailyEconomy.lastDay = r.world.day.clone()
     }
 }

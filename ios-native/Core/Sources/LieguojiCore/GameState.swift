@@ -151,6 +151,9 @@ public struct GameState: Codable, Equatable, Sendable {
     /// v14 LGB2 军团差量推流标志：为 true 时 `armies` 仅携带变动军团，客户端按 ID 合并并移除 `removedArmyIds`。
     public var armyDeltaMode: Bool? = nil
     public var removedArmyIds: [String]? = nil
+    /// v17 LGB2 舰队差量推流标志：为 true 时 `fleets` 仅携带变动舰队，客户端按 ID 合并并移除 `removedFleetIds`。
+    public var fleetDeltaMode: Bool? = nil
+    public var removedFleetIds: [String]? = nil
     public var displayYear: Int { date.year + (yearOffset ?? 0) }
     /// 纯净日期文本（永远只显示时间，绝不混入地图名或剧本标题）。
     public var pureDateText: String {

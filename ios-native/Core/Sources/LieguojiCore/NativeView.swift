@@ -348,6 +348,15 @@ extension NativeEngine {
         let appTechActive = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
         let eraNow = appTechActive ? HistoricalEra.current(r) : .medieval
         var nationQuality = [String: (milTech: Int, quality: Double)]()
+        // v13.0.0：推流精简帧缓存各国科技/工业/空优/综合国力（每 5 日或战局/国数变动时重算，消除每日 60 国重复全图扫描）。
+        let techCacheKey: Int = {
+            var warCnt = 0
+            for e in enemies { warCnt &+= e.count }
+            return (w.day.asInt / 5) &* 131_071 &+ nations.count &* 997 &+ warCnt
+        }()
+        let useCachedTech = appTechActive && slim && (nationTechCache?.key == techCacheKey)
+        var nextTechRows: [String: (milTech: Int, navTech: Int, ic: Int, airPower: Int, doctrine: String, compositePower: Double, quality: Double)]? = (appTechActive && !useCachedTech) ? [:] : nil
+        nextTechRows?.reserveCapacity(nations.count)
         let nationRows = nations.enumerated().map { i, n -> GameState.Nation in
             let id = n.id.asString
             // Identity for the map legend: states founded during play are not in the opening map.
@@ -360,23 +369,40 @@ extension NativeEngine {
             x.capital = ownCount[i] > 0 ? n.capitalId.optionalString.flatMap { cityIndex[$0] } ?? -1 : -1
             x.culture = civ.cultureId.optionalString ?? ""; x.polity = civ.polity.optionalString ?? ""; x.religion = civ.religionId.optionalString ?? ""
             if appTechActive {
-                let milT = WorldDepth.techLevel(r, nation: id, branch: .military)
-                let navT = WorldDepth.techLevel(r, nation: id, branch: .naval)
-                let icV = Int(NuclearWarfare.ic(r, nationId: id).rounded())
-                let indV = NuclearWarfare.industryIndex(r, nationId: id)
-                let airV = Int(NuclearWarfare.airPower(r, nationId: id).rounded())
-                x.milTech = milT
-                x.navTech = navT
-                x.ic = icV
-                x.airPower = airV
-                x.doctrine = MilitaryDoctrines.doctrine(r, nationId: id).shortTag
-                x.compositePower = War26.compositePower(r, id).total
-                let techScale = Volley.techGapMultiplier(attackerTech: milT, defenderTech: 3, era: eraNow)
-                let airScale = eraNow.isModernAirEra ? (1.0 + Double(max(0, airV - 25)) / 240.0) : 1.0
-                let indScale = max(0.65, min(1.85, indV.squareRoot()))
-                nationQuality[id] = (milT, techScale * indScale * airScale)
+                if useCachedTech, let c = nationTechCache?.rows[id] {
+                    x.milTech = c.milTech
+                    x.navTech = c.navTech
+                    x.ic = c.ic
+                    x.airPower = c.airPower
+                    x.doctrine = c.doctrine
+                    x.compositePower = c.compositePower
+                    nationQuality[id] = (c.milTech, c.quality)
+                } else {
+                    let milT = WorldDepth.techLevel(r, nation: id, branch: .military)
+                    let navT = WorldDepth.techLevel(r, nation: id, branch: .naval)
+                    let icV = Int(NuclearWarfare.ic(r, nationId: id).rounded())
+                    let indV = NuclearWarfare.industryIndex(r, nationId: id)
+                    let airV = Int(NuclearWarfare.airPower(r, nationId: id).rounded())
+                    let docTag = MilitaryDoctrines.doctrine(r, nationId: id).shortTag
+                    let compP = War26.compositePower(r, id).total
+                    x.milTech = milT
+                    x.navTech = navT
+                    x.ic = icV
+                    x.airPower = airV
+                    x.doctrine = docTag
+                    x.compositePower = compP
+                    let techScale = Volley.techGapMultiplier(attackerTech: milT, defenderTech: 3, era: eraNow)
+                    let airScale = eraNow.isModernAirEra ? (1.0 + Double(max(0, airV - 25)) / 240.0) : 1.0
+                    let indScale = max(0.65, min(1.85, indV.squareRoot()))
+                    let qVal = techScale * indScale * airScale
+                    nationQuality[id] = (milT, qVal)
+                    nextTechRows?[id] = (milT, navT, icV, airV, docTag, compP, qVal)
+                }
             }
             return x
+        }
+        if let built = nextTechRows {
+            nationTechCache = (techCacheKey, built)
         }
         let space = Armies.space(r), bridge = Armies.bridge
         // Two armies in contact share a province (the original's battle rule), possibly far apart:
@@ -555,9 +581,11 @@ extension NativeEngine {
                 if form != .standard { x.formation = form.rawValue }
                 let fld = ArmyTactics.fieldOrder(r, armyId: id)
                 if fld != .normal { x.fieldOrder = fld.rawValue }
-                let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil, ctx: &supplyCtx)
-                x.supplyState = sup.state.rawValue
-                x.supplyOriginProvince = sup.originProvince
+                if !slim {
+                    let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil, ctx: &supplyCtx)
+                    x.supplyState = sup.state.rawValue
+                    x.supplyOriginProvince = sup.originProvince
+                }
                 if ArmyTactics.isEncircled(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil, ctx: &supplyCtx) {
                     x.encircled = true
                 }
@@ -595,11 +623,16 @@ extension NativeEngine {
         var fleetRows = [GameState.Fleet](), fleetPoint = [(Double, Double)]()
         if let bridge, !r.navy.isNull, !r.navy.fleets.isNull {
             let manualFleets = Set(r.voyages.manualFleets.asArray.map(\.asString))
+            var portById = [String: Naval.Port]()
+            if let seaPorts = Naval.sea?.ports {
+                portById.reserveCapacity(seaPorts.count)
+                for p in seaPorts { portById[p.id] = p }
+            }
             for fl in r.navy.fleets.asArray where fl.status.asString != "lost" {
                 let id = fl.id.asString, rec = r.fleetPositions.records[id]
                 if rec.isNull { continue }
                 let p = bridge.graph.location(bridge.travel(rec)).point, row = r.navalAutonomy.isNull ? JS.null : r.navalAutonomy.fleets[id]
-                let port = row.isNull ? nil : row.assignedPortId.optionalString.flatMap { a in Naval.sea?.ports.first { $0.id == a } }
+                let port = row.isNull ? nil : row.assignedPortId.optionalString.flatMap { portById[$0] }
                 var at = (p.x, p.y)
                 let fleetClash = clash[Daily.key("fleet", id)]
                 if let m = fleetClash {

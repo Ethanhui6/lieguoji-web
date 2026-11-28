@@ -141,7 +141,8 @@ public enum Armies {
         let indIdx = owner.isEmpty ? 1.0 : NuclearWarfare.industryIndex(r, nationId: owner)
         let mpScale = owner.isEmpty ? 1.0 : NuclearWarfare.manpowerScale(r, nationId: owner)
         let density = provinceDensityFactor(r, provinceId: home, population: pop, medianPop: med)
-        let mult = max(0.45, min(2.35, indIdx.squareRoot() * mpScale * (0.65 + 0.35 * density)))
+        let bigMapCorpsBoost = r.world.provinces.length >= 300 ? 1.30 : 1.0
+        let mult = max(0.45, min(2.85, indIdx.squareRoot() * mpScale * (0.65 + 0.35 * density) * bigMapCorpsBoost))
         return max(500, Int((Double(base) * mult / 100.0).rounded() * 100.0))
     }
     @discardableResult
@@ -217,7 +218,10 @@ public enum Armies {
             // keeps up to two standing armies a province and one and a half per province in all (the original:
             // one a province, two thirds of them), for armies as numerous as the original's.
             // App worlds raise more: up to three a province at home and 2.2 a province in all (900 in the world).
-            let app = UnitKinds.enabled, perHome = app ? Tuning.current.armiesAtHome : 1, globalCap = app ? Tuning.current.armyCap : 500
+            let app = UnitKinds.enabled
+            let bigAppMap = app && !r.regimes.isNull && r.regimes.enabled.isTruthy && allProvinces.count >= 240
+            let perHome = bigAppMap ? 1 : (app ? Tuning.current.armiesAtHome : 1)
+            let globalCap = bigAppMap ? min(Tuning.current.armyCap, 260) : (app ? Tuning.current.armyCap : 500)
             let cap: Int
             if app && !r.regimes.isNull && r.regimes.enabled.isTruthy {
                 cap = maxArmiesCap(r, nationId: id)
@@ -286,6 +290,119 @@ public enum Armies {
             if q.count > 0 { People.announce(r, kind: UnitKinds.enabled ? "emergency" : "diplomacy", text: "\(n.name.asString)进行一次紧急动员，征招\(q.count)个军团", reason: "原月检国运与君主特性决定数量；网页按安全核心集结、保留年度与五年冷却，不扣常备兵源或粮储。", nations: [id], province: nil) }
         }
         r.dailyEconomy.lastMusterMonth = JS(month)
+        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+            consolidateCorps(r)
+        }
+    }
+
+    /// v13.0.0 HOI4 集团军整编（仅 App 模式生效）：
+    /// 同国同州休整待命的非手操小团自动合编为高编制主力军团（超大地图上限 45,000 人），
+    /// 100% 守恒总兵力、保留最高战力兵种与历史名将、按兵力加权平均士气粮秣，
+    /// 彻底根除 800 州后期 550+ 碎团导致的 O(N²) 寻路/接触算力雪崩与屏幕堆叠！
+    @discardableResult
+    public static func consolidateCorps(_ r: JS, force: Bool = false) -> Int {
+        guard UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy else { return 0 }
+        let provCount = r.world.provinces.length
+        guard force || provCount >= 160 else { return 0 }
+        let maxCorpsTroops: Double = provCount >= 300 ? 45_000.0 : 32_000.0
+        let manual = Set(r.voyages.manualArmies.asArray.map(\.asString))
+        let sp = space(r)
+        guard sp.count >= 2 else { return 0 }
+
+        var buckets = [String: [Located]]()
+        buckets.reserveCapacity(sp.count)
+        for v in sp {
+            guard let prov = v.province else { continue }
+            let a = v.army
+            let id = a.id.asString
+            let st = a.status.asString
+            guard a.troops.asNumber > 0,
+                  st != "destroyed", st != "fighting", st != "retreating",
+                  !manual.contains(id),
+                  r.reorganization.active[id].isNull else { continue }
+            let trStatus = v.travel.status.asString
+            guard trStatus == "arrived" || trStatus == "halted" || (force && st == "idle") else { continue }
+            let bucketKey = a.nationId.asString + "\u{1F}" + prov.id.asString
+            buckets[bucketKey, default: []].append(v)
+        }
+
+        var mergedCount = 0
+        for (_, group) in buckets where group.count >= 2 {
+            // 有历史名将的军团优先做主心骨，其次按当前兵力从大到小排序，确保名将永不丢失且大团吸收小团
+            let sorted = group.sorted { lhs, rhs in
+                let lc = MilitaryDoctrines.commander(r, armyId: lhs.army.id.asString) != nil
+                let rc = MilitaryDoctrines.commander(r, armyId: rhs.army.id.asString) != nil
+                if lc != rc { return lc }
+                let lt = lhs.army.troops.asNumber, rt = rhs.army.troops.asNumber
+                if lt != rt { return lt > rt }
+                return lhs.army.id.asString < rhs.army.id.asString
+            }
+
+            var anchors = [Located]()
+            anchors.reserveCapacity(sorted.count)
+            for item in sorted {
+                let donor = item.army
+                let donorId = donor.id.asString
+                let donorTroops = donor.troops.asNumber
+                let donorHasCmd = MilitaryDoctrines.commander(r, armyId: donorId) != nil
+
+                // 名将所部不并入其他团，保持独立指挥；无将领部队合入首个未满编的同州主力军团
+                var targetIdx: Int? = nil
+                if !donorHasCmd {
+                    for i in anchors.indices {
+                        let at = anchors[i].army.troops.asNumber
+                        if at + donorTroops <= maxCorpsTroops {
+                            targetIdx = i
+                            break
+                        }
+                    }
+                }
+                guard let idx = targetIdx else {
+                    anchors.append(item)
+                    continue
+                }
+
+                let anchor = anchors[idx].army
+                let anchorId = anchor.id.asString
+                let anchorTroops = anchor.troops.asNumber
+                let totalTroops = anchorTroops + donorTroops
+                guard totalTroops > 0 else { continue }
+
+                let anchorMorale = anchor.morale.optionalNumber ?? 80
+                let donorMorale = donor.morale.optionalNumber ?? 80
+                let anchorSup = anchor.supplies.optionalNumber ?? 100
+                let donorSup = donor.supplies.optionalNumber ?? 100
+                anchor.troops = JS(totalTroops)
+                anchor.morale = JS(((anchorMorale * anchorTroops + donorMorale * donorTroops) / totalTroops).rounded())
+                anchor.supplies = JS(((anchorSup * anchorTroops + donorSup * donorTroops) / totalTroops).rounded())
+
+                let aForce = r.tactics.forces[anchorId], dForce = r.tactics.forces[donorId]
+                let aFull = aForce.fullStrength.optionalNumber ?? anchorTroops
+                let dFull = dForce.fullStrength.optionalNumber ?? donorTroops
+                if !aForce.isNull {
+                    aForce.fullStrength = JS(min(maxCorpsTroops * 1.15, max(totalTroops, aFull + dFull)))
+                }
+                // 保留更高战力的主战兵种（如装甲师吞并步兵团后维持装甲编制）
+                let aUnit = r.units[anchorId].optionalString ?? "Infantry"
+                let dUnit = r.units[donorId].optionalString ?? "Infantry"
+                let aPow = UnitKinds.byKey[aUnit]?.power ?? 1.0
+                let dPow = UnitKinds.byKey[dUnit]?.power ?? 1.0
+                if dPow > aPow {
+                    r.units[anchorId] = JS(dUnit)
+                }
+
+                // 退役已并入空壳，由 Daily.retire 清理归档
+                donor.troops = JS(0); donor.status = JS("destroyed"); donor.morale = JS(0); donor.supplies = JS(0)
+                donor.route = .array(); donor.progress = JS(0)
+                let halted = item.travel.clone(); halted.status = JS("halted"); r.armyPositions.records[donorId] = halted
+                r.battles.plans.delete(donorId); r.reorganization.active.delete(donorId); r.tactics.rounds.delete(donorId)
+                mergedCount += 1
+            }
+        }
+        if mergedCount > 0 {
+            Daily.retire(r)
+        }
+        return mergedCount
     }
     static func t(_ r: JS) -> JS { r.tactics }
 }

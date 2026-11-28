@@ -79,6 +79,33 @@ public enum ArmyOrders {
         return Profile.measure("o.resolve") { resolve0(r, id, action) }
     }
     nonisolated(unsafe) static var lastResolve: (run: JS, id: String, action: Action, revision: Double, tick: Double, value: Result<(travel: JS, name: String), Refused>)?
+    /// v13.0.0：单 tick 级海港可用集与当前空间快照缓存，避免同一批 15–30 支军令反复全图扫 835 州 × 200 港！
+    private static var embarkPortCache: (run: ObjectIdentifier, tick: Double, rev: Double, byNation: [String: Set<Int>])?
+    private static func cachedEmbarkPorts(_ r: JS, nation: String) -> Set<Int> {
+        let rid = ObjectIdentifier(r), tick = r.clock.tick.asNumber, rev = r.portControl.isNull ? 0 : r.portControl.revision.asNumber
+        if embarkPortCache == nil || embarkPortCache!.run != rid || embarkPortCache!.tick != tick || embarkPortCache!.rev != rev {
+            embarkPortCache = (rid, tick, rev, [:])
+        }
+        if let hit = embarkPortCache!.byNation[nation] { return hit }
+        let unblocked = MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: nation)
+        let allowed: Set<Int>
+        if !unblocked.isEmpty {
+            allowed = unblocked
+        } else if let sea = Naval.sea {
+            var out = Set<Int>()
+            let provs = r.world.provinces.asArray, idxById = RunWindow.provinceIndexById(r)
+            for port in sea.ports {
+                if let idx = idxById[port.provinceId], RunWindow.access(r, nation, provs[idx].controller.asString) {
+                    out.insert(idx)
+                }
+            }
+            allowed = out
+        } else {
+            allowed = []
+        }
+        embarkPortCache!.byNation[nation] = allowed
+        return allowed
+    }
     static func resolve0(_ r: JS, _ id: String, _ action: Action) -> Result<(travel: JS, name: String), Refused> {
         let bridge = Armies.bridge!, g = bridge.graph, space = Armies.space(r)
         guard let here = space.first(where: { $0.army.id.asString == id }) else { return .failure(Refused(reason: "这支军队不存在或已失去战斗力。")) }
@@ -103,20 +130,7 @@ public enum ArmyOrders {
             let anchor = original ? r.world.provinces.asArray.first { $0.id.asString == a.provinceId.asString }?.controller.asString : nil
             let allowSea = r.reorganization.active[id].isNull
             let strictMaritime = UnitKinds.enabled && r.regimes.enabled.isTruthy && allowSea && (Naval.sea?.ports.isEmpty == false)
-            let unblockedPorts = strictMaritime ? MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: nation) : []
-            let fallbackOwnPorts: Set<Int> = {
-                guard strictMaritime && unblockedPorts.isEmpty, let sea = Naval.sea else { return [] }
-                var out = Set<Int>()
-                let provs = r.world.provinces.asArray
-                for port in sea.ports {
-                    if let idx = provs.firstIndex(where: { $0.id.asString == port.provinceId }),
-                       RunWindow.access(r, nation, provs[idx].controller.asString) {
-                        out.insert(idx)
-                    }
-                }
-                return out
-            }()
-            let allowedEmbarkPorts = unblockedPorts.isEmpty ? fallbackOwnPorts : unblockedPorts
+            let allowedEmbarkPorts: Set<Int> = strictMaritime ? cachedEmbarkPorts(r, nation: nation) : []
             // 港口登船 (app worlds): 有海港体系时严禁陆军从无港海岸徒步踏海，必须自本国或友邦海港登船（全港遭封锁时允许有限应急突围）。
             let embark: ((Int) -> Double)? = r.regimes.enabled.isTruthy && allowSea ? {
                 if strictMaritime {
@@ -125,9 +139,23 @@ public enum ArmyOrders {
                 let ports = portProvinces(r), cost = embarkPenalty(g)
                 return { q in ports.contains(q) ? 0 : cost }
             }() : nil
-            guard let path = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in
-                canTraverse(r, nation: nation, controller: r.world.provinces[q].controller.asString, anchor: anchor, retreat: v)
-            }, embark: embark, aStar: r.regimes.enabled.isTruthy, seaRate: r.regimes.enabled.isTruthy ? 0.5 : 1, terrainCost: r.regimes.enabled.isTruthy) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
+            // v13.0.0 同大陆直连快路径：若起点与终点在同一陆地连通块且均在陆地上，先走纯陆路紧致 A*（启发率 2× 紧致，搜索耗时骤降 4×！），
+            // 仅当纯陆路被敌国/中立国阻断时再开启跨海搜索！
+            let appFast = r.regimes.enabled.isTruthy
+            let geo = appFast ? geography(r, bridge) : nil
+            let sameLandComp = appFast && !g.isSea(here.cell) && !g.isSea(target) && (geo!.cellFeature[here.cell] == geo!.cellFeature[target])
+            var foundPath: (nodes: [Int], cost: Double)? = nil
+            if sameLandComp {
+                foundPath = g.path(from: here.cell, to: target, allowSea: false, canEnterProvince: { q in
+                    canTraverse(r, nation: nation, controller: r.world.provinces[q].controller.asString, anchor: anchor, retreat: v)
+                }, embark: nil, aStar: true, seaRate: 1, terrainCost: true)
+            }
+            if foundPath == nil {
+                foundPath = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in
+                    canTraverse(r, nation: nation, controller: r.world.provinces[q].controller.asString, anchor: anchor, retreat: v)
+                }, embark: embark, aStar: appFast, seaRate: appFast ? 0.5 : 1, terrainCost: appFast)
+            }
+            guard let path = foundPath else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
             // 跨海运力与海港核验：自陆地发起渡海时必须从可用港口出发且具备剩余海运运力
             if strictMaritime && g.provinces.indices.contains(here.cell) && g.provinces[here.cell] >= 0 {
                 if let firstWaterIdx = path.nodes.firstIndex(where: { g.provinces.indices.contains($0) && g.provinces[$0] < 0 }) {

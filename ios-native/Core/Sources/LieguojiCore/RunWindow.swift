@@ -32,17 +32,24 @@ public enum RunWindow {
         return EncounterGeometry.touching(bridge.graph.location(bridge.travel(force.travel)).point, bridge.graph.targets[index], reach: ForceBridge.engageReach(r))
     }
 
-    // MARK: Resistance capacity (occupation resistanceCapacity)
+    // MARK: Resistance capacity (occupation resistanceCapacity — v13.0.0 按世界缓存全图州面积，杜绝每次开围重算 835 多边形！)
+    private static var areaCache: (list: ObjectIdentifier, count: Int, areas: [Double], total: Double)?
     static func area(_ p: JS) -> Double {
         let poly = p.polygon.asArray
         var s = 0.0
         for (i, a) in poly.enumerated() { let b = poly[(i + 1) % poly.count]; s = s + a.x.asNumber * b.y.asNumber - b.x.asNumber * a.y.asNumber }
         return abs(s) / 2
     }
-    static func capacity(_ r: JS, _ p: JS) -> Double {
-        let all = r.world.provinces.asArray
-        let total = all.reduce(0.0) { $0 + area($1) }
-        return max(1, 400 * area(p) * Double(all.count) / max(1, total))
+    static func capacity(_ r: JS, _ p: JS, index idx: Int? = nil) -> Double {
+        let list = r.world.provinces, all = list.asArray
+        if areaCache == nil || areaCache!.list != ObjectIdentifier(list) || areaCache!.count != all.count {
+            let areas = all.map { area($0) }
+            let total = areas.reduce(0.0, +)
+            areaCache = (ObjectIdentifier(list), all.count, areas, total)
+        }
+        let c = areaCache!
+        let a = idx.flatMap { c.areas.indices.contains($0) ? c.areas[$0] : nil } ?? area(p)
+        return max(1, 400 * a * Double(c.count) / max(1, c.total))
     }
 
     // MARK: Attack clock
@@ -73,7 +80,8 @@ public enum RunWindow {
         }
         let space = Profile.measure("o.space") { Armies.space(r) }
         if r.occupation.sieges.length == 0 && !space.contains(where: { $0.province != nil && $0.army.status.asString != "retreating" && war($0.army.nationId.asString, $0.province!.controller.asString) }) { return false }
-        let previous = r.world.provinces.asArray.map(\.controller.asString)
+        var previous: [String]? = nil
+        var anyCaptured = false
         let armyDue = Set(space.filter { due.contains(key("army", $0.army.id.asString)) }.map(\.army.id.asString))
         let w = r.world, tick = now.rounded(.down)
         let provinces = w.provinces.asArray, provinceIds = provinceIndexById(r)
@@ -119,7 +127,7 @@ public enum RunWindow {
             let defenders = group.filter { attacker != nil && $0.nationId.asString != attacker! && war($0.nationId.asString, attacker!) }
             let immediate = r.tactics.unopposed.asString == "takeover" && !attackers.isEmpty && defenders.isEmpty
             if siege == nil, let attacker {
-                let m = capacity(r, p)
+                let m = capacity(r, p, index: index)
                 let s = JS.object(); s.provinceId = JS(pid); s.controller = p.controller.clone(); s.attacker = JS(attacker); s.maximum = JS(m); s.resistance = JS(m); s.started = JS(tick); s.pulse = JS(tick)
                 r.occupation.sieges.push(s); siege = s; siegeOf[pid] = s
                 if !immediate { log(r, "battle", "\(p.name.asString)\(w.cities.asArray.contains { $0.provinceId.optionalString == pid } ? "争夺城防" : "争夺地区")", "对军交锋和地区抵抗分别结算；每军独立计时，守军同时回补抵抗。") }
@@ -143,6 +151,8 @@ public enum RunWindow {
                 }
             }
             if s.resistance.asNumber == 0, let next = conqueror {
+                if previous == nil { previous = provinces.map(\.controller.asString) }
+                anyCaptured = true
                 let old = p.controller.asString
                 PeaceBridge.transferEconomy(r, pid, old, next); p.controller = JS(next)
                 if let captor, !r.nobility.isNull { Nobility.conquestMerit(r, captor) }
@@ -157,8 +167,12 @@ public enum RunWindow {
                 siegeOf[pid] = r.occupation.sieges.asArray.first { $0.provinceId.asString == pid }
             }
         }
-        Naval.reconcileLandOwners(r); afterOccupation?(r)
-        politicalOccupation(r, previous)
+        if anyCaptured, let prev = previous {
+            Naval.reconcileLandOwners(r); afterOccupation?(r)
+            politicalOccupation(r, prev)
+        } else if !UnitKinds.enabled {
+            Naval.reconcileLandOwners(r); afterOccupation?(r)
+        }
         return true
     }
     /// recordPoliticalOccupation47.

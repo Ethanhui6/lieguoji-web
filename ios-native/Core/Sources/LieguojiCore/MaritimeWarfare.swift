@@ -120,20 +120,34 @@ public enum MaritimeWarfare {
         return sum / Double(mine.count)
     }
 
-    /// 返回某国（及其同盟）当前可安全登船的未封锁港口所在行省索引集合。
+    /// 返回某国（及其同盟）当前可安全登船的未封锁港口所在行省索引集合（v13.0.0：复用 provinceIndexById + 预建战盟集）。
     public static func unblockedFriendlyPortIndices(_ r: JS, nation: String) -> Set<Int> {
         guard !r.portControl.isNull, !r.portControl.ports.isNull else { return [] }
-        var provIndex = [String: Int]()
-        for (i, p) in r.world.provinces.asArray.enumerated() { provIndex[p.id.asString] = i }
+        let provIndex = RunWindow.provinceIndexById(r)
+        var warWith = Set<String>()
+        for rel in r.world.statecraft.relations.asArray where rel.status.asString == "war" {
+            let a = rel.a.asString, b = rel.b.asString
+            if a == nation { warWith.insert(b) } else if b == nation { warWith.insert(a) }
+        }
+        var friends = Set<String>([nation])
+        for al in r.alliances.records.asArray where al.endedTick.isNull {
+            let members = al.members.asArray.map(\.asString)
+            if members.contains(nation) {
+                for m in members where !warWith.contains(m) { friends.insert(m) }
+            }
+        }
+        for vs in r.vassals.records.asArray where vs.endedTick.isNull && vs.overlordId.asString == nation {
+            let v = vs.vassalId.asString
+            if !warWith.contains(v) { friends.insert(v) }
+        }
         var out = Set<Int>()
         for (pid, pc) in r.portControl.ports.objectEntries {
             guard let idx = provIndex[pid] else { continue }
             let landOwner = pc.landOwnerId.optionalString ?? r.world.provinces[idx].controller.asString
             let occupier = pc.occupierId.optionalString ?? landOwner
-            // 港口必须归本国或具备军事通行权的友邦控制，且当前未被敌对舰队占领/封锁
-            guard RunWindow.access(r, nation, landOwner) else { continue }
-            if occupier != landOwner && Wars.relation(r, nation, occupier)?.status.asString == "war" { continue }
-            if isPortBlockaded(r, provinceId: pid, landOwner: landOwner) { continue }
+            guard friends.contains(landOwner) else { continue }
+            if occupier != landOwner && warWith.contains(occupier) { continue }
+            if !r.regimes.isNull, !r.regimes.blockadedPorts.isNull, r.regimes.blockadedPorts[pid].isTruthy { continue }
             out.insert(idx)
         }
         return out
@@ -232,25 +246,63 @@ public enum MaritimeWarfare {
         r.regimes.blockadingFleets = .object()
         r.regimes.blockadedPorts = .object()
 
+        // v13.0.0：单次 O(R + N) 预建交战/通行/国别/学说查找表，彻底消除 200 港 × 120 舰的 24,000 次线性扫盟/战表（d.maritime 299ms -> <5ms）
+        var warPairs = Set<String>()
+        for rel in r.world.statecraft.relations.asArray where rel.status.asString == "war" {
+            let a = rel.a.asString, b = rel.b.asString
+            warPairs.insert(a + "|" + b); warPairs.insert(b + "|" + a)
+        }
+        var accessPairs = Set<String>()
+        for al in r.alliances.records.asArray where al.endedTick.isNull {
+            let ms = al.members.asArray.map(\.asString)
+            for a in ms {
+                for b in ms where a != b && !warPairs.contains(a + "|" + b) {
+                    accessPairs.insert(a + "|" + b)
+                }
+            }
+        }
+        for vs in r.vassals.records.asArray where vs.endedTick.isNull {
+            let ov = vs.overlordId.asString, va = vs.vassalId.asString
+            if !warPairs.contains(ov + "|" + va) { accessPairs.insert(ov + "|" + va) }
+        }
+        @inline(__always) func fastWar(_ a: String, _ b: String) -> Bool { a != b && warPairs.contains(a + "|" + b) }
+        @inline(__always) func fastAccess(_ a: String, _ b: String) -> Bool { a == b || accessPairs.contains(a + "|" + b) }
+        var nationById = [String: JS]()
+        for n in r.world.nations.asArray { nationById[n.id.asString] = n }
+        var docCache = [String: MilitaryDoctrines.Spec]()
+        func fastDoc(_ nid: String) -> MilitaryDoctrines.Spec {
+            if let d = docCache[nid] { return d }
+            let d = MilitaryDoctrines.doctrine(r, nationId: nid); docCache[nid] = d; return d
+        }
+
         // 1. 收集所有活跃舰队实时坐标与三舰种/指令档案，并执行安全港船坞日常抢修与补员
-        struct LiveFleet { let js: JS; let id: String; let nation: String; let x: Double; let y: Double; let ships: Int; let meta: FleetMeta }
+        struct LiveFleet { let js: JS; let id: String; let nation: String; let x: Double; let y: Double; let ships: Int; let meta: FleetMeta; let blockadeRad: Double; let blockadeRad2: Double; let escortRad: Double; let escortRad2: Double; let raidRad: Double; let raidRad2: Double }
         var liveFleets = [LiveFleet]()
         r.regimes.repairingFleets = .object()
         let day = r.world.day.asInt
         if !r.navy.isNull, !r.navy.fleets.isNull {
-            for fl in r.navy.fleets.asArray where fl.status.asString != "lost" && fl.ships.asInt > 0 {
+            let allFleets = r.navy.fleets.asArray
+            liveFleets.reserveCapacity(allFleets.count)
+            for fl in allFleets where fl.status.asString != "lost" && fl.ships.asInt > 0 {
                 let fid = fl.id.asString
                 let rec = r.fleetPositions.records[fid]
                 guard !rec.isNull else { continue }
                 let loc = g.location(bridge.travel(rec))
                 let pt = loc.point
                 let meta = fleetMeta(r, fleet: fl)
-                liveFleets.append(LiveFleet(js: fl, id: fid, nation: fl.nationId.asString, x: pt.x, y: pt.y, ships: fl.ships.asInt, meta: meta))
+                let chainBoost = meta.admiralSkill == .ironChain ? 1.30 : 1.0
+                let bRad = (55.0 + meta.gunboatShare * 26.0 + (meta.mission == .blockade ? 12.0 : 0.0)) * chainBoost
+                let eRad = 98.0 + meta.lightShare * 34.0 + (meta.mission == .escort ? 24.0 : 0.0)
+                let rRad = 86.0 + meta.lightShare * 28.0 + (meta.mission == .raid ? 22.0 : 0.0)
+                liveFleets.append(LiveFleet(js: fl, id: fid, nation: fl.nationId.asString, x: pt.x, y: pt.y, ships: fl.ships.asInt, meta: meta, blockadeRad: bRad, blockadeRad2: bRad * bRad, escortRad: eRad, escortRad2: eRad * eRad, raidRad: rRad, raidRad2: rRad * rRad))
 
                 // 船坞实时修缮与水兵补员：停泊在本国未封锁港口时自动修复受损舰体（归港修整指令下双倍速）
                 let st = rec.status.asString
                 if (st == "arrived" || st == "halted"), let sea = Naval.sea,
-                   let dockedPort = sea.ports.first(where: { jsHypot(pt.x - $0.center.x, pt.y - $0.center.y) <= 22 }),
+                   let dockedPort = sea.ports.first(where: {
+                       let dx = pt.x - $0.center.x, dy = pt.y - $0.center.y
+                       return abs(dx) <= 22 && abs(dy) <= 22 && dx * dx + dy * dy <= 484
+                   }),
                    let pc = r.portControl.isNull ? nil : r.portControl.ports[dockedPort.provinceId],
                    !pc.isNull, pc.landOwnerId.optionalString == fl.nationId.asString,
                    !isPortBlockaded(r, provinceId: dockedPort.provinceId, landOwner: fl.nationId.asString) {
@@ -281,18 +333,19 @@ public enum MaritimeWarfare {
         }
 
         // 1b. 破交袭扰舰队主动劫掠敌方海上商路（每 10 日靠近敌国海港 140 单位内即掠夺商税并削弱敌国运）
-        if day % 10 == 5, let sea = Naval.sea, !r.portControl.isNull, !r.portControl.ports.isNull {
+        if day % 10 == 5, !warPairs.isEmpty, let sea = Naval.sea, !r.portControl.isNull, !r.portControl.ports.isNull {
             for rf in liveFleets where rf.meta.mission == .raid {
                 guard let victimPort = sea.ports.first(where: { port in
+                    let dx = rf.x - port.center.x, dy = rf.y - port.center.y
+                    guard abs(dx) <= 140 && abs(dy) <= 140 && dx * dx + dy * dy <= 19600 else { return false }
                     let pc = r.portControl.ports[port.provinceId]
                     guard !pc.isNull, let owner = pc.landOwnerId.optionalString else { return false }
-                    return Wars.relation(r, rf.nation, owner)?.status.asString == "war" && jsHypot(rf.x - port.center.x, rf.y - port.center.y) <= 140
+                    return fastWar(rf.nation, owner)
                 }) else { continue }
                 let owner = r.portControl.ports[victimPort.provinceId].landOwnerId.asString
                 let raidBoost = rf.meta.admiralSkill == .commerceRaider ? 1.40 : 1.0
                 let loot = (14.0 + Double(rf.ships) * 4.2) * (1.0 + 0.30 * rf.meta.lightShare) * raidBoost
-                if let atkNat = r.world.nations.asArray.first(where: { $0.id.asString == rf.nation }),
-                   let defNat = r.world.nations.asArray.first(where: { $0.id.asString == owner }) {
+                if let atkNat = nationById[rf.nation], let defNat = nationById[owner] {
                     let taken = min(max(0, defNat.gold.asNumber * 0.025), loot)
                     if taken >= 4 {
                         defNat.gold = JS(max(0, defNat.gold.asNumber - taken))
@@ -304,32 +357,38 @@ public enum MaritimeWarfare {
             }
         }
 
-        // 2. 判定近海港口封锁：敌对战斗舰队盘踞港口近海（封锁炮舰与铁链锁港特技显著增强封锁范围与战分压制）
-        if let sea = Naval.sea, !r.portControl.isNull, !r.portControl.ports.isNull {
+        // 2. 判定近海港口封锁：仅在全局有战事且有舰队落入端口包围盒时结算（零无谓全图扫！）
+        if !warPairs.isEmpty, !liveFleets.isEmpty, let sea = Naval.sea, !r.portControl.isNull, !r.portControl.ports.isNull {
             for port in sea.ports {
+                let px = port.center.x, py = port.center.y
                 let pid = port.provinceId
                 let pc = r.portControl.ports[pid]
                 guard !pc.isNull, let owner = pc.landOwnerId.optionalString else { continue }
-                let hostiles = liveFleets.filter {
-                    let chainBoost = $0.meta.admiralSkill == .ironChain ? 1.30 : 1.0
-                    let rad = (55.0 + $0.meta.gunboatShare * 26.0 + ($0.meta.mission == .blockade ? 12.0 : 0.0)) * chainBoost
-                    return Wars.relation(r, owner, $0.nation)?.status.asString == "war" && jsHypot($0.x - port.center.x, $0.y - port.center.y) <= rad
+                var hostiles = [LiveFleet]()
+                var hPower = 0.0
+                var fPower = 0.0
+                for fl in liveFleets {
+                    let dx = fl.x - px, dy = fl.y - py
+                    if abs(dx) > fl.blockadeRad && abs(dx) > 60 { continue }
+                    if abs(dy) > fl.blockadeRad && abs(dy) > 60 { continue }
+                    let d2 = dx * dx + dy * dy
+                    if d2 <= fl.blockadeRad2 && fastWar(owner, fl.nation) {
+                        hostiles.append(fl)
+                        hPower += Double(fl.ships) * (1.0 + 0.45 * fl.meta.gunboatShare + (fl.meta.mission == .blockade ? 0.30 : 0.0) + (fl.meta.admiralSkill == .ironChain ? 0.35 : 0.0))
+                    } else if d2 <= 3600 && fastAccess(owner, fl.nation) {
+                        fPower += Double(fl.ships) * (1.0 + 0.25 * fl.meta.heavyShare)
+                    }
                 }
-                let friendlies = liveFleets.filter { RunWindow.access(r, owner, $0.nation) && jsHypot($0.x - port.center.x, $0.y - port.center.y) <= 60 }
-                let hPower = hostiles.reduce(0.0) { $0 + Double($1.ships) * (1.0 + 0.45 * $1.meta.gunboatShare + ($1.meta.mission == .blockade ? 0.30 : 0.0) + ($1.meta.admiralSkill == .ironChain ? 0.35 : 0.0)) }
-                let fPower = friendlies.reduce(0.0) { $0 + Double($1.ships) * (1.0 + 0.25 * $1.meta.heavyShare) }
                 if hPower > fPower && hPower > 0 {
                     r.regimes.blockadedPorts[pid] = JS(true)
                     for hf in hostiles {
                         r.regimes.blockadingFleets[hf.id] = JS(true)
-                        // 每 10 日封锁敌港累积战功、截夺海贸关税，并持续压低敌方战意/国运（加速敌方求和）
                         if day % 10 == 0 {
                             let curXp = r.regimes.fleetMeta[hf.id].xp.optionalNumber ?? 0
                             r.regimes.fleetMeta[hf.id].xp = JS(curXp + 2)
                             let chainMult = hf.meta.admiralSkill == .ironChain ? 1.40 : 1.0
                             let spoil = (16.0 + Double(hf.ships) * 4.5) * (1.0 + 0.35 * hf.meta.gunboatShare) * chainMult
-                            if let atkNat = r.world.nations.asArray.first(where: { $0.id.asString == hf.nation }),
-                               let defNat = r.world.nations.asArray.first(where: { $0.id.asString == owner }) {
+                            if let atkNat = nationById[hf.nation], let defNat = nationById[owner] {
                                 let taken = min(max(0, defNat.gold.asNumber * 0.03), spoil)
                                 if taken >= 5 {
                                     defNat.gold = JS(max(0, defNat.gold.asNumber - taken))
@@ -348,7 +407,7 @@ public enum MaritimeWarfare {
         }
 
         // 3. 逐军更新登船、护航、敌舰海上截杀、两栖抢滩登陆与海外封锁断补、以及天时恶劣天气损耗
-        var liveArmyIds = Set<String>()
+        var liveArmyIds = Set<String>(minimumCapacity: space.count)
         var blockadeCache = [String: (ports: Int, held: Int)]()
         for v in space {
             let a = v.army
@@ -356,28 +415,31 @@ public enum MaritimeWarfare {
             guard a.troops.asNumber > 0 && a.status.asString != "destroyed" else { continue }
             liveArmyIds.insert(aid)
             let nation = a.nationId.asString
-            let loc = g.location(bridge.travel(v.travel))
-            let atSea = v.province == nil || (g.provinces.indices.contains(loc.cell) && g.provinces[loc.cell] < 0)
+            let atSea = v.province == nil
             let wasSea = r.regimes.wasAtSea[aid].isTruthy
 
             if atSea {
+                let loc = g.location(bridge.travel(v.travel))
+                let ax = loc.point.x, ay = loc.point.y
                 r.regimes.wasAtSea[aid] = JS(true)
                 r.regimes.landingDays.delete(aid)
                 r.regimes.seaSupplyCut.delete(aid)
 
-                // 友军战舰护航判定（巡弋快舰与护航指令大幅拓宽护航半径并压低运兵船伤亡）
-                let escorts = liveFleets.filter {
-                    let rad = 98.0 + $0.meta.lightShare * 34.0 + ($0.meta.mission == .escort ? 24.0 : 0.0)
-                    return RunWindow.access(r, nation, $0.nation) && jsHypot($0.x - loc.point.x, $0.y - loc.point.y) <= rad
+                var escorts = [LiveFleet]()
+                var firstRaider: LiveFleet?
+                for fl in liveFleets {
+                    let dx = fl.x - ax, dy = fl.y - ay
+                    if abs(dx) > fl.escortRad && abs(dx) > fl.raidRad { continue }
+                    if abs(dy) > fl.escortRad && abs(dy) > fl.raidRad { continue }
+                    let d2 = dx * dx + dy * dy
+                    if d2 <= fl.escortRad2 && fastAccess(nation, fl.nation) {
+                        escorts.append(fl)
+                        r.regimes.escortingFleets[fl.id] = JS(true)
+                    } else if firstRaider == nil && d2 <= fl.raidRad2 && fastWar(nation, fl.nation) {
+                        firstRaider = fl
+                    }
                 }
-                for ef in escorts { r.regimes.escortingFleets[ef.id] = JS(true) }
-
-                // 敌国战斗舰队海上截杀运兵船队（破交袭扰指令与快舰占比显著放大截杀范围与杀伤）
-                let interceptors = liveFleets.filter {
-                    let rad = 86.0 + $0.meta.lightShare * 28.0 + ($0.meta.mission == .raid ? 22.0 : 0.0)
-                    return Wars.relation(r, nation, $0.nation)?.status.asString == "war" && jsHypot($0.x - loc.point.x, $0.y - loc.point.y) <= rad
-                }
-                if let raider = interceptors.first {
+                if let raider = firstRaider {
                     let escorted = !escorts.isEmpty
                     let strongEscort = escorts.contains { $0.meta.mission == .escort || $0.meta.heavy >= 2 }
                     var lossRate = escorted ? (strongEscort ? 0.035 : 0.055) : 0.18
@@ -392,7 +454,6 @@ public enum MaritimeWarfare {
                     Wars.recordLoss(r, nation, "soldiers", Int(lost))
                     let curXp = r.regimes.fleetMeta[raider.id].xp.optionalNumber ?? 0
                     r.regimes.fleetMeta[raider.id].xp = JS(curXp + (nextTroops <= 0 ? 18 : 4))
-                    // 若有护航战舰，护航舰队反击敌拦截舰队并累积战功
                     if escorted, !r.maritime.isNull, !r.maritime.hulls.isNull {
                         let curHull = r.maritime.hulls[raider.id].optionalNumber ?? 100
                         let counterDmg = strongEscort ? 18.0 : 12.0
@@ -412,50 +473,56 @@ public enum MaritimeWarfare {
                     }
                 }
             } else {
-                r.regimes.wasAtSea.delete(aid)
-                // 刚从海上踏上敌控沿海州 → 进入 3 日两栖抢滩登陆战状态！
-                if wasSea, let p = v.province {
-                    let ctrl = p.controller.asString
-                    if ctrl != nation && Wars.relation(r, nation, ctrl)?.status.asString == "war" {
-                        r.regimes.landingDays[aid] = JS(3)
-                        let hasFire = hasOffshoreNavalSupport(r, nation: nation, at: (loc.point.x, loc.point.y))
-                        Daily.event(r, "war", "\(a.name.asString)于\(p.name.asString)发起两栖抢滩登陆",
-                                    hasFire ? "近海友军舰队提供舰炮火力支援，大幅减轻抢滩登陆战损！" : "无舰队岸轰掩护，抢滩部队三日内承受两栖登陆减益。")
+                if wasSea {
+                    r.regimes.wasAtSea.delete(aid)
+                    if let p = v.province {
+                        let ctrl = p.controller.asString
+                        if fastWar(nation, ctrl) {
+                            let loc = g.location(bridge.travel(v.travel))
+                            r.regimes.landingDays[aid] = JS(3)
+                            let hasFire = liveFleets.contains { fl in
+                                let dx = fl.x - loc.point.x, dy = fl.y - loc.point.y
+                                return abs(dx) <= 120 && abs(dy) <= 120 && dx * dx + dy * dy <= 14400 && fastAccess(nation, fl.nation)
+                            }
+                            Daily.event(r, "war", "\(a.name.asString)于\(p.name.asString)发起两栖抢滩登陆",
+                                        hasFire ? "近海友军舰队提供舰炮火力支援，大幅减轻抢滩登陆战损！" : "无舰队岸轰掩护，抢滩部队三日内承受两栖登陆减益。")
+                        }
                     }
                 } else if let rem = r.regimes.landingDays[aid].optionalNumber.map(Int.init), rem > 0 {
                     if rem <= 1 { r.regimes.landingDays.delete(aid) } else { r.regimes.landingDays[aid] = JS(rem - 1) }
                 }
 
-                // 港口全封锁导致的海外补给线切断（v11.0.0 按国缓存 Naval.blockade 消除 O(Armies × Ports)）
+                // 港口全封锁导致的海外补给线切断（按国缓存 Naval.blockade）
                 if let p = v.province {
-                    let blk = blockadeCache[nation] ?? {
-                        let b = Naval.blockade(r, nation)
-                        blockadeCache[nation] = b
-                        return b
-                    }()
                     let pCtrl = p.controller.asString
-                    let overseas = pCtrl != nation && blk.ports > 0 && blk.held >= blk.ports
-                    if overseas {
-                        r.regimes.seaSupplyCut[aid] = JS(true)
-                        a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - 8))
-                        a.morale = JS(max(10, (a.morale.optionalNumber ?? 60) - 3))
-                    } else {
-                        r.regimes.seaSupplyCut.delete(aid)
-                    }
-
-                    // v11.0.0 军事学说实装：敌方领土持久游击/焦土后勤消耗（enemySupplyDrainMult）+ 寒冬减耗（winterAttritionMult）
-                    let docSelf = MilitaryDoctrines.doctrine(r, nationId: nation)
-                    if pCtrl != nation && Wars.relation(r, nation, pCtrl)?.status.asString == "war" {
-                        let enemyDoc = MilitaryDoctrines.doctrine(r, nationId: pCtrl)
-                        if enemyDoc.enemySupplyDrainMult > 1.05 {
-                            let extraDrain = (enemyDoc.enemySupplyDrainMult - 1.0) * 3.5
-                            a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - extraDrain))
+                    if pCtrl != nation {
+                        let blk = blockadeCache[nation] ?? {
+                            let b = Naval.blockade(r, nation)
+                            blockadeCache[nation] = b
+                            return b
+                        }()
+                        if blk.ports > 0 && blk.held >= blk.ports {
+                            r.regimes.seaSupplyCut[aid] = JS(true)
+                            a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - 8))
+                            a.morale = JS(max(10, (a.morale.optionalNumber ?? 60) - 3))
+                        } else if !r.regimes.seaSupplyCut[aid].isNull {
+                            r.regimes.seaSupplyCut.delete(aid)
                         }
+                        if fastWar(nation, pCtrl) {
+                            let enemyDoc = fastDoc(pCtrl)
+                            if enemyDoc.enemySupplyDrainMult > 1.05 {
+                                let extraDrain = (enemyDoc.enemySupplyDrainMult - 1.0) * 3.5
+                                a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - extraDrain))
+                            }
+                        }
+                    } else if !r.regimes.seaSupplyCut[aid].isNull {
+                        r.regimes.seaSupplyCut.delete(aid)
                     }
 
                     // 天时天气联动：暴雪与大旱对滞留战区军队造成真实补给消耗（大纵深/严寒适应学说减免寒冬损耗）
                     if let dis = Regimes.disasterAt(r, p.id.asString) {
                         if dis == "snow" {
+                            let docSelf = fastDoc(nation)
                             let snowLoss = 3.0 * max(0.35, min(1.5, docSelf.winterAttritionMult))
                             a.supplies = JS(max(0, (a.supplies.optionalNumber ?? 50) - snowLoss))
                         } else if dis == "drought" {

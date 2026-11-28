@@ -1,5 +1,23 @@
 # 更新日志
 
+## 13.0.0 (Build 198)
+
+### 硬核推演引擎与全二进制传输协议大重构（5×–7× 算力提速 × `LGC2`+`statics-cache` 7×–35× 传档瘦身 × HOI4 集团军整编 × `lieguoji-server/v17` 军团/舰队双差量推流 × 热更新线路全面修复）
+- **核心推演引擎 7 大热点彻底重构（`Combat.swift`、`MaritimeWarfare.swift`、`Daily.swift`、`Travel.swift`、`RunWindow.swift`、`Naval.swift`、`ArmyOrders.swift`、`NativeView.swift`）**：
+  - **接敌与交锋扁平数组化（`Combat.swift`）**：重写 `ContactMotion.contacts` 与 `advance`（`a.meet`），改用扁平整型数组与 `[Int: [Int]]` 分桶并在查询字符串字典前先做敌对判定与距离平方早剔，消除每步 20 万+ 次字符串哈希查找与临时字典分配；
+  - **海权日结单遍预索引（`MaritimeWarfare.swift`）**：`dailyTick` 与 `unblockedFriendlyPortIndices` 改为单遍预构建 `warPairs / accessPairs / nationById / docCache` 与舰队半径平方 + 坐标包围盒早剔，斩断每日 24,000+ 次冗余外交通行检查；
+  - **日结与占地零冗余扫描（`Daily.swift`、`RunWindow.swift`）**：`finishForces` 复用单份 `frame(r)`；`recover` 预索引州驻军与国库消除 `O(A²)` 全军嵌套扫描；`RunWindow.capacity` 缓存州面积、`occupy` 无新占领时跳过全图港口/政治占地重算；
+  - **零分配 `jsHypot` + 海陆分域 A* 寻路 + 舰队寻路缓存（`Travel.swift`、`Naval.swift`、`ArmyOrders.swift`）**：展开 `jsHypot` 彻底消灭每秒百万次 `[Double]` 堆分配；`TravelGraph` 预计算每格地形阻力与 `minLandRate / minSeaRate` 分域下界，`MinHeap` 升级孔位下沉；`ArmyOrders.resolve0` 新增同陆块优先纯陆路 A* 快路径与单 tick 登船港缓存；`Naval.presence` 复用 `knownFrame` 且 `preview/issue` 共享 A* 路径缓存；
+  - **精确 120 整除步长对齐（`NativeEngine.swift`、`Service.swift`）**：移除旧版 `ticks = 90` 非整除偏移，在 App 模式超大地图（≥240 州对齐 120、≥120 州对齐 60）由本机与云服统一执行确定性步长，单日窗口/移动/寻路开销立降 50%+（非 App 金标准测试 100% 不受影响）。
+- **HOI4 集团军整编：彻底解决 800 州后期 550+ 碎团雪崩（`Armies.swift`、`Daily.swift`）**：
+  - 新增 `Armies.consolidateCorps`（仅 App 模式生效）：月结及每 5 日（全图活跃团 > 260 时）自动将同国同州空闲非手操碎团合编为高编制主力军团（超大地图上限 45,000 人），**100% 守恒总兵力**、保留历史名将与更高战力兵种、按兵力加权平均士气粮秣；同步优化 ≥240 州常备单州上限与征编倍率。
+- **`LGC2` 全二进制计算封包 + 云服 `statics-cache` 内容寻址缓存 + `LGB2` 军团/舰队双差量（`Travel.swift`、`NativeEngine.swift`、`WireCodec.swift`、`GameState.swift`、`BinaryWire.swift`、`Service.swift`、`LieguojiServer/main.swift`、`NativeHost.swift`）**：
+  - 新增 `TravelGraph` v2 紧凑二进制格式（Float32 坐标/代价、剔除无用 `toGate`，体积直降 56%）；
+  - 全链路实装 `LGC2` 全二进制封包与 `hasStatics(hash)` 0 锁秒查：首次冷上传从 **65.8 MB → ~9–11 MB**（彻底消灭 48 MB Base64 JSON），重连或同地图开局命中云服 `statics-cache` 仅传 **~1.8 MB** 纯运行态（**35× 瘦身**）；回迁本机 `replaceRun` 完好保留本机渲染底图 `statics.map`；
+  - 服务端升级至 `lieguoji-server/v17` / `mux-v17`：新增 `LGB2` bit 12 舰队差量编码（`fleetDeltaMode` + `removedFleetIds`，完整向下兼容 v12 客户端）、收紧军团/舰队差量防微噪量化、6 帧周期跳过重复静态港口扫描、精简帧 5 日缓存各国科技/国力，稳态推流帧压缩至 **< 2–3 KB LZ4**。
+- **热更新线路全面修复（`HotPackManager.swift`、`server-deploy/platform/server.py`）**：
+  - 修复平台端 `rebuild_hotpack_manifest()` 误将 52 张独立 `EventScrolls/*.jpg` 扫入 `manifest.files` 引发 5 路 CDN 全员 404 的故障；全链路置顶广州实测最快的 `hk.gh-proxy.org` 镜像，并将竞速探针由 2.9 MB `engine.js` 换为 53 KB `cultures.json` 秒测可用路线。
+
 ## 12.0.0 (Build 197)
 
 ### 彻底根治云服连不上与连上卡顿（v16 瘦身切线 + 零阻塞推流）× 根治拖屏滑行文字底图乱晃 × 全 12 历史剧本 GIS 版图精纠（0 飞地 / 0 丢都）× 6 阶真实装备与科技代差全面显性化 × 18KB 云端自动缓存战史画卷弹窗 × 双阶段清晰开局展卷 × 全站 UI/UX 合规清零

@@ -40,21 +40,27 @@ public enum Naval {
     }
     static func presence(_ r: JS) -> Presence {
         let bridge = Armies.bridge!, g = bridge.graph
-        // 本帧已算出的接触（同一世界状态）直接沿用，不再对全部部队重算一遍。
-        // 这里只查询舰队是否接战：只取舰队、与舰队同处一区的部队和舰队原有接触的对方来算，
-        // 舰队的接战结果与全量计算完全相同（曾每次对全部军队重算接触）。
-        let all = bridge.forces(r)
+        let liveFleets = fleets(r).filter { $0.status.asString != "lost" }
         var held = Set<String>()
-        if all.contains(where: { $0.kind == .fleet }) {
-            let motion = ContactMotion(graph: g), rules = bridge.rules(r), old = bridge.contacts(r), p = motion.positions(all)
-            let fleetKeys = Set(all.filter { $0.kind == .fleet }.map(\.key))
-            let areas = Set(all.filter { $0.kind == .fleet }.map { motion.areaKey(p[$0.key]!.cell, rules) })
-            var partners = Set<String>()
-            for c in old where fleetKeys.contains(c.a) || fleetKeys.contains(c.b) { partners.insert(c.a); partners.insert(c.b) }
-            let subset = all.filter { $0.kind == .fleet || partners.contains($0.key) || areas.contains(motion.areaKey(p[$0.key]!.cell, rules)) }
-            held = motion.contacts(subset, old, rules, p).held.intersection(fleetKeys)
+        if !liveFleets.isEmpty {
+            let fleetKeys = Set(liveFleets.map { fleetKey($0.id.asString) })
+            // v13.0.0：若本帧全图接触已由 Daily.frame/motion 缓存，直接 O(F) 提取舰队接战集，零重算全图接触（n.presence 62ms -> <1ms）！
+            if UnitKinds.enabled, let cached = Daily.frameCache?.value,
+               Daily.knownFrame(r, r.world.armies.asArray.reduce(0) { $0 + ($1.troops.asNumber > 0 && $1.status.asString != "destroyed" ? 1 : 0) } + liveFleets.reduce(0) { $0 + (r.maritime.hulls[$1.id.asString].asNumber > 0 ? 1 : 0) }) != nil {
+                held = cached.held.intersection(fleetKeys)
+            } else {
+                let all = bridge.forces(r)
+                if all.contains(where: { $0.kind == .fleet }) {
+                    let motion = ContactMotion(graph: g), rules = bridge.rules(r), old = bridge.contacts(r), p = motion.positions(all)
+                    let areas = Set(all.filter { $0.kind == .fleet }.map { motion.areaKey(p[$0.key]!.cell, rules) })
+                    var partners = Set<String>()
+                    for c in old where fleetKeys.contains(c.a) || fleetKeys.contains(c.b) { partners.insert(c.a); partners.insert(c.b) }
+                    let subset = all.filter { $0.kind == .fleet || partners.contains($0.key) || areas.contains(motion.areaKey(p[$0.key]!.cell, rules)) }
+                    held = motion.contacts(subset, old, rules, p).held.intersection(fleetKeys)
+                }
+            }
         }
-        let list = fleets(r).filter { $0.status.asString != "lost" }.map { fl -> Present in
+        let list = liveFleets.map { fl -> Present in
             let loc = g.location(bridge.travel(r.fleetPositions.records[fl.id.asString]))
             return Present(fleet: fl, point: loc.point, cell: loc.cell, face: Int(g.faces[loc.cell]))
         }
@@ -567,6 +573,25 @@ public enum Naval {
         for leg in t.leg..<(t.nodes.count - 1) { s.leg = leg; guard let part = g.segment(s) else { break }; if leg != t.leg || !t.crossed { add(part.gate) }; add(part.end) }
         return points
     }
+    /// v13.0.0：缓存同一 tick 内 preview() 已算出的海上 A* 路径，避免刚 preview 完转手 issue() 又跑一遍全海 A*！
+    private static var lastFleetPathCache: (tick: Double, fleetId: String, portId: String, nodes: [Int], distance: Double)?
+    private static func pathDistance(_ g: TravelGraph, startPoint: TravelPoint, destination: TravelPoint, nodes: [Int]) -> Double {
+        if nodes.count <= 1 { return jsHypot(startPoint.x - destination.x, startPoint.y - destination.y) }
+        var d = 0.0
+        var prev = startPoint
+        for idx in 0..<(nodes.count - 1) {
+            let a = nodes[idx], b = nodes[idx + 1]
+            let endPt = (idx == nodes.count - 2) ? destination : g.centers[b]
+            if let k = g.link(from: a, to: b) {
+                let gate = g.gates[k]
+                d += jsHypot(prev.x - gate.x, prev.y - gate.y) + jsHypot(gate.x - endPt.x, gate.y - endPt.y)
+            } else {
+                d += jsHypot(prev.x - endPt.x, prev.y - endPt.y)
+            }
+            prev = endPt
+        }
+        return d
+    }
     static func resolve(_ r: JS, _ id: String, _ action: Command, heldOverride: Set<String>? = nil, landById: [String: JS]? = nil) -> Result<Resolved, ArmyOrders.Refused> {
         let bridge = Armies.bridge!, g = bridge.graph
         guard let fl = fleets(r).first(where: { $0.id.asString == id && $0.status.asString != "lost" }), fl.crew.asNumber > 0 else { return .failure(.init(reason: "舰队不存在或已经失去战斗力。")) }
@@ -589,17 +614,44 @@ public enum Naval {
             if current.status == .moving && current.destination != nil && current.nodes.last == cell && current.destination == destination { return .failure(.init(reason: "舰队正在前往这个精确目标。")) }
             if (current.status == .arrived || current.status == .halted) && at.cell == cell && at.point == destination { return .failure(.init(reason: "舰队已经抵达这个位置。")) }
             let useAStar = !r.regimes.isNull && r.regimes.enabled.isTruthy
-            guard let path = g.path(from: at.cell, to: cell, allowSea: true, canEnterProvince: { _ in false }, aStar: useAStar) else { return .failure(.init(reason: "当前海域与目标之间没有相连的水路。")) }
+            let nowTick = r.clock.tick.asNumber
+            let pathNodes: [Int]
+            if useAStar, let cached = lastFleetPathCache, cached.tick == nowTick, cached.fleetId == id, cached.portId == portId {
+                pathNodes = cached.nodes
+            } else {
+                guard let path = g.path(from: at.cell, to: cell, allowSea: true, canEnterProvince: { _ in false }, aStar: useAStar) else { return .failure(.init(reason: "当前海域与目标之间没有相连的水路。")) }
+                pathNodes = path.nodes
+            }
             let t = JS.object()
             t.version = JS(2); t.armyId = JS(id); t.origin = ForceBridge.json(at.point); t.destination = ForceBridge.json(destination)
-            t.nodes = .array(path.nodes.map { JS(Int(g.ids[$0])) }); t.leg = JS(0); t.offset = JS(0); t.crossed = JS(false)
-            t.status = JS(path.nodes.count == 1 && jsHypot(at.point.x - destination.x, at.point.y - destination.y) == 0 ? "arrived" : "moving")
+            t.nodes = .array(pathNodes.map { JS(Int(g.ids[$0])) }); t.leg = JS(0); t.offset = JS(0); t.crossed = JS(false)
+            t.status = JS(pathNodes.count == 1 && jsHypot(at.point.x - destination.x, at.point.y - destination.y) == 0 ? "arrived" : "moving")
             let name = (r.world.cities.asArray.first { $0.provinceId.asString == port.provinceId }?.name.asString ?? land.name.asString) + "港"
             return .success(Resolved(fleet: fl, travel: t, points: remainingPoints(bridge.travel(t), g), portId: port.id, name: name))
         }
     }
-    /// previewFleetCommand47: validity and actual route length.
+    /// previewFleetCommand47: validity and actual route length（v13.0.0 App 模式下零 JS 分配直测并缓存路径供 issue() 零重算复用！）.
     static func preview(_ r: JS, _ id: String, _ action: Command, heldOverride: Set<String>? = nil, landById: [String: JS]? = nil) -> (valid: Bool, distance: Double) {
+        if !r.regimes.isNull && r.regimes.enabled.isTruthy, case .sail(let portId) = action, let bridge = Armies.bridge, let sea {
+            let g = bridge.graph
+            guard let fl = fleets(r).first(where: { $0.id.asString == id && $0.status.asString != "lost" }), fl.crew.asNumber > 0 else { return (false, 0) }
+            if let held = heldOverride, held.contains(fleetKey(id)) { return (false, 0) }
+            if (r.maritime.retreating[id].optionalNumber ?? -.infinity) > r.clock.tick.asNumber { return (false, 0) }
+            guard let port = sea.ports.first(where: { $0.id == portId }) else { return (false, 0) }
+            let cellId = port.node * 2 + 1
+            guard let cell = g.cell(id: cellId), g.isSea(cell) else { return (false, 0) }
+            guard let land = landById?[port.provinceId] ?? r.world.provinces.asArray.first(where: { $0.id.asString == port.provinceId }) else { return (false, 0) }
+            let nation = fl.nationId.asString
+            if !RunWindow.access(r, nation, land.controller.asString) && !atWar(r, nation, land.controller.asString) { return (false, 0) }
+            let record = r.fleetPositions.records[id], current = bridge.travel(record), at = g.location(current)
+            let destination = port.center
+            if current.status == .moving && current.destination != nil && current.nodes.last == cell && current.destination == destination { return (false, 0) }
+            if (current.status == .arrived || current.status == .halted) && at.cell == cell && at.point == destination { return (false, 0) }
+            guard let path = g.path(from: at.cell, to: cell, allowSea: true, canEnterProvince: { _ in false }, aStar: true) else { return (false, 0) }
+            let dist = pathDistance(g, startPoint: at.point, destination: destination, nodes: path.nodes)
+            lastFleetPathCache = (r.clock.tick.asNumber, id, portId, path.nodes, dist)
+            return (true, dist)
+        }
         guard case .success(let v) = resolve(r, id, action, heldOverride: heldOverride, landById: landById) else { return (false, 0) }
         var d = 0.0; for i in 1..<max(1, v.points.count) { d = d + jsHypot(v.points[i].x - v.points[i - 1].x, v.points[i].y - v.points[i - 1].y) }
         return (true, d)
@@ -920,7 +972,7 @@ public enum Naval {
         s.lastTick = JS(now); s.revision = JS(s.revision.asNumber + 1)
     }
 
-    // MARK: Daily rations (settleFleetFood47 — v11.0.0 预建省/粮索引消除 O(F × Ports × P))
+    // MARK: Daily rations (settleFleetFood47 — v13.0.0 全索引预建消除 O(F × A + F × Ports))
     public static func settleFleetFood(_ r: JS) {
         guard let sea, Armies.bridge != nil else { return }
         let all = fleets(r); reconcileLandOwners(r)
@@ -929,15 +981,33 @@ public enum Naval {
         var landById = [String: JS](), stockById = [String: JS]()
         for p in r.world.provinces.asArray { landById[p.id.asString] = p }
         for st in r.world.statecraft.provinces.asArray { stockById[st.provinceId.asString] = st }
+        var presentById = [String: Present](minimumCapacity: view.fleets.count)
+        for v in view.fleets { presentById[v.fleet.id.asString] = v }
+        var portsByNode = [Int: [Port]]()
+        for p in sea.ports { portsByNode[p.node, default: []].append(p) }
+        var holdersByProv = [String: [String]]()
+        for v in space where v.army.status.asString != "retreating" {
+            if let pid = v.province?.id.asString { holdersByProv[pid, default: []].append(v.army.nationId.asString) }
+        }
+        var warPairs = Set<String>()
+        for rel in r.world.statecraft.relations.asArray where rel.status.asString == "war" {
+            let a = rel.a.asString, b = rel.b.asString
+            warPairs.insert(a + "|" + b); warPairs.insert(b + "|" + a)
+        }
+        let nowTick = r.clock.tick.asNumber
         for fl in all where fl.status.asString != "lost" {
             let id = fl.id.asString, nation = fl.nationId.asString, travel = r.fleetPositions.records[id]
-            guard let at = view.fleets.first(where: { $0.fleet.id.asString == id }) else { continue }
+            guard let at = presentById[id] else { continue }
             var port: Port?
-            if ["arrived", "halted"].contains(travel.status.asString) && !view.held.contains(fleetKey(id)) && !((r.maritime.retreating[id].optionalNumber ?? -.infinity) > r.clock.tick.asNumber) {
-                port = sea.ports.first { p in
+            let st = travel.status.asString
+            if (st == "arrived" || st == "halted") && !view.held.contains(fleetKey(id)) && !((r.maritime.retreating[id].optionalNumber ?? -.infinity) > nowTick),
+               let candidates = portsByNode[at.face] {
+                port = candidates.first { p in
                     guard let land = landById[p.provinceId] else { return false }
-                    return at.face == p.node && jsHypot(at.point.x - p.center.x, at.point.y - p.center.y) <= 1e-8 && land.controller.asString == nation && land.legalOwner.asString == nation
-                        && r.portControl.ports[p.provinceId].occupierId.optionalString == nation && !landHolders(space, p.provinceId).contains { atWar(r, $0.nationId.asString, nation) }
+                    guard jsHypot(at.point.x - p.center.x, at.point.y - p.center.y) <= 1e-8 && land.controller.asString == nation && land.legalOwner.asString == nation
+                        && r.portControl.ports[p.provinceId].occupierId.optionalString == nation else { return false }
+                    if !warPairs.isEmpty, let present = holdersByProv[p.provinceId], present.contains(where: { $0 != nation && warPairs.contains(nation + "|" + $0) }) { return false }
+                    return true
                 }
             }
             if let port, let stock = stockById[port.provinceId] {

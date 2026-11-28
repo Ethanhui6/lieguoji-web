@@ -362,7 +362,7 @@ extension NativeEngine {
             if appTechActive {
                 let milT = WorldDepth.techLevel(r, nation: id, branch: .military)
                 let navT = WorldDepth.techLevel(r, nation: id, branch: .naval)
-                let icV = Int(NuclearWarfare.industrialCapacity(r, nationId: id).rounded())
+                let icV = Int(NuclearWarfare.ic(r, nationId: id).rounded())
                 let indV = NuclearWarfare.industryIndex(r, nationId: id)
                 let airV = Int(NuclearWarfare.airPower(r, nationId: id).rounded())
                 x.milTech = milT
@@ -370,7 +370,7 @@ extension NativeEngine {
                 x.ic = icV
                 x.airPower = airV
                 x.doctrine = MilitaryDoctrines.doctrine(r, nationId: id).shortTag
-                x.compositePower = War26.compositePower(r, id)
+                x.compositePower = War26.compositePower(r, id).total
                 let techScale = Volley.techGapMultiplier(attackerTech: milT, defenderTech: 3, era: eraNow)
                 let airScale = eraNow.isModernAirEra ? (1.0 + Double(max(0, airV - 25)) / 240.0) : 1.0
                 let indScale = max(0.65, min(1.85, indV.squareRoot()))

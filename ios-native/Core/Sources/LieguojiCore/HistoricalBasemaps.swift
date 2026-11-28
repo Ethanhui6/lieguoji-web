@@ -279,7 +279,7 @@ public enum HistoricalBasemaps {
                     return false
                 }
             }
-            for spec in HistoricalScenarios.catalog {
+            for spec in HistoricalScenarios.officialScenarios {
                 guard let sc = scenarios["\(spec.id)@\(expectedCount)"],
                       sc.nationCount == spec.nations.count else {
                     return false

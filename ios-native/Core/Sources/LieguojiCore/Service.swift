@@ -441,7 +441,7 @@ public final class EngineService {
             resetSlimStaticCache()
             return Reply(ok: true, reason: "ok")
         case "enableMux":
-            return Reply(ok: true, reason: "mux-v13")
+            return Reply(ok: true, reason: "mux-v16")
         case "pullLatest":
             guard let e = engine else { return Reply(ok: false, reason: "世界尚未载入。") }
             let days = max(1, min(64, optInt("days") ?? 3))

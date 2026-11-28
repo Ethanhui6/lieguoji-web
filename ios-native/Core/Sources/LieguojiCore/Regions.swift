@@ -433,7 +433,7 @@ public enum Regions {
             if faceOwner[i] < 0 { cl.live = false }
             return cl
         }
-        var clusterOwner = faceOwner
+        let clusterOwner = faceOwner
         var liveCount = nationFaceCount
         var nationTargetEffArea = [Int: Double]()
         for o in activeOwners {

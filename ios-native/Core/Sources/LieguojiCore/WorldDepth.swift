@@ -856,7 +856,7 @@ extension NativeEngine {
         let milTierTitle = WorldDepth.TechBranch.military.tierName(milLvl, era: eraNow)
         let techGapNote = eraNow.isModernAirEra ? "现代代差系数 ×\(String(format: "%.2f", Volley.techGapMultiplier(attackerTech: milLvl, defenderTech: 3, era: eraNow)))（对 3 阶）" : "攻防 +\((milLvl - 1) * 5)%"
         milRows.append(makeLine("陆军装备科技 · \(milLvl)阶「\(milTierTitle)」", techGapNote, milLvl >= 5 ? "good" : (milLvl <= 2 ? "bad" : "neutral")))
-        let icVal = Int(NuclearWarfare.industrialCapacity(r, nationId: id).rounded())
+        let icVal = Int(NuclearWarfare.ic(r, nationId: id).rounded())
         let indIdx = NuclearWarfare.industryIndex(r, nationId: id)
         milRows.append(makeLine("军工产能（\(icVal) IC · 工业系数 \(String(format: "%.2f", indIdx))）", indIdx >= 1.5 ? "重工精锐优势" : (indIdx < 0.75 ? "重武器匮乏" : "常规补给"), indIdx >= 1.5 ? "good" : (indIdx < 0.75 ? "bad" : "neutral")))
         if eraNow.isModernAirEra {
@@ -984,11 +984,11 @@ extension NativeEngine {
             let milTech = WorldDepth.techLevel(r, nation: nid, branch: .military)
             let navTech = WorldDepth.techLevel(r, nation: nid, branch: .naval)
             let era = HistoricalEra.current(r)
-            let ic = Int(NuclearWarfare.industrialCapacity(r, nationId: nid).rounded())
+            let ic = Int(NuclearWarfare.ic(r, nationId: nid).rounded())
             let indIdx = NuclearWarfare.industryIndex(r, nationId: nid)
             let air = Int(NuclearWarfare.airPower(r, nationId: nid).rounded())
             let doc = MilitaryDoctrines.doctrine(r, nationId: nid)
-            let compPower = Int(War26.compositePower(r, nid).rounded())
+            let compPower = Int(War26.compositePower(r, nid).total.rounded())
             let sea = SeaDominion.seaControl(r, nation: nid)
             let shock = Int((Regimes.defeatPenalty(r, nid) * 100).rounded())
             let rep = WorldDepth.reputation(r, nation: nid)

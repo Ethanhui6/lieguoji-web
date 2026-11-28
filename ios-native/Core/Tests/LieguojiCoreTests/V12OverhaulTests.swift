@@ -209,12 +209,12 @@ final class V12OverhaulTests: XCTestCase {
         }
 
         // 中间帧不应每 24 帧强发全量关键帧，且中间帧国家名称被剥离以省流
-        let step1 = svc.handle("step", ["days": 1, "slim": true, "binary": true])
+        let step1 = svc.handle("stepBinary", ["days": 1])
         XCTAssertTrue(step1.ok)
         if let bin = step1.data, let gs1 = BinaryStateWire.decode(bin) {
             XCTAssertTrue(gs1.nations.allSatisfy { $0.name == nil }, "中间帧应剥离未变国家名称以大幅压缩单帧流量")
         } else {
-            XCTFail("中间帧 step 解码失败")
+            XCTFail("中间帧 stepBinary 解码失败")
         }
     }
 }

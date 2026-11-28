@@ -101,8 +101,8 @@ public enum UnitKinds {
         if let u = unique[culture] { out.append((u, 9)) }
         return out
     }
-    /// 严格按历史时代与文化返回加权兵种池（绝不跨时代混编）。
-    public static func rosterForEra(_ era: HistoricalEra, culture: String) -> [(String, Int)] {
+    /// 严格按历史时代、文化与本国军事科技/工业实力返回加权兵种池（绝不让低科技弱国刷出满编重装甲师与机械化师！）。
+    public static func rosterForEra(_ era: HistoricalEra, culture: String, techMil: Int = 4, industryIndex: Double = 1.0) -> [(String, Int)] {
         switch era {
         case .antiquity:
             return roster(culture).filter { $0.0 != "Streltsy" }
@@ -120,22 +120,50 @@ public enum UnitKinds {
             }
             return [("LineInfantry", 48), ("FieldArtillery", 28), ("Cuirassier", 24)]
         case .ww1:
+            if techMil <= 2 || industryIndex < 0.72 {
+                // 农业/弱工业军阀：以步枪堑壕与野炮为主，无坦克编制
+                return [("TrenchInfantry", 64), ("FieldArtillery", 22), ("Cavalry", 14)]
+            }
+            if techMil == 3 || industryIndex < 1.15 {
+                return [("TrenchInfantry", 50), ("HeavyArtillery", 28), ("Stormtrooper", 16), ("EarlyTank", 6)]
+            }
             if culture == "german" || culture == "hungarian" {
-                return [("TrenchInfantry", 38), ("HeavyArtillery", 24), ("Stormtrooper", 24), ("EarlyTank", 14)]
+                return [("TrenchInfantry", 36), ("HeavyArtillery", 24), ("Stormtrooper", 24), ("EarlyTank", 16)]
             }
             if culture == "english" || culture == "french" {
-                return [("TrenchInfantry", 38), ("HeavyArtillery", 24), ("EarlyTank", 24), ("Stormtrooper", 14)]
+                return [("TrenchInfantry", 36), ("HeavyArtillery", 24), ("EarlyTank", 26), ("Stormtrooper", 14)]
             }
             return [("TrenchInfantry", 44), ("HeavyArtillery", 26), ("Stormtrooper", 16), ("EarlyTank", 14)]
         case .ww2:
+            if techMil <= 2 || industryIndex < 0.65 {
+                // 弱工业/游击/军阀部队（如1931地方军阀、延安、弱小国）：拉栓步兵、迫击炮与少量骑兵，严禁刷重装甲与机械化师！
+                return [("TrenchInfantry", 68), ("FieldArtillery", 18), ("Cavalry", 14)]
+            }
+            if techMil == 3 || industryIndex < 1.15 {
+                // 中等工业国（波兰、民国中央军、意大利、巴尔干诸国）：以步兵与重炮为主，极少装甲
+                return [("TrenchInfantry", 54), ("HeavyArtillery", 22), ("MechInfantry", 16), ("ArmoredDivision", 8)]
+            }
+            if techMil >= 5 && industryIndex >= 1.80 {
+                // 顶尖工业列强（二战德、美、苏、英主力）：高比例装甲集群与机械化突击师
+                if culture == "japanese" || culture == "english" {
+                    return [("MechInfantry", 32), ("MarineDiv", 26), ("ArmoredDivision", 26), ("Airborne", 16)]
+                }
+                return [("ArmoredDivision", 40), ("MechInfantry", 34), ("Airborne", 16), ("MarineDiv", 10)]
+            }
             if culture == "japanese" || culture == "english" {
                 return [("MechInfantry", 34), ("MarineDiv", 28), ("ArmoredDivision", 22), ("Airborne", 16)]
             }
             if culture == "german" || culture == "slavic" || culture == "french" {
-                return [("MechInfantry", 34), ("ArmoredDivision", 36), ("Airborne", 18), ("MarineDiv", 12)]
+                return [("MechInfantry", 36), ("ArmoredDivision", 34), ("Airborne", 18), ("MarineDiv", 12)]
             }
-            return [("MechInfantry", 40), ("ArmoredDivision", 28), ("Airborne", 16), ("MarineDiv", 16)]
+            return [("MechInfantry", 40), ("ArmoredDivision", 26), ("Airborne", 18), ("MarineDiv", 16)]
         case .modern:
+            if techMil <= 2 || industryIndex < 0.70 {
+                return [("TrenchInfantry", 58), ("HeavyArtillery", 24), ("MechInfantry", 18)]
+            }
+            if techMil <= 3 || industryIndex < 1.20 {
+                return [("MechInfantry", 46), ("ArmoredDivision", 24), ("RocketArtillery", 18), ("MarineDiv", 12)]
+            }
             if culture == "japanese" || culture == "english" {
                 return [("CombinedArms", 34), ("MarineDiv", 26), ("AirAssault", 22), ("RocketArtillery", 18)]
             }
@@ -151,11 +179,11 @@ public enum UnitKinds {
         for (k, w) in r { if x < w, let kind = byKey[k] { return kind }; x -= w }
         return byKey["Infantry"] ?? kinds[0]
     }
-    /// 严格时代锁定的确定性兵种抽选（先秦/中古绝不出现火器坦克；火器/一战/二战/现代绝不出现冷兵器弓骑）。
-    public static func pickForEra(_ era: HistoricalEra, culture: String, id: String) -> Kind {
+    /// 严格时代 + 本国科技/工业门控的确定性兵种抽选（低科技弱国绝不刷装甲师与机械化师）。
+    public static func pickForEra(_ era: HistoricalEra, culture: String, id: String, techMil: Int = 4, industryIndex: Double = 1.0) -> Kind {
         var h: UInt32 = 2166136261
         for u in id.utf8 { h = (h ^ UInt32(u)) &* 16777619 }
-        let r = rosterForEra(era, culture: culture)
+        let r = rosterForEra(era, culture: culture, techMil: techMil, industryIndex: industryIndex)
         let total = r.reduce(0) { $0 + $1.1 }
         var x = Int(h % UInt32(max(1, total)))
         for (k, w) in r {
@@ -164,6 +192,40 @@ public enum UnitKinds {
         }
         if let first = r.first?.0, let kind = byKey[first] { return kind }
         return byKey["Infantry"] ?? kinds[0]
+    }
+
+    /// v12.0.0 按本国真实军事科技、工业产值、制空权与海军科技生成**本国现役主力装备谱系**（绝不再让延安和美国同显航母原子弹！）。
+    public static func nationEquipmentSummary(era: HistoricalEra, milTech: Int, navTech: Int, ic: Int, airPower: Int) -> String {
+        switch era {
+        case .ww2, .modern:
+            let land: String
+            if milTech >= 6 && ic >= 50 { land = era == .modern ? "主战坦克合成军 · 精确制导重炮" : "虎/豹/谢尔曼重装集群 · 机械化闪击师" }
+            else if milTech >= 5 && ic >= 30 { land = "中型坦克师 · 装甲掷弹兵 · 自行火炮" }
+            else if milTech >= 4 && ic >= 16 { land = "轻中型坦克旅 · 摩托化步兵 · 师属重炮" }
+            else if milTech >= 3 { land = "正规步枪师 · 山野榴弹炮 · 反坦克炮" }
+            else { land = "轻步兵武器 · 迫击炮 · 游击机动编制" }
+            let air: String
+            if airPower >= 75 { air = "战略重轰与制空战机联队" }
+            else if airPower >= 45 { air = "战术俯冲轰炸与前线航空队" }
+            else if airPower >= 18 { air = "少量侦察/驱逐机中队" }
+            else { air = "缺乏现代空军掩护" }
+            let sea: String
+            if navTech >= 5 && ic >= 35 { sea = "航母特混与战列舰队" }
+            else if navTech >= 3 { sea = "巡洋/驱逐舰队" }
+            else { sea = "近岸炮艇防卫" }
+            return "\(land) · \(air) · \(sea)"
+        case .ww1:
+            if milTech >= 5 { return "重炮弹幕群 · 风暴突击队 · 早期坦克 · 侦察航空兵" }
+            if milTech >= 3 { return "栓动步枪堑壕师 · 马克沁重机枪 · 榴弹炮" }
+            return "旧式步枪与骑兵旅 · 少量野炮"
+        case .gunpowder:
+            if milTech >= 4 { return "燧发线列步兵 · 拿破仑野战炮群 · 胸甲重骑" }
+            return "火绳枪足轻/鸟铳营 · 轻型佛朗机炮"
+        case .medieval:
+            return milTech >= 4 ? "重装铁甲骑兵 · 劲弩长枪阵 · 攻城抛石机" : "常备步骑营 · 弓弩手 · 刀盾兵"
+        case .antiquity:
+            return milTech >= 4 ? "铁剑重步方阵 · 强弩车骑 · 攻城云梯" : "青铜戈矛步卒 · 战车弓手"
+        }
     }
 
     /// Damage multiplier of `attacker` hitting `victim` (unit keys).

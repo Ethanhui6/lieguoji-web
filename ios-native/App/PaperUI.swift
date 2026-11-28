@@ -306,7 +306,7 @@ struct MapViewLegend: View {
                 }
             }
             Rectangle().fill(Theme.ink.opacity(0.2)).frame(height: 0.8)
-            ForEach(Array(legend.prefix(6).enumerated()), id: \.offset) { _, e in
+            ForEach(Array(legend.prefix(6).enumerated()), id: \.element.stableId) { _, e in
                 let active = spotlightColor?.uppercased() == e.color.uppercased()
                 let dimmed = spotlightColor != nil && !active
                 HStack(spacing: 4) {
@@ -357,7 +357,10 @@ struct MapViewLegend: View {
 
 struct MapViewData: Decodable {
     /// key：「alliance:ID」「none」等；members：同盟成员的国家序号（同盟图）。
-    struct Entry: Decodable, Equatable { let name: String; let color: String; let count: Int; var key: String? = nil; var members: [Int]? = nil }
+    struct Entry: Decodable, Equatable {
+        let name: String; let color: String; let count: Int; var key: String? = nil; var members: [Int]? = nil
+        var stableId: String { "\(key ?? "")|\(name)|\(color)" }
+    }
     let fills: [String]
     let legend: [Entry]
     /// Group name boxes (culture, family, religion views); nil keeps the state names.
@@ -596,6 +599,7 @@ struct EdictSheet: View {
     /// 天下规则: world rates in percent of normal.
     @State private var rules: [String: Int] = [:]
     @State private var writingRule = false
+    @State private var loadFailed = false
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 14) {
@@ -641,13 +645,23 @@ struct EdictSheet: View {
                                 .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
                         }
                         Text("钦此。").font(Theme.title).foregroundStyle(Theme.ink).frame(maxWidth: .infinity, alignment: .trailing).padding(.horizontal, Theme.Layout.sectionInset)
-                    } else { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40) }
+                    } else {
+                        PanelPending(failed: loadFailed, reason: "未能读取天下诏令设置，请检查连接后重试。", busy: !loadFailed) {
+                            loadFailed = false
+                            Task { await reload() }
+                        }
+                    }
                 }
                 .padding(.bottom, 28)
             }
         .task { await reload() }
     }
-    private func reload() async { s = await model.worldSettings(); rules = await model.worldRules() }
+    private func reload() async {
+        loadFailed = false
+        s = await model.worldSettings()
+        rules = await model.worldRules()
+        if s == nil { loadFailed = true }
+    }
     @State private var confirming: (title: String, key: String)?
     /// A one-off world order (the original's world editor), confirmed first.
     private func order(_ title: String, _ note: String, _ key: String) -> some View {
@@ -947,8 +961,9 @@ struct SealButton: View {
                 if busy { InkBusy(tint: Theme.paperLight, track: Theme.paperLight.opacity(0.35)).frame(width: 44) }
                 Text(title).font(Theme.serif(15.5)).tracking(1.2)
             }
-            .foregroundStyle(Theme.paperLight).frame(maxWidth: .infinity).frame(height: 46)
-            .background(Theme.seal.opacity(disabled ? 0.36 : 1), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .foregroundStyle(disabled ? Theme.ink2 : Theme.paperLight).frame(maxWidth: .infinity).frame(height: 46)
+            .background(disabled ? Theme.wash : Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(disabled ? Theme.line : Color.clear, lineWidth: 0.75))
         }
         .buttonStyle(PressStyle()).disabled(disabled || busy)
     }
@@ -1889,7 +1904,18 @@ struct StrategicNuclearCard: View {
                 SectionLabel("时代军制 · 工业与战略核威慑")
                 Group2 {
                     VStack(alignment: .leading, spacing: 12) {
-                        // 1. 时代抬头与制式兵器
+                        // 1. 时代抬头与本国真实主力装备谱系（v12.0.0 按本国科技/工业/空优分列，告别全员同款航母原子弹）
+                        let natState = state.nations.indices.contains(nation) ? state.nations[nation] : nil
+                        let eraObj = HistoricalEra(rawValue: data.eraId) ?? .ww2
+                        let milTier = natState?.milTech ?? 2
+                        let navTier = natState?.navTech ?? 2
+                        let nationWeapons = UnitKinds.nationEquipmentSummary(
+                            era: eraObj,
+                            milTech: milTier,
+                            navTech: navTier,
+                            ic: data.ic,
+                            airPower: data.airPower
+                        )
                         HStack(alignment: .center, spacing: 10) {
                             SealFace(text: data.nuclearUnlocked ? "核" : "制", size: 32, color: data.nuclearUnlocked ? Theme.seal : Theme.ink)
                             VStack(alignment: .leading, spacing: 3) {
@@ -1899,6 +1925,7 @@ struct StrategicNuclearCard: View {
                                         .foregroundStyle(Theme.ink)
                                         .lineLimit(1)
                                         .minimumScaleFactor(0.8)
+                                    PaperTag(text: "T\(milTier)·\(WorldDepth.TechBranch.military.tierName(milTier, era: eraObj))", color: milTier >= 5 ? Theme.seal : Theme.jade, size: 10)
                                     if data.nuclearUnlocked {
                                         PaperTag(text: "战略核威慑", color: Theme.seal, size: 10)
                                     }
@@ -1907,13 +1934,11 @@ struct StrategicNuclearCard: View {
                                         PaperTag(text: "受核击 \(data.nukesHit)", color: Theme.seal, size: 10)
                                     }
                                 }
-                                if !data.eraWeapons.isEmpty {
-                                    Text(data.eraWeapons)
-                                        .font(Theme.caption)
-                                        .foregroundStyle(Theme.ink2)
-                                        .lineLimit(2)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
+                                Text("本国现役：\(nationWeapons)")
+                                    .font(Theme.caption)
+                                    .foregroundStyle(Theme.ink2)
+                                    .lineLimit(2)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
 

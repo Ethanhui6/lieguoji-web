@@ -426,11 +426,15 @@ struct WorldArchiveSheet: View {
     }
 
     @ViewBuilder private var localContent: some View {
-        if worlds.isEmpty {
-            if loaded {
-                Text("架上尚空。推演满一个月的世界，会在开创新世界时收进这里；也可切换到「云端存档」拉取或上传备份。")
-                    .font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22).padding(.top, 8)
+        if !loaded {
+            HStack(spacing: 8) {
+                InkBusy().frame(width: 24, height: 24)
+                Text("正在读取本地卷宗…").font(Theme.label).foregroundStyle(Theme.ink2)
             }
+            .padding(.horizontal, Theme.Layout.pageInset).padding(.vertical, 12)
+        } else if worlds.isEmpty {
+            Text("架上尚空。推演满一个月的世界，会在开创新世界时收进这里；也可切换到「云端存档」拉取或上传备份。")
+                .font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22).padding(.top, 8)
         } else {
             Group2 {
                 ForEach(Array(worlds.enumerated()), id: \.element.id) { i, w in
@@ -502,7 +506,7 @@ struct WorldArchiveSheet: View {
                 }
                 .padding(.horizontal, Theme.Layout.pageInset).padding(.vertical, 8)
             } else if cloudSaves.isEmpty {
-                Text("云端尚无存档。轻点上方「上传当前世界」即可将进度 zlib 压缩存入云端（无需电脑开机，最多保留 16 卷）。")
+                Text("云端尚无存档。轻点上方「上传当前世界」即可将进度 zlib 压缩存入云端（无需电脑开机，最多保留 20 卷）。")
                     .font(Theme.body).foregroundStyle(Theme.ink2)
                     .padding(.horizontal, Theme.Layout.pageInset).padding(.top, 4)
             } else {

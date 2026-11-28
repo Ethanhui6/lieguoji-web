@@ -104,21 +104,39 @@ public enum WorldDepth {
             case .statecraft: return "治政"
             }
         }
-        public func tierName(_ lvl: Int) -> String {
+        public func tierName(_ lvl: Int, era: HistoricalEra? = nil) -> String {
             let names: [String]
-            switch self {
-            case .military:   names = ["冷兵方阵", "精钢甲胄", "火绳燧发", "线列野炮", "近代总参"]
-            case .naval:      names = ["近岸桨帆", "远洋风帆", "舷侧战列", "铁甲蒸汽", "远洋巨舰"]
-            case .economy:    names = ["传统农耕", "水利垦荒", "商帮市舶", "工坊行会", "近代实业"]
-            case .statecraft: names = ["宗法旧制", "考课察举", "度支预算", "文官常任", "现代法典"]
+            switch (self, era) {
+            case (.military, .ww2):
+                names = ["拉栓步兵师", "反坦野炮师", "中型坦克群", "重坦合成军", "机械化闪击", "喷气空地协同"]
+            case (.military, .modern):
+                names = ["常规摩步师", "重装坦克旅", "合成机械化", "精确制导炮", "隐身空地一体", "信息化合成军"]
+            case (.military, .ww1):
+                names = ["老式步枪师", "重机枪堑壕", "重炮弹幕群", "突击风暴队", "早期装甲坦", "空地联合攻势"]
+            case (.military, .gunpowder):
+                names = ["火绳步兵团", "燧发线列阵", "滑膛野战炮", "胸甲突击骑", "拿破仑炮兵群", "近卫军团体系"]
+            case (.naval, .ww2), (.naval, .modern):
+                names = ["近海炮艇队", "驱逐护航队", "重巡洋舰队", "无畏战列舰", "舰队航母群", "核动力特混编队"]
+            case (.naval, .ww1):
+                names = ["鱼雷快艇队", "防护巡洋舰", "前无畏舰队", "无畏战列舰", "超无畏主力", "潜艇航空协同"]
+            case (.economy, .ww2), (.economy, .modern):
+                names = ["手工作坊", "轻工纺织", "基础铁路网", "重工兵工厂", "全国战时总产", "超级军工复合体"]
+            case (.military, _):
+                names = ["冷兵方阵", "精钢甲胄", "火绳燧发", "线列野炮", "近代总参", "机械化合成军"]
+            case (.naval, _):
+                names = ["近岸桨帆", "远洋风帆", "舷侧战列", "铁甲蒸汽", "远洋巨舰", "航母特混舰队"]
+            case (.economy, _):
+                names = ["传统农耕", "水利垦荒", "商帮市舶", "工坊行会", "近代实业", "重工战时体系"]
+            case (.statecraft, _):
+                names = ["宗法旧制", "考课察举", "度支预算", "文官常任", "现代法典", "总参统帅体制"]
             }
             return names[max(0, min(names.count - 1, lvl - 1))]
         }
         public var perLevelEffect: String {
             switch self {
-            case .military:   return "每阶：全军攻防 +5% · 攻城破防 +6%"
+            case .military:   return "每阶：全军攻防 +5% · 攻城破防 +6% · 显著放大代差碾压"
             case .naval:      return "每阶：水师火力 +7% · 造舰耗时 −8% · 跨海运力 +1"
-            case .economy:    return "每阶：月度岁入 +6% · 人口与粮产增速提升"
+            case .economy:    return "每阶：月度岁入 +6% · 工业战力提升 · 6 阶解锁战略核研"
             case .statecraft: return "每阶：腐化压力 −4 · 国运稳健 +0.4/年 · 治理增效"
             }
         }
@@ -141,7 +159,7 @@ public enum WorldDepth {
 
     public static func techLevel(_ r: JS, nation: String, branch: TechBranch) -> Int {
         guard !r.regimes.isNull, !r.regimes.tech.isNull, !r.regimes.tech[nation].isNull else { return 1 }
-        return max(1, min(5, r.regimes.tech[nation][branch.rawValue].level.optionalNumber.map(Int.init) ?? 1))
+        return max(1, min(6, r.regimes.tech[nation][branch.rawValue].level.optionalNumber.map(Int.init) ?? 1))
     }
 
     public static func techProgress(_ r: JS, nation: String, branch: TechBranch) -> Int {
@@ -402,16 +420,17 @@ public enum WorldDepth {
     public static func addTechProgress(_ r: JS, nation: String, branch: TechBranch, points: Int) {
         let tb = techBook(r, nation: nation)
         let row = tb[branch.rawValue]
-        let lvl = max(1, min(5, row.level.optionalNumber.map(Int.init) ?? 1))
-        guard lvl < 5 else { row.progress = JS(100); return }
+        let lvl = max(1, min(6, row.level.optionalNumber.map(Int.init) ?? 1))
+        guard lvl < 6 else { row.progress = JS(100); return }
         let nextP = (row.progress.optionalNumber.map(Int.init) ?? 0) + points
         if nextP >= 100 {
             let nextLvl = lvl + 1
             row.level = JS(nextLvl)
-            row.progress = JS(nextLvl >= 5 ? 100 : (nextP - 100))
+            row.progress = JS(nextLvl >= 6 ? 100 : (nextP - 100))
             let nName = Vassals.name(r, nation)
+            let era = HistoricalEra.current(r)
             _ = People.announce(r, kind: "reform",
-                                text: "\(nName)\(branch.label)突破至「\(branch.tierName(nextLvl))」（\(nextLvl)阶）",
+                                text: "\(nName)\(branch.label)突破至「\(branch.tierName(nextLvl, era: era))」（\(nextLvl)阶）",
                                 reason: "\(branch.perLevelEffect)。",
                                 nations: [nation], province: Rebellion.capitalProvince(r, nation))
         } else {
@@ -751,8 +770,9 @@ extension NativeEngine {
         guard Vassals.alive(r, id) else { return (false, "该国已亡。") }
         Regimes.enable(r)
         let curLvl = WorldDepth.techLevel(r, nation: id, branch: b)
-        guard curLvl < 5 else { return (false, "\(b.label)已达最高 5 阶（\(b.tierName(5))）。") }
-        let cost = Double(150 + curLvl * 70)
+        let era = HistoricalEra.current(r)
+        guard curLvl < 6 else { return (false, "\(b.label)已达最高 6 阶（\(b.tierName(6, era: era))）。") }
+        let cost = Double(150 + curLvl * 75)
         let fin = r.finance.nations[id]
         let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
         guard gold >= cost else { return (false, "国库不足（拨款资助\(b.label)需 \(Int(cost)) 金）。") }
@@ -761,7 +781,7 @@ extension NativeEngine {
         let afterLvl = WorldDepth.techLevel(r, nation: id, branch: b)
         let afterP = WorldDepth.techProgress(r, nation: id, branch: b)
         if afterLvl > curLvl {
-            return (true, "拨款 \(Int(cost)) 金突破成功！\(b.label)晋升 \(afterLvl) 阶「\(b.tierName(afterLvl))」。")
+            return (true, "拨款 \(Int(cost)) 金突破成功！\(b.label)晋升 \(afterLvl) 阶「\(b.tierName(afterLvl, era: era))」。")
         }
         return (true, "拨款 \(Int(cost)) 金资助\(b.label)，当前研发进度 \(afterP)%。")
     }
@@ -827,12 +847,28 @@ extension NativeEngine {
         if armyFee > 0 { taxRows.append(makeLine("野战军费开支", "−\(armyFee) 金/月", "bad")) }
         out.tax = .array(taxRows)
 
-        // 2. 陆军综合战力拆解
+        // 2. 陆军综合战力拆解（v12.0.0 完整透明化：装备科技代差 / 工业产值 IC / 制空权 / 军事学说 / 动员法案）
         var milRows = [JS]()
+        let eraNow = HistoricalEra.current(r)
         let dest = Int((r.destiny.nations[id].destiny.optionalNumber ?? 50).rounded())
         milRows.append(makeLine("国运底蕴（\(dest)）", dest >= 60 ? "高昂" : dest <= 30 ? "低迷" : "平稳", dest >= 60 ? "good" : dest <= 30 ? "bad" : "neutral"))
         let milLvl = WorldDepth.techLevel(r, nation: id, branch: .military)
-        if milLvl > 1 { milRows.append(makeLine("军备科技（\(milLvl)阶）", "攻防 +\((milLvl - 1) * 5)%", "good")) }
+        let milTierTitle = WorldDepth.TechBranch.military.tierName(milLvl, era: eraNow)
+        let techGapNote = eraNow.isModernAirEra ? "现代代差系数 ×\(String(format: "%.2f", Volley.techGapMultiplier(attackerTech: milLvl, defenderTech: 3, era: eraNow)))（对 3 阶）" : "攻防 +\((milLvl - 1) * 5)%"
+        milRows.append(makeLine("陆军装备科技 · \(milLvl)阶「\(milTierTitle)」", techGapNote, milLvl >= 5 ? "good" : (milLvl <= 2 ? "bad" : "neutral")))
+        let icVal = Int(NuclearWarfare.industrialCapacity(r, nationId: id).rounded())
+        let indIdx = NuclearWarfare.industryIndex(r, nationId: id)
+        milRows.append(makeLine("军工产能（\(icVal) IC · 工业系数 \(String(format: "%.2f", indIdx))）", indIdx >= 1.5 ? "重工精锐优势" : (indIdx < 0.75 ? "重武器匮乏" : "常规补给"), indIdx >= 1.5 ? "good" : (indIdx < 0.75 ? "bad" : "neutral")))
+        if eraNow.isModernAirEra {
+            let air = Int(NuclearWarfare.airPower(r, nationId: id).rounded())
+            milRows.append(makeLine("航空与制空实力（\(air)/100）", air >= 70 ? "绝对制空（空地协同 +25%+）" : (air >= 40 ? "局部制空掩护" : "防空薄弱易遭轰炸"), air >= 70 ? "good" : (air < 30 ? "bad" : "neutral")))
+        }
+        let docNow = MilitaryDoctrines.doctrine(r, nationId: id)
+        milRows.append(makeLine("现役军事学说「\(docNow.name)」", docNow.shortTag, "good"))
+        let mobNow = NuclearWarfare.mobilization(r, nationId: id)
+        if mobNow.attackBonusPct != 0 || mobNow.defenseBonusPct != 0 {
+            milRows.append(makeLine("动员体制「\(mobNow.label)」", "攻 \(mobNow.attackBonusPct >= 0 ? "+" : "")\(Int(mobNow.attackBonusPct))% · 守 \(mobNow.defenseBonusPct >= 0 ? "+" : "")\(Int(mobNow.defenseBonusPct))%", (mobNow.attackBonusPct + mobNow.defenseBonusPct) >= 0 ? "good" : "bad"))
+        }
         if let doc = CultureDoctrines.forNation(r, id), (doc.attack != 0 || doc.defense != 0) {
             milRows.append(makeLine("文化学说「\(doc.title)」", "攻 \(doc.attack >= 0 ? "+" : "")\(Int(doc.attack))% · 守 \(doc.defense >= 0 ? "+" : "")\(Int(doc.defense))%", (doc.attack + doc.defense) >= 0 ? "good" : "bad"))
         }
@@ -947,6 +983,12 @@ extension NativeEngine {
             let gold = Int((r.finance.nations[nid].gold.optionalNumber ?? 0).rounded())
             let milTech = WorldDepth.techLevel(r, nation: nid, branch: .military)
             let navTech = WorldDepth.techLevel(r, nation: nid, branch: .naval)
+            let era = HistoricalEra.current(r)
+            let ic = Int(NuclearWarfare.industrialCapacity(r, nationId: nid).rounded())
+            let indIdx = NuclearWarfare.industryIndex(r, nationId: nid)
+            let air = Int(NuclearWarfare.airPower(r, nationId: nid).rounded())
+            let doc = MilitaryDoctrines.doctrine(r, nationId: nid)
+            let compPower = Int(War26.compositePower(r, nid).rounded())
             let sea = SeaDominion.seaControl(r, nation: nid)
             let shock = Int((Regimes.defeatPenalty(r, nid) * 100).rounded())
             let rep = WorldDepth.reputation(r, nation: nid)
@@ -967,6 +1009,13 @@ extension NativeEngine {
             o.gold = JS(gold)
             o.milTech = JS(milTech)
             o.navTech = JS(navTech)
+            o.milTierName = JS(WorldDepth.TechBranch.military.tierName(milTech, era: era))
+            o.ic = JS(ic)
+            o.industryIndex = JS((indIdx * 100).rounded() / 100)
+            o.airPower = JS(air)
+            o.doctrine = JS(doc.name)
+            o.compositePower = JS(compPower)
+            o.equipSummary = JS(UnitKinds.nationEquipmentSummary(era: era, milTech: milTech, navTech: navTech, ic: ic, airPower: air))
             o.seaControl = JS(sea.score)
             o.seaLabel = JS(sea.label)
             o.defeatShock = JS(shock)
@@ -980,6 +1029,17 @@ extension NativeEngine {
         let out = JS.object()
         out.attacker = sideInfo(aid)
         out.defender = sideInfo(did)
+        let era = HistoricalEra.current(r)
+        let milA = WorldDepth.techLevel(r, nation: aid, branch: .military)
+        let milD = WorldDepth.techLevel(r, nation: did, branch: .military)
+        let techRatio = Volley.techGapMultiplier(attackerTech: milA, defenderTech: milD, era: era)
+        let indRatio = NuclearWarfare.industrialCombatRatio(r, attacker: aid, victim: did)
+        let airRatio = NuclearWarfare.airSuperiorityBonus(r, attacker: aid, victim: did)
+        let exchangeRatio = ((techRatio * indRatio * airRatio) * 100).rounded() / 100
+        out.techMultiplier = JS((techRatio * 100).rounded() / 100)
+        out.industryMultiplier = JS((indRatio * 100).rounded() / 100)
+        out.airMultiplier = JS((airRatio * 100).rounded() / 100)
+        out.exchangeRatio = JS(exchangeRatio)
         let activeTreaties = DiplomacyDeep.activeTreaties(r, aid, did)
         let breaksTreaty = !activeTreaties.isEmpty
         out.breaksTreaty = JS(breaksTreaty)

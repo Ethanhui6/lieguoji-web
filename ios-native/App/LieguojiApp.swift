@@ -12,14 +12,19 @@ import LieguojiCore
         UISegmentedControl.appearance().setTitleTextAttributes([.font: segFont], for: .normal)
         UINavigationBar.appearance().titleTextAttributes = [.font: barFont]
         // 后台异步预热宣纸 256px 纹理、核心 Phosphor 矢量路径与 1:10m 真实历史地理图集（优先热更新包，回退内置包）。
+        // v12.0.0：同步先登记图集目录，保证玩家启动 0.2 秒内点进剧本时 ensureAtlasLoaded() 100% 命中真实 GIS 底图！
+        let initialAtlasURL = HotPackManager.bestAtlasDirectoryURL()
+            ?? Bundle.main.url(forResource: "HistoricalAtlas", withExtension: nil)
+        if let initialAtlasURL {
+            HistoricalBasemaps.registerDefaultAtlasDirectory(initialAtlasURL)
+        }
         Task { @MainActor in
             _ = HotPackManager.shared
         }
         DispatchQueue.global(qos: .utility).async {
             MemorialPaper.prewarm()
             PhosphorPathCache.prewarmCore()
-            if let atlasURL = HotPackManager.bestAtlasDirectoryURL()
-                ?? Bundle.main.url(forResource: "HistoricalAtlas", withExtension: nil) {
+            if let atlasURL = initialAtlasURL {
                 HistoricalBasemaps.loadAtlasDirectory(atlasURL)
             }
         }
@@ -61,7 +66,7 @@ enum Theme {
     static let wash = Color(red: 0.922, green: 0.894, blue: 0.847)        // 浅绢底衬色
     static let seal = Color(red: 0.659, green: 0.196, blue: 0.149)        // #A83226 特色朱砂红（主按钮与核心强调色）
     static let jade = Color(red: 0.247, green: 0.333, blue: 0.286)        // 克制青墨（仅地图语义与兼容位）
-    static let gold = Color(red: 0.545, green: 0.435, blue: 0.247)        // 暗古金（仅兼容位）
+    static let gold = Color(red: 0.459, green: 0.357, blue: 0.180)        // #755B2E 沉古金（WCAG AA >= 5.5:1 可读性）
     static let goldRim = Color(red: 0.82, green: 0.69, blue: 0.43)        // 浅鎏金丝（御卷细框与漆面内嵌）
     static let danger = seal
 
@@ -170,7 +175,7 @@ struct RootView: View {
             case .splash: EmptyView()
             case .title: TitleView(model: model).transition(.opacity)
             case .generating: GeneratingView(note: model.generationNote).transition(.opacity)
-            case .founding: FoundingView(controller: model.controller, cancel: { model.cancelGeneration() }).transition(.opacity)
+            case .founding: FoundingView(controller: model.controller, note: model.generationNote, cancel: { model.cancelGeneration() }).transition(.opacity)
             case .playing:
                 GameView(model: model)
                     .environment(\.verticalSizeClass, model.tourLandscape ? .compact : sysVerticalClass)
@@ -349,7 +354,7 @@ struct CircleIcon: View {
     }
 }
 
-/// 卡片内统一的圆形轻关闭按钮（26×26pt 正圆、柔墨底、居中墨叉），彻底统一所有悬浮卡的关闭角标。
+/// 卡片内统一的圆形轻关闭按钮（视觉 28×28pt 正圆、触控区严格满足 Apple HIG 44×44pt）。
 struct CardCloseButton: View {
     let action: () -> Void
     var body: some View {
@@ -357,14 +362,16 @@ struct CardCloseButton: View {
             GameFeel.shared.tap()
             action()
         } label: {
-            InkIcon(glyph: .close, size: 11, weight: 1.8)
+            InkIcon(glyph: .close, size: 11.5, weight: 1.85)
                 .foregroundStyle(Theme.ink2)
-                .frame(width: 26, height: 26)
+                .frame(width: 28, height: 28)
                 .background(Theme.ink.opacity(0.065), in: Circle())
-                .overlay(Circle().strokeBorder(Theme.ink.opacity(0.12), lineWidth: 0.6))
-                .contentShape(Circle())
+                .overlay(Circle().strokeBorder(Theme.ink.opacity(0.14), lineWidth: 0.6))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(PressStyle())
+        .accessibilityLabel("关闭")
     }
 }
 

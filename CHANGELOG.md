@@ -1,5 +1,31 @@
 # 更新日志
 
+## 12.0.0 (Build 197)
+
+### 彻底根治云服连不上与连上卡顿（v16 瘦身切线 + 零阻塞推流）× 根治拖屏滑行文字底图乱晃 × 全 12 历史剧本 GIS 版图精纠（0 飞地 / 0 丢都）× 6 阶真实装备与科技代差全面显性化 × 18KB 云端自动缓存战史画卷弹窗 × 双阶段清晰开局展卷 × 全站 UI/UX 合规清零
+- **彻底根治云服连不上、切线必败与连上后卡顿（`NativeEngine.swift`、`Service.swift`、`LieguojiServer/main.swift`、`NativeHost.swift`、`GameModel.swift`、`GameView.swift`、`OnlinePlatform.swift`）**：
+  - **斩断 89MB 上传超时与 4GB VPS 内存 OOM**：新增 `NativeEngine.saveForCompute()`，切云服时彻底剥离只用于手机端渲染的 `statics.map`（上传体积直降 **60–75%**）；服务端 `open` 先释放旧 `engine = nil` 再构建新引擎，杜绝双份世界叠加挤爆 4GB 内存；
+  - **斩断切线自杀与暂停拉档**：切换线路期间加单飞锁 `routeSwitchBusy` 并自动暂挂本地推演，杜绝边传边跑触发二次上传与 10 秒超时自杀；云端模式下 `pause()` / `backToTitle()` / 开局自动存盘彻底禁止向 3Mbps 广州服回拉几十 MB `save()`，并拉长 `open/save` 超时至 60s、`step/resumeWorld` 至 30s；
+  - **消灭多端口竞速互踢与局域网误导**：首选顺序统一调整为直连优先 `8765 → 8443 → 443`，`reattachBest()` / `connectAuto()` 改有序顺次降级彻底杜绝多条并发连接互相顶掉；算力面板将「广州云服 3 条专线」与「局域网电脑端直连（可选）」分区呈现，未搜到局域网电脑端明确显示「未发现电脑端」而非误导性的「超时」，并在面板顶部内联展示精确连接失败原因；
+  - **云服推流丝滑提速（`lieguoji-server/v16` / `mux-v16`）**：移除可靠 TCP 上每 24 帧强发全量关键帧的带宽尖峰、中间帧剥离重复国家 UTF-8 身份字段（每帧再省 5–10KB）、服务端将 `effectiveMaxInFlight` 提升至 `4–6` 帧、客户端入队即回 `MUX_ACK` 并移除重复 RTT 节流与 `play()` 每帧多余 actor 跳变，且隔离 `command()` 与 `SimStreamer` 差量基线，军团排序稳定不乱跳。
+- **彻底根治滑动/甩屏/缩放时底图、地名与兵牌乱晃（`MapView.swift`）**：
+  - 修复 `syncPresentCameraFrame` 中 `else if fingerDragging` 将 `presentsWithTransaction` 在每帧反复设为 `true ↔ false` 引发的底图与文字撕裂晃动；将惯性滑行 `isFlinging` 与相机动画 `animation != nil` 一并纳入 `wantsAtomicDraw`，并在原子提交期锁定 `enableSetNeedsDisplay = false` 防止 CA 二次异步提交；
+  - 交互期间显式锁定 `MapLabelsView.isPanning`，并将松手 `settleLabels()` 合并进单次 `CATransaction` 零抖动落定；修复双指缩放转单指时 `isInteracting` 泄漏与 `.began` 偏移未清零问题；对 `TroopLabelsView` 实行物理像素对齐并扩大标签视锥边距至 `0.72×`。
+- **全 12 套历史剧本真实疆域彻底纠偏（0 飞地 / 0 丢都）（`bake-v9-maps.mjs`、`HistoricalScenarios.swift`、`HistoricalBasemaps.swift`、`Regions.swift`、`CreationStatics.swift`、`scenarios_gis*.bin`）**：
+  - 修复冷启动异步竞态：`LieguojiApp.init()` 同步登记图集目录、`HistoricalBasemaps` 全部读取入口强制 `ensureAtlasLoaded()`，并将 `hasCompatibleResolution` 升级为校验全部 7 大战区与 12 套剧本；修复 `Regions.swift` 偏袒 0 号国家的距离平局判定并增加跨海沟邻接保护；
+  - 全量重烘焙 20K / 60K / 120K 三档 `scenarios_gis*.bin`，并加入 `capMiss == 0` 硬校验：修复 1936 二战前夜奥地利与捷克斯洛伐克/苏台德区完整版图、1939 欧陆波西米亚/斯洛伐克与维也纳仲裁真实边界、1914 一战奥斯曼完整黎凡特/美索不达米亚与色雷斯边界、1812 拿破仑华沙/伊利里亚/普鲁士/西西里真实多边形、1931 民国保住新德里与东北/山西连通、1941 亚太蒙疆/香港与印尼群岛边界、1950 冷战跨日界线楚科奇与格陵兰、755 盛唐/1142 宋金/前 260 战国/208 三国全部精准落位、1560 日本战国彻底根除织田信长 500km 跨海四国飞地；修复阿拔斯与立陶宛都城坐标及宋金/一战配色区分度。
+- **6 阶真实装备与科技代差全面显性化（`WorldDepth.swift`、`UnitKinds.swift`、`EraMilitarySystem.swift`、`Custom.swift`、`RunWindow.swift`、`Naval.swift`、`WorldExtras.swift`、`GameState.swift`、`BinaryWire.swift`、`MapEffects.swift`、`PaperUI.swift`、`StrategyDepthViews.swift`、`WorldSheets.swift`、`MilitaryOverview.swift`、`ArmySheets.swift`）**：
+  - 解锁 6 阶科技上限（激活二战/现代 39 个强国满阶科技与战略核研），实装 6 时代专属兵器谱系与 `techMil + industryIndex` 严格兵种门控（低工业弱国不再刷出装甲师与机械化师）；
+  - 战斗演算正式接入真实州郡地形到 `airSuperiorityBonus`、在 ≥2 阶科技代差或 ≥1.55× 战略倍率下穿透小国保底韧性 `grit`、修复海军科技与相对制空差对比，并在战报史记自动记录代差压制叙事；
+  - 全链路透传 `milTech / navTech / ic / airPower / doctrine / compositePower / equipTier / effectivePower`：地图战场血条按有效战力切分并弹出红金「代差压制」角标，宣战对比新增「工业/空优」「现役主装」「综合国力」与「预估单兵战力交换比」，战略核威慑卡改为按本国真实科技/工业/空优展示现役主装，列国/军情/军团列表处处可见真实 `T1–T6` 代阶与有效战力。
+- **战史事件弹窗重制 × 18KB 云端自动缓存画卷 × 零卡顿快讯号外（`HistoricalEvents.swift`、`HotPackManager.swift`、`HistoricalEventModal.swift`、`GameModel.swift`、`GameView.swift`）**：
+  - 将全部 52 幅战史画卷压缩为 17.9KB 高清 JPEG（总计仅 0.91MB）托管至广州云服直出 + 5 路 CDN 兜底，进剧本后台静默预暖前 8 张、弹出按需秒拉并永久落盘缓存（无需手动下 2GB 热更即可 0ms 亮图）；
+  - 重绘历史事件弹窗：暗纱渐变 16:9 战史头图、涉事双边国色条 +「定位战区」直飞按钮、每个抉择下方的红/青/金结构化实效胶囊（战火/扩土/稳定/军资/国策一目了然）、自适应防裁切滚动排版；事件弹出当帧跳过后台全图深拷贝根治卡顿，并正式在战局顶栏挂载 `HistoricalExpressBanner` 快讯号外条。
+- **双阶段清晰建世动画 + 并行海陆提速（`CreationMap.swift`、`TitleViews.swift`、`MapView.swift`、`GameModel.swift`）**：
+  - `CreationMap.sea()` 并行化提速 4–5×；`FoundingView` 升级为「第一阶段：勘舆筹算 0–32%（实时阶段文案 + 流动活墨条，绝不僵死在 1%）」+「第二阶段：丹青展卷 32–100%（4.8 秒柔和展示八笔山河细节 + 44pt 高对比跳过按钮）」。
+- **全站 UI/UX 合规与深层 Bug 清零（`MenuSheets.swift`、`LieguojiApp.swift`、`HistoricalWorkshopViews.swift`、`OnlineHubViews.swift`、`OnlineAdminViews.swift`、`OnlineAuthViews.swift`、`WorldArchive.swift`、`EditorialComponents.swift`）**：
+  - 修复游戏内菜单「开辟新世界」丢失 `startScenario` / `drawScenario` 导致历史剧本点不开的 P0 阻断 Bug；修复 `renderScale == 3.0` 误显「150%清晰」、历法弹窗预填与键盘遮挡、云上传连点防重、游客转正弹窗高度、军情军事学说初始高亮缺失、战绩/图例/纪事 `ForEach` 身份错乱、残留跑马灯底部空白、禁用按钮与浅金文字 WCAG 对比度、44pt 触控热区、本机地图删除/管理员封禁清榜二次确认及统一「20 卷云档 / 2.06 GB」文案。
+
 ## 11.0.0 (Build 196)
 
 ### 终极双模丝滑引擎（本机 0ms 瞬开 + 九州云服 v15 1s 秒连）× Metal Early-Z 与主线程微顿清零 × 全 12 历史剧本港口舰队与 7,289 座纯简体中文城市 × 真实史实锁盟与学说实装 × 全面去跑马灯与多复音纯净音频 × 2.06GB 分片断点续传热更包 v11

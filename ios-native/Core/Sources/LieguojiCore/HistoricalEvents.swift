@@ -55,6 +55,13 @@ public enum HistoricalEvents {
         public let illustration: String
         public let isHistoricalRoute: Bool
         public let choices: [Choice]
+        public var actorName: String? = nil
+        public var actorColor: String? = nil
+        public var targetName: String? = nil
+        public var targetColor: String? = nil
+        public var focusProvince: Int? = nil
+        public var resolved: Bool? = nil
+        public var appliedEffectCode: String? = nil
     }
 
     // MARK: - 路线判定与初始化
@@ -196,11 +203,30 @@ public enum HistoricalEvents {
         obj.illustration = JS(ev.illustration)
         obj.isHistoricalRoute = JS(historical)
         obj.firedDay = JS(r.world.day.optionalNumber.map(Int.init) ?? 0)
+        // v12.0.0：写入涉事国家双边信息、国色与事发州索引（支持弹窗「定位事发地」飞镜与结构化效果预览标签）
+        let nationsArr = r.world.nations.asArray
+        let provsArr = r.world.provinces.asArray
+        let actorNid = nationId(r, specId: ev.actorSpecId)
+        let targetNid = ev.targetSpecId.flatMap { nationId(r, specId: $0) }
+        if let actorNid, let an = nationsArr.first(where: { $0.id.optionalString == actorNid }) {
+            obj.actorName = JS(an.name.optionalString ?? Vassals.name(r, actorNid))
+            obj.actorColor = JS(an.color.optionalString ?? "#B84A39")
+        }
+        if let targetNid, let tn = nationsArr.first(where: { $0.id.optionalString == targetNid }) {
+            obj.targetName = JS(tn.name.optionalString ?? Vassals.name(r, targetNid))
+            obj.targetColor = JS(tn.color.optionalString ?? "#4A6B8A")
+        }
+        let focusNid = targetNid ?? actorNid
+        if let focusNid, let capPid = Rebellion.capitalProvince(r, focusNid),
+           let pIdx = provsArr.firstIndex(where: { $0.id.optionalString == capPid }) {
+            obj.focusProvince = JS(pIdx)
+        }
         if let idx = resolvedChoiceIndex {
             obj.resolved = JS(true)
             let c = ev.choices[idx]
+            obj.appliedEffectCode = JS(c.effectCode)
             let cObj = JS.object()
-            cObj.title = JS("已知悉（\(c.title)）")
+            cObj.title = JS(c.title)
             cObj.subtitle = JS(c.subtitle)
             cObj.isHistorical = JS(c.isHistorical)
             cObj.effectCode = JS("ack")
@@ -231,7 +257,7 @@ public enum HistoricalEvents {
                 effectCode: c.effectCode.optionalString ?? "ack"
             )
         } : []
-        return PendingModal(
+        var m = PendingModal(
             id: id,
             title: e.title.optionalString ?? "历史事件",
             headline: e.headline.optionalString ?? "",
@@ -242,6 +268,14 @@ public enum HistoricalEvents {
             isHistoricalRoute: e.isHistoricalRoute.isTruthy,
             choices: choices
         )
+        m.actorName = e.actorName.optionalString
+        m.actorColor = e.actorColor.optionalString
+        m.targetName = e.targetName.optionalString
+        m.targetColor = e.targetColor.optionalString
+        m.focusProvince = e.focusProvince.optionalNumber.map(Int.init)
+        m.resolved = e.resolved.isTruthy
+        m.appliedEffectCode = e.appliedEffectCode.optionalString
+        return m
     }
 
     @discardableResult

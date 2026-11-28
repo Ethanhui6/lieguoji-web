@@ -33,11 +33,14 @@ struct HubAdminTabView: View {
     @State private var pace1 = 1
     @State private var pace4 = 2
     @State private var pace16 = 5
-    @State private var relVersion = "5.7.0"
-    @State private var relBuild = "187"
+    @State private var relVersion = "12.0.0"
+    @State private var relBuild = "197"
     @State private var relForce = false
     @State private var packTag = ""
     @State private var packSummary = ""
+    @State private var overviewFailed = false
+    @State private var confirmBanUser: AdminUserRow? = nil
+    @State private var confirmClearBoardUser: AdminUserRow? = nil
 
     var body: some View {
         ViewBoundary {
@@ -60,11 +63,52 @@ struct HubAdminTabView: View {
                 if next == "users" && users.isEmpty { Task { users = await platform.fetchAdminUsers() } }
                 if next == "monitor" { Task { await loadOverview() } }
             }
+            .confirmationDialog(
+                confirmBanUser.map { $0.banned ? "确认解封「\($0.nickname)」？" : "确认封禁账号「\($0.nickname)」？" } ?? "",
+                isPresented: Binding(get: { confirmBanUser != nil }, set: { if !$0 { confirmBanUser = nil } }),
+                titleVisibility: .visible
+            ) {
+                if let u = confirmBanUser {
+                    Button(u.banned ? "确认解封" : "确认封禁", role: u.banned ? nil : .destructive) {
+                        confirmBanUser = nil
+                        Task {
+                            busy = true
+                            let err = await platform.adminPost("/api/v1/admin/users/\(u.id)", body: ["banned": !u.banned])
+                            users = await platform.fetchAdminUsers(query: userQuery)
+                            busy = false
+                            onToast(err ?? (u.banned ? "已解封" : "已封禁该账号"))
+                        }
+                    }
+                }
+                Button("取消", role: .cancel) { confirmBanUser = nil }
+            }
+            .confirmationDialog(
+                confirmClearBoardUser.map { "确认清除「\($0.nickname)」的全部史榜记录？" } ?? "",
+                isPresented: Binding(get: { confirmClearBoardUser != nil }, set: { if !$0 { confirmClearBoardUser = nil } }),
+                titleVisibility: .visible
+            ) {
+                if let u = confirmClearBoardUser {
+                    Button("确认清榜", role: .destructive) {
+                        confirmClearBoardUser = nil
+                        Task {
+                            busy = true
+                            let err = await platform.adminPost("/api/v1/admin/users/\(u.id)", body: ["clearLeaderboard": true])
+                            busy = false
+                            onToast(err ?? "已移除其史榜记录")
+                        }
+                    }
+                }
+                Button("取消", role: .cancel) { confirmClearBoardUser = nil }
+            }
         }
     }
 
     private func loadOverview() async {
-        guard let ov = await platform.fetchAdminOverview() else { return }
+        overviewFailed = false
+        guard let ov = await platform.fetchAdminOverview() else {
+            overviewFailed = true
+            return
+        }
         overview = ov
         noticeText = ov.notice
         maintenanceOn = ov.maintenance
@@ -275,7 +319,7 @@ struct HubAdminTabView: View {
                             busy = true
                             let err = await platform.adminPost("/api/v1/admin/release", body: [
                                 "latestVersion": relVersion,
-                                "latestBuild": Int(relBuild) ?? 186,
+                                "latestBuild": Int(relBuild) ?? 197,
                                 "forceUpdate": relForce
                             ])
                             busy = false
@@ -324,26 +368,21 @@ struct HubAdminTabView: View {
                                 Spacer()
                             }
                             HStack(spacing: 8) {
-                                EditorialTactileButton(title: "+100 功勋", compact: true) {
+                                EditorialTactileButton(title: "+100 功勋", compact: true, disabled: busy) {
                                     Task {
+                                        busy = true
                                         let err = await platform.adminPost("/api/v1/admin/users/\(u.id)", body: ["expDelta": 100])
                                         users = await platform.fetchAdminUsers(query: userQuery)
+                                        busy = false
                                         onToast(err ?? "已为 \(u.nickname) 赏赐 +100 功勋")
                                     }
                                 }
-                                EditorialTactileButton(title: "清榜", compact: true) {
-                                    Task {
-                                        let err = await platform.adminPost("/api/v1/admin/users/\(u.id)", body: ["clearLeaderboard": true])
-                                        onToast(err ?? "已移除其史榜记录")
-                                    }
+                                EditorialTactileButton(title: "清榜", compact: true, disabled: busy) {
+                                    confirmClearBoardUser = u
                                 }
                                 if u.role != "admin" {
-                                    EditorialTactileButton(title: u.banned ? "解封" : "封禁", accent: !u.banned, compact: true) {
-                                        Task {
-                                            let err = await platform.adminPost("/api/v1/admin/users/\(u.id)", body: ["banned": !u.banned])
-                                            users = await platform.fetchAdminUsers(query: userQuery)
-                                            onToast(err ?? (u.banned ? "已解封" : "已封禁该账号"))
-                                        }
+                                    EditorialTactileButton(title: u.banned ? "解封" : "封禁", accent: !u.banned, compact: true, disabled: busy) {
+                                        confirmBanUser = u
                                     }
                                 }
                             }
@@ -361,7 +400,7 @@ struct HubAdminTabView: View {
     private var monitorSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let ov = overview {
-                SectionLabel("计算引擎 v13 实时态势")
+                SectionLabel("计算引擎 v16 实时态势")
                 Group2 {
                     Row(label: "计算服链路", value: ov.compute.online ? "在线（\(ov.compute.rttMs ?? 1) ms）" : "离线")
                     Divider2()
@@ -393,9 +432,8 @@ struct HubAdminTabView: View {
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             } else {
-                HStack(spacing: 8) {
-                    InkBusy().frame(width: 24, height: 24)
-                    Text("正在读取机枢遥测…").font(Theme.label).foregroundStyle(Theme.ink2)
+                PanelPending(failed: overviewFailed, reason: "未能连接服务器读取机枢遥测，请检查管理员会话或网络。", busy: !overviewFailed) {
+                    Task { await loadOverview() }
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             }

@@ -38,12 +38,19 @@ struct WarCompareData: Decodable {
         let allyCount: Int
         let allyNames: [String]
         let allyTroops: Int
+        var ic: Int? = nil
+        var industryIndex: Int? = nil
+        var airPower: Int? = nil
+        var doctrine: String? = nil
+        var compositePower: Int? = nil
+        var equipSummary: String? = nil
     }
     let attacker: Side
     let defender: Side
     let breaksTreaty: Bool
     let reputationImpact: Int
     let warning: String
+    var exchangeRatio: Double? = nil
 }
 
 // MARK: - GameModel Pack 2 RPC Bridges
@@ -247,6 +254,24 @@ struct WarCompareSheet: View {
                             compareRow("水师舰船", "\(d.attacker.ships) 艘 · \(d.attacker.seaControl)%", "\(d.defender.ships) 艘 · \(d.defender.seaControl)%", leftWins: d.attacker.ships >= d.defender.ships)
                             Divider2()
                             compareRow("军备/航海", "\(d.attacker.milTech)阶 / \(d.attacker.navTech)阶", "\(d.defender.milTech)阶 / \(d.defender.navTech)阶", leftWins: (d.attacker.milTech + d.attacker.navTech) >= (d.defender.milTech + d.defender.navTech))
+                            if d.attacker.ic != nil || d.defender.ic != nil || d.attacker.airPower != nil || d.defender.airPower != nil {
+                                Divider2()
+                                let aIC = d.attacker.ic ?? 0, dIC = d.defender.ic ?? 0
+                                let aAir = d.attacker.airPower ?? 0, dAir = d.defender.airPower ?? 0
+                                compareRow("工业/空优", "IC \(aIC) · 空 \(aAir)%", "IC \(dIC) · 空 \(dAir)%", leftWins: (aIC + aAir) >= (dIC + dAir))
+                            }
+                            if let aEq = d.attacker.equipSummary, let dEq = d.defender.equipSummary, (!aEq.isEmpty || !dEq.isEmpty) {
+                                Divider2()
+                                compareRow("现役主装", aEq.isEmpty ? "常规步兵" : aEq, dEq.isEmpty ? "常规步兵" : dEq, leftWins: d.attacker.milTech >= d.defender.milTech)
+                            }
+                            if let aDoc = d.attacker.doctrine, let dDoc = d.defender.doctrine, (!aDoc.isEmpty || !dDoc.isEmpty) {
+                                Divider2()
+                                compareRow("军事学说", aDoc.isEmpty ? "均衡列阵" : aDoc, dDoc.isEmpty ? "均衡列阵" : dDoc, leftWins: d.attacker.milTech >= d.defender.milTech)
+                            }
+                            if let aComp = d.attacker.compositePower, let dComp = d.defender.compositePower {
+                                Divider2()
+                                compareRow("综合国力", "\(aComp)", "\(dComp)", leftWins: aComp >= dComp)
+                            }
                             Divider2()
                             compareRow("国库军资", "\(Names.wan(d.attacker.gold)) 金", "\(Names.wan(d.defender.gold)) 金", leftWins: d.attacker.gold >= d.defender.gold)
                             Divider2()
@@ -256,6 +281,33 @@ struct WarCompareSheet: View {
                         }
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
+
+                    if let ratio = d.exchangeRatio, ratio.isFinite, ratio > 0 {
+                        let gapHigh = ratio >= 1.55 || ratio <= 0.65
+                        let ratioText: String = ratio >= 1.0
+                            ? String(format: "%.2f : 1（攻方科技×工业×空优占优）", ratio)
+                            : String(format: "1 : %.2f（守方装备与火力占优）", 1.0 / max(0.1, ratio))
+                        Group2 {
+                            HStack(alignment: .center, spacing: 8) {
+                                InkIcon(glyph: .military, size: 15, weight: 1.8)
+                                    .foregroundStyle(ratio >= 1.0 ? Theme.jade : Theme.seal)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("预估单兵战力交换比（科技×装备×空优）")
+                                        .font(Theme.caption).foregroundStyle(Theme.ink2)
+                                    Text(ratioText)
+                                        .font(Theme.label)
+                                        .foregroundStyle(ratio >= 1.0 ? Theme.jade : Theme.seal)
+                                        .monospacedDigit()
+                                }
+                                Spacer(minLength: 4)
+                                if gapHigh {
+                                    PaperTag(text: "代差压制", color: ratio >= 1.0 ? Theme.jade : Theme.seal, size: 10.5)
+                                }
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                    }
 
                     if !d.defender.allyNames.isEmpty {
                         Group2 {

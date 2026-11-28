@@ -205,8 +205,10 @@ public enum BinaryStateWire {
         w.u16(w.clampU16(gs.nations.count))
         for n in gs.nations {
             let hasIdent = (n.id != nil || n.name != nil || n.color != nil)
+            let hasTech = (n.milTech != nil || n.ic != nil || n.airPower != nil)
             var nf: UInt8 = n.alive ? 1 : 0
             if hasIdent { nf |= 2 }
+            if hasTech { nf |= 4 }
             w.u8(nf)
             w.u16(w.clampU16(n.provinces))
             w.u16(w.clampU16(n.cities))
@@ -227,6 +229,13 @@ public enum BinaryStateWire {
                 w.str8(n.culture ?? "")
                 w.str8(n.polity ?? "")
                 w.str8(n.religion ?? "")
+            }
+            if hasTech {
+                w.u8(UInt8(max(0, min(15, n.milTech ?? 1))))
+                w.u8(UInt8(max(0, min(15, n.navTech ?? 1))))
+                w.u16(w.clampU16(n.ic ?? 0))
+                w.u8(UInt8(max(0, min(255, n.airPower ?? 0))))
+                w.f32(Float(n.compositePower ?? 0))
             }
         }
 
@@ -263,12 +272,20 @@ public enum BinaryStateWire {
             if let b = a.banner {
                 w.u8(b == "ruler" ? 2 : (b == "general" ? 1 : 0))
             }
-            // v2 可选将领与战术标签（仅在非空时附带，零冗余字节）
+            // v2 可选将领、战术标签与装备代次/有效战力（位标志按需附带，零冗余字节）
             let hasCmd = (a.commander != nil && !(a.commander?.isEmpty ?? true)) || (a.tacticTag != nil && !(a.tacticTag?.isEmpty ?? true))
-            w.u8(hasCmd ? 1 : 0)
+            let hasEquip = (a.equipTier != nil || a.effectivePower != nil)
+            var extFlags: UInt8 = 0
+            if hasCmd { extFlags |= 1 }
+            if hasEquip { extFlags |= 2 }
+            w.u8(extFlags)
             if hasCmd {
                 w.str8(a.commander ?? "")
                 w.str8(a.tacticTag ?? "")
+            }
+            if hasEquip {
+                w.u8(UInt8(max(0, min(15, a.equipTier ?? 1))))
+                w.f32(Float(a.effectivePower ?? Double(a.troops)))
             }
         }
         // v2 差量移除军团 ID 列表
@@ -495,13 +512,29 @@ public enum BinaryStateWire {
                 polity = sPol.isEmpty ? nil : sPol
                 religion = sRel.isEmpty ? nil : sRel
             }
-            nations.append(GameState.Nation(
+            var milTech: Int? = nil, navTech: Int? = nil, icVal: Int? = nil, airVal: Int? = nil
+            var compPow: Double? = nil
+            if (nf & 4) != 0 {
+                guard let mt = r.u8(), let nt = r.u8(), let icU = r.u16(), let airU = r.u8(), let cpF = r.f32() else { return nil }
+                milTech = Int(mt)
+                navTech = Int(nt)
+                icVal = Int(icU)
+                airVal = Int(airU)
+                compPow = Double(cpF)
+            }
+            var nationRow = GameState.Nation(
                 id: id, name: name, color: color, line: line, capital: capital,
                 culture: culture, polity: polity, religion: religion,
                 provinces: Int(provs), cities: Int(cities), population: Int(pop),
                 grain: Double(grain), troops: Int(troops), gold: Double(gold),
                 destiny: Double(destiny), enemies: enemies, alive: (nf & 1) != 0
-            ))
+            )
+            nationRow.milTech = milTech
+            nationRow.navTech = navTech
+            nationRow.ic = icVal
+            nationRow.airPower = airVal
+            nationRow.compositePower = compPow
+            nations.append(nationRow)
         }
 
         // Armies
@@ -557,11 +590,16 @@ public enum BinaryStateWire {
             army.full = full
             army.banner = banner
             if version >= 2 {
-                guard let hasCmd = r.u8() else { return nil }
-                if hasCmd != 0 {
+                guard let extFlags = r.u8() else { return nil }
+                if (extFlags & 1) != 0 {
                     guard let cmd = r.str8(), let tag = r.str8() else { return nil }
                     if !cmd.isEmpty { army.commander = cmd }
                     if !tag.isEmpty { army.tacticTag = tag }
+                }
+                if (extFlags & 2) != 0 {
+                    guard let eqT = r.u8(), let effP = r.f32() else { return nil }
+                    army.equipTier = Int(eqT)
+                    army.effectivePower = Double(effP)
                 }
             }
             armies.append(army)

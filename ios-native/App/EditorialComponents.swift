@@ -183,13 +183,17 @@ struct EditorialInkButton: View {
                         .monospacedDigit()
                 }
             }
-            .foregroundStyle(Theme.paperLight)
+            .foregroundStyle(disabled ? Theme.ink2 : Theme.paperLight)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 44)
             .padding(.horizontal, 16)
             .background(
-                Theme.seal.opacity(disabled ? 0.36 : 1.0),
+                disabled ? Theme.wash : Theme.seal,
                 in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .stroke(disabled ? Theme.line : Color.clear, lineWidth: 0.75)
             )
         }
         .buttonStyle(PressStyle())

@@ -86,8 +86,8 @@ struct MilitaryOverview: View {
         state.nations.indices
             .filter { state.nations[$0].alive && $0 < map.meta.nations.count }
             .sorted {
-                let sa = state.nations[$0].troops + state.nations[$0].provinces * 600
-                let sb = state.nations[$1].troops + state.nations[$1].provinces * 600
+                let sa = state.nations[$0].compositePower ?? Double(state.nations[$0].troops + state.nations[$0].provinces * 600)
+                let sb = state.nations[$1].compositePower ?? Double(state.nations[$1].troops + state.nations[$1].provinces * 600)
                 return sa != sb ? sa > sb : $0 < $1
             }
             .prefix(6)
@@ -148,7 +148,8 @@ struct MilitaryOverview: View {
                     },
                     onToast: { msg in onToast?(msg) }
                 )
-                MilitaryDoctrineQuickCard(model: model, nation: chosen, eraRaw: state.historicalEra, onToast: { msg in onToast?(msg) })
+                let curDoc = state.nations.indices.contains(chosen) ? state.nations[chosen].doctrine : nil
+                MilitaryDoctrineQuickCard(model: model, nation: chosen, eraRaw: state.historicalEra, currentDoctrine: curDoc, onToast: { msg in onToast?(msg) })
             }
 
             if !powers.isEmpty {
@@ -206,7 +207,11 @@ struct MilitaryOverview: View {
                     ForEach(clashes) { c in
                         let a = state.armies[c.first], b = state.armies[c.second]
                         Button { flyTo(Double(a.x), Double(a.y)) } label: {
-                            ClashRow(left: a.name, leftColor: color(a.nation), leftTroops: a.troops, right: b.name, rightColor: color(b.nation), rightTroops: b.troops, place: place(a.province))
+                            ClashRow(
+                                left: a.name, leftColor: color(a.nation), leftTroops: a.troops, leftTier: a.equipTier, leftPower: a.effectivePower,
+                                right: b.name, rightColor: color(b.nation), rightTroops: b.troops, rightTier: b.equipTier, rightPower: b.effectivePower,
+                                place: place(a.province)
+                            )
                         }
                         .buttonStyle(.plain)
                         if c.id != clashes.last?.id { Divider2() }
@@ -410,28 +415,51 @@ private struct ClashRow: View {
     let left: String
     let leftColor: Color
     let leftTroops: Int
+    var leftTier: Int? = nil
+    var leftPower: Double? = nil
     let right: String
     let rightColor: Color
     let rightTroops: Int
+    var rightTier: Int? = nil
+    var rightPower: Double? = nil
     let place: String
+
+    private var gapTag: String? {
+        if let lt = leftTier, let rt = rightTier, abs(lt - rt) >= 2 {
+            return lt > rt ? "左T\(lt)代差压制" : "右T\(rt)代差压制"
+        }
+        if let lp = leftPower, let rp = rightPower, lp > 0, rp > 0 {
+            let lMult = lp / max(1, Double(leftTroops))
+            let rMult = rp / max(1, Double(rightTroops))
+            if max(lMult, rMult) / max(0.1, min(lMult, rMult)) >= 1.55 {
+                return lMult > rMult ? "左火力占优" : "右火力占优"
+            }
+        }
+        return nil
+    }
+
     var body: some View {
         HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 2).fill(leftColor).frame(width: 8, height: 22)
+            RoundedRectangle(cornerRadius: 2).fill(leftColor).frame(width: 8, height: 24)
             VStack(alignment: .leading, spacing: 1) {
                 Text(left).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                Text(Names.wan(leftTroops)).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                Text(Names.wan(leftTroops) + (leftTier.map { " · T\($0)" } ?? "")).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
             }
             Spacer(minLength: 4)
-            VStack(spacing: 1) {
-                Text("战").font(Theme.body).foregroundStyle(Theme.seal)
+            VStack(spacing: 2) {
+                if let tag = gapTag {
+                    PaperTag(text: tag, color: Theme.seal, size: 9.5)
+                } else {
+                    Text("战").font(Theme.body).foregroundStyle(Theme.seal)
+                }
                 Text(place).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 1) {
                 Text(right).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                Text(Names.wan(rightTroops)).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                Text(Names.wan(rightTroops) + (rightTier.map { " · T\($0)" } ?? "")).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
             }
-            RoundedRectangle(cornerRadius: 2).fill(rightColor).frame(width: 8, height: 22)
+            RoundedRectangle(cornerRadius: 2).fill(rightColor).frame(width: 8, height: 24)
         }
         .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
     }
@@ -442,6 +470,7 @@ private struct MilitaryDoctrineQuickCard: View {
     @ObservedObject var model: GameModel
     let nation: Int
     let eraRaw: String?
+    var currentDoctrine: String? = nil
     var onToast: ((String) -> Void)? = nil
 
     @State private var busy = false
@@ -450,6 +479,18 @@ private struct MilitaryDoctrineQuickCard: View {
     private var specs: [MilitaryDoctrines.Spec] {
         let era = HistoricalEra(rawValue: eraRaw ?? "") ?? .ww2
         return MilitaryDoctrines.allSpecs(for: era)
+    }
+
+    private func syncActiveDoctrine() {
+        if let doc = currentDoctrine, !doc.isEmpty {
+            if let match = specs.first(where: { $0.id.rawValue == doc || $0.name == doc || $0.shortTag == doc }) {
+                selectedId = match.id.rawValue
+                return
+            }
+            selectedId = doc
+        } else if selectedId.isEmpty, let first = specs.first {
+            selectedId = first.id.rawValue
+        }
     }
 
     var body: some View {
@@ -499,5 +540,8 @@ private struct MilitaryDoctrineQuickCard: View {
         .padding(12)
         .paperCard()
         .padding(.horizontal, Theme.Layout.pageInset)
+        .onAppear { syncActiveDoctrine() }
+        .onChange(of: nation) { _, _ in syncActiveDoctrine() }
+        .onChange(of: currentDoctrine) { _, _ in syncActiveDoctrine() }
     }
 }

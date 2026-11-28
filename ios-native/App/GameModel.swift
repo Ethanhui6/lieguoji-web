@@ -235,9 +235,20 @@ import LieguojiCore
         }
     }
 
-    /// 手动或自动切换至指定 ID 的推流专线（`tencent-443` / `tencent-8765` / `tencent-8443` / `lan-udp`）。返回是否切换成功。
+    @Published var lastRouteSwitchError: String? = nil
+    private var routeSwitchBusy = false
+
+    /// 手动或自动切换至指定 ID 的推流专线（`tencent-8765` / `tencent-8443` / `tencent-443` / `lan-udp`）。返回是否切换成功。
     @discardableResult
     func switchComputeRoute(_ routeId: String) async -> Bool {
+        guard !routeSwitchBusy else {
+            lastRouteSwitchError = "正在切换算力线路，请稍候…"
+            return false
+        }
+        routeSwitchBusy = true
+        lastRouteSwitchError = nil
+        defer { routeSwitchBusy = false }
+
         remoteOfflineManual = false
         UserDefaults.standard.set(false, forKey: "remote.offlineManual")
 
@@ -245,15 +256,28 @@ import LieguojiCore
             ?? ComputeRouteInfo.builtInRoutes.first(where: { $0.id == routeId })
         guard let target else { return false }
 
+        // v12.0.0：若处于本机推演中，切线上传期间先暂挂本地步进，彻底杜绝边传边跑触发二次上传与 10s step 超时自杀！
+        let wasPlayingLocal = playing && remoteAddress == nil
+        if wasPlayingLocal {
+            pause(saving: false, fetchFullState: false)
+        }
+        defer {
+            if wasPlayingLocal && !playing && phase == .playing && !appInBackground {
+                play()
+            }
+        }
+
         switch routeId {
         case "tencent-443", "tencent-8765", "tencent-8443":
             UserDefaults.standard.set(false, forKey: "remote.directAddressCleared")
             UserDefaults.standard.set(target.address, forKey: "remote.directAddress")
             let err = await connectRemote(target.address)
             if let err {
-                notice = "切换「\(target.name)」失败：\(err)"
+                lastRouteSwitchError = "连接「\(target.name)」失败：\(err)"
+                notice = lastRouteSwitchError
                 return false
             } else {
+                lastRouteSwitchError = nil
                 syncActiveRouteState(activeId: routeId, rttMs: remoteRTTMs)
                 let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
                 notice = "已切换至「\(target.name)」\(msText)"
@@ -268,29 +292,21 @@ import LieguojiCore
                 lanAddr = await LANDiscovery.discover(roomCode: NativeHost.activeRoomCode, timeoutSeconds: 1.2)
             }
             guard let lanAddr, !lanAddr.isEmpty else {
-                notice = "当前局域网未发现列国纪计算端"
+                lastRouteSwitchError = "同 Wi-Fi 下未检测到电脑端列国纪服务器"
+                notice = lastRouteSwitchError
                 return false
             }
             await native.setRouteProbeHints(fastestDirect: nil, lanAddress: lanAddr)
             let err = await connectRemote(lanAddr)
             if let err {
-                notice = "局域网直连失败：\(err)"
+                lastRouteSwitchError = "局域网直连失败：\(err)"
+                notice = lastRouteSwitchError
                 return false
             } else {
+                lastRouteSwitchError = nil
                 syncActiveRouteState(activeId: "lan-udp", rttMs: remoteRTTMs)
                 let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
                 notice = "已切换至局域网毫秒直连\(msText)"
-                return true
-            }
-        case "cf-relay":
-            let err = await connectRemote(NativeHost.activeRoomCode)
-            if let err {
-                notice = "Cloudflare 边缘推流连接失败：\(err)"
-                return false
-            } else {
-                syncActiveRouteState(activeId: "cf-relay", rttMs: remoteRTTMs)
-                let msText = remoteRTTMs.map { " · \($0)ms" } ?? ""
-                notice = "已切换至 Cloudflare 全球边缘推流\(msText)"
                 return true
             }
         default:
@@ -1252,6 +1268,14 @@ import LieguojiCore
             controller.activeHistoricalEra = eraOverride
             GameFeel.shared.setHistoricalEra(eraOverride)
         }
+        if let sc = options.historicalScenario {
+            // v12.0.0：后台静默预拉取该剧本即将触发的前 8 张战史画卷（18KB/张），事件弹出 0ms 亮图！
+            let upcomingIllustrations = HistoricalEvents.allEvents
+                .filter { $0.scenarioIds.contains(sc.id) }
+                .prefix(8)
+                .map(\.illustration)
+            EventScrollImageCache.prewarm(keys: upcomingIllustrations)
+        }
         phase = .founding
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
@@ -1320,7 +1344,10 @@ import LieguojiCore
                 guard let self, self.worldEpoch == epoch, self.phase == .playing else { return }
                 await self.archiveCurrent()
                 guard self.worldEpoch == epoch, self.phase == .playing else { return }
-                self.save()
+                // v12.0.0：云端计算模式下绝不从 3Mbps 广州服回拉几十 MB 存档塞爆连接！
+                if self.remoteAddress == nil {
+                    self.save()
+                }
                 CrashBreadcrumb.mark("play.autosave")
             }
         } catch {
@@ -1331,11 +1358,11 @@ import LieguojiCore
         }
     }
 
-    /// The classic full ink-painting generation reveal (brisk 2.0s sea soak -> shore ink -> rising hills -> state wash -> borders + camera pull-back; tap anywhere to skip instantly).
+    /// v12.0.0 丹青展卷开局动画：延长至 4.8s 柔和分段展示「注海 → 海岸 → 山河 → 江河 → 州郡 → 分封 → 国界 → 城邦」八笔细节，轻点「跳过动画」可随时秒进！
     private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(from: 0.04, duration: 2.0, push: true, publishProgress: false, while: { self.worldEpoch == epoch }); return }
+        if !ShotTour.on { await playReveal(from: 0.04, duration: 4.8, push: true, publishProgress: false, while: { self.worldEpoch == epoch }); return }
         // CI waits on these frames: the clock is pinned to each stage in turn while its shot is taken.
         let shots: [(at: Float, name: String)] = [(0.03, "02-founding"), (0.10, "02a-sea"), (0.24, "02b-rise"), (0.36, "02c-ink"), (0.62, "02d-states"), (0.80, "02e-borders")]
         for shot in shots {
@@ -1537,7 +1564,12 @@ import LieguojiCore
         routeTask?.cancel()
         routeTask = nil
         lastRouteQueryKey = ""
-        pause(); dismissHerald(); save()
+        pause(saving: remoteAddress == nil, fetchFullState: false); dismissHerald()
+        if remoteAddress == nil {
+            save()
+        } else {
+            Task { [weak self] in _ = await self?.native.park() }
+        }
         controller.activeHistoricalEra = ""
         GameFeel.shared.setHistoricalEra("")
         controller.armies = []; controller.troopTexts = [:]; controller.troopRatios = [:]; controller.troopBarColors = [:]
@@ -1623,7 +1655,8 @@ import LieguojiCore
                 // 彻底消除每步等待 RTT 的停顿感，控制指令零延迟并发直达。
                 var canPush = false
                 if self.remoteAddress != nil {
-                    canPush = await self.native.serverSupportsPush
+                    // v12.0.0：已进入推流态直接复用缓存标志，消除每帧 1 次串行 actor 跳变开销。
+                    canPush = self.remotePushActive ? true : await self.native.serverSupportsPush
                 }
                 if canPush {
                     ahead = nil
@@ -1739,7 +1772,8 @@ import LieguojiCore
             }
         }
         if was, saving, let s = state { apply(s) }
-        if saving, was, let day = state?.day { save(); lastSavedDay = day }
+        // v12.0.0 致命网络修复：云端模式下绝不在暂停/开面板时触发 save() 向 3Mbps 广州服回拉几十 MB 存档塞死连接并引发 10s 超时踢回本机！
+        if !wasRemote, saving, was, let day = state?.day { save(); lastSavedDay = day }
     }
     func cycleSpeed() {
         speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : speed == 16 ? 32 : speed == 32 ? 64 : 1
@@ -1904,12 +1938,18 @@ import LieguojiCore
             if next.yards == nil { next.yards = previous.yards }
             if next.events.isEmpty && !previous.events.isEmpty { next.events = previous.events }
             if next.armyDeltaMode == true {
+                var order = previous.armies.map(\.id)
                 var merged = Dictionary(uniqueKeysWithValues: previous.armies.map { ($0.id, $0) })
-                for a in next.armies { merged[a.id] = a }
-                if let rem = next.removedArmyIds {
-                    for rid in rem { merged.removeValue(forKey: rid) }
+                for a in next.armies {
+                    if merged[a.id] == nil { order.append(a.id) }
+                    merged[a.id] = a
                 }
-                next.armies = Array(merged.values)
+                if let rem = next.removedArmyIds, !rem.isEmpty {
+                    let remSet = Set(rem)
+                    for rid in rem { merged.removeValue(forKey: rid) }
+                    order.removeAll { remSet.contains($0) }
+                }
+                next.armies = order.compactMap { merged[$0] }
                 next.armyDeltaMode = false
                 next.removedArmyIds = nil
             }
@@ -1923,6 +1963,7 @@ import LieguojiCore
         if let hr = next.historicalRoute, !hr.isEmpty, activeHistoricalRoute != hr {
             activeHistoricalRoute = hr
         }
+        var openedModalThisFrame = false
         if let modal = next.pendingHistoricalEvent {
             if pendingHistoricalModal?.id != modal.id {
                 let expressMode = UserDefaults.standard.bool(forKey: "events.expressBanner")
@@ -1937,21 +1978,26 @@ import LieguojiCore
                         if let data = res.state, let resolved = await Self.decode(GameState.self, from: data), !self.playing {
                             self.apply(resolved)
                         }
-                        try? await Task.sleep(nanoseconds: 4_800_000_000)
+                        try? await Task.sleep(nanoseconds: 5_200_000_000)
                         guard !Task.isCancelled else { return }
                         if self.expressEventToast?.id == modal.id { self.expressEventToast = nil }
                     }
                 } else {
+                    openedModalThisFrame = true
                     wasPlayingBeforeModal = playing
-                    pendingHistoricalModal = modal
-                    controller.modalOpen = true
                     if playing && !ShotTour.on { pause(saving: false, fetchFullState: false) }
+                    controller.modalOpen = true
+                    pendingHistoricalModal = modal
                 }
             }
         } else if next.pendingHistoricalEvent == nil && pendingHistoricalModal != nil {
             // 仅在事件已被外部解决时保持 UI 同步
         }
         state = next
+        // v12.0.0 根治事件弹出卡顿：事件模态刚弹出的这一帧直接让出主线程预算给弹窗动效，跳过同帧全图 WorldMap 深拷贝与 flushSync()！
+        if openedModalThisFrame {
+            return
+        }
         if let nukeProv = next.lastNukeProvince, nukeProv >= 0,
            let nukeDay = next.lastNukeDay,
            (nukeDay > lastHandledNukeDay || (nukeDay == lastHandledNukeDay && nukeProv != lastHandledNukeProvince)) {
@@ -2420,16 +2466,50 @@ import LieguojiCore
             guard n >= 0, n < map.meta.nations.count else { return nil }
             let c = rgb(n); return .init(name: map.meta.nations[n].name, r: c.0, g: c.1, b: c.2)
         }
+        let isModernFirepower = ["ww1", "ww2", "modern"].contains(state.historicalEra ?? controller.activeHistoricalEra)
         for (key, v) in spots.sorted(by: { $0.key < $1.key }) {
             let s = sides[key]
             var battle = MapEffects.Battle(key: key, x: v.x / v.n, y: v.y / v.n, left: s.flatMap { side($0.0) }, right: s.flatMap { side($0.1) }, culture: s.map { cultureOf($0.0) } ?? "")
+            battle.modern = isModernFirepower
             if let p = ends[key] { battle.ax = p.0; battle.ay = p.1; battle.bx = p.2; battle.by = p.3 }
             if let s, let f = fighters[key] {
-                for (i, n) in f { if n == s.0 { battle.leftTroops += state.armies[i].troops } else { battle.rightTroops += state.armies[i].troops } }
+                for (i, n) in f {
+                    let a = state.armies[i]
+                    let effP = a.effectivePower ?? Double(a.troops)
+                    if n == s.0 {
+                        battle.leftTroops += a.troops
+                        battle.leftPower += effP
+                    } else {
+                        battle.rightTroops += a.troops
+                        battle.rightPower += effP
+                    }
+                }
+                if state.nations.indices.contains(s.0), state.nations.indices.contains(s.1) {
+                    let nL = state.nations[s.0], nR = state.nations[s.1]
+                    let tL = nL.milTech ?? 3, tR = nR.milTech ?? 3
+                    let aL = nL.airPower ?? 0, aR = nR.airPower ?? 0
+                    let tDiff = abs(tL - tR)
+                    let aDiff = abs(aL - aR)
+                    if tDiff >= 2 {
+                        let ratio = max(1.3, min(3.5, 1.0 + Double(tDiff) * 0.42))
+                        battle.gapBadge = String(format: "装备×%.1f", ratio)
+                    } else if isModernFirepower && aDiff >= 30 {
+                        battle.gapBadge = "制空压制"
+                    } else if battle.leftTroops > 0 && battle.rightTroops > 0 && battle.leftPower > 0 && battle.rightPower > 0 {
+                        let qL = battle.leftPower / Double(battle.leftTroops)
+                        let qR = battle.rightPower / Double(battle.rightTroops)
+                        let qRatio = max(qL, qR) / max(0.01, min(qL, qR))
+                        if qRatio >= 1.45 {
+                            battle.gapBadge = String(format: "代差×%.1f", min(3.5, qRatio))
+                        }
+                    }
+                }
             }
             if let ns = navalStrengths[key] {
                 battle.leftTroops += ns.left
                 battle.rightTroops += ns.right
+                battle.leftPower += Double(ns.left)
+                battle.rightPower += Double(ns.right)
             }
             e.battles.append(battle)
         }

@@ -19,6 +19,12 @@ struct MapEffects: Equatable {
         var ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0
         /// Troops on each side, for the strength bar over the fight.
         var leftTroops = 0, rightTroops = 0
+        /// v12.0.0 有效综合战力（兵力×科技×工业×空优×兵种）：交锋条按真实战力比而非纯人头比分割！
+        var leftPower: Double = 0, rightPower: Double = 0
+        /// 显著装备/科技/空优代差徽记（如「科技×1.8」「空优压制」），仅代差明显时浮显。
+        var gapBadge: String? = nil
+        /// 现代/一战/二战火力时代标志（切炮火闪焰风格）
+        var modern: Bool = false
         /// 主战文明标识（自动匹配东亚画戟/楼船、西欧长剑/盖伦舰、北欧维京长船）。
         var culture = ""
     }
@@ -331,30 +337,55 @@ final class EffectsView: UIView {
         return e
     }
 
-    /// The two sides' strength over a fight: one bar in their colours, split by troops.
+    /// The two sides' strength over a fight: v12.0.0 按真实有效战力（含科技/工业/空优代差）分割，并在代差显著时浮显装备代差徽记。
     private func setStrength(_ root: CALayer, _ b: MapEffects.Battle) {
         guard let bar = root.sublayers?.first(where: { $0.name == "strength" }), let subs = bar.sublayers, subs.count >= 2 else { return }
-        let total = b.leftTroops + b.rightTroops
+        let usePower = b.leftPower > 0 && b.rightPower > 0
+        let leftVal = usePower ? b.leftPower : Double(b.leftTroops)
+        let rightVal = usePower ? b.rightPower : Double(b.rightTroops)
+        let total = leftVal + rightVal
         guard let l = b.left, let r = b.right, total > 0 else { bar.isHidden = true; return }
         let wasHidden = bar.isHidden
         bar.isHidden = false
         let w = bar.bounds.width, h = bar.bounds.height
-        let share = max(0, min(w, w * CGFloat(b.leftTroops) / CGFloat(total)))
-        // 首次出现立即落位（避免从复用旧条滑变），交战中再平滑过渡兵力消长。
+        let share = max(0, min(w, w * CGFloat(leftVal / total)))
+        // 首次出现立即落位（避免从复用旧条滑变），交战中再平滑过渡战力消长。
         CATransaction.setDisableActions(wasHidden)
         if !wasHidden { CATransaction.setAnimationDuration(0.35) }
         defer { CATransaction.setDisableActions(true) }
         subs[0].frame = CGRect(x: 0, y: 0, width: share, height: h); subs[0].backgroundColor = UIColor(red: l.r, green: l.g, blue: l.b, alpha: 1).cgColor
         subs[1].frame = CGRect(x: share, y: 0, width: w - share, height: h); subs[1].backgroundColor = UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1).cgColor
+        if let badge = root.sublayers?.first(where: { $0.name == "gapBadge" }) as? CATextLayer {
+            if let text = b.gapBadge, !text.isEmpty {
+                badge.isHidden = false
+                if (badge.string as? String) != text {
+                    badge.string = text
+                    let bw = max(36, CGFloat(text.count) * 8.2 + 8)
+                    badge.bounds = CGRect(x: 0, y: 0, width: bw, height: 12.5)
+                }
+            } else {
+                badge.isHidden = true
+            }
+        }
     }
     private func battleLayer(culture: String) -> CALayer {
-        // 36 帧（6×6 @ 30fps）高清多帧拼接交锋动画：复用原作 40 帧双剑挥斩交击序列，精铸寒钢铜柄刀剑＋交击朱金气浪环＋四溅火星与扬尘，彻底告别简陋代码折线！
         _ = culture
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 48, height: 44)
-        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 42, height: 4.8); strength.position = CGPoint(x: 24, y: -6)
-        strength.cornerRadius = 2.4; strength.masksToBounds = true; strength.borderWidth = 0.85
+        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 44, height: 5.0); strength.position = CGPoint(x: 24, y: -6)
+        strength.cornerRadius = 2.5; strength.masksToBounds = true; strength.borderWidth = 0.85
         strength.borderColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 0.95).cgColor; strength.isHidden = true
         strength.addSublayer(CALayer()); strength.addSublayer(CALayer()); root.addSublayer(strength)
+
+        let badge = CATextLayer(); badge.name = "gapBadge"
+        badge.font = UIFont.systemFont(ofSize: 8.5, weight: .bold)
+        badge.fontSize = 8.5; badge.alignmentMode = .center; badge.contentsScale = UIScreen.main.scale
+        badge.foregroundColor = UIColor(red: 1.0, green: 0.95, blue: 0.80, alpha: 1).cgColor
+        badge.backgroundColor = UIColor(red: 0.62, green: 0.14, blue: 0.10, alpha: 0.88).cgColor
+        badge.cornerRadius = 3; badge.masksToBounds = true
+        badge.bounds = CGRect(x: 0, y: 0, width: 44, height: 12.5)
+        badge.position = CGPoint(x: 24, y: -16.5)
+        badge.isHidden = true
+        root.addSublayer(badge)
 
         let phase = Double.random(in: 0..<1.2)
         let sheet = SpriteSheetLayer(spec: .atlasBattle36)

@@ -802,13 +802,13 @@ private final class TokenBox: @unchecked Sendable {
 @MainActor final class OnlinePlatform: ObservableObject {
     static let shared = OnlinePlatform()
 
-    /// 默认专属腾讯云平台地址与计算节点（开机优先 443 运营商防限速专线 + 8765/8443 并行竞速直连）
+    /// 默认专属腾讯云平台地址与计算节点（v12.0.0：优先原生 TCP 8765 避开 443 非 TLS 运营商限速，顺次容灾 8443 / 443）
     nonisolated static let defaultPlatformBase = "http://111.230.153.235"
-    nonisolated static let defaultComputeHost = "111.230.153.235:443"
+    nonisolated static let defaultComputeHost = "111.230.153.235:8765"
     nonisolated static let defaultComputeEndpoints: [String] = [
-        "111.230.153.235:443",
         "111.230.153.235:8765",
-        "111.230.153.235:8443"
+        "111.230.153.235:8443",
+        "111.230.153.235:443"
     ]
 
     nonisolated static var apiBase: String {

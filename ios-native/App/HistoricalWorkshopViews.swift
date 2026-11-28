@@ -19,6 +19,7 @@ final class HistoricalThumbnailCache {
     }
 
     nonisolated static func renderScenario(_ scenario: HistoricalScenario, inputs: PreviewWorld.Inputs) -> UIImage? {
+        HistoricalBasemaps.ensureAtlasLoaded()
         let heights: [UInt8]
         if let b64 = scenario.customHeightsBase64,
            let decoded = HistoricalScenarios.decodeHeights(b64, expectedCount: inputs.grid.points.count) {
@@ -45,6 +46,7 @@ final class HistoricalThumbnailCache {
     }
 
     nonisolated static func renderRegion(_ region: HistoricalRegion, inputs: PreviewWorld.Inputs) -> UIImage? {
+        HistoricalBasemaps.ensureAtlasLoaded()
         let heights = HistoricalBasemaps.generateHeights(region: region, graph: inputs.grid)
         let thumb = PreviewWorld.thumbnail(inputs, heights: heights, width: 320, nations: 0, seed: "region-\(region.rawValue)")
         return makeUIImage(rgba: thumb.rgba, width: thumb.width, height: thumb.height)
@@ -672,6 +674,7 @@ struct PlayerWorkshopBrowserView: View {
     @State private var likedIds: Set<String> = []
     @State private var statusBanner: String? = nil
     @State private var refreshNonce = 0
+    @State private var deletingLocal: HistoricalScenario? = nil
 
     private static let regionPills: [(id: String, title: String)] = [
         ("all", "全部"),
@@ -903,6 +906,20 @@ struct PlayerWorkshopBrowserView: View {
             guard !Task.isCancelled else { return }
             let _ = await platform.fetchWorkshopMaps(region: selectedRegion, query: searchText)
         }
+        .confirmationDialog(
+            "确认从本机移除自绘舆图「\(deletingLocal?.title ?? "")」？删除后无法恢复。",
+            isPresented: Binding(get: { deletingLocal != nil }, set: { if !$0 { deletingLocal = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("确认删除", role: .destructive) {
+                guard let target = deletingLocal else { return }
+                deletingLocal = nil
+                LocalWorkshopStore.delete(id: target.id)
+                localScenarios = LocalWorkshopStore.list()
+                statusBanner = "已从本机移除「\(target.title)」"
+            }
+            Button("取消", role: .cancel) { deletingLocal = nil }
+        }
     }
 
     private func localScenarioCard(_ sc: HistoricalScenario) -> some View {
@@ -980,9 +997,7 @@ struct PlayerWorkshopBrowserView: View {
 
                     Button {
                         GameFeel.shared.tap()
-                        LocalWorkshopStore.delete(id: sc.id)
-                        localScenarios = LocalWorkshopStore.list()
-                        statusBanner = "已从本机移除「\(sc.title)」"
+                        deletingLocal = sc
                     } label: {
                         InkIcon(glyph: .trash, size: 14, weight: 1.7)
                             .foregroundStyle(Theme.seal)
@@ -1117,6 +1132,7 @@ struct PlayerWorkshopBrowserView: View {
                 .disabled(downloadingId != nil)
 
                 Button {
+                    guard !likedIds.contains(item.id) else { return }
                     GameFeel.shared.tap()
                     likedIds.insert(item.id)
                     Task {
@@ -1138,6 +1154,7 @@ struct PlayerWorkshopBrowserView: View {
                     .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(isLiked ? Color.clear : Theme.hairline, lineWidth: 0.7))
                 }
                 .buttonStyle(PressStyle())
+                .disabled(isLiked)
                 .accessibilityLabel("点赞此舆图")
             }
         }

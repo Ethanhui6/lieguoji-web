@@ -168,7 +168,23 @@ enum ArmyLedger {
                 book.lastAnnouncedDay = JS(day)
                 let stList = c.states.asArray.map(\.asString).sorted()
                 let peakWan = String(format: "%.1f万", c.peak.asNumber / 10000.0)
-                People.announce(r, kind: "battle", text: "\(c.name.asString)爆发", reason: "\(stList.map { Vassals.name(r, $0) }.joined(separator: "、"))投入兵力逾\(peakWan)在\(p.name.asString)展开主力会战。", nations: stList, province: pid)
+                var gapNote = ""
+                if stList.count >= 2, UnitKinds.enabled {
+                    let eraNow = HistoricalEra.current(r)
+                    let ranked = stList.map { ($0, WorldDepth.techLevel(r, nation: $0, branch: .military), Int(NuclearWarfare.airPower(r, nationId: $0).rounded())) }
+                        .sorted { ($0.1 * 100 + $0.2) > ($1.1 * 100 + $1.2) }
+                    let top = ranked[0], bot = ranked[ranked.count - 1]
+                    let tDiff = top.1 - bot.1
+                    let aDiff = top.2 - bot.2
+                    if tDiff >= 2 && eraNow.isModernAirEra && aDiff >= 25 {
+                        gapNote = " \(Vassals.name(r, top.0))凭借\(tDiff)阶装备代差与绝对制空优势实施火力碾压。"
+                    } else if tDiff >= 2 {
+                        gapNote = " \(Vassals.name(r, top.0))依托\(tDiff)阶军备科技代差（\(WorldDepth.TechBranch.military.tierName(top.1, era: eraNow))）占据压倒性火力优势。"
+                    } else if eraNow.isModernAirEra && aDiff >= 30 {
+                        gapNote = " \(Vassals.name(r, top.0))掌握战区制空权（制空差 +\(aDiff)），对地面目标展开空地协同突击。"
+                    }
+                }
+                People.announce(r, kind: "battle", text: "\(c.name.asString)爆发", reason: "\(stList.map { Vassals.name(r, $0) }.joined(separator: "、"))投入兵力逾\(peakWan)在\(p.name.asString)展开主力会战。\(gapNote)", nations: stList, province: pid)
             }
         }
         for pid in book.active.objectKeys where fighting[pid] == nil {

@@ -236,15 +236,17 @@ struct TitleView: View {
                                         .font(Theme.caption)
                                         .monospacedDigit()
                                         .lineLimit(1)
+                                        .minimumScaleFactor(0.76)
                                 }
                                 .foregroundStyle(Theme.paperLight)
                                 .padding(.horizontal, 10)
-                                .frame(height: 28)
+                                .frame(minHeight: 34)
                                 .background(Theme.seal, in: Capsule())
                             }
                             .buttonStyle(PressStyle())
                         }
                     }
+                    .frame(maxWidth: 196, alignment: .trailing)
                     .padding(.trailing, 18)
                     .padding(.top, 8)
                     .opacity(shown ? 1 : 0)
@@ -359,9 +361,10 @@ struct TitleView: View {
                         try? await Task.sleep(nanoseconds: 210_000_000)
                         guard !Task.isCancelled else { return }
                         var opts = GameModel.NewWorld()
+                        let cap = NativeHost.selectedResolutionTier.maxProvinces
                         opts.historicalScenario = scenario
-                        opts.nations = max(2, min(24, scenario.nations.count))
-                        opts.provinces = String(max(opts.nations, min(480, scenario.provinceCount)))
+                        opts.nations = max(2, min(100, scenario.nations.count))
+                        opts.provinces = String(max(opts.nations, min(cap, scenario.provinceCount)))
                         model.openEditor(opts)
                         model.editor?.applyHistoricalScenario(scenario)
                     }
@@ -1307,12 +1310,12 @@ struct GeneratingView: View {
 
 // MARK: - game
 
-/// 御卷建世浮卡（60/120fps 零卡顿重构）：
-/// - 动态单字书法朱印（海 / 岸 / 山 / 川 / 州 / 国 / 界 / 城 / 族 / 兵 / 盟 / 定）配诗意副题与八珠步进；
-/// - 抬头与步进珠严格按 `Equatable` 隔离，仅在阶段切换时更新；底部细墨进度条独占轻帧刷新，
-///   不叠加重型实时毛玻璃模糊，把全部 GPU 留给 Metal 山河水墨开卷！
+/// v12.0.0 双阶段御卷建世浮卡（根治“前期停在 1% 卡死不动 → 突然一闪而过看不懂细节”）：
+/// - 第一阶段「勘舆筹算 (0%→32%)」：实时跟随引擎地形/海陆/列国/纹理构建进度，配活墨微光条与动态阶段文案，绝不僵死在 1%；
+/// - 第二阶段「丹青展卷 (32%→100%)」：以 4.8 秒柔和节奏逐笔呈现八重山河画卷，右侧提供 44pt 高对比「跳过动画 ›」按钮随时秒进！
 struct FoundingView: View {
     @ObservedObject var controller: MapController
+    var note: String = ""
     let cancel: () -> Void
     private var liveReveal: Float { controller.revealNow ?? controller.reveal }
 
@@ -1322,6 +1325,13 @@ struct FoundingView: View {
         let title: String
         let poetic: String
     }
+
+    static let prepStages: [StageMeta] = [
+        StageMeta(until: 0.08, seal: "筹", title: "勘测真实地形与海陆轮廓", poetic: "正在调取高精度地理底图并并行演算海洋"),
+        StageMeta(until: 0.16, seal: "勘", title: "划定州郡山川与水系航道", poetic: "正在生成山脉流域、海港与不可通行边界"),
+        StageMeta(until: 0.24, seal: "封", title: "初始化各国政权与部队编制", poetic: "正在按史实落位都城、国境、将领与军备代阶"),
+        StageMeta(until: 0.32, seal: "绘", title: "装配高精舆图纹理 · 即将展卷", poetic: "山河着色与国名版式就绪，丹青立现"),
+    ]
 
     static let stages: [StageMeta] = [
         StageMeta(until: 0.15, seal: "海", title: "铺纸注海", poetic: "澄墨入宣，四海波兴"),
@@ -1333,64 +1343,104 @@ struct FoundingView: View {
         StageMeta(until: 0.85, seal: "界", title: "勘定国界", poetic: "四境既明，雄关星列"),
         StageMeta(until: 1.00, seal: "城", title: "营建城邦", poetic: "城郭宏开，通商海港"),
     ]
-    static let later: [StageMeta] = [
-        StageMeta(until: 1.0, seal: "族", title: "诞生世家与人物", poetic: "门阀绵延，群英入仕"),
-        StageMeta(until: 1.0, seal: "兵", title: "编练列国军旅", poetic: "整军经武，旌旗列阵"),
-        StageMeta(until: 1.0, seal: "盟", title: "缔结纵横邦交", poetic: "合纵连横，使节往来"),
-        StageMeta(until: 1.0, seal: "定", title: "天下初定", poetic: "九州既成，即将入局"),
-    ]
 
     @State private var started = Date()
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { context in
             let reveal = liveReveal
-            let canSkip = controller.revealClock != nil && reveal > 0.06 && !ShotTour.on
-            let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
-            let laterIndex = min(Self.later.count - 1, controller.foundingStage)
-            let current = reveal < 1
-                ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1)
-                : Self.stages.count + laterIndex
-            let creep: Double = (1 - exp(-waited / 7.5)) * 0.92
-            let rawProgress: Double = reveal < 1
-                ? Double(reveal) * 0.85
-                : 0.85 + (Double(laterIndex) + creep) / Double(Self.later.count) * 0.15
-            let progress = max(0.015, min(1.0, rawProgress))
+            let elapsed = max(0, context.date.timeIntervalSince(started))
+            let inPrepPhase = (controller.revealClock == nil && reveal < 0.05)
+            let canSkip = !inPrepPhase && controller.revealClock != nil && reveal > 0.06 && !ShotTour.on
+
+            // Phase 1 (0% -> 32%): 实时根据 foundingStage (0..3) 与平滑计时推进，让玩家看得见每一步真实计算，绝不假死在 1%
+            let stageFloor = Double(min(3, max(0, controller.foundingStage))) * 0.075
+            let prepCreep = (1.0 - exp(-elapsed / 1.8)) * 0.24
+            let prepProgress = min(0.31, max(0.04, max(stageFloor + 0.05, prepCreep)))
+            let prepIndex = min(Self.prepStages.count - 1, max(controller.foundingStage, Int(prepProgress / 0.08)))
+
+            // Phase 2 (32% -> 100%): 4.8s 柔和分段展卷动画，每笔清晰可见
+            let revealStageIdx = Self.stages.firstIndex { reveal < $0.until } ?? (Self.stages.count - 1)
+            let progress: Double = inPrepPhase
+                ? prepProgress
+                : min(1.0, max(0.32, 0.32 + Double(min(1.0, max(0.0, reveal))) * 0.68))
+
+            let headerMeta: StageMeta = {
+                if inPrepPhase {
+                    let base = Self.prepStages[prepIndex]
+                    if !note.isEmpty && note != "正在生成地形" {
+                        return StageMeta(until: base.until, seal: base.seal, title: note, poetic: base.poetic)
+                    }
+                    return base
+                }
+                return Self.stages[revealStageIdx]
+            }()
+            let stepIndex = inPrepPhase ? prepIndex : revealStageIdx
+            let stepTotal = inPrepPhase ? Self.prepStages.count : Self.stages.count
+            let prevTitle: String? = (!inPrepPhase && revealStageIdx > 0) ? Self.stages[revealStageIdx - 1].title : nil
 
             VStack {
                 Spacer()
                 VStack(alignment: .leading, spacing: 11) {
-                    FoundingCartoucheHeader(current: current)
-                        .equatable()
+                    FoundingCartoucheHeader(
+                        meta: headerMeta,
+                        inPrepPhase: inPrepPhase,
+                        stepIndex: stepIndex,
+                        stepTotal: stepTotal,
+                        prevTitle: prevTitle
+                    )
+                    .equatable()
 
-                    // 4.3 极简平铺宣纸朱砂进度条（60fps 丝滑无阶跃）
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.hairline)
-                        Capsule().fill(Theme.seal)
-                            .scaleEffect(x: progress, y: 1, anchor: .leading)
+                    // 双阶段进度条：准备阶段叠加流动活墨提示，展卷阶段 60fps 丝滑朱砂进度
+                    if inPrepPhase {
+                        VStack(spacing: 5) {
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Theme.hairline)
+                                Capsule().fill(Theme.seal)
+                                    .scaleEffect(x: progress, y: 1, anchor: .leading)
+                            }
+                            .frame(height: 4)
+                            InkBusy(tint: Theme.seal.opacity(0.65), track: Theme.ink.opacity(0.06))
+                                .frame(height: 3)
+                        }
+                    } else {
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.hairline)
+                            Capsule().fill(Theme.seal)
+                                .scaleEffect(x: progress, y: 1, anchor: .leading)
+                        }
+                        .frame(height: 4)
                     }
-                    .frame(height: 3)
 
                     HStack(spacing: 8) {
-                        EditorialValueText("\(Int(progress * 100))%", size: 15, color: Theme.ink)
-                        Spacer()
+                        EditorialValueText("\(Int((progress * 100).rounded()))%", size: 15.5, color: Theme.ink)
+                        Text(inPrepPhase ? "勘舆筹算 · 阶段 \(stepIndex + 1)/\(stepTotal)" : "丹青展卷 · 第 \(stepIndex + 1)/\(stepTotal) 笔")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink2)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                        Spacer(minLength: 4)
                         if canSkip {
-                            Text("轻点立即入局 ›")
-                                .font(Theme.caption)
-                                .foregroundStyle(Theme.seal)
-                                .padding(.horizontal, 9).padding(.vertical, 3)
-                                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.seal.opacity(0.45), lineWidth: 0.75))
-                        } else {
-                            Text(current < Self.stages.count ? "第 \(current + 1)/\(Self.stages.count) 笔" : "史卷落成")
-                                .font(Theme.caption)
-                                .foregroundStyle(Theme.ink2)
-                                .monospacedDigit()
+                            Button {
+                                GameFeel.shared.tap()
+                                controller.skipReveal()
+                            } label: {
+                                Text("跳过动画 ›")
+                                    .font(Theme.label)
+                                    .foregroundStyle(Theme.paperLight)
+                                    .padding(.horizontal, 12)
+                                    .frame(minHeight: 36)
+                                    .background(Theme.seal, in: Capsule())
+                            }
+                            .buttonStyle(PressStyle())
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                         }
                     }
 
-                    if waited > 20 {
+                    if elapsed > 20 {
                         HStack(spacing: 8) {
-                            Text("比平时久一些，仍在推算")
+                            Text("高精图集数据较多，仍在推算")
                                 .font(Theme.kai(13))
                                 .foregroundStyle(Theme.ink2)
                             Spacer(minLength: 8)
@@ -1398,6 +1448,7 @@ struct FoundingView: View {
                                 Text("放弃，回标题")
                                     .font(Theme.kai(13))
                                     .foregroundStyle(Theme.seal)
+                                    .frame(minHeight: 36)
                             }
                             .buttonStyle(PressStyle())
                         }
@@ -1405,7 +1456,7 @@ struct FoundingView: View {
                     }
                 }
                 .padding(.horizontal, 18).padding(.vertical, 15)
-                .frame(maxWidth: 352, alignment: .leading)
+                .frame(maxWidth: 368, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(Theme.paperLight.opacity(0.96))
@@ -1415,37 +1466,24 @@ struct FoundingView: View {
                         .stroke(Theme.hairline, lineWidth: 0.9)
                         .allowsHitTesting(false)
                 )
-                .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .onTapGesture {
-                    if canSkip {
-                        GameFeel.shared.tap()
-                        controller.skipReveal()
-                    }
-                }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 34)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                if canSkip {
-                    GameFeel.shared.tap()
-                    controller.skipReveal()
-                }
-            }
-            .onChange(of: reveal >= 1) { _, done in if done { started = Date() } }
         }
+        .onAppear { started = Date() }
     }
 }
 
-/// 等值隔离的开卷抬头与八珠步进：仅在阶段序号 `current` 跃迁时重绘，60fps 进度刷新零额外排版开销。
+/// 等值隔离的开卷抬头与阶段步进：仅在阶段跃迁时重绘，60fps 进度刷新零额外排版开销。
 private struct FoundingCartoucheHeader: View, Equatable {
-    let current: Int
+    let meta: FoundingView.StageMeta
+    let inPrepPhase: Bool
+    let stepIndex: Int
+    let stepTotal: Int
+    let prevTitle: String?
+
     var body: some View {
-        let all = FoundingView.stages + FoundingView.later
-        let clamped = max(0, min(current, all.count - 1))
-        let meta = all[clamped]
-        let prevTitle: String? = clamped > 0 ? all[clamped - 1].title : nil
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 ZStack {
@@ -1459,10 +1497,11 @@ private struct FoundingCartoucheHeader: View, Equatable {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(meta.title)
-                            .font(Theme.serif(18.5))
+                            .font(Theme.serif(17.5))
                             .foregroundStyle(Theme.ink)
                             .lineLimit(1)
-                            .id(clamped)
+                            .minimumScaleFactor(0.8)
+                            .id(meta.title)
                             .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
                         if let prevTitle {
                             Text("· 已成\(prevTitle)")
@@ -1475,23 +1514,28 @@ private struct FoundingCartoucheHeader: View, Equatable {
                         .font(Theme.caption)
                         .foregroundStyle(Theme.ink2)
                         .lineLimit(1)
-                        .id("p-\(clamped)")
+                        .minimumScaleFactor(0.84)
+                        .id(meta.poetic)
                         .transition(.opacity)
                 }
                 Spacer(minLength: 0)
             }
-            // 八珠开卷进度点：已成松烟墨、当前朱砂长胶囊、未启淡墨
             HStack(spacing: 5) {
-                ForEach(0..<FoundingView.stages.count, id: \.self) { i in
-                    let done = i < clamped
-                    let active = i == min(clamped, FoundingView.stages.count - 1)
+                ForEach(0..<max(1, stepTotal), id: \.self) { i in
+                    let done = i < stepIndex
+                    let active = i == stepIndex
                     Capsule()
                         .fill(done ? Theme.ink.opacity(0.65) : (active ? Theme.seal : Theme.hairline))
                         .frame(width: active ? 18 : 7, height: 4)
                 }
                 Spacer(minLength: 0)
+                if inPrepPhase {
+                    Text("构建地图中")
+                        .font(Theme.sans(10.5))
+                        .foregroundStyle(Theme.seal)
+                }
             }
         }
-        .animation(Motion.panel, value: clamped)
+        .animation(Motion.panel, value: meta.title)
     }
 }

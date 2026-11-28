@@ -208,7 +208,19 @@ public enum RunWindow {
                                       // App rules: arms counter one another, and each state's attack and defence bonuses (自定义).
                                       counter: UnitKinds.enabled ? { a, b in
                                           let ids = r.world.nations.asArray
-                                          let bonus = ids.indices.contains(a.nation) && ids.indices.contains(b.nation) ? Regimes.combatBonus(r, attacker: ids[a.nation].id.asString, victim: ids[b.nation].id.asString) : 1
+                                          let battleTerrain: String? = {
+                                              let provs = r.world.provinces.asArray
+                                              guard let pidx = provinceIndex(bridge, b.travel) ?? provinceIndex(bridge, a.travel),
+                                                    provs.indices.contains(pidx) else { return nil }
+                                              let land = r.terrainContext.provinces[provs[pidx].id.asString]
+                                              if land.mountain.isTruthy { return "mountain" }
+                                              let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
+                                              let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
+                                              if [5, 6, 7, 8, 9].contains(main) { return "forest" }
+                                              if [1, 2].contains(main) { return "desert" }
+                                              return "plain"
+                                          }()
+                                          let bonus = ids.indices.contains(a.nation) && ids.indices.contains(b.nation) ? Regimes.combatBonus(r, attacker: ids[a.nation].id.asString, victim: ids[b.nation].id.asString, terrain: battleTerrain) : 1
                                           let power: Double = ids.indices.contains(a.nation) ? Regimes.unitPower(r, ids[a.nation].id.asString, r.units[a.id].optionalString ?? "") * Regimes.armyPower(r, a.id) : 1
                                           return UnitKinds.counter(r.units[a.id].optionalString ?? "", r.units[b.id].optionalString ?? "") * bonus * ArmyLedger.veterancy(r, attacker: a.id, victim: b.id) * power
                                       } : nil)

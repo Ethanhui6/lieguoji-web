@@ -51,7 +51,12 @@ public enum CreationStatics {
         }
         for _ in 0..<4 { for cell in 0..<n where elevations[cell] >= 20 && result[cell] < 0 {
             if let wl = wastelandCells, cell < wl.count, wl[cell] { continue }
-            if let next = d.neighbors[cell].first(where: { result[$0] >= 0 }) { result[cell] = result[next] }
+            let cp = d.points[cell]
+            if let next = d.neighbors[cell].first(where: { nb in
+                guard result[nb] >= 0, elevations[nb] >= 20 else { return false }
+                let dx = d.points[nb].0 - cp.0, dy = d.points[nb].1 - cp.1
+                return dx * dx + dy * dy < 900.0
+            }) { result[cell] = result[next] }
         } }
         return result
     }

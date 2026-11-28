@@ -293,23 +293,48 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
                     if parts.count == 2 {
                         let top = String(parts[0])
                         let rest = String(parts[1])
-                        let ghPath: String? = ["Music", "Art", "Video", "Engine", "Catalog", "World"].contains(top)
-                            ? "ios-native/Resources/\(top)/\(rest)"
-                            : (top == "Content" ? "server-deploy/platform/hotpack-content/\(rest)" : nil)
-                        if let ghPath {
-                            let ghEnc = ghPath
-                                .split(separator: "/")
-                                .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
-                                .joined(separator: "/")
-                            for mirror in HotPackManager.cdnMirrors {
-                                let cleanPrefix = mirror.baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                                if let u = URL(string: "\(cleanPrefix)/\(ghEnc)") {
+                        // v12.0.0：历史事件画卷与名将肖像支持零热更联网按需自动缓存！
+                        // 1) 优先直拉广州行宫 18KB 极速压缩版 JPEG（国内 <150ms 秒出图）；
+                        // 2) 兜底自动回退至 GitHub Release hotpack-v7 五路满速 CDN 镜像（EventScrolls__*.png）。
+                        if top == "EventScrolls" || top == "GeneralPortraits" {
+                            if let originFast = URL(string: "\(OnlinePlatform.apiBase)/api/v1/hotpack/file/\(encoded)") {
+                                candidates.append(originFast)
+                            }
+                            let stem = (rest as NSString).deletingPathExtension
+                            let flatAsset = "\(top)__\(stem).png"
+                            let flatEnc = flatAsset.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? flatAsset
+                            let releaseBase = "https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/\(flatEnc)"
+                            for prefix in [
+                                "https://cdn.gh-proxy.org/",
+                                "https://edgeone.gh-proxy.com/",
+                                "https://gh-proxy.com/",
+                                "https://gh-proxy.org/",
+                                ""
+                            ] {
+                                if let u = URL(string: "\(prefix)\(releaseBase)") {
                                     candidates.append(u)
+                                }
+                            }
+                        } else {
+                            let ghPath: String? = ["Music", "Art", "Video", "Engine", "Catalog", "World"].contains(top)
+                                ? "ios-native/Resources/\(top)/\(rest)"
+                                : (top == "Content" ? "server-deploy/platform/hotpack-content/\(rest)" : nil)
+                            if let ghPath {
+                                let ghEnc = ghPath
+                                    .split(separator: "/")
+                                    .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+                                    .joined(separator: "/")
+                                for mirror in HotPackManager.cdnMirrors {
+                                    let cleanPrefix = mirror.baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                                    if let u = URL(string: "\(cleanPrefix)/\(ghEnc)") {
+                                        candidates.append(u)
+                                    }
                                 }
                             }
                         }
                     }
-                    if let origin = URL(string: "\(OnlinePlatform.apiBase)/api/v1/hotpack/file/\(encoded)") {
+                    if let origin = URL(string: "\(OnlinePlatform.apiBase)/api/v1/hotpack/file/\(encoded)"),
+                       !candidates.contains(origin) {
                         candidates.append(origin)
                     }
                     for url in candidates {

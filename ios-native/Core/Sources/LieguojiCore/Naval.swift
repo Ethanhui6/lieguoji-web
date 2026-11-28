@@ -170,29 +170,47 @@ public enum Naval {
         if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy {
             let era = HistoricalEra.current(r)
             powerBonus += historicalNavalBonus(r, nation: nation)
-            // 对比当前交战敌国的航海科技均差，赋予真实海上科技代差倍率（二战/现代航母舰炮雷达代差高达 0.35…2.50 倍）
+            // v12.0.0 优先对比活跃海上对手（有舰队的交战敌国）的航海科技与相对制空权差，避免被陆锁弱盟友拉低均值制造虚假碾压！
             let myTech = WorldDepth.techLevel(r, nation: nation, branch: .naval)
-            var enemyTechSum = 0.0, enemyCount = 0
+            let myAir = NuclearWarfare.airPower(r, nationId: nation)
+            var fleetEnemies = Set<String>()
+            if !r.navy.isNull && !r.navy.fleets.isNull {
+                for fl in r.navy.fleets.asArray where fl.status.asString != "lost" && fl.ships.asInt > 0 {
+                    if let fn = fl.nationId.optionalString { fleetEnemies.insert(fn) }
+                }
+            }
+            var enemyTechSum = 0.0, enemyAirSum = 0.0, enemyCount = 0
+            var fallbackTechSum = 0.0, fallbackAirSum = 0.0, fallbackCount = 0
             if !r.world.statecraft.isNull && !r.world.statecraft.relations.isNull {
                 for rel in r.world.statecraft.relations.asArray where rel.status.optionalString == "war" {
                     let other: String? = (rel.a.optionalString == nation) ? rel.b.optionalString : (rel.b.optionalString == nation ? rel.a.optionalString : nil)
                     if let other {
-                        enemyTechSum += Double(WorldDepth.techLevel(r, nation: other, branch: .naval))
-                        enemyCount += 1
+                        let oTech = Double(WorldDepth.techLevel(r, nation: other, branch: .naval))
+                        let oAir = NuclearWarfare.airPower(r, nationId: other)
+                        if fleetEnemies.contains(other) {
+                            enemyTechSum += oTech; enemyAirSum += oAir; enemyCount += 1
+                        } else {
+                            fallbackTechSum += oTech; fallbackAirSum += oAir; fallbackCount += 1
+                        }
                     }
                 }
             }
-            if enemyCount > 0 {
-                let avgEnemy = Int((enemyTechSum / Double(enemyCount)).rounded())
-                let techMult = Volley.navalTechGapMultiplier(attackerTech: myTech, defenderTech: avgEnemy, era: era)
+            let useCount = enemyCount > 0 ? enemyCount : fallbackCount
+            if useCount > 0 {
+                let avgEnemyTech = Int(((enemyCount > 0 ? enemyTechSum : fallbackTechSum) / Double(useCount)).rounded())
+                let techMult = Volley.navalTechGapMultiplier(attackerTech: myTech, defenderTech: avgEnemyTech, era: era)
                 powerBonus += (techMult - 1.0)
-            }
-            if era.isModernAirEra {
-                // 二战/现代海战叠加密接航空与舰队航空兵制空加成（航母舰队对无空掩护舰船具压倒性优势）
-                let air = NuclearWarfare.airPower(r, nationId: nation)
-                if air >= 50.0 {
-                    powerBonus += min(0.45, (air - 40.0) / 100.0 * 0.65)
+                if era.isModernAirEra {
+                    let avgEnemyAir = (enemyCount > 0 ? enemyAirSum : fallbackAirSum) / Double(useCount)
+                    let airDiff = myAir - avgEnemyAir
+                    if airDiff > 12.0 {
+                        powerBonus += min(0.45, (airDiff - 12.0) / 100.0 * 0.72)
+                    } else if airDiff < -12.0 {
+                        powerBonus -= min(0.32, (-airDiff - 12.0) / 100.0 * 0.55)
+                    }
                 }
+            } else if era.isModernAirEra && myAir >= 50.0 {
+                powerBonus += min(0.35, (myAir - 40.0) / 100.0 * 0.55)
             }
             // v8.0.0 军事学说（航母机动舰队/狼群战术）与战役奇袭（如偷袭珍珠港）海战加成
             powerBonus += (MilitaryDoctrines.navalCombatMultiplier(r, nationId: nation) - 1.0)

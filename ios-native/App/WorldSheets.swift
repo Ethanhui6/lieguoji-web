@@ -6,60 +6,104 @@ import LieguojiCore
 struct NationsSheet: View {
     @State private var search = ""
     @State private var livingOnly = true
+    @State private var sortBy = "power"
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
     var body: some View {
         if let map = model.map, let state = model.state {
             // A state just founded may not be in the map legend yet: list only the ones it has.
-            let order = state.nations.indices.filter { $0 < map.meta.nations.count && (!livingOnly || state.nations[$0].alive) && (search.isEmpty || map.meta.nations[$0].name.localizedCaseInsensitiveContains(search)) }.sorted { state.nations[$0].provinces > state.nations[$1].provinces }
+            let order = state.nations.indices.filter {
+                $0 < map.meta.nations.count && (!livingOnly || state.nations[$0].alive) && (search.isEmpty || map.meta.nations[$0].name.localizedCaseInsensitiveContains(search))
+            }.sorted { a, b in
+                let na = state.nations[a], nb = state.nations[b]
+                switch sortBy {
+                case "provinces":
+                    return na.provinces != nb.provinces ? na.provinces > nb.provinces : a < b
+                case "troops":
+                    return na.troops != nb.troops ? na.troops > nb.troops : a < b
+                default:
+                    let pa = na.compositePower ?? Double(na.provinces * 120 + na.troops / 25)
+                    let pb = nb.compositePower ?? Double(nb.provinces * 120 + nb.troops / 25)
+                    return pa != pb ? pa > pb : a < b
+                }
+            }
             ScrollView {
                 LazyVStack(spacing: 16) {
-                    SheetHeader(title: "列国", subtitle: "\(state.nations.filter(\.alive).count) 国并立", seal: "龙")
+                    SheetHeader(title: "列国", subtitle: "\(state.nations.filter(\.alive).count) 国并立 · 含军备代阶与工业国力", seal: "龙")
                     VStack(spacing: 10) {
                         HStack(spacing: 8) {
                             PhosphorIcon(glyph: .search, size: 15, weight: .light).foregroundStyle(Theme.ink2)
-                            TextField("", text: $search, prompt: Text("搜索国名……").foregroundColor(Theme.ink2.opacity(0.6)))
+                            TextField("", text: $search, prompt: Text("搜索国名……").foregroundColor(Theme.ink2.opacity(0.72)))
                                 .font(Theme.body).foregroundStyle(Theme.ink).tint(Theme.seal)
                         }
                         .padding(.horizontal, 12).frame(height: 40)
                         .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.line, lineWidth: 0.85))
+                        ChipPicker(items: [("power", "综合国力"), ("provinces", "疆土州郡"), ("troops", "常备兵力")], selection: $sortBy)
                         ChipPicker(items: [(true, "现存"), (false, "全部（含已亡）")], selection: $livingOnly)
                         if order.isEmpty { Text("没有符合条件的国家").font(Theme.label).foregroundStyle(Theme.ink2) }
                     }.padding(.horizontal, Theme.Layout.pageInset)
                     Group2 {
-                        let maxProvs = max(1, order.map { state.nations[$0].provinces }.max() ?? 1)
+                        let maxMetric: Double = max(1, order.map { idx -> Double in
+                            let ns = state.nations[idx]
+                            switch sortBy {
+                            case "provinces": return Double(ns.provinces)
+                            case "troops": return Double(ns.troops)
+                            default: return ns.compositePower ?? Double(ns.provinces * 120 + ns.troops / 25)
+                            }
+                        }.max() ?? 1)
                         ForEach(order, id: \.self) { i in
                             let n = map.meta.nations[i], s = state.nations[i]
                             let nLex = LocalizationEngine.lexicon(culture: s.culture ?? n.culture, polity: s.polity ?? n.polity, style: nil)
                             let nColor = Names.color(n.color)
+                            let metricVal: Double = {
+                                switch sortBy {
+                                case "provinces": return Double(s.provinces)
+                                case "troops": return Double(s.troops)
+                                default: return s.compositePower ?? Double(s.provinces * 120 + s.troops / 25)
+                                }
+                            }()
                             Button {
                                 GameFeel.shared.tap()
                                 select(i)
                             } label: {
                                 VStack(spacing: 7) {
                                     HStack(spacing: 12) {
-                                        Rectangle().fill(nColor).frame(width: 3.5, height: 36)
+                                        Rectangle().fill(nColor).frame(width: 3.5, height: 40)
                                         VStack(alignment: .leading, spacing: 4) {
-                                            HStack(spacing: 7) {
+                                            HStack(spacing: 6) {
                                                 Text(n.name).font(Theme.serif(16)).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
                                                 if !s.alive { PaperTag(text: "已亡", color: Theme.ink2, size: 10.5) }
                                                 else if !s.enemies.isEmpty { PaperTag(text: "交战", color: Theme.seal, size: 10.5) }
+                                                if s.alive, let mt = s.milTech, mt > 0 {
+                                                    PaperTag(text: "T\(mt)", color: mt >= 5 ? Theme.seal : Theme.jade, size: 10)
+                                                }
                                             }
-                                            Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)")
-                                                .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                            let techPart: String = {
+                                                guard s.alive else { return "" }
+                                                var bits: [String] = []
+                                                if let ic = s.ic, ic > 0 { bits.append("IC \(ic)") }
+                                                if let air = s.airPower, air > 0 { bits.append("空优 \(air)%") }
+                                                return bits.isEmpty ? "" : " · " + bits.joined(separator: " · ")
+                                            }()
+                                            Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)\(techPart)")
+                                                .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
                                         }
                                         Spacer(minLength: 8)
                                         VStack(alignment: .trailing, spacing: 3) {
-                                            EditorialValueText("\(s.provinces) \(nLex.adminUnit)", size: 15.5, color: Theme.ink)
-                                            Text("\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵")
+                                            if sortBy == "power", let cp = s.compositePower, cp > 0 {
+                                                EditorialValueText("国力 \(Int(cp.rounded()))", size: 14.5, color: Theme.ink)
+                                            } else {
+                                                EditorialValueText("\(s.provinces) \(nLex.adminUnit)", size: 15.5, color: Theme.ink)
+                                            }
+                                            Text("\(s.provinces)州 · \(Names.wan(s.troops))兵")
                                                 .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
                                         }
                                         PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
                                             .foregroundStyle(Theme.ink2.opacity(0.72))
                                     }
-                                    if s.alive && s.provinces > 0 {
-                                        InkBar(fraction: Double(s.provinces) / Double(maxProvs), color: nColor.opacity(0.72), track: Theme.ink.opacity(0.06), height: 2.5)
+                                    if s.alive && metricVal > 0 {
+                                        InkBar(fraction: min(1, metricVal / maxMetric), color: nColor.opacity(0.72), track: Theme.ink.opacity(0.06), height: 2.5)
                                             .padding(.leading, 18)
                                     }
                                 }
@@ -75,6 +119,14 @@ struct NationsSheet: View {
             }
             .scrollContentBackground(.hidden)
             .ignoresSafeArea(.container, edges: .bottom)
+        } else {
+            VStack(spacing: 12) {
+                SheetHeader(title: "列国", subtitle: "正在同步各国情报", seal: "龙")
+                InkBusy(text: "正在载入世界版图与各国实力……")
+                    .frame(maxWidth: 240)
+                    .padding(.top, 36)
+                Spacer(minLength: 0)
+            }
         }
     }
 }
@@ -446,9 +498,13 @@ struct WarBalance: View {
         let d = Set(war.participants.filter { $0.side != attackerSide }.map(\.nation)).union([war.defender]).subtracting(a)
         let at = state.armies.reduce(0) { a.contains($1.nation) ? $0 + $1.troops : $0 }
         let dt = state.armies.reduce(0) { d.contains($1.nation) ? $0 + $1.troops : $0 }
-        let share = at + dt > 0 ? Double(at) / Double(at + dt) : 0.5
+        let aPow = state.armies.reduce(0.0) { a.contains($1.nation) ? $0 + ($1.effectivePower ?? Double($1.troops)) : $0 }
+        let dPow = state.armies.reduce(0.0) { d.contains($1.nation) ? $0 + ($1.effectivePower ?? Double($1.troops)) : $0 }
+        let share = aPow + dPow > 0 ? aPow / (aPow + dPow) : (at + dt > 0 ? Double(at) / Double(at + dt) : 0.5)
+        let troopShare = at + dt > 0 ? Double(at) / Double(at + dt) : 0.5
         let attPct = Int((share * 100).rounded())
         let defPct = 100 - attPct
+        let hasTechSwing = abs(share - troopShare) >= 0.06
         let days = max(0, state.day - war.startDay)
         let sieges = state.sieges.filter { s in (a.contains(s.nation) || d.contains(s.nation)) }.count
         VStack(alignment: .leading, spacing: 5) {
@@ -467,14 +523,21 @@ struct WarBalance: View {
             .frame(height: 10)
             .animation(Motion.reveal, value: share)
             HStack {
-                Text("攻 \(Names.wan(at))（\(attPct)%）").font(Theme.caption).foregroundStyle(Theme.ink)
+                Text("攻 \(Names.wan(at))（战力 \(attPct)%）").font(Theme.caption).foregroundStyle(Theme.ink)
                 Spacer()
                 Text((days >= 360 ? "\(days / 360)年\(days % 360 / 30)月" : "\(max(1, days / 30))月") + (sieges > 0 ? " · 围城\(sieges)" : ""))
                     .font(Theme.caption).foregroundStyle(sieges > 0 ? Theme.seal : Theme.ink2)
                 Spacer()
-                Text("守 \(Names.wan(dt))（\(defPct)%）").font(Theme.caption).foregroundStyle(Theme.ink)
+                Text("守 \(Names.wan(dt))（战力 \(defPct)%）").font(Theme.caption).foregroundStyle(Theme.ink)
             }
             .monospacedDigit()
+            if hasTechSwing {
+                let advantaged = share > troopShare ? "攻方装备/科技/空优占优" : "守方装备/科技/空优占优"
+                Text("有效战力：\(Names.wan(Int(aPow.rounded()))) vs \(Names.wan(Int(dPow.rounded()))) · \(advantaged)")
+                    .font(Theme.sans(10.5))
+                    .foregroundStyle(Theme.seal)
+                    .monospacedDigit()
+            }
         }
     }
     private func color(_ n: Int) -> Color { n >= 0 && n < map.meta.nations.count ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
@@ -1141,7 +1204,7 @@ struct ChronicleSheet: View {
                     .padding(.bottom, 10)
                     EditorialDivider()
 
-                    ForEach(Array(group.items.enumerated()), id: \.offset) { idx, e in
+                    ForEach(Array(group.items.enumerated()), id: \.element.id) { idx, e in
                         chronicleRow(e, isNewest: e.id == newestId)
                         if idx < group.items.count - 1 { EditorialDivider() }
                     }

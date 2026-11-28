@@ -208,15 +208,14 @@ public final class EngineService {
         return Profile.measure("s.json") { (try? JSONEncoder().encode(gs)) ?? Data() }
     }
 
-    /// v14 紧凑差量二进制推流帧（`LGB2`）：
-    /// - 关键帧（首帧或每 24 帧一次）下发全量基线；
-    /// - 中间帧启用**军队实体差量（`armyDeltaMode`）+ 疆域差量（`ownersDelta`）**，仅传输移动/伤亡/变态军团与移除 ID，
-    ///   将单帧体积从 9–14 KB 压缩至 **0.35–0.85 KB LZ4**，95%+ 推流帧单包走 UDP 8767 零队头阻塞直达手机！
+    /// v16 紧凑差量二进制推流帧（`LGB2`）：
+    /// - 仅在首帧（或 `resetSlimStaticCache()` 后）下发全量基线，彻底移除有序 TCP 模式下每 24 帧强发 30KB 关键帧的规律性顿挫！
+    /// - 中间帧剥离不变的国家 UTF-8 身份字符串（仅在新建/改名/改色时下发）+ 军队实体差量 + 疆域差量，将稳态推流帧压缩至 **0.35–1.1 KB LZ4**！
     public func stateBinary(stepping: Bool = true) -> Data {
         guard let e = engine else { return Data() }
         let includeLabels = labelsDue(e, stepping: stepping)
         var gs = e.gameState(includeLabels: includeLabels, slim: true)
-        if !slimStaticInitialized || slimFramesSinceFullStatic >= 24 {
+        if !slimStaticInitialized {
             gs.ownersDelta = nil
             gs.armyDeltaMode = nil
             gs.removedArmyIds = nil
@@ -247,7 +246,7 @@ public final class EngineService {
                 lastSlimOwners = gs.owners
                 gs.ownersDelta = nil
             }
-            // v14 真网游军队实体差量：仅编码本步位置/兵力/状态发生变化的军团 + 阵亡移除列表
+            // 真网游军队实体差量：仅编码本步位置/兵力/状态发生变化的军团 + 阵亡移除列表
             var nextMap = [String: ArmyDeltaSig]()
             nextMap.reserveCapacity(gs.armies.count)
             var changedArmies = [GameState.Army]()
@@ -267,11 +266,30 @@ public final class EngineService {
             gs.armies = changedArmies
             gs.armyDeltaMode = true
             gs.removedArmyIds = removedIds
-            // v14 国家与舰队静帧零开销省略：无变化时免重复编码，确保 27 国欧洲推流帧 < 0.85 KB 落入单包 UDP 8767 MTU
+            // v16 国家身份字符串零重复：若国家数量、名、色、首都未变，中间帧清空 8 项 UTF-8 身份字符串，每帧立省 5–10 KB！
             if gs.nations == lastSlimNations && !lastSlimNations.isEmpty {
                 gs.nations = []
             } else {
-                lastSlimNations = gs.nations
+                let prevN = lastSlimNations
+                let fullCurrentNations = gs.nations
+                if prevN.count == fullCurrentNations.count {
+                    var compactNations = fullCurrentNations
+                    for idx in compactNations.indices {
+                        let a = compactNations[idx], b = prevN[idx]
+                        if a.id == b.id && a.name == b.name && a.color == b.color && a.capital == b.capital && a.polity == b.polity && a.religion == b.religion {
+                            compactNations[idx].id = nil
+                            compactNations[idx].name = nil
+                            compactNations[idx].color = nil
+                            compactNations[idx].line = nil
+                            compactNations[idx].capital = nil
+                            compactNations[idx].culture = nil
+                            compactNations[idx].polity = nil
+                            compactNations[idx].religion = nil
+                        }
+                    }
+                    gs.nations = compactNations
+                }
+                lastSlimNations = fullCurrentNations
             }
             let curFleets = gs.fleets ?? []
             if curFleets == lastSlimFleets {
@@ -371,7 +389,11 @@ public final class EngineService {
             guard let out else { return Reply(ok: false, reason: "世界尚未载入。") }
             if !out.ok { return Reply(ok: false, reason: out.reason, data: nil) }
             if bool("withoutState") { return Reply(ok: true, reason: out.reason, data: nil) }
-            return Reply(ok: true, reason: out.reason, data: state(slim: bool("slim")))
+            // v12.0.0：隔离 command() 与 SimStreamer 的差量基线！不再让并发下令篡改 lastSlimOwners/lastSlimArmies，直接返回完整非破坏快照。
+            guard let e = engine else { return Reply(ok: true, reason: out.reason, data: nil) }
+            let gs = e.gameState(includeLabels: labelsDue(e, stepping: false), slim: bool("slim"))
+            let encoded = Profile.measure("s.json") { (try? JSONEncoder().encode(gs)) ?? Data() }
+            return Reply(ok: true, reason: out.reason, data: encoded)
         }
         func data(_ d: Data?) -> Reply { Reply(ok: d != nil, reason: d == nil ? "世界尚未载入。" : "", data: d) }
 
@@ -441,10 +463,12 @@ public final class EngineService {
         case "open":
             guard let rawPayload = payload else { return Reply(ok: false, reason: "缺少世界数据。") }
             let unpacked = WireCodec.decompressIfNeeded(rawPayload)
+            // v12.0.0：先释放旧引擎（1–2 GB 内存）再解析新世界，彻底根除 4C4G 轻量云换局 OOM 崩溃死循环！
+            engine = nil; lastOwners = []; lastNationSig = []; resetSlimStaticCache()
             do {
                 let e = try NativeEngine(world: unpacked)
-                engine = e; lastOwners = []; lastNationSig = []; resetSlimStaticCache()
-                // v11.0.0 远程同步无需倒传 2–30MB 的 mapJSON 与完整 state()，支持 withoutMap / withoutState 毫秒级回包！
+                engine = e
+                // 远程同步无需倒传 2–30MB 的 mapJSON 与完整 state()，支持 withoutMap / withoutState 毫秒级回包！
                 let replyData: Data? = bool("withoutState") ? nil : state(slim: bool("slim"))
                 var r = Reply(data: replyData)
                 if !bool("withoutMap") { r.map = e.mapJSON }

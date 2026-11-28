@@ -387,7 +387,7 @@ public enum Regimes {
     }
     /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses, and the
     /// world's combat intensity).
-    static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
+    static func combatBonus(_ r: JS, attacker: String, victim: String, terrain: String? = nil) -> Double {
         let customAtk: Double = bonus(r, attacker, "attack") ?? 0
         let customDef: Double = bonus(r, victim, "defense") ?? 0
         var a: Double = 0
@@ -431,13 +431,15 @@ public enum Regimes {
             let milB = WorldDepth.techLevel(r, nation: victim, branch: .military)
             let techMult = Volley.techGapMultiplier(attackerTech: milA, defenderTech: milB, era: era)
             let indMult = NuclearWarfare.industrialCombatRatio(r, attacker: attacker, victim: victim)
-            let airMult = NuclearWarfare.airSuperiorityBonus(r, attacker: attacker, victim: victim)
+            let airMult = NuclearWarfare.airSuperiorityBonus(r, attacker: attacker, victim: victim, terrain: terrain)
             let shoreMult = Naval.hasShoreBombardment(r, attacker: attacker, against: victim) ? (era.isModernAirEra ? 1.28 : 1.18) : 1.0
             let strategicMult = techMult * indMult * airMult * shoreMult
             scaled *= strategicMult
             let qualityScale = max(0.22, min(5.5, (1 + customAtk / 100) / max(0.22, 1 + customDef / 100) * strategicMult))
             let effOdds = rawOdds * qualityScale
-            return scaled * overwhelm(effOdds) / (effOdds >= 6 ? 1 : grit(r, victim))
+            // v12.0.0：若存在显著装备/科技代差（≥2阶或综合压制≥1.55×），不再被小国坚韧反杀机制抹平代差！
+            let bypassGrit = effOdds >= 5.0 || (milA - milB) >= 2 || strategicMult >= 1.55
+            return scaled * overwhelm(effOdds) / (bypassGrit ? 1 : grit(r, victim))
         }
         return scaled * overwhelm(rawOdds) / (rawOdds >= 4 ? 1 : grit(r, victim))
     }

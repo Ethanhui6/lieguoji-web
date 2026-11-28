@@ -1343,7 +1343,8 @@ public enum HistoricalScenarios {
                 let strMult = max(0.55, min(2.25, indIdx.squareRoot() * mpScale * (0.65 + 0.35 * densityFactor)))
                 let troops = max(800, Int((Double(baseStr) * strMult / 100.0).rounded() * 100.0))
 
-                let uk = UnitKinds.pickForEra(era, culture: culture, id: armyId)
+                let milLvl = WorldDepth.techLevel(r, nation: nid, branch: .military)
+                let uk = UnitKinds.pickForEra(era, culture: culture, id: armyId, techMil: milLvl, industryIndex: indIdx)
                 let uName = Regimes.unitName(r, nid, uk)
                 Regimes.noteExtraUnit(r, army: armyId, uk)
                 let branchInfo = Regimes.assignArmyBranchAndName(r, nation: nid, armyId: armyId, home: pid, unitKey: uk.key, unitName: uName, kind: "regular")
@@ -2392,10 +2393,10 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "abbasid", name: "黑衣大食西域", shortName: "大食", color: "#2F3B47",
                 culture: "arab", religion: "islam", polity: "Theocracy", style: "caliphate",
-                capitalLon: 75.9, capitalLat: 39.5, capitalName: "疏勒",
+                capitalLon: 73.8, capitalLat: 41.2, capitalName: "怛罗斯西境",
                 anchors: [
-                    HistoricalAnchor(lon: 75.2, lat: 42.8, provinceName: "碎叶", weight: 1.25),
-                    HistoricalAnchor(lon: 79.9, lat: 37.1, provinceName: "于阗", weight: 1.05),
+                    HistoricalAnchor(lon: 73.5, lat: 42.6, provinceName: "怛罗斯", weight: 1.15),
+                    HistoricalAnchor(lon: 73.6, lat: 39.2, provinceName: "葱岭西道", weight: 1.00),
                 ],
                 rulerName: "阿布·穆斯林", rulerTitle: "呼罗珊总督",
                 rulerMilitary: 88, rulerAdmin: 78, rulerDiplo: 74, rulerCharisma: 84,
@@ -2488,7 +2489,7 @@ public enum HistoricalScenarios {
                 rulerTraits: ["Benevolent", "Merciful", "Patient"]
             ),
             HistoricalNationSpec(
-                id: "mongol", name: "蒙古诸部", shortName: "蒙", color: "#A87B2D",
+                id: "mongol", name: "蒙古诸部", shortName: "蒙", color: "#5E8A63",
                 culture: "mongol", religion: "tengri", polity: "Tribal", style: "khanate",
                 capitalLon: 109.8, capitalLat: 42.5, capitalName: "斡难河",
                 anchors: [
@@ -3110,7 +3111,7 @@ public enum HistoricalScenarios {
                 rulerTraits: ["Patient", "Just"]
             ),
             HistoricalNationSpec(
-                id: "ottoman", name: "奥斯曼帝国", shortName: "奥斯曼", color: "#1B7A43",
+                id: "ottoman", name: "奥斯曼帝国", shortName: "奥斯曼", color: "#C25B3E",
                 culture: "turkic", religion: "islam", polity: "Kingdom", style: "sultanate",
                 capitalLon: 28.9, capitalLat: 41.0, capitalName: "君士坦丁堡",
                 anchors: [
@@ -3319,7 +3320,7 @@ public enum HistoricalScenarios {
                 rulerTraits: ["Veteran", "Patient"]
             ),
             HistoricalNationSpec(
-                id: "bulgaria", name: "保加利亚王国", shortName: "保", color: "#4E8B63",
+                id: "bulgaria", name: "保加利亚王国", shortName: "保", color: "#9A7D3A",
                 culture: "slavic", religion: "orthodox", polity: "Kingdom", style: "absolute",
                 capitalLon: 23.32, capitalLat: 42.70, capitalName: "索菲亚",
                 anchors: [
@@ -3928,9 +3929,9 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "lithuania", name: "立陶宛共和国", shortName: "立", color: "#A58A3C",
                 culture: "polish", religion: "catholic", polity: "Republic", style: "presidential",
-                capitalLon: 25.28, capitalLat: 54.69, capitalName: "维尔纽斯",
+                capitalLon: 23.90, capitalLat: 54.90, capitalName: "考纳斯",
                 anchors: [
-                    HistoricalAnchor(lon: 23.90, lat: 54.90, provinceName: "考纳斯", weight: 0.78),
+                    HistoricalAnchor(lon: 23.31, lat: 55.93, provinceName: "希奥利艾", weight: 0.78),
                 ],
                 rulerName: "安塔纳斯·斯梅托纳", rulerTitle: "总统",
                 rulerMilitary: 64, rulerAdmin: 74, rulerDiplo: 74, rulerCharisma: 72,
@@ -4298,9 +4299,9 @@ public enum HistoricalScenarios {
             HistoricalNationSpec(
                 id: "lithuania", name: "立陶宛共和国", shortName: "立", color: "#A58A3C",
                 culture: "polish", religion: "catholic", polity: "Republic", style: "presidential",
-                capitalLon: 25.28, capitalLat: 54.69, capitalName: "维尔纽斯",
+                capitalLon: 23.90, capitalLat: 54.90, capitalName: "考纳斯",
                 anchors: [
-                    HistoricalAnchor(lon: 23.90, lat: 54.90, provinceName: "考纳斯", weight: 0.78),
+                    HistoricalAnchor(lon: 23.31, lat: 55.93, provinceName: "希奥利艾", weight: 0.78),
                 ],
                 rulerName: "安塔纳斯·斯梅托纳", rulerTitle: "总统",
                 rulerMilitary: 64, rulerAdmin: 74, rulerDiplo: 74, rulerCharisma: 72,

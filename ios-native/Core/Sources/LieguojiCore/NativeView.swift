@@ -345,6 +345,9 @@ extension NativeEngine {
         for rel in w.statecraft.relations.asArray where rel.status.asString == "war" {
             if let x = ni[rel.a.asString], let y = ni[rel.b.asString], x != y { enemies[x].append(y); enemies[y].append(x) }
         }
+        let appTechActive = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
+        let eraNow = appTechActive ? HistoricalEra.current(r) : .medieval
+        var nationQuality = [String: (milTech: Int, quality: Double)]()
         let nationRows = nations.enumerated().map { i, n -> GameState.Nation in
             let id = n.id.asString
             // Identity for the map legend: states founded during play are not in the opening map.
@@ -356,6 +359,23 @@ extension NativeEngine {
             // A state with no land has no capital left to mark.
             x.capital = ownCount[i] > 0 ? n.capitalId.optionalString.flatMap { cityIndex[$0] } ?? -1 : -1
             x.culture = civ.cultureId.optionalString ?? ""; x.polity = civ.polity.optionalString ?? ""; x.religion = civ.religionId.optionalString ?? ""
+            if appTechActive {
+                let milT = WorldDepth.techLevel(r, nation: id, branch: .military)
+                let navT = WorldDepth.techLevel(r, nation: id, branch: .naval)
+                let icV = Int(NuclearWarfare.industrialCapacity(r, nationId: id).rounded())
+                let indV = NuclearWarfare.industryIndex(r, nationId: id)
+                let airV = Int(NuclearWarfare.airPower(r, nationId: id).rounded())
+                x.milTech = milT
+                x.navTech = navT
+                x.ic = icV
+                x.airPower = airV
+                x.doctrine = MilitaryDoctrines.doctrine(r, nationId: id).shortTag
+                x.compositePower = War26.compositePower(r, id)
+                let techScale = Volley.techGapMultiplier(attackerTech: milT, defenderTech: 3, era: eraNow)
+                let airScale = eraNow.isModernAirEra ? (1.0 + Double(max(0, airV - 25)) / 240.0) : 1.0
+                let indScale = max(0.65, min(1.85, indV.squareRoot()))
+                nationQuality[id] = (milT, techScale * indScale * airScale)
+            }
             return x
         }
         let space = Armies.space(r), bridge = Armies.bridge
@@ -518,6 +538,11 @@ extension NativeEngine {
                 let br = Regimes.armyBranch(r, armyId: id, unitKey: unitKey)
                 let nid = a.nationId.asString
                 x.branch = br.rawValue
+                let nq = nationQuality[nid] ?? (3, 1.0)
+                let unitPow = UnitKinds.byKey[unitKey]?.power ?? 1.0
+                let morScale = max(0.55, min(1.15, Double(safeMorale) / 85.0))
+                x.equipTier = nq.milTech
+                x.effectivePower = (Double(safeTroops) * unitPow * nq.quality * morScale).rounded()
                 // 跨海登船状态、两栖抢滩与海外断补标记（地图直接渲染，推流精简帧必须保留）
                 x.embarked = (v.province == nil)
                 if !r.regimes.landingDays.isNull, let ld = r.regimes.landingDays[id].optionalNumber.map(Int.init), ld > 0 {

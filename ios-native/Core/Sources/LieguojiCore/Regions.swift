@@ -212,7 +212,12 @@ public enum Regions {
                     else if o == -2 { wastelandVotes += 1 }
                 }
             }
-            if let best = votes.max(by: { $0.value == $1.value ? $0.key > $1.key : $0.value < $1.value }) {
+            if let best = votes.max(by: {
+                if $0.value != $1.value { return $0.value < $1.value }
+                let ha = UInt32(truncatingIfNeeded: fi &* 2654435761 ^ ($0.key &* 2246822519))
+                let hb = UInt32(truncatingIfNeeded: fi &* 2654435761 ^ ($1.key &* 2246822519))
+                return ha < hb
+            }) {
                 if wastelandVotes > best.value {
                     faceOwner[fi] = -2
                 } else {

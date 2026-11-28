@@ -25,7 +25,7 @@ import Darwin
 //    以及服务端每 60 秒自动双写热备（`autosave.lgj` + 最多 10 份 `world-<id>.lgj`）与 SIGTERM/SIGINT 优雅落盘退出。
 
 setvbuf(stdout, nil, _IONBF, 0)
-let serverVersionTag = "lieguoji-server/v15"
+let serverVersionTag = "lieguoji-server/v16"
 let env = ProcessInfo.processInfo.environment
 let enableUDPPush = (env["LGJ_ENABLE_UDP"] == "1" || env["LGJ_ENABLE_UDP"]?.lowercased() == "true")
 let udpPushPort: UInt16 = enableUDPPush ? (UInt16(env["LGJ_UDP_PORT"] ?? "") ?? 8767) : 0
@@ -783,8 +783,8 @@ final class SimStreamer {
                 let period = self.intervalSec
                 let epoch = self.streamEpoch
                 let inFlight = self.streamSeq >= self.ackedSeq ? (self.streamSeq - self.ackedSeq) : 0
-                let effectiveMaxInFlight: UInt32 = (period <= 0.055) ? 3 : 2
-                let ackStalled = tickStart.timeIntervalSince(self.lastPushSentAt) > 1.2
+                let effectiveMaxInFlight: UInt32 = (period <= 0.055) ? 6 : 4
+                let ackStalled = tickStart.timeIntervalSince(self.lastPushSentAt) > 0.85
                 let windowFull = doPush && useWindow && inFlight >= effectiveMaxInFlight && !ackStalled
                 let idleSecs = tickStart.timeIntervalSince(self.lastClientActivity)
                 let dayMsEst = self.avgDayMs
@@ -1050,7 +1050,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         return service.handle("park", args, payload: nil)
     }
     if call == "enableMux" {
-        var r = EngineService.Reply(ok: true, reason: "mux-v15")
+        var r = EngineService.Reply(ok: true, reason: "mux-v16")
         if enableUDPPush {
             let tok = udpGateway.issueToken()
             let uPort = udpGateway.boundPort
@@ -1065,13 +1065,13 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
         streamer.invalidatePending()
         acquireEngineForRPC()
         defer { engineLock.unlock() }
-        // 1) 内存热命中：0ms 磁盘、0 MB 上传瞬间恢复
-        if service.engine != nil, service.currentWorldId == reqWorldId, service.currentDay >= clientDay - 2 {
+        // 1) 内存热命中：0ms 磁盘、0 MB 上传瞬间恢复（v12.0.0 放宽本地短时回落天数差容忍至 120 日，避免掉线 1 秒就丧失热续资格）
+        if service.engine != nil, service.currentWorldId == reqWorldId, abs(service.currentDay - clientDay) <= 120 {
             let reply = service.handle("resume", [:], payload: nil)
             let pCount = service.engine?.run.world.provinces.length ?? 0
             let curDay = service.currentDay
             streamer.setWorldMeta(open: true, provinces: pCount, day: curDay, worldId: reqWorldId)
-            print("（v12 秒级热续连）命中内存世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
+            print("（v16 秒级热续连）命中内存世界 \(sanitizeWorldId(reqWorldId).prefix(12))（第 \(curDay) 日），0 MB 上传恢复")
             return reply
         }
         // 2) 本地 SSD 磁盘秒载（~50ms，0 MB 上传恢复）
@@ -1090,7 +1090,7 @@ func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineSer
                     if let s = candidate.run.world.custom.seed.optionalString, !s.isEmpty { return s }
                     return ""
                 }()
-                if (candWid.isEmpty || candWid == reqWorldId) && candDay >= clientDay - 2 {
+                if (candWid.isEmpty || candWid == reqWorldId) && abs(candDay - clientDay) <= 120 {
                     _ = service.adopt(candidate)
                     candidate.enableAppRules()
                     let reply = service.handle("resume", [:], payload: nil)

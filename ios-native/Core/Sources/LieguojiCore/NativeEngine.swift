@@ -76,6 +76,16 @@ public final class NativeEngine {
         let o = JS.object(); o.format = JS(Self.saveFormat); o.run = run; o.statics = statics
         return o.jsonData(reserveCapacity: 4_194_304)
     }
+    /// v12.0.0 云端计算专用精简快照：剔除 `statics.map`（60K/120K 高达 20–45 MB Base64 渲染底图，云服推演 0 字节使用），
+    /// 将手机上传广州云服的载荷直降 60%–75%，彻底根除建连超时与 4GB 云服 OOM！
+    public func saveForCompute() -> Data {
+        let slimStatics = JS.object()
+        for (k, v) in statics.objectEntries where k != "map" {
+            slimStatics[k] = v
+        }
+        let o = JS.object(); o.format = JS(Self.saveFormat); o.run = run; o.statics = slimStatics
+        return o.jsonData(reserveCapacity: 2_097_152)
+    }
 }
 
 public enum NativeEngineError: LocalizedError {

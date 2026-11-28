@@ -143,7 +143,9 @@ public enum EraMilitarySystem {
             let culture = (!r.civilization.isNull && !nid.isEmpty)
                 ? (r.civilization.nations[nid].cultureId.optionalString ?? "")
                 : ""
-            let picked = UnitKinds.pickForEra(era, culture: culture, id: id)
+            let milLvl = nid.isEmpty ? 3 : WorldDepth.techLevel(r, nation: nid, branch: .military)
+            let indIdx = nid.isEmpty ? 1.0 : NuclearWarfare.industryIndex(r, nationId: nid)
+            let picked = UnitKinds.pickForEra(era, culture: culture, id: id, techMil: milLvl, industryIndex: indIdx)
             let oldUnitName = UnitKinds.name(curKey)
             r.units[id] = JS(picked.key)
 

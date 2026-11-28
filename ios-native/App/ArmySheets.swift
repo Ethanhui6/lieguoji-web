@@ -33,6 +33,9 @@ struct ArmyRow: View {
                     if let duty = army.duty.flatMap({ Self.duties[$0] }) {
                         PaperTag(text: duty, color: Theme.seal, size: 10.5)
                     }
+                    if let tier = army.equipTier, tier >= 1 {
+                        PaperTag(text: "T\(tier)", color: tier >= 5 ? Theme.seal : Theme.jade, size: 10.0)
+                    }
                     if let tactic = army.tacticTag, !tactic.isEmpty {
                         PaperTag(text: tactic, color: Theme.jade, size: 10.0)
                     }
@@ -43,7 +46,18 @@ struct ArmyRow: View {
                     .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
             }
             Spacer(minLength: 8)
-            EditorialValueText(Names.wan(army.troops), size: 15.5, color: Theme.ink)
+            VStack(alignment: .trailing, spacing: 2) {
+                EditorialValueText(Names.wan(army.troops), size: 15.5, color: Theme.ink)
+                if let eff = army.effectivePower, eff > 0, army.troops > 0 {
+                    let mult = eff / Double(army.troops)
+                    if abs(mult - 1.0) >= 0.15 {
+                        Text("战力 \(Names.wan(Int(eff.rounded())))")
+                            .font(Theme.sans(10))
+                            .foregroundStyle(mult >= 1.2 ? Theme.seal : Theme.ink2)
+                            .monospacedDigit()
+                    }
+                }
+            }
             PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
                 .foregroundStyle(Theme.ink2.opacity(0.68))
         }
@@ -308,6 +322,23 @@ struct ArmySheet: View {
                     Text(supplyState.text).font(Theme.caption).foregroundStyle(supplyState.color)
                     Spacer(minLength: 4)
                     PaperTag(text: curSeason.fullName, color: curSeason == .winter ? Color(red: 0.24, green: 0.44, blue: 0.62) : curSeason == .autumn ? Color(red: 0.74, green: 0.42, blue: 0.12) : Theme.jade, size: 11)
+                }
+                if let tier = a.equipTier, tier >= 1 {
+                    let eff = a.effectivePower ?? Double(a.troops)
+                    let ratio = a.troops > 0 ? eff / Double(a.troops) : 1.0
+                    let eraObj = HistoricalEra(rawValue: model.state?.historicalEra ?? "") ?? .ww2
+                    let tierLabel = WorldDepth.TechBranch.military.tierName(tier, era: eraObj)
+                    Divider2()
+                    HStack(spacing: 7) {
+                        PaperTag(text: "装备 T\(tier)·\(tierLabel)", color: tier >= 5 ? Theme.seal : Theme.jade, size: 11)
+                        Text("综合战力 \(Names.wan(Int(eff.rounded())))（单兵 ×\(String(format: "%.2f", ratio))）")
+                            .font(Theme.caption)
+                            .foregroundStyle(ratio >= 1.35 ? Theme.seal : Theme.ink2)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Spacer(minLength: 0)
+                    }
                 }
                 if let br = a.branchLabel, !br.isEmpty {
                     Divider2()

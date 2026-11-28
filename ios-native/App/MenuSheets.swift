@@ -26,6 +26,7 @@ struct MenuSheet: View {
     @State private var calendar = false
     @State private var eraText = ""
     @State private var yearText = ""
+    @State private var uploadingCloud = false
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 14) {
@@ -145,12 +146,19 @@ struct MenuSheet: View {
                 Group2 {
                     Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "天下诏令与规则") }.buttonStyle(.plain)
                     Divider2()
-                    Button { calendar = true } label: { MenuRow(symbol: "calendar", title: "纪年与日期") }.buttonStyle(.plain)
+                    Button {
+                        eraText = model.state?.era ?? ""
+                        yearText = "\(model.state?.displayYear ?? 1)"
+                        calendar = true
+                    } label: { MenuRow(symbol: "calendar", title: "纪年与日期") }.buttonStyle(.plain)
                     Divider2()
                     Button { wallpaper() } label: { MenuRow(symbol: "photo.on.rectangle", title: "壁纸观景模式") }.buttonStyle(.plain)
                     Divider2()
                     Button {
+                        guard !uploadingCloud else { return }
+                        uploadingCloud = true
                         Task {
+                            defer { uploadingCloud = false }
                             let res = await model.uploadCurrentToCloud()
                             switch res {
                             case .success(let card):
@@ -161,7 +169,12 @@ struct MenuSheet: View {
                                 say(err.localizedDescription)
                             }
                         }
-                    } label: { MenuRow(symbol: "square.and.arrow.up", title: "上传当前世界至云端存档") }.buttonStyle(.plain)
+                    } label: {
+                        MenuRow(symbol: "icloud.and.arrow.up", title: uploadingCloud ? "正在上传云端存档…" : "上传当前世界至云端存档")
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(uploadingCloud)
+                    .opacity(uploadingCloud ? 0.6 : 1)
                     Divider2()
                     Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档备份") }.buttonStyle(.plain)
                     Divider2()
@@ -181,8 +194,23 @@ struct MenuSheet: View {
         .animation(Motion.fade, value: page)
         }
         .sheet(isPresented: $creating) {
-            NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) }, inputs: model.previewInputs)
-                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            NewWorldSheet(
+                start: { options in creating = false; close(); Task { await model.generate(options) } },
+                draw: { options in creating = false; close(); model.openEditor(options) },
+                startScenario: { scenario in creating = false; close(); Task { await model.generateHistorical(scenario) } },
+                drawScenario: { scenario in
+                    creating = false; close()
+                    var opts = GameModel.NewWorld()
+                    let cap = NativeHost.selectedResolutionTier.maxProvinces
+                    opts.historicalScenario = scenario
+                    opts.nations = max(2, min(100, scenario.nations.count))
+                    opts.provinces = String(max(opts.nations, min(cap, scenario.provinceCount)))
+                    model.openEditor(opts)
+                    model.editor?.applyHistoricalScenario(scenario)
+                },
+                inputs: model.previewInputs
+            )
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model, open: { world in archive = false; close(); Task { await model.openArchived(world) } }, onCloudOpened: { archive = false; close() })
@@ -190,19 +218,21 @@ struct MenuSheet: View {
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
         .sheet(isPresented: $calendar) {
-            VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "纪年与日期", subtitle: model.state?.dateText ?? "", seal: "历")
-                HStack { Text("年号").font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("公元", text: $eraText).paperField() }.padding(.horizontal, 22)
-                HStack { Text("今年为").font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("\(model.state?.displayYear ?? 1)", text: $yearText).keyboardType(.numbersAndPunctuation).paperField(); Text("年").font(Theme.body).foregroundStyle(Theme.ink2) }.padding(.horizontal, 22)
-                Text("只改纪年的显示（年号与年份），推演的时间不变；留空年号即用「公元」。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
-                SealButton(title: "颁行", disabled: false) {
-                    calendar = false
-                    Task { if let e = await model.setCalendar(era: eraText, year: Int(yearText)) { say(e) } else { say("纪年已改") } }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    SheetHeader(title: "纪年与日期", subtitle: model.state?.dateText ?? "", seal: "历")
+                    HStack { Text("年号").font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("公元", text: $eraText).paperField() }.padding(.horizontal, 22)
+                    HStack { Text("今年为").font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("\(model.state?.displayYear ?? 1)", text: $yearText).keyboardType(.numbersAndPunctuation).paperField(); Text("年").font(Theme.body).foregroundStyle(Theme.ink2) }.padding(.horizontal, 22)
+                    Text("只改纪年的显示（年号与年份），推演的时间不变；留空年号即用「公元」。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                    SealButton(title: "颁行", disabled: false) {
+                        calendar = false
+                        Task { if let e = await model.setCalendar(era: eraText, year: Int(yearText)) { say(e) } else { say("纪年已改") } }
+                    }
+                    .padding(.horizontal, 22)
                 }
-                .padding(.horizontal, 22)
+                .padding(.bottom, 24)
             }
-            .padding(.bottom, 16)
-            .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.72)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
@@ -428,7 +458,8 @@ struct FrameSettings: View {
                 HStack(spacing: 8) {
                     Text("高级帧率与负载微调").font(Theme.body).foregroundStyle(Theme.ink2)
                     Spacer()
-                    Text("\(play.mapFPS)帧 · \(Int(play.renderScale * 100 / 2))%清晰").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                    let scaleLabel = play.renderScale >= 2.9 ? "原生超清" : "\(Int((play.renderScale * 50).rounded()))%清晰"
+                    Text("\(play.mapFPS)帧 · \(scaleLabel)").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                     InkIcon(glyph: .chevronDown, size: 14, weight: 1.7).foregroundStyle(Theme.ink2).rotationEffect(.degrees(showAdvanced ? 180 : 0))
                 }
                 .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())

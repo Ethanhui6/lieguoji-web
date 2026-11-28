@@ -40,6 +40,7 @@ const sharp = requireFromMain('sharp');
 const MAP_W = 1600;
 const MAP_H = 900;
 const SKIP_RELIEF = process.argv.includes('--skip-relief');
+const SCENARIOS_ONLY = process.argv.includes('--scenarios-only');
 
 const REGIONS = [
   { name: 'china',           lonMin: 73.0,   lonMax: 136.0, latMin: 17.5,  latMax: 54.0, pad: 0.025, z5Shards: 3 },
@@ -559,6 +560,10 @@ async function rebuildChangedBasemaps(grid20, mesh60, mesh120, swiftRivers) {
   const bm20 = readBasemapsBin(path.join(BUNDLE_ATLAS_DIR, 'basemaps.bin'));
   const bm60 = readBasemapsBin(path.join(OUT_DIR, 'HDMeshes/basemaps_60k.bin'));
   const bm120 = readBasemapsBin(path.join(OUT_DIR, 'HDMeshes/basemaps_120k.bin'));
+  if (SCENARIOS_ONLY) {
+    console.log('[v12 Map Baker] --scenarios-only: reusing existing 20K/60K/120K basemaps.');
+    return { bm20, bm60, bm120 };
+  }
 
   const landPolys = extractPolygons(JSON.parse(fs.readFileSync(path.join(SRC_DIR, 'ne_10m_land.geojson'), 'utf8')));
   const lakePolys = extractPolygons(JSON.parse(fs.readFileSync(path.join(SRC_DIR, 'ne_10m_lakes.geojson'), 'utf8')));
@@ -882,14 +887,14 @@ function buildPopDensityField(frame, CW, CH, regionName) {
   return field;
 }
 
-// 真实多边形轮廓：1931 中国省界（沿山川省界自然弯曲，彻底告别横平竖直方块线！）
+// 真实多边形轮廓：1931 中国省界（沿山川省界自然弯曲，察绥热河连片不割裂内蒙国府！）
 const POLY_1931_CPC = [[114.6,25.4],[115.4,24.9],[116.5,25.0],[117.1,25.8],[116.8,26.8],[115.8,27.2],[114.7,26.8],[114.3,26.1]];
 const POLY_1931_YUNNAN = [[97.4,24.0],[98.6,21.5],[100.8,21.2],[103.0,22.5],[105.6,22.8],[105.8,24.2],[104.5,25.5],[103.8,27.1],[102.0,27.8],[100.2,28.4],[98.4,28.2],[97.5,26.2]];
 const POLY_1931_GUANGXI = [[104.6,24.4],[105.8,22.8],[107.6,21.5],[109.6,21.4],[111.1,22.6],[111.7,24.2],[111.0,25.8],[109.2,26.1],[107.2,25.4],[105.4,25.2]];
 const POLY_1931_SICHUAN = [[98.4,28.2],[100.2,28.4],[102.0,27.8],[103.8,27.1],[104.5,25.5],[106.5,25.2],[108.5,25.7],[109.5,27.4],[109.8,29.3],[110.2,31.2],[108.5,32.5],[106.2,32.8],[104.0,33.5],[102.0,33.4],[100.0,32.2],[98.6,30.5]];
-const POLY_1931_SHANXI = [[106.8,41.6],[110.5,42.2],[113.8,41.2],[114.4,39.5],[114.0,37.4],[113.5,35.6],[111.8,34.8],[110.3,34.7],[110.1,36.8],[110.7,38.8],[109.2,39.8],[106.9,40.2]];
-const POLY_1931_MA = [[92.5,38.8],[96.5,41.8],[101.0,42.3],[105.5,41.4],[106.9,40.2],[107.6,37.5],[106.6,35.2],[105.2,33.8],[102.8,33.2],[99.5,32.5],[96.0,33.6],[93.5,36.2]];
-const POLY_1931_HEBEI_NE = [[113.8,41.2],[114.4,39.5],[114.2,37.8],[116.2,37.8],[117.8,38.4],[119.5,39.5],[121.0,40.5],[119.0,43.0],[115.0,43.2]];
+const POLY_1931_SHANXI = [[106.5,43.2],[111.2,43.5],[114.2,41.6],[114.4,39.5],[114.0,37.4],[113.5,35.6],[111.8,34.8],[110.3,34.7],[110.1,36.8],[110.7,38.8],[109.2,39.8],[106.6,40.2]];
+const POLY_1931_MA = [[92.5,38.8],[96.5,42.5],[101.0,43.2],[106.5,42.6],[106.9,40.2],[107.6,37.5],[106.6,35.2],[105.2,33.8],[102.8,33.2],[99.5,32.5],[96.0,33.6],[93.5,36.2]];
+const POLY_1931_HEBEI_NE = [[113.8,41.2],[114.4,39.5],[114.2,37.8],[116.2,37.8],[117.8,38.4],[119.5,39.5],[121.8,40.5],[120.0,45.8],[114.2,45.8],[111.2,43.5]];
 
 function classifyChina1931Warlord(lon, lat, idxOf) {
   if (pointInRing(lon, lat, POLY_1931_CPC)) return idxOf('cpc');
@@ -900,20 +905,23 @@ function classifyChina1931Warlord(lon, lat, idxOf) {
   if (pointInRing(lon, lat, POLY_1931_SHANXI)) return idxOf('shanxi');
   if (pointInRing(lon, lat, POLY_1931_MA)) return idxOf('ma_clique');
   if (pointInRing(lon, lat, POLY_1931_HEBEI_NE)) return idxOf('northeast');
+  if (lat >= 41.2 && lon >= 111.0) return idxOf('northeast'); // 察哈尔/热河/东蒙连片归东北军，避免国府孤悬内蒙
+  if (lat >= 40.5 && lon >= 106.2 && lon < 111.0) return idxOf('shanxi'); // 绥远归晋绥系
   if (lon < 98.5 && lat < 35.4) return idxOf('tibet');
   return idxOf('roc');
 }
 
-// 1941.12.7 中国战区真实曲折战线多边形（太行山-中条山-黄河-淮河-大别山-武汉突出部-鄱阳湖-钱塘江 + 广州/海南/台湾）
-const POLY_1941_YANAN = [[107.4,38.6],[110.2,39.3],[113.2,39.6],[114.3,38.6],[113.8,36.4],[112.4,35.7],[110.7,35.6],[108.9,35.3],[107.6,36.4]];
-const POLY_1941_JP_NORTH_EAST = [[110.5,41.8],[116.0,41.5],[121.5,40.0],[123.0,37.5],[122.2,34.5],[122.0,30.0],[120.5,29.3],[118.4,29.8],[116.5,29.5],[115.5,29.6],[113.6,29.8],[113.1,30.8],[114.2,32.1],[114.6,33.6],[113.4,34.8],[113.7,36.2],[114.2,38.4],[113.0,39.7],[110.4,40.4]];
-const POLY_1941_JP_CANTON = [[112.6,22.2],[113.9,22.2],[114.3,23.2],[113.5,23.8],[112.6,23.4]];
+// 1941.12.7 中国战区真实曲折战线多边形（太原/大同归日占华北；陕甘宁+晋察冀敌后归延安；香港精确划归英军！）
+const POLY_1941_YANAN = [[107.3,38.5],[109.8,39.4],[111.4,39.1],[111.6,37.6],[110.9,36.2],[109.6,35.4],[108.2,35.5],[107.4,36.8]];
+const POLY_1941_JP_NORTH_EAST = [[110.5,41.8],[116.0,41.5],[121.5,40.0],[123.0,37.5],[122.2,34.5],[122.0,30.0],[120.5,29.3],[118.4,29.8],[116.5,29.5],[115.5,29.6],[113.6,29.8],[113.1,30.8],[114.2,32.1],[114.6,33.6],[113.4,34.8],[112.1,35.4],[111.5,37.4],[111.8,39.5],[110.4,40.4]];
+const POLY_1941_JP_CANTON = [[112.6,22.2],[113.85,22.2],[114.3,23.2],[113.5,23.8],[112.6,23.4]];
 const POLY_1941_JP_COAST = [[117.5,23.4],[119.8,24.8],[120.0,26.2],[118.8,26.0],[117.0,24.0]];
 
 function classifyChina1941Front(lon, lat, idxOf) {
   if (lon >= 108.5 && lon <= 111.3 && lat >= 18.0 && lat <= 20.2) return idxOf('japan'); // 海南岛
   if (lon >= 119.5 && lon <= 122.5 && lat >= 21.8 && lat <= 25.5) return idxOf('japan'); // 台湾
-  if (lon >= 113.95 && lon <= 114.45 && lat >= 22.15 && lat <= 22.55) return idxOf('uk_burma'); // 香港
+  if (lon >= 113.85 && lon <= 114.55 && lat >= 22.05 && lat <= 22.62) return idxOf('uk_burma'); // 香港（九龙+港岛）
+  if (lat >= 40.6 && lon >= 110.0) return idxOf('manchukuo'); // 蒙疆/热河/西满洲归伪满与日占，绝不让国府孤悬内蒙！
   if (pointInRing(lon, lat, POLY_1941_YANAN)) return idxOf('yanan');
   if (pointInRing(lon, lat, POLY_1941_JP_NORTH_EAST)) return idxOf('japan');
   if (pointInRing(lon, lat, POLY_1941_JP_CANTON)) return idxOf('japan');
@@ -1001,17 +1009,18 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
     return best;
   };
 
-  // ==================== 各剧本专属精确 GIS 光栅化（含 -2 剧本外无人之地） ====================
+  // ==================== 各剧本专属精确 GIS 光栅化（含 -2 剧本外无人之地 · v12 零错位版） ====================
   const WASTELAND = -2;
   if (sc.id === 'ww2_eve_1936' || sc.id === 'ww2_europe_1939') {
     const is1936 = sc.id === 'ww2_eve_1936';
     const wasteland1938 = new Set([
-      'algeria (france)', 'morocco (france)', 'tunisia', 'spanish morocco', 'libya', 'egypt',
-      'syria (france)', 'mesopotamia (gb)', 'iraq', 'iran', 'palestine', 'transjordan', 'jordan',
-      'lebanon', 'saudi arabia', 'iceland',
+      'algeria (france)', 'algeria', 'morocco (france)', 'morocco', 'tunisia', 'spanish morocco',
+      'libya', 'libya (it)', 'egypt', 'syria (france)', 'mesopotamia (gb)', 'iraq', 'iran',
+      'mandatory palestine (gb)', 'palestine', 'transjordan', 'jordan', 'lebanon', 'saudi arabia', 'iceland',
     ]);
     const exact1938 = new Map([
       ['germany', idxOf('germany')],
+      ['east prussia', idxOf('germany')],
       ['ussr', idxOf('ussr')],
       ['united kingdom', idxOf('uk')],
       ['france', idxOf('france')],
@@ -1038,7 +1047,7 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       ['lithuania', idxOf('lithuania')],
       ['latvia', idxOf('latvia')],
       ['estonia', idxOf('estonia')],
-      ['albania', idxOf('italy')], // 1939.4 意占阿尔巴尼亚；1936 亦属意势力范围（28国中无独立阿尔巴尼亚）
+      ['albania', idxOf('italy')],
     ]);
     if (is1936) {
       exact1938.set('czechoslovakia', idxOf('czechoslovakia'));
@@ -1049,31 +1058,48 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       const n = String(props.NAME || '').trim().toLowerCase();
       if (!n) return null;
       if (wasteland1938.has(n)) return WASTELAND;
-      if (!is1936 && n === 'czechoslovakia') return 998; // 1939 精准拆分波希米亚/斯洛伐克/喀尔巴阡
-      if (n === 'armenia') return 997; // 修复 world_1938 东安纳托利亚 Armenia 多边形：lon < 43.5 归土耳其，>= 43.5 归苏联
+      if (!is1936 && n === 'czechoslovakia') return 998;
+      if (n === 'armenia') return 997;
       return exact1938.has(n) ? exact1938.get(n) : null;
     });
 
-    // 1936：从 world_1930.geojson 精确叠加独立奥地利共和国！
+    // 1936：从 world_1930.geojson 同时叠加完整独立奥地利 + 完整捷克斯洛伐克（含苏台德区！绝不提前 2.5 年归德）
     if (is1936) {
       const polys30 = getYearPolys(1930);
       rasterizePolygons(polys30, frame, CW, CH, canvas, (props) => {
         const n = String(props.NAME || '').trim().toLowerCase();
-        return n === 'austria' ? idxOf('austria') : null;
+        if (n === 'austria') return idxOf('austria');
+        if (n === 'czechoslovakia') return idxOf('czechoslovakia');
+        return null;
       });
     }
 
-    // 逐像素精确处理 998 (1939 捷克拆分)、997 (东土耳其/亚美尼亚国界) 以及北非/冰岛/西亚边角无人之地
+    // 1939.9.1 真实捷克/斯洛伐克/维也纳仲裁多边形（布拉迪斯拉发 17.11,48.15 明确归斯洛伐克！）
+    const polySlovakia39 = [
+      [16.90,48.05],[17.30,48.12],[18.15,48.20],[19.30,48.35],[20.65,48.58],[22.15,48.50],
+      [22.55,49.08],[21.25,49.45],[19.55,49.62],[18.40,49.52],[17.45,48.90],[16.95,48.50]
+    ];
+    const polyViennaAwardHungary39 = [
+      [17.30,47.72],[22.35,47.85],[24.45,48.05],[24.30,48.80],[22.55,49.08],[22.15,48.50],
+      [20.65,48.58],[19.30,48.35],[18.15,48.20],[17.30,48.12]
+    ];
+
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const tag = canvas[row + x];
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
         if (lat > 62.5 && lon < -10.0) { canvas[row + x] = WASTELAND; continue; } // 冰岛
-        if ((lat < 35.85 && lon < 11.8) || (lat < 37.35 && lon > 7.5 && lon < 11.4)) { canvas[row + x] = WASTELAND; continue; } // 北非（含突尼斯邦角，保留西西里/马耳他）
+        if ((lat < 35.85 && lon < 11.8) || (lat < 37.35 && lon > 7.5 && lon < 11.4)) { canvas[row + x] = WASTELAND; continue; } // 北非
         if (lat < 36.2 && lon > 36.5) { canvas[row + x] = WASTELAND; continue; }  // 叙利亚/伊拉克/伊朗边角
-        if (tag === 998) {
-          canvas[row + x] = lon < 17.05 ? idxOf('germany') : (lon >= 22.15 ? idxOf('hungary') : idxOf('slovakia'));
+        // 设得兰与奥克尼群岛（英国苏格兰北）绝不漂移给挪威！
+        if (lon >= -4.2 && lon <= 0.5 && lat >= 58.6 && lat <= 61.2) { canvas[row + x] = idxOf('uk'); continue; }
+        if (!is1936 && pointInRing(lon, lat, polySlovakia39) && (tag === 998 || tag === idxOf('germany') || tag === idxOf('hungary'))) {
+          canvas[row + x] = idxOf('slovakia');
+        } else if (!is1936 && pointInRing(lon, lat, polyViennaAwardHungary39) && tag === 998) {
+          canvas[row + x] = idxOf('hungary');
+        } else if (tag === 998) {
+          canvas[row + x] = lon < 18.0 ? idxOf('germany') : (lon >= 22.15 ? idxOf('hungary') : idxOf('slovakia'));
         } else if (tag === 997) {
           canvas[row + x] = (lon >= 43.45 || lat >= 41.25) ? idxOf('ussr') : idxOf('turkey');
         }
@@ -1118,17 +1144,21 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       if (wasteland1914.has(n)) return WASTELAND;
       return exact1914.has(n) ? exact1914.get(n) : null;
     });
+    // 校准东色雷斯君士坦丁堡归奥斯曼、贝尔格莱德多瑙河南岸归塞尔维亚，保留奥斯曼叙利亚/两河流域（仅阿拉伯荒漠/波斯设无人区）
+    const polyEastThrace1914 = [[26.2,40.6],[29.5,40.8],[29.4,41.6],[27.6,41.9],[26.4,41.6]];
+    const polyBelgradeSouth1914 = [[19.5,44.4],[21.3,44.3],[21.2,44.90],[20.1,44.90],[19.5,44.75]];
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
         if (lat > 62.5 && lon < -10.0) { canvas[row + x] = WASTELAND; continue; }
         if ((lat < 35.85 && lon < 11.8) || (lat < 37.35 && lon > 7.5 && lon < 11.4)) { canvas[row + x] = WASTELAND; continue; }
-        if (lat < 36.2 && lon > 36.6) { canvas[row + x] = WASTELAND; continue; }
+        if (lon >= -4.2 && lon <= 0.5 && lat >= 58.6 && lat <= 61.2) { canvas[row + x] = idxOf('britain'); continue; }
+        if (pointInRing(lon, lat, polyEastThrace1914)) { canvas[row + x] = idxOf('ottoman'); continue; }
+        if (pointInRing(lon, lat, polyBelgradeSouth1914)) { canvas[row + x] = idxOf('serbia'); continue; }
       }
     }
   } else if (sc.id === 'napoleon_1812') {
-    // 1812 拿破仑远征莫斯科前夜：法兰西大帝国（含低地/莱茵邦联/意大利王国/那不勒斯/瑞士/华沙大公国），丹麦-挪威联合王国，普鲁士/奥地利/俄国/英国/西班牙/葡萄牙/奥斯曼/瑞典
     const wasteland1812 = new Set(['algiers', 'tunis', 'morocco', 'persia', 'iceland', 'tripolitania', 'egypt']);
     const franceSet = new Set([
       'france', 'netherlands', 'belgium', 'luxembourg', 'switzerland',
@@ -1143,10 +1173,10 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       const n = String(props.NAME || '').trim().toLowerCase();
       if (!n) return null;
       if (wasteland1812.has(n)) return WASTELAND;
-      if (n === 'sweden–norway') return 996; // 1812 年挪威仍属丹麦-挪威联合王国！
+      if (n === 'sweden–norway') return 996;
       if (n === 'denmark' || n === 'holstein' || n === 'schleswig') return idxOf('denmark');
-      if (n === 'prussia') return 995; // 1812 普鲁士尚未重得莱茵兰与西波兰
-      if (n === 'russian empire') return 994; // 1812 华沙大公国尚未并入沙俄
+      if (n === 'prussia') return 995;
+      if (n === 'russian empire') return 994;
       if (n === 'austrian empire') return idxOf('austria');
       if (n === 'united kingdom of great britain and ireland') return idxOf('britain');
       if (n === 'spain') return idxOf('spain');
@@ -1155,7 +1185,6 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       if (franceSet.has(n)) return idxOf('france');
       return null;
     });
-    // 叠加 1914 的 Netherlands/Belgium/Norway/Sweden 精准轮廓以还原 1812 挪威归丹麦与低地归法兰西
     rasterizePolygons(getYearPolys(1914), frame, CW, CH, canvas, (props) => {
       const n = String(props.NAME || '').trim().toLowerCase();
       if (n === 'norway') return idxOf('denmark');
@@ -1164,6 +1193,12 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       if (n === 'grand duchy of finland') return idxOf('russia');
       return null;
     });
+    // 1812 真实多边形：华沙大公国、法兰西伊利里亚行省（达尔马提亚+斯洛文尼亚+蒂罗尔）、普鲁士易北河以东、英国庇护西西里/撒丁
+    const polyWarsaw1812 = [[15.5,52.8],[17.8,53.6],[19.2,53.3],[21.2,53.6],[23.5,54.8],[24.1,53.6],[23.5,51.2],[22.6,49.8],[19.5,49.7],[18.2,50.5],[16.6,51.7]];
+    const polyIllyriaTyrol1812 = [[10.0,46.6],[12.5,47.5],[14.2,46.8],[15.6,45.8],[17.2,43.8],[19.0,42.2],[17.5,42.3],[14.6,44.4],[13.5,45.6],[10.4,46.1]];
+    const polyPrussia1812 = [[11.6,54.1],[14.8,54.4],[17.2,54.8],[21.6,55.8],[22.8,54.0],[19.0,53.2],[16.0,52.6],[17.8,51.1],[18.8,50.2],[16.2,50.4],[14.3,51.2],[12.2,52.0],[11.5,53.1]];
+    const polySicily1812 = [[12.3,37.8],[13.5,38.3],[15.7,38.3],[15.5,36.6],[13.6,37.0],[12.3,37.5]];
+    const polySardinia1812 = [[8.1,41.3],[9.9,41.3],[9.8,38.8],[8.2,38.8]];
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
@@ -1172,20 +1207,17 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
         if (lat > 62.5 && lon < -10.0) { canvas[row + x] = WASTELAND; continue; }
         if ((lat < 35.85 && lon < 11.8) || (lat < 37.35 && lon > 7.5 && lon < 11.4)) { canvas[row + x] = WASTELAND; continue; }
         if (lat < 36.2 && lon > 36.6) { canvas[row + x] = WASTELAND; continue; }
+        if (lon >= -4.2 && lon <= 0.5 && lat >= 58.6 && lat <= 61.2) { canvas[row + x] = idxOf('britain'); continue; }
         if (tag === 996) {
           canvas[row + x] = (lon < 11.4 || (lat > 62.5 && lon < 13.8) || (lat > 67.5 && lon < 18.0)) ? idxOf('denmark') : idxOf('sweden');
         } else if (tag === 995) {
-          // 1812 普鲁士（易北河以东：勃兰登堡/波美拉尼亚/西里西亚/东普鲁士）；易北河以西属莱茵邦联/法兰西
-          canvas[row + x] = lon >= 11.4 ? idxOf('prussia') : idxOf('france');
+          canvas[row + x] = pointInRing(lon, lat, polyPrussia1812) ? idxOf('prussia') : idxOf('france');
         } else if (tag === 994) {
-          // 1812 华沙大公国（波兰中部 lon < 23.2, lat 50.0..54.2）归法兰西阵营，其余属俄罗斯帝国
-          canvas[row + x] = (lon < 23.0 && lat >= 49.8 && lat <= 54.3) ? idxOf('france') : idxOf('russia');
-        } else if (tag === idxOf('france')) {
-          // 西西里岛与撒丁岛 1812 仍由英国皇家海军庇护（巴勒莫、卡利亚里）
-          if ((lon >= 12.2 && lon <= 15.8 && lat >= 36.4 && lat <= 38.4) ||
-              (lon >= 8.0 && lon <= 10.0 && lat >= 38.7 && lat <= 41.35)) {
-            canvas[row + x] = idxOf('britain');
-          }
+          canvas[row + x] = pointInRing(lon, lat, polyWarsaw1812) ? idxOf('france') : idxOf('russia');
+        } else if (tag === idxOf('austria') && pointInRing(lon, lat, polyIllyriaTyrol1812)) {
+          canvas[row + x] = idxOf('france');
+        } else if (tag === idxOf('france') && (pointInRing(lon, lat, polySicily1812) || pointInRing(lon, lat, polySardinia1812))) {
+          canvas[row + x] = idxOf('britain');
         }
       }
     }
@@ -1213,21 +1245,20 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       if (n === 'chinese warlords') return 999;
       return exact1930.has(n) ? exact1930.get(n) : null;
     });
-    // 西印度/克什米尔/恒河平原西段沿自然曲线设为剧本外无人之地，保留英属缅甸+东印度完整连贯
+    // 仅将最西侧信德/塔尔沙漠与德干半岛南端设为无人之地，完整保留新德里 (77.21, 28.61) + 恒河平原 + 孟加拉 + 缅甸连片归英属印度！
     const polyChina31WestIndiaWaste = [
-      [40.0,10.0],[87.2,10.0],[86.8,22.0],[85.4,25.5],[83.2,27.8],[80.2,30.0],[77.8,32.5],[75.5,35.5],[40.0,37.0]
+      [40.0,10.0],[82.0,10.0],[81.5,21.5],[78.0,23.5],[75.2,25.5],[74.5,29.5],[73.5,33.0],[40.0,37.0]
     ];
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const tag = canvas[row + x];
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
-        if (lat < 20.4 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; } // 吕宋/菲律宾外缘
+        if (lat < 20.4 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }
         if (pointInRing(lon, lat, polyChina31WestIndiaWaste)) { canvas[row + x] = WASTELAND; continue; }
         if (tag === 999) {
           canvas[row + x] = classifyChina1931Warlord(lon, lat, idxOf);
         } else if (tag === idxOf('northeast')) {
-          // 旅大关东州租借地属日军关东军出发阵地
           if (lon >= 121.0 && lon <= 122.7 && lat >= 38.6 && lat <= 39.55) {
             canvas[row + x] = idxOf('japan');
           }
@@ -1251,24 +1282,22 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       ['cochin china', idxOf('indochina')],
       ['siam', idxOf('thailand')],
       ['philippines', idxOf('philippines')],
-      ['australia', idxOf('usa_pacific')], // 东新几内亚/巴布亚（盟军西南太平洋司令部）
+      ['australia', idxOf('usa_pacific')],
       ['guam', idxOf('usa_pacific')],
       ['saipan', idxOf('usa_pacific')],
-      ['tibet', WASTELAND],     // 1941 太平洋战场中青藏高原与西域高寒无人区（沿真实 GeoJSON 山脉边界！）
+      ['tibet', WASTELAND],
       ['xinjiang', WASTELAND],
     ]);
     rasterizePolygons(getYearPolys(1938), frame, CW, CH, canvas, (props) => {
       const n = String(props.NAME || '').trim().toLowerCase();
       if (n === 'chinese warlords') return 999;
-      if (n === 'empire of japan') return 993; // 精确切分满洲国 vs 日本本土/朝鲜/台湾/库页岛
+      if (n === 'empire of japan') return 993;
       return exactAsia38.has(n) ? exactAsia38.get(n) : null;
     });
-    // 从 world_1930 精确叠加 Manchuria 轮廓，让伪满洲国与朝鲜/日本本土边界分毫不差！
     rasterizePolygons(getYearPolys(1930), frame, CW, CH, canvas, (props) => {
       const n = String(props.NAME || '').trim().toLowerCase();
       return n === 'manchuria' ? idxOf('manchukuo') : null;
     });
-    // 西北西伯利亚/阿尔泰山以西自然曲线设为无人之地，彻底告别直角直线切割
     const polyAsia41NW = [
       [40.0,33.5],[79.5,33.5],[88.0,36.0],[91.5,40.0],[92.8,44.5],[94.5,48.5],[99.5,52.0],[112.0,53.5],[40.0,58.0]
     ];
@@ -1278,12 +1307,16 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
         const tag = canvas[row + x];
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
         if (pointInRing(lon, lat, polyAsia41NW)) { canvas[row + x] = WASTELAND; continue; }
+        // 明确归属印尼外围群岛（苏拉威西/摩鹿加/明打威/小巽他），杜绝被菲律宾或马来跨海吃掉！
+        if (tag === -1 && lat <= 2.2 && lon >= 94.0 && lon <= 135.0 && !(lon >= 108.0 && lon <= 119.5 && lat >= 0.8 && lat <= 7.5)) {
+          canvas[row + x] = idxOf('dutch_ei');
+          continue;
+        }
         if (tag === 999) {
           canvas[row + x] = classifyChina1941Front(lon, lat, idxOf);
         } else if (tag === 993) {
           canvas[row + x] = idxOf('japan');
         } else if (tag === idxOf('manchukuo')) {
-          // 旅大（大连）直接归日本关东州
           if (lon >= 121.0 && lon <= 122.7 && lat >= 38.6 && lat <= 39.55) {
             canvas[row + x] = idxOf('japan');
           }
@@ -1291,7 +1324,6 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       }
     }
   } else if (sc.id === 'coldwar_1950') {
-    // 1950 冷战世界全图：按 world_1945 183 国逐一精确映射至 12 大阵营（格陵兰/极北冻土/自然轮廓撒哈拉腹地设为 HOI4 式无人之地）
     const polys45 = getYearPolys(1945);
     rasterizePolygons(polys45, frame, CW, CH, canvas, (props, poly) => {
       const rawName = String(props.NAME || '').trim();
@@ -1301,6 +1333,8 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       let slon = 0, slat = 0;
       for (const pt of ring) { slon += pt[0]; slat += pt[1]; }
       const cLon = slon / Math.max(1, ring.length), cLat = slat / Math.max(1, ring.length);
+      // 防止楚科奇跨日界线多边形穿透至阿拉斯加西侧
+      if (rawName.toLowerCase() === 'ussr' && cLon < -100) return null;
       const owner = classifyColdWar1950(rawName, cLon, cLat, idxOf);
       return owner >= 0 ? owner : null;
     });
@@ -1312,12 +1346,14 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
-        if (lat > 69.5) { canvas[row + x] = WASTELAND; continue; } // 极圈永久冻土无人区
-        if (pointInRing(lon, lat, polySahara)) { canvas[row + x] = WASTELAND; continue; } // 撒哈拉自然沙海无人区
+        if (lat > 69.5) { canvas[row + x] = WASTELAND; continue; }
+        if (lon < -20.0 && lon > -62.0 && lat > 58.0) { canvas[row + x] = WASTELAND; continue; } // 格陵兰南端亦归无人区，不归西欧北约
+        if (lon < -160.0 && lat > 50.0) { canvas[row + x] = idxOf('usa'); continue; } // 阿拉斯加西岛严归美国，杜绝苏联飞点
+        if (pointInRing(lon, lat, polySahara)) { canvas[row + x] = WASTELAND; continue; }
       }
     }
   } else if (sc.id === 'tang_755') {
-    // 盛唐天宝 755：直接采用真实历史 GeoJSON (world_800.geojson) 的自然曲折边界！日本/天竺/吕宋/台澎/极北冻土设为无人之地
+    // 盛唐天宝十四载（755，安史之乱前夕全盛版图！彻底修复误用 AD800 导致 3 国首都落敌境的灾难）
     const exact800 = new Map([
       ['tang empire', idxOf('tang')],
       ['hainan', idxOf('tang')],
@@ -1341,23 +1377,34 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       const n = String(props.NAME || '').trim().toLowerCase();
       return exact800.has(n) ? exact800.get(n) : null;
     });
-    // 补充河西走廊与安西四镇/西域北庭（755 安史之乱前丝绸之路全线畅通）
-    const polyTangAnxi = [[78.5,38.0],[84.0,39.2],[90.0,40.0],[96.5,39.4],[101.5,37.4],[105.0,36.2],[105.5,39.2],[101.0,41.2],[95.5,43.8],[88.5,44.6],[83.0,43.8],[78.8,41.5]];
+    // 755 盛唐天宝十四载精确六大板块：安西/北庭/河西归唐、云南全境归南诏、葱岭西归大食、东北与滨海完整归渤海、回纥止步大兴安岭！
+    const polyTangCore755 = [[102.5,39.0],[105.5,40.8],[111.5,41.2],[117.5,41.4],[121.2,40.8],[124.2,40.0],[122.8,36.5],[122.0,30.0],[119.5,24.0],[110.5,18.2],[105.2,18.5],[104.5,22.8],[103.8,26.8],[102.5,31.0],[101.8,35.8]];
+    const polyTangAnxi755 = [[75.4,37.0],[82.5,36.6],[91.0,37.8],[97.5,38.0],[102.5,35.8],[105.5,36.8],[105.5,40.5],[99.5,42.5],[92.0,44.8],[84.0,45.2],[76.8,43.8],[75.4,40.2]];
+    const polyNanzhao755 = [[97.4,24.2],[98.5,21.4],[101.8,21.2],[104.5,22.8],[104.5,26.6],[102.5,28.0],[99.5,28.0],[97.8,26.4]];
+    const polyTibet755 = [[75.5,35.5],[79.5,29.5],[87.5,27.6],[96.5,27.8],[99.5,28.2],[102.2,31.2],[101.8,35.8],[97.0,37.6],[89.0,37.2],[81.0,36.4]];
+    const polyBohai755 = [[121.5,40.2],[125.0,40.2],[129.0,40.2],[136.5,42.2],[137.0,48.8],[130.5,49.5],[124.0,48.0],[121.5,44.0]];
+    const polyAbbasid755 = [[60.0,35.5],[75.3,36.2],[75.3,44.5],[60.0,46.0]];
+    const polySilla755 = [[124.2,39.8],[129.5,40.0],[129.5,34.2],[125.5,34.2]];
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
-        if ((lon > 129.6 && lat < 38.8) || (lon > 135.8 && lat < 45.8)) { canvas[row + x] = WASTELAND; continue; } // 仅日本列岛，保留渤海国滨海边疆区！
-        if (lon > 119.5 && lon < 123.2 && lat < 25.8) { canvas[row + x] = WASTELAND; continue; } // 流求（剧本外）
-        if (lon > 123.2 && lat < 30.0) { canvas[row + x] = WASTELAND; continue; }                // 琉球群岛
-        if (lat < 20.5 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }                // 吕宋
-        if (lat < 26.8 && lon < 96.2) { canvas[row + x] = WASTELAND; continue; }                 // 恒河天竺外缘
-        if (lat > 51.4) { canvas[row + x] = WASTELAND; continue; }                               // 极北西伯利亚外缘
-        if (pointInRing(lon, lat, polyTangAnxi)) canvas[row + x] = idxOf('tang');
+        if ((lon > 129.6 && lat < 38.8) || (lon > 135.8 && lat < 45.8)) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 119.5 && lon < 123.2 && lat < 25.8) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 123.2 && lat < 30.0) { canvas[row + x] = WASTELAND; continue; }
+        if (lat < 20.5 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }
+        if (lat < 26.8 && lon < 96.2) { canvas[row + x] = WASTELAND; continue; }
+        if (lat > 51.4) { canvas[row + x] = WASTELAND; continue; }
+        if (pointInRing(lon, lat, polyAbbasid755)) { canvas[row + x] = idxOf('abbasid'); continue; }
+        if (pointInRing(lon, lat, polyBohai755)) { canvas[row + x] = idxOf('bohai'); continue; }
+        if (pointInRing(lon, lat, polySilla755)) { canvas[row + x] = idxOf('silla'); continue; }
+        if (pointInRing(lon, lat, polyNanzhao755)) { canvas[row + x] = idxOf('nanzhao'); continue; }
+        if (pointInRing(lon, lat, polyTibet755)) { canvas[row + x] = idxOf('tibet'); continue; }
+        if (pointInRing(lon, lat, polyTangAnxi755) || pointInRing(lon, lat, polyTangCore755)) { canvas[row + x] = idxOf('tang'); continue; }
+        if (canvas[row + x] === idxOf('uyghur') && lon > 121.2) { canvas[row + x] = idxOf('bohai'); continue; }
       }
     }
   } else if (sc.id === 'song_jin_1142') {
-    // 宋金绍兴和议 1142：采用真实历史 GeoJSON (world_1200.geojson) 的曲折历史疆域 + 秦岭淮河自然分界 + 域外无人之地
     const exact1200 = new Map([
       ['song empire', idxOf('nsong')],
       ['hainan', idxOf('nsong')],
@@ -1383,25 +1430,29 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       const n = String(props.NAME || '').trim().toLowerCase();
       return exact1200.has(n) ? exact1200.get(n) : null;
     });
-    // 绍兴和议金朝完整疆域（覆盖华北/燕云/关中/淮北/东北，沿秦岭-大散关-淮河曲折分界）
+    // 绍兴和议 1142 严格以秦岭大散关—淮河为界：关中/陇右/燕云/东北完整归金，南宋绝不北突陕西；西夏西界止于敦煌 (94.2°E)
     const polyJin1142 = [
-      [104.2,35.6],[106.5,34.4],[108.8,34.0],[111.2,33.2],[113.5,32.5],[115.6,32.5],[118.2,33.2],[120.4,34.2],
-      [123.5,37.8],[124.2,40.2],[129.0,42.5],[131.5,45.5],[124.0,46.0],[119.0,42.8],[114.2,41.4],[110.5,40.4],[109.0,37.8],[107.2,35.8]
+      [102.8,35.6],[104.5,34.1],[106.8,34.0],[109.2,33.7],[111.4,33.0],[113.8,32.4],[116.0,32.5],[118.6,33.2],[120.8,34.4],
+      [123.5,37.8],[124.2,40.2],[129.0,42.5],[134.5,46.0],[126.0,47.5],[120.0,43.8],[115.0,41.6],[110.5,40.4],[109.2,37.8],[106.8,35.6]
     ];
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
-        if (lon > 129.6) { canvas[row + x] = WASTELAND; continue; }                              // 完整日本列岛（严密避开朝鲜釜山！）
-        if (lon > 123.2 && lat < 30.0) { canvas[row + x] = WASTELAND; continue; }                // 琉球群岛
-        if (lat < 20.5 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }                // 吕宋
-        if (lon > 119.5 && lon < 123.2 && lat < 25.8) { canvas[row + x] = WASTELAND; continue; } // 夷洲未辖
-        if (lon < 98.2 && lat < 27.0) { canvas[row + x] = WASTELAND; continue; }                 // 缅甸/印缅外缘
-        if (pointInRing(lon, lat, polyJin1142)) canvas[row + x] = idxOf('jin');
+        if (lon > 129.6) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 123.2 && lat < 30.0) { canvas[row + x] = WASTELAND; continue; }
+        if (lat < 20.5 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 119.5 && lon < 123.2 && lat < 25.8) { canvas[row + x] = WASTELAND; continue; }
+        if (lon < 98.2 && lat < 27.0) { canvas[row + x] = WASTELAND; continue; }
+        if (canvas[row + x] === idxOf('xixia') && lon < 94.2) { canvas[row + x] = WASTELAND; continue; }
+        if (pointInRing(lon, lat, polyJin1142)) { canvas[row + x] = idxOf('jin'); continue; }
+        if (canvas[row + x] === idxOf('nsong') && ((lon < 110.5 && lat > 34.1) || (lon >= 110.5 && lat > 33.4))) {
+          canvas[row + x] = idxOf('jin');
+        }
       }
     }
   } else if (sc.id === 'zhanguo_260bce') {
-    // 战国七雄：先用 world_bc200 真实曲折外疆多边形（匈奴/百越/羌戎），中原内部用自然加权锚点分割七雄；域外日本/三韩/印缅/台澎设为无人之地！
+    // 战国七雄（公元前 260 年长平之战）：按真实山川（秦岭/函谷关/黄河/太行/淮河/长江）划定七雄多边形，青藏/塔里木设无人区！
     const exactBC = new Map([
       ['xiongnu', idxOf('xiongnu')],
       ['turcik tribes', idxOf('xiongnu')],
@@ -1410,7 +1461,7 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       ['nan-yue', idxOf('baiyue')],
       ['mon-khmer', WASTELAND],
       ['thai', WASTELAND],
-      ['zhangzhung kingdom', idxOf('qiangrong')],
+      ['zhangzhung kingdom', WASTELAND],
       ['yuezhi', idxOf('qiangrong')],
       ['mauryan empire', WASTELAND],
       ['arakan', WASTELAND],
@@ -1420,29 +1471,45 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       if (n === 'han empire') return 991;
       return exactBC.has(n) ? exactBC.get(n) : null;
     });
+    const polyQin = [[102.2,35.8],[105.5,38.2],[109.8,39.2],[110.8,36.2],[111.0,34.4],[111.5,32.2],[110.2,30.2],[106.5,28.8],[103.0,29.5],[102.2,32.5]];
+    const polyZhao = [[109.8,39.2],[111.2,40.8],[115.6,40.4],[116.2,37.8],[114.8,36.0],[112.8,35.8],[111.2,36.6],[110.8,38.0]];
+    const polyYan = [[115.0,40.4],[117.5,41.8],[124.5,41.6],[124.5,39.6],[119.5,38.6],[116.2,38.6],[115.5,39.5]];
+    const polyQi = [[116.2,38.2],[119.2,37.8],[122.8,37.4],[121.0,35.2],[117.5,35.0],[115.8,36.2]];
+    const polyWei = [[110.8,35.8],[112.8,35.8],[114.8,36.0],[116.0,35.6],[116.4,33.8],[114.2,33.8],[113.0,34.8],[111.0,34.9]]; // 河东-大梁完整连通！
+    const polyHan = [[111.0,34.8],[113.0,34.8],[114.3,33.8],[113.8,32.7],[111.6,32.8],[110.8,33.8]];
+    const polyChu = [[110.2,32.4],[113.8,32.8],[116.4,33.8],[118.5,34.8],[121.8,33.0],[121.8,29.5],[118.2,27.8],[114.5,26.8],[110.5,26.5],[108.5,29.2]];
+    const polyBaiyue = [[105.5,24.5],[109.5,26.5],[114.5,26.8],[118.2,27.8],[121.5,29.5],[119.5,23.5],[110.0,18.2],[105.5,21.0]];
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const tag = canvas[row + x];
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
-        if (lon > 129.6) { canvas[row + x] = WASTELAND; continue; }                              // 日本全境（含北海道边角）
-        if (lon > 125.8 && lat < 38.2) { canvas[row + x] = WASTELAND; continue; }                // 朝鲜半岛南部（三韩外域）
-        if (lon > 123.2 && lat < 30.0) { canvas[row + x] = WASTELAND; continue; }                // 琉球群岛
-        if (lat < 20.5 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }                // 吕宋
-        if (lon > 119.5 && lon < 123.2 && lat < 25.8) { canvas[row + x] = WASTELAND; continue; } // 东海岛屿外域
-        if (lon < 98.5 && lat < 28.0) { canvas[row + x] = WASTELAND; continue; }                 // 印缅深谷外域
-        if (lat < 20.4 && lon < 105.0) { canvas[row + x] = WASTELAND; continue; }                // 中南半岛外域
+        if (lon > 129.6) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 125.8 && lat < 38.2) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 123.2 && lat < 30.0) { canvas[row + x] = WASTELAND; continue; }
+        if (lat < 20.5 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 119.5 && lon < 123.2 && lat < 25.8) { canvas[row + x] = WASTELAND; continue; }
+        if (lon < 97.0) { canvas[row + x] = WASTELAND; continue; } // 塔里木/青藏腹地设无人区，不再让羌戎变成秦国 2.66 倍
+        if (lon < 102.5 && lat < 31.5) { canvas[row + x] = WASTELAND; continue; }
+        if (lat < 20.4 && lon < 105.0) { canvas[row + x] = WASTELAND; continue; }
+        if (lat > 43.2) { canvas[row + x] = WASTELAND; continue; }
+        if (pointInRing(lon, lat, polyWei)) { canvas[row + x] = idxOf('wei'); continue; }
+        if (pointInRing(lon, lat, polyHan)) { canvas[row + x] = idxOf('han'); continue; }
+        if (pointInRing(lon, lat, polyQi)) { canvas[row + x] = idxOf('qi'); continue; }
+        if (pointInRing(lon, lat, polyYan)) { canvas[row + x] = idxOf('yan'); continue; }
+        if (pointInRing(lon, lat, polyZhao)) { canvas[row + x] = idxOf('zhao'); continue; }
+        if (pointInRing(lon, lat, polyQin)) { canvas[row + x] = idxOf('qin'); continue; }
+        if (pointInRing(lon, lat, polyChu)) { canvas[row + x] = idxOf('chu'); continue; }
+        if (pointInRing(lon, lat, polyBaiyue)) { canvas[row + x] = idxOf('baiyue'); continue; }
+        if (lat >= 40.4 && lon < 121.0) { canvas[row + x] = idxOf('xiongnu'); continue; }
+        if (lon < 103.5 && lat >= 31.5 && lat < 40.4) { canvas[row + x] = idxOf('qiangrong'); continue; }
         if (tag === 991 || tag === -1) {
-          if (tag === -1) {
-            if (lon < 103.5 && lat < 40.2) { canvas[row + x] = idxOf('qiangrong'); continue; }
-            if (lat > 40.6 && lon < 120.0) { canvas[row + x] = idxOf('xiongnu'); continue; }
-          }
           canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, new Set(['qin', 'zhao', 'qi', 'chu', 'wei', 'han', 'yan', 'baiyue', 'qiangrong', 'xiongnu']));
         }
       }
     }
   } else if (sc.id === 'sanguo_208') {
-    // 三国 208：采用 world_200 真实曲折外疆（鲜卑/辽东公孙/汉地），内部按 208 州郡精确自然锚点划分九方；域外日本/三韩/横断高原/印缅设为无人之地！
+    // 三国赤壁 208：补齐公孙康辽东 + 长江/秦岭/淮河自然边界 + 西域青藏设无人区（绝不让马腾大过曹魏！）
     const exact200 = new Map([
       ['southern xiongnu', idxOf('xianbei')],
       ['yueban', idxOf('xianbei')],
@@ -1457,56 +1524,89 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       if (n === 'han') return 991;
       return exact200.has(n) ? exact200.get(n) : null;
     });
-    // 西南横断山脉与青藏高原腹地自然弧形界线（避免直角硬边与左侧残条）
     const polySanguoSWWaste = [
       [60.0,10.0],[103.8,10.0],[102.8,20.2],[99.8,22.4],[98.4,25.2],[98.8,28.8],[99.2,32.5],[96.5,35.8],[60.0,37.0]
     ];
+    const polyGongsun208 = [[120.2,38.7],[126.2,39.2],[127.0,42.5],[123.5,43.0],[120.4,41.6]];
+    const polyCaowei208 = [[108.5,34.4],[110.2,33.4],[111.2,30.9],[114.2,30.6],[116.5,31.2],[118.8,32.2],[121.6,33.4],[122.8,37.4],[120.2,40.4],[117.5,41.0],[112.0,40.6],[109.5,39.2],[108.6,36.2]];
+    const polySunwu208 = [[113.8,30.4],[116.5,31.2],[118.8,32.2],[122.0,31.5],[121.5,27.0],[119.5,24.5],[115.5,24.8],[113.6,27.6]];
+    const polyLiubei208 = [[109.2,30.5],[113.8,30.5],[113.8,25.4],[110.2,25.2],[109.0,28.0]];
+    const polyZhanglu208 = [[105.5,33.8],[108.8,33.8],[109.2,31.9],[106.0,31.8]];
+    const polyLiuzhang208 = [[99.2,32.2],[105.8,32.2],[109.2,31.8],[109.2,26.8],[106.0,24.8],[101.2,24.8],[99.0,28.5]];
+    const polyShixie208 = [[103.2,21.0],[106.0,24.8],[110.2,25.2],[115.5,24.8],[117.0,23.2],[110.5,18.0],[105.5,18.2]];
+    const polyMateng208 = [[97.2,39.5],[101.5,40.4],[106.5,39.2],[108.8,38.0],[108.8,34.2],[105.5,33.6],[101.5,34.5],[98.2,36.8]];
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const tag = canvas[row + x];
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
-        if (lon > 129.6) { canvas[row + x] = WASTELAND; continue; }                              // 日本全境（含东北本州/北海道）
-        if (lon > 126.2 && lat < 37.3) { canvas[row + x] = WASTELAND; continue; }                // 三韩南部外域
-        if (lon > 123.2 && lat < 30.0) { canvas[row + x] = WASTELAND; continue; }                // 琉球群岛
-        if (lat < 20.5 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }                // 吕宋
-        if (lon > 119.5 && lon < 123.2 && lat < 25.8) { canvas[row + x] = WASTELAND; continue; } // 夷洲外域
-        if (pointInRing(lon, lat, polySanguoSWWaste)) { canvas[row + x] = WASTELAND; continue; } // 横断山脉-青藏-印缅外域
+        if (lon > 129.6) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 126.2 && lat < 37.3) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 123.2 && lat < 30.0) { canvas[row + x] = WASTELAND; continue; }
+        if (lat < 20.5 && lon > 118.5) { canvas[row + x] = WASTELAND; continue; }
+        if (lon > 119.5 && lon < 123.2 && lat < 25.8) { canvas[row + x] = WASTELAND; continue; }
+        if (lon < 97.0) { canvas[row + x] = WASTELAND; continue; } // 玉门关外西域大漠设无人区，绝不让马腾吞并全疆青藏！
+        if (lat > 43.8) { canvas[row + x] = WASTELAND; continue; }
+        if (pointInRing(lon, lat, polySanguoSWWaste)) { canvas[row + x] = WASTELAND; continue; }
+        if (pointInRing(lon, lat, polyGongsun208)) { canvas[row + x] = idxOf('gongsun'); continue; }
+        if (pointInRing(lon, lat, polyZhanglu208)) { canvas[row + x] = idxOf('zhanglu'); continue; }
+        if (pointInRing(lon, lat, polyCaowei208)) { canvas[row + x] = idxOf('caowei'); continue; }
+        if (pointInRing(lon, lat, polySunwu208)) { canvas[row + x] = idxOf('sunwu'); continue; }
+        if (pointInRing(lon, lat, polyLiubei208)) { canvas[row + x] = idxOf('liubei'); continue; }
+        if (pointInRing(lon, lat, polyLiuzhang208)) { canvas[row + x] = idxOf('liuzhang'); continue; }
+        if (pointInRing(lon, lat, polyShixie208)) { canvas[row + x] = idxOf('shixie'); continue; }
+        if (pointInRing(lon, lat, polyMateng208)) { canvas[row + x] = idxOf('mateng'); continue; }
+        if (lat >= 40.6 && lon < 120.5) { canvas[row + x] = idxOf('xianbei'); continue; }
         if (tag === 991) {
-          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, new Set(['caowei', 'sunwu', 'liubei', 'liuzhang', 'mateng', 'zhanglu', 'shixie']));
+          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, new Set(['caowei', 'sunwu', 'liubei', 'liuzhang', 'mateng', 'zhanglu', 'shixie', 'gongsun']));
         } else if (tag === -1) {
-          canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, null);
+          canvas[row + x] = WASTELAND;
         }
       }
     }
   } else {
-    // v10.0.0 sengoku_1560：AoH3 级日本战国 24 家大名令制国超细版图（纯净放大列岛底图；津轻海峡以北虾夷地/北海道设为史实无人之地 -2！）
+    // v12.0.0 sengoku_1560：严格按日本列岛四大岛+真实令制国多边形划分 24 家大名（彻底根除织田 500km 西四国飞地、四国竖刀切、朝仓跨海漂移！）
     const kyushuSet = new Set(['shimazu', 'otomo', 'ryuzoji']);
     const chugokuSet = new Set(['mori', 'amago', 'ukita']);
     const kinkiSet = new Set(['miyoshi', 'ashikaga', 'rokkaku', 'azai', 'kitabatake']);
     const chubuKantoSet = new Set(['oda', 'matsudaira', 'imagawa', 'saito', 'asakura', 'takeda', 'uesugi', 'hojo', 'satake']);
     const tohokuSet = new Set(['date', 'mogami', 'nanbu']);
+    // 精确四岛地理轮廓（按濑户内海/丰后水道/纪伊水道自然海沟分岛，绝无 131.85..132.0 缝隙泄漏！）
+    const polyKyushu = [[128.5,31.0],[131.95,31.0],[132.12,33.32],[131.65,33.86],[130.92,33.92],[129.6,34.75],[128.5,34.0]];
+    const polyShikoku = [[131.95,32.55],[134.82,32.75],[134.85,34.35],[133.92,34.42],[133.20,34.12],[132.35,33.95],[131.92,33.30]];
+    // 四国内部：东阿波+赞岐（三好氏），土佐+伊予（长宗我部）沿四国山地自然曲线分界
+    const polyShikokuMiyoshi = [[133.68,34.42],[134.85,34.35],[134.82,33.52],[134.30,33.65],[133.85,33.88],[133.60,34.12]];
+    const polyChugoku = [[130.85,33.88],[132.4,33.95],[133.6,34.32],[134.55,34.52],[134.55,35.80],[132.5,36.45],[130.8,34.8]];
+    const polyKinki = [[134.55,34.32],[135.2,33.40],[136.65,33.95],[136.66,35.15],[136.32,35.65],[135.65,35.85],[134.55,35.80]];
+    const polyTohoku = [[139.45,37.25],[141.6,37.25],[142.3,41.42],[139.6,41.42],[139.4,38.8]];
+    // 明确令制国校正：越前朝仓仅限北陆越前/若狭，绝不跨若狭湾漂到丹后
+    const polyEchizenAsakura = [[135.75,35.50],[136.85,35.62],[136.85,36.35],[135.95,36.32]];
+    const polyOwariOda = [[136.66,34.65],[137.12,34.80],[137.10,35.38],[136.66,35.32]];
+    const polyMikawaMatsudaira = [[137.08,34.60],[137.65,34.65],[137.68,35.25],[137.10,35.30]];
     for (let y = 0; y < CH; y++) {
       const row = y * CW;
       for (let x = 0; x < CW; x++) {
         const [lon, lat] = unprojectPt(x + 0.5, y + 0.5, frame);
-        if (lat > 41.42) { canvas[row + x] = WASTELAND; continue; } // 虾夷地（北海道）：1560 战国大名未开拓无人之地
-        // 1. 九州与对马（避开关门海峡以北的山口长门）
-        if ((lon <= 131.85 && lat <= 33.92 && !(lon >= 130.92 && lat >= 33.86)) || (lon <= 129.75 && lat <= 34.75)) {
+        if (lat > 41.42) { canvas[row + x] = WASTELAND; continue; } // 虾夷地（北海道）
+        if (pointInRing(lon, lat, polyKyushu)) {
           canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, kyushuSet);
-        // 2. 四国（土佐/伊予归长宗我部，东阿波/赞岐归三好）
-        } else if (lon >= 132.0 && lon <= 134.82 && lat >= 32.55 && lat <= 34.40 && !(lon < 133.65 && lat > 34.15)) {
-          canvas[row + x] = lon >= 133.92 ? idxOf('miyoshi') : idxOf('chosokabe');
-        // 3. 奥羽东北（伊达/最上/南部三足鼎立）
-        } else if (lat >= 37.30 && lon >= 139.55) {
+        } else if (pointInRing(lon, lat, polyShikoku)) {
+          canvas[row + x] = pointInRing(lon, lat, polyShikokuMiyoshi) ? idxOf('miyoshi') : idxOf('chosokabe');
+        } else if (pointInRing(lon, lat, polyTohoku)) {
           canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, tohokuSet);
-        // 4. 中国地方山阴山阳（毛利/尼子/宇喜多）
-        } else if (lon < 134.55 && lat >= 33.86) {
+        } else if (pointInRing(lon, lat, polyChugoku)) {
           canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, chugokuSet);
-        // 5. 畿内与伊势纪伊（足利幕府/三好/六角/浅井/北畠）
-        } else if (lon >= 134.55 && lon < 136.66 && lat < 35.62) {
+        } else if (pointInRing(lon, lat, polyKinki)) {
           canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, kinkiSet);
-        // 6. 东海/美浓/北陆/甲信越/关东（织田/松平/今川/斋藤/朝仓/武田/上杉/北条/佐竹）
+        } else if (pointInRing(lon, lat, polyEchizenAsakura)) {
+          canvas[row + x] = idxOf('asakura');
+        } else if (pointInRing(lon, lat, polyOwariOda)) {
+          canvas[row + x] = idxOf('oda');
+        } else if (pointInRing(lon, lat, polyMikawaMatsudaira)) {
+          canvas[row + x] = idxOf('matsudaira');
+        } else if (lon < 134.55) {
+          // 濑户内海/西国零星小岛只归西国/九州/四国，绝不落入尾张织田！
+          canvas[row + x] = lat < 33.6 ? pickAnchorOwner(x + 0.5, y + 0.5, kyushuSet) : pickAnchorOwner(x + 0.5, y + 0.5, chugokuSet);
         } else {
           canvas[row + x] = pickAnchorOwner(x + 0.5, y + 0.5, chubuKantoSet);
         }
@@ -1559,35 +1659,68 @@ function buildScenarioGIS(sc, grid20, mesh60, mesh120, bm20, bm60, bm120) {
       }
     }
 
-    // 3. 孤立小海岛（整个岛都未落在 GeoJSON 轮廓内）：若附近光栅带为无人之地则归 -2，否则就近锚点归属
+    // 3. 孤立小海岛（整个岛都未落在 GeoJSON 轮廓内）：优先继承 64px 内最近的已归属陆地格（杜绝跨数百公里乱跳的全球 Voronoi 飞地！）
+    const assignedCells = [];
+    for (let i = 0; i < mesh.n; i++) {
+      if (bm[i] >= 20 && (owners[i] >= 0 || owners[i] === WASTELAND)) assignedCells.push(i);
+    }
     for (let i = 0; i < mesh.n; i++) {
       if (bm[i] >= 20 && owners[i] === -1) {
-        owners[i] = Math.max(0, pickAnchorOwner(mesh.coords[i * 2], mesh.coords[i * 2 + 1], null));
+        const ix = mesh.coords[i * 2], iy = mesh.coords[i * 2 + 1];
+        let bestOwn = WASTELAND, bestD2 = 72 * 72;
+        for (let k = 0; k < assignedCells.length; k++) {
+          const j = assignedCells[k];
+          const dx = mesh.coords[j * 2] - ix, dy = mesh.coords[j * 2 + 1] - iy;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < bestD2) { bestD2 = d2; bestOwn = owners[j]; }
+        }
+        owners[i] = bestOwn;
       }
     }
 
-    // 4. 最小领土保障（防止小国如卢森堡/关岛在 20K 网格上少于 6 格导致无州，跳过无人之地）
-    const minCells = mesh.n > 80000 ? 32 : (mesh.n > 40000 ? 18 : 8);
+    // 4. 最小领土与首都主权保障（确保每个国家首都格精确落于本国，且小国如卢森堡/香港在 20K 上至少保底，不覆盖他国首都）
+    const minCells = mesh.n > 80000 ? 30 : (mesh.n > 40000 ? 18 : 8);
+    const capitalCells = new Set();
     for (let ni = 0; ni < sc.nations.length; ni++) {
-      let held = 0;
-      for (let i = 0; i < mesh.n; i++) if (owners[i] === ni) held++;
-      if (held < minCells) {
+      const [cx, cy] = projectPt(sc.nations[ni].capitalLon, sc.nations[ni].capitalLat, frame);
+      let bestC = -1, bestD2 = Infinity;
+      for (let i = 0; i < mesh.n; i++) {
+        if (bm[i] < 20) continue;
+        const d2 = (mesh.coords[i * 2] - cx) ** 2 + (mesh.coords[i * 2 + 1] - cy) ** 2;
+        if (d2 < bestD2) { bestD2 = d2; bestC = i; }
+      }
+      if (bestC >= 0) {
+        capitalCells.add(bestC);
+        if (owners[bestC] !== ni) owners[bestC] = ni;
+      }
+    }
+    const nationCounts = new Int32Array(sc.nations.length);
+    for (let i = 0; i < mesh.n; i++) if (bm[i] >= 20 && owners[i] >= 0) nationCounts[owners[i]]++;
+    for (let ni = 0; ni < sc.nations.length; ni++) {
+      if (nationCounts[ni] < minCells) {
         const [cx, cy] = projectPt(sc.nations[ni].capitalLon, sc.nations[ni].capitalLat, frame);
         const near = [];
         for (let i = 0; i < mesh.n; i++) {
-          if (bm[i] < 20 || owners[i] === WASTELAND) continue;
+          if (bm[i] < 20 || owners[i] === WASTELAND || owners[i] === ni || capitalCells.has(i)) continue;
           const d2 = (mesh.coords[i * 2] - cx) ** 2 + (mesh.coords[i * 2 + 1] - cy) ** 2;
           if (d2 < 3200) near.push([d2, i]);
         }
         near.sort((a, b) => a[0] - b[0]);
-        for (let k = 0; k < Math.min(near.length, minCells); k++) owners[near[k][1]] = ni;
+        for (let k = 0; k < near.length && nationCounts[ni] < minCells; k++) {
+          const idx = near[k][1];
+          const prev = owners[idx];
+          if (prev >= 0 && nationCounts[prev] <= minCells) continue;
+          if (prev >= 0) nationCounts[prev]--;
+          owners[idx] = ni;
+          nationCounts[ni]++;
+        }
       }
     }
 
-    // 5. 清理单格边界孤立噪点（跳过无人之地；某可玩陆地格周围全部可玩陆地邻居皆为同一他国时抚平）
+    // 5. 清理单格边界孤立噪点（保护各国首都格与微型国家不被抹平）
     const smooth = new Int8Array(owners);
     for (let i = 0; i < mesh.n; i++) {
-      if (bm[i] < 20 || owners[i] < 0) continue;
+      if (bm[i] < 20 || owners[i] < 0 || capitalCells.has(i) || nationCounts[owners[i]] <= minCells + 2) continue;
       const own = owners[i];
       let same = 0, otherCnt = 0, topOther = -1;
       const votes = new Map();
@@ -1694,12 +1827,26 @@ async function renderScenarioPreview(sc, entry20, grid20, bm20) {
     .png({ compressionLevel: 6 })
     .toFile(path.join(PREVIEW_DIR, `${sc.id}.png`));
 
-  // 硬断言：零空国，每个国家 >= 8 格
+  // 硬断言 1：零空国，每个国家 >= 6 格；硬断言 2：100% 国家首都落在己国领土内！
+  let capMiss = 0;
+  for (let ni = 0; ni < sc.nations.length; ni++) {
+    const [cx, cy] = projectPt(sc.nations[ni].capitalLon, sc.nations[ni].capitalLat, frame);
+    let bestC = -1, bestD2 = Infinity;
+    for (let i = 0; i < grid20.n; i++) {
+      if (bm20[i] < 20) continue;
+      const d2 = (grid20.coords[i * 2] - cx) ** 2 + (grid20.coords[i * 2 + 1] - cy) ** 2;
+      if (d2 < bestD2) { bestD2 = d2; bestC = i; }
+    }
+    if (bestC >= 0 && cellOwner[bestC] !== ni) {
+      capMiss++;
+      console.error(`  [CAPITAL MISMATCH] ${sc.id} ${sc.nations[ni].id} capital cell owned by ${cellOwner[bestC]}`);
+    }
+  }
   const minCount = Math.min(...counts);
   const worstIdx = counts.indexOf(minCount);
-  console.log(`  [Verify ${sc.id}] nations=${sc.nations.length}, wasteland=${wastelandCells}, min=${sc.nations[worstIdx].id}(${minCount} cells), max=${Math.max(...counts)}`);
-  if (minCount < 6) {
-    throw new Error(`ASSERTION FAILED: ${sc.id} nation ${sc.nations[worstIdx].id} has only ${minCount} cells!`);
+  console.log(`  [Verify ${sc.id}] nations=${sc.nations.length}, wasteland=${wastelandCells}, capMiss=${capMiss}, min=${sc.nations[worstIdx].id}(${minCount} cells), max=${Math.max(...counts)}`);
+  if (minCount < 6 || capMiss > 0) {
+    throw new Error(`ASSERTION FAILED: ${sc.id} min=${sc.nations[worstIdx].id}(${minCount}) capMiss=${capMiss}`);
   }
 }
 

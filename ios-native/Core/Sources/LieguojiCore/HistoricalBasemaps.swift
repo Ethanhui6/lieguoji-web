@@ -251,17 +251,37 @@ public enum HistoricalBasemaps {
             }
         }
 
+        private var defaultAtlasDir: URL?
+        private var loadedDefaultAtlas = false
+
+        func registerDefaultDirectory(_ url: URL) {
+            lock.lock()
+            defaultAtlasDir = url
+            lock.unlock()
+        }
+
+        func pendingDefaultDirectory() -> URL? {
+            lock.lock(); defer { lock.unlock() }
+            if loadedDefaultAtlas || !basemaps.isEmpty { return nil }
+            loadedDefaultAtlas = true
+            return defaultAtlasDir
+        }
+
+        func markDefaultLoaded() {
+            lock.lock(); loadedDefaultAtlas = true; lock.unlock()
+        }
+
         func hasCompatibleResolution(_ expectedCount: Int) -> Bool {
             lock.lock(); defer { lock.unlock() }
-            for reg in [HistoricalRegion.japanDetail, .eastAsiaJapan, .europe, .china] {
+            for reg in HistoricalRegion.allCases where reg != .custom {
                 guard let bm = basemaps["\(reg.rawValue)@\(expectedCount)"],
                       HistoricalBasemaps.isCompatibleBounds(bm, for: reg) else {
                     return false
                 }
             }
-            if let sengoku = HistoricalScenarios.scenario(id: "sengoku_1560") {
-                guard let sc = scenarios["sengoku_1560@\(expectedCount)"],
-                      sc.nationCount == sengoku.nations.count else {
+            for spec in HistoricalScenarios.catalog {
+                guard let sc = scenarios["\(spec.id)@\(expectedCount)"],
+                      sc.nationCount == spec.nations.count else {
                     return false
                 }
             }
@@ -293,9 +313,21 @@ public enum HistoricalBasemaps {
 
     private static let store = AtlasStore()
 
+    /// 注册内置 `HistoricalAtlas` 目录，确保在任何开局/缩略图请求之前同步懒加载就绪，彻底消除启动异步竞态退化为手绘 Voronoi！
+    public static func registerDefaultAtlasDirectory(_ dirURL: URL) {
+        store.registerDefaultDirectory(dirURL)
+    }
+
+    public static func ensureAtlasLoaded() {
+        if let dir = store.pendingDefaultDirectory() {
+            loadAtlasDirectory(dir)
+        }
+    }
+
     /// 校验已载入的某档位（如 60K / 120K）热更底图与剧本掩膜是否与当前版本权威经纬度边界和国家数一致，杜绝旧版热更包错位。
     public static func hasCompatibleAtlas(expectedCellCount: Int) -> Bool {
-        store.hasCompatibleResolution(expectedCellCount)
+        ensureAtlasLoaded()
+        return store.hasCompatibleResolution(expectedCellCount)
     }
 
     /// 过滤旧版热更包中由机械音译生成的 `iso == "XX"` 乱码地名（如 `什阿恩哈`/`贝伊吉恩`/`卡瓦萨基`）。
@@ -390,18 +422,22 @@ public enum HistoricalBasemaps {
     }
 
     public static func bakedScenarioGIS(id: String, expectedCount: Int? = nil) -> BakedScenarioGIS? {
-        store.scenario(for: id, expectedCount: expectedCount)
+        ensureAtlasLoaded()
+        return store.scenario(for: id, expectedCount: expectedCount)
     }
 
     public static func globalCities() -> [GazetteerCity] {
-        store.allCities()
+        ensureAtlasLoaded()
+        return store.allCities()
     }
 
     public static func hasBakedAtlas() -> Bool {
-        store.hasBasemaps()
+        ensureAtlasLoaded()
+        return store.hasBasemaps()
     }
 
     public static func bakedHeights(region: HistoricalRegion, expectedCount: Int) -> [UInt8]? {
+        ensureAtlasLoaded()
         guard let bm = store.basemap(for: region.rawValue, expectedCount: expectedCount), bm.heights.count == expectedCount else { return nil }
         return bm.heights
     }

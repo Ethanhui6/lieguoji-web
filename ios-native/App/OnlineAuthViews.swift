@@ -247,9 +247,9 @@ private struct FloatingPaperInputCard<Field: Hashable>: View {
 
                 Group {
                     if secure && !revealPassword {
-                        SecureField("", text: $text, prompt: Text(placeholder).foregroundColor(Theme.ink2.opacity(0.48)))
+                        SecureField("", text: $text, prompt: Text(placeholder).foregroundColor(Theme.ink2.opacity(0.72)))
                     } else {
-                        TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Theme.ink2.opacity(0.48)))
+                        TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Theme.ink2.opacity(0.72)))
                     }
                 }
                 .font(Theme.section)
@@ -268,7 +268,8 @@ private struct FloatingPaperInputCard<Field: Hashable>: View {
                     } label: {
                         PhosphorIcon(glyph: revealPassword ? .eye : .eyeClosed, size: 16, weight: .light)
                             .foregroundStyle(isFocused ? Theme.seal : Theme.ink2)
-                            .frame(width: 30, height: 30)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -325,17 +326,17 @@ private struct AuthPrimaryCinnabarButton: View {
                     .font(Theme.serif(16))
                     .tracking(1.6)
             }
-            .foregroundStyle(Theme.paperLight)
+            .foregroundStyle(disabled ? Theme.ink2 : Theme.paperLight)
             .frame(maxWidth: .infinity)
             .frame(height: 48)
             .background(
-                Theme.seal.opacity(disabled ? 0.38 : 1.0),
+                disabled ? Theme.wash : Theme.seal,
                 in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous)
-                    .strokeBorder(Theme.paperLight.opacity(disabled ? 0.10 : 0.24), lineWidth: 0.65)
-                    .padding(2.5)
+                    .strokeBorder(disabled ? Theme.line : Theme.paperLight.opacity(0.24), lineWidth: 0.75)
+                    .padding(disabled ? 0 : 2.5)
                     .allowsHitTesting(false)
             )
         }

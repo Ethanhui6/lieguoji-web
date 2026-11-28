@@ -99,16 +99,16 @@ RANKS = [
     (1200, "一代史圣", "正一品"),
 ]
 
-DEFAULT_LATEST_VERSION = "11.0.0"
-DEFAULT_LATEST_BUILD = 196
+DEFAULT_LATEST_VERSION = "12.0.0"
+DEFAULT_LATEST_BUILD = 197
 DEFAULT_RELEASE_NOTES: list[str] = [
-    "【双模 0 卡顿丝滑架构：本机 Apple Silicon 0ms 瞬开 + 九州云服 v15 1s 极速秒连】彻底根治开局 15–30Hz SwiftUI 重绘风暴、apply(step) 串行阻塞、Metal 60–80% 陆下海面无效过绘与 MapLabels/TroopLabels 主线程微顿；云服升级至 v15 纯有序 TCP MUX + 独立异步高优写线程，移除开局多余 30MB 冗余下载与 UDP 失序帧，切回云服 1 秒内秒连且稳态 25–40ms！",
-    "【全 12 历史剧本港口舰队恢复 + 真河道防线 + 7,289 座 100% 简体纯中文城市大典】修复局部剧本所有历史港口与舰队消失、修复地图外缘伪海岸线并还原历史剧本真实缩略图预览；彻底清洗 825 条繁体与残字地名，补全日本战国 360+ 真实城下町；史实路线严格锁定史实事件时间门控、AI 宣战/退盟与总力战过早白和，开放架空路线自由抉择。",
-    "【全面关闭跑马灯 + 工作室级纯净无杂音音频引擎 + 2.06GB 断点续传热更包 v11】彻底移除全端所有跑马灯/快讯横幅并提升历史事件弹窗至顶层 0 抖动叠层；默认启用经典原声 + AVAudioEngine 六声部多复音拟音池并重制纯净相位积分音效；2GB 热更支持 .part+.meta 真实分片断点续传、单模块独立挂载与 IPA SHA256 完整性校验。",
+    "【彻底根治云服连不上与连上卡顿（v16 瘦身切线 + 零阻塞推流）】切云服自动剥离 60–75% 冗余底图、加单飞切线锁与自动暂挂本地推演，杜绝 89MB 超时与 4GB 云服 OOM；云端暂停/返回不再回拉几十 MB 存档；升级 lieguoji-server/v16 扩大滑动窗口至 4–6 帧、中间帧再省 5–10KB，彻底区分「广州云服 3 专线」与「可选局域网电脑端」。",
+    "【根治滑动文字地图乱晃 × 全 12 历史剧本版图精准纠偏（0 飞地 / 0 丢都）】彻底修复单指拖动/甩屏/缩放期间底图与文字撕裂晃动；重烘焙全部 12 套历史剧本 20K/60K/120K 真实地理边界（1936 完整奥地利与捷克斯洛伐克、1560 日本战国消除跨海飞地、1914 奥斯曼完整版图、755 盛唐/208 三国/1931 民国全部 0 丢都）。",
+    "【6 阶装备与科技代差全面显性化 × 18KB 云端自动缓存战史画卷弹窗 × 双阶段清晰开局动画】解锁 6 阶科技与低工业兵种门控，战场血条/代差角标/宣战战力交换比/本国现役装备处处可见真实代差；52 幅战史画卷云端自动缓存（18KB/张秒出图）+ 战区直飞 + 实效胶囊 + 快讯号外；开局动画升级为「勘舆筹算 + 4.8s 柔和八笔展卷」双阶段并附跳过按钮。",
 ]
 
 DEFAULT_HOTPATCH_CONFIG: dict[str, Any] = {
-    "version": 26,
+    "version": 27,
     "notice": "",
     "computeHost": COMPUTE_HOST,
     "pace": {"1": 1, "2": 1, "4": 2, "8": 4, "16": 8, "32": 16, "64": 32},
@@ -160,6 +160,16 @@ CHANGELOG_HISTORY: list[dict[str, Any]] = [
         "build": DEFAULT_LATEST_BUILD,
         "date": "2026-11-27",
         "lines": list(DEFAULT_RELEASE_NOTES),
+    },
+    {
+        "version": "11.0.0",
+        "build": 196,
+        "date": "2026-11-27",
+        "lines": [
+            "【双模 0 卡顿丝滑架构】根治开局 15–30Hz SwiftUI 重绘风暴、Metal Early-Z 省 60–80% 陆下海面片元、v15 纯有序 TCP MUX。",
+            "【全 12 历史剧本港口舰队恢复 + 7,289 座纯简体城市大典】彻底清洗 825 条繁体与残字地名，史实路线严格锁定年份门控与锁盟。",
+            "【纯净无杂音音频引擎 + 2.06GB 断点续传热更包 v11】AVAudioEngine 六声部多复音拟音池与 .part+.meta 真断点续传。",
+        ],
     },
     {
         "version": "10.1.0",
@@ -311,9 +321,9 @@ DEFAULT_RELEASE: dict[str, Any] = {
     "webDownloadUrl": f"http://{PUBLIC_HOST}/download",
     "releaseNotes": list(DEFAULT_RELEASE_NOTES),
     "hotpatch": {
-        "patchVersion": 26,
+        "patchVersion": 27,
         "updatedAt": int(time.time() * 1000),
-        "summary": "v11.0.0 终极稳态大版本：本机 0ms + 九州云服 v15 1s 秒连 · Early-Z 渲染与零卡顿引擎 · 港口舰队与 7,289 纯简体地名 · 史实锁盟与纯净音频 · 2GB 断点续传热更",
+        "summary": "v12.0.0 全链路质变升级：云服 v16 瘦身秒连不卡 · 根治滑屏文字乱晃 · 全 12 剧本版图精准纠偏 · 6 阶装备科技代差显性化 · 云端自动缓存战史画卷弹窗 · 双阶段清晰建世动画",
         "sha256": compute_hotpatch_sha(DEFAULT_HOTPATCH_CONFIG),
         "config": DEFAULT_HOTPATCH_CONFIG,
     },
@@ -720,20 +730,20 @@ def init_db() -> None:
             except Exception as exc:
                 print(f"升级持久化发版配置失败，保留原值: {exc}", flush=True)
 
-        # 同步将旧版 hotpack_meta (packVersion < 11) 平滑升级至 v11（v11.0 100% 简体纯净地名库与真实断点续传国内高速多源热更包）
+        # 同步将旧版 hotpack_meta (packVersion < 12) 平滑升级至 v12（v12.0 全 12 剧本精准纠偏 GIS 边界 0 飞地/0 丢都）
         hp_row = DB.execute("SELECT v FROM kv_store WHERE k = 'hotpack_meta'").fetchone()
         if hp_row:
             try:
                 hp_meta = json.loads(hp_row["v"])
-                if int(hp_meta.get("packVersion", 0)) < 11:
+                if int(hp_meta.get("packVersion", 0)) < 12:
                     DB.execute(
                         "UPDATE kv_store SET v = ?, updated_at = ? WHERE k = 'hotpack_meta'",
                         (
                             json.dumps(
                                 {
-                                    "packVersion": 11,
-                                    "releaseTag": "v11.0 · 2.06GB 纯简体中文城市大典与断点续传多源热更包 v11",
-                                    "summary": "全量 7 大零水分实装模块：全面净化 7,289 座 100% 简体纯中文真实城市库（0 繁体/0 机翻/0 残字）、移除失效 404 回源并支持 2GB 分片真实断点续传与单模块独立挂载生效",
+                                    "packVersion": 12,
+                                    "releaseTag": "v12.0 · 12 剧本精准纠偏 GIS 疆域（0 飞地/0 丢都）与极速热更包 v12",
+                                    "summary": "全量 7 大零水分实装模块：全面重烘焙全 12 历史剧本 60K/120K 真实地理边界（1936 奥地利与捷克斯洛伐克完整疆域、1560 战国消除跨海飞地、1914 奥斯曼完整版图、755 盛唐/208 三国/1931 民国全部 0 丢都）+ 7,289 座纯简体中文城市大典",
                                 },
                                 ensure_ascii=False,
                             ),
@@ -2198,9 +2208,11 @@ class PlatformHandler(BaseHTTPRequestHandler):
                 self.close_connection = True
             return
 
+        ext = target.suffix.lower()
+        mime = "image/jpeg" if ext in (".jpg", ".jpeg") else ("image/png" if ext == ".png" else ("application/json" if ext == ".json" else "application/octet-stream"))
         self.send_response(200)
         self._security_headers()
-        self.send_header("Content-Type", "application/octet-stream")
+        self.send_header("Content-Type", mime)
         self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Length", str(size))
         self.send_header("Cache-Control", "public, max-age=86400")

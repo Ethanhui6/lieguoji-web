@@ -1,8 +1,8 @@
 {
   "ok": true,
-  "packVersion": 11,
-  "releaseTag": "v11.0 · 2.06GB 纯简体中文城市大典与断点续传多源热更包 v11",
-  "summary": "全量 7 大零水分实装模块：全面净化 7,289 座 100% 简体纯中文真实城市库（0 繁体/0 机翻/0 残字）、移除失效 404 回源并支持 2GB 分片真实断点续传与单模块独立挂载生效",
+  "packVersion": 12,
+  "releaseTag": "v12.0 · 12 剧本精准纠偏 GIS 疆域（0 飞地/0 丢都）与极速热更包 v12",
+  "summary": "全量 7 大零水分实装模块：全面重烘焙全 12 历史剧本 60K/120K 真实地理边界（1936 奥地利与捷克斯洛伐克完整疆域、1560 战国消除跨海飞地、1914 奥斯曼完整版图、755 盛唐/208 三国/1931 民国全部 0 丢都）+ 7,289 座纯简体中文城市大典",
   "totalBytes": 2220282431,
   "updatedAt": 1795799149491,
   "modules": [
@@ -3571,7 +3571,7 @@
       "path": "HDMeshes/scenarios_gis_120k.bin",
       "module": "hd-meshes",
       "size": 2883168,
-      "sha256": "f75544ddce2cca3cca9f7b41d72b176000e3fb3448f972e646248c0313544fe7",
+      "sha256": "077a413efbfe7f8c418f9ed1f4134773f44c7cc7f1b1e2f43e1fb8b0fa66204e",
       "cdnUrls": [
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__scenarios_gis_120k.bin",
         "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__scenarios_gis_120k.bin",
@@ -3584,7 +3584,7 @@
       "path": "HDMeshes/scenarios_gis_60k.bin",
       "module": "hd-meshes",
       "size": 1439904,
-      "sha256": "f4c9c25a46993e91a596efac6133a2bc650db772d400e34095f3d232aa8cb83d",
+      "sha256": "cbea807251c9139cd993a0571dc9727bfa50e59b9a0ecaf3137180e4055d3920",
       "cdnUrls": [
         "https://cdn.gh-proxy.org/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__scenarios_gis_60k.bin",
         "https://edgeone.gh-proxy.com/https://github.com/Ethanhui6/lieguoji-web/releases/download/hotpack-v7/HDMeshes__scenarios_gis_60k.bin",

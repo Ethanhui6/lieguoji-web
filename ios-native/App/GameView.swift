@@ -641,7 +641,7 @@ private struct GameHudCanvas: View {
                 )
             }
             .overlay {
-                // v11.0.0：将历史重大抉择弹窗提升至顶层独立叠层，彻底脱离顶栏弹簧动画子树，弹出 0 抖动零卡顿！
+                // v12.0.0：将历史重大抉择弹窗提升至最顶层（zIndex 130 > Toast 120），支持「定位战区」直飞事发地，弹出 0 抖动零卡顿！
                 if let modal = model.pendingHistoricalModal {
                     HistoricalEventModalOverlay(
                         modal: modal,
@@ -649,10 +649,13 @@ private struct GameHudCanvas: View {
                         onChoose: { idx in
                             GameFeel.shared.tap()
                             Task { await model.resolveHistoricalEvent(choiceIndex: idx) }
+                        },
+                        onLocate: { pIdx in
+                            controller.fly(to: pIdx)
                         }
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                    .zIndex(95)
+                    .zIndex(130)
                 }
             }
             .overlay(alignment: .topTrailing) {
@@ -837,12 +840,33 @@ private struct GameTopChrome: View {
                     say: say
                 )
             }
-            // v11.0.0：已彻底移除顶部跑马灯/传报横幅/快讯飘条，并把 HistoricalEventModalOverlay 提升至顶层独立叠层
+
+            // v12.0.0 正式挂载高速看海 / 快讯不暂停模式顶部历史号外条：零暂停零卡顿，轻点可展开完整战史画卷弹窗！
+            if hudVisible, let express = model.expressEventToast, model.pendingHistoricalModal == nil {
+                HistoricalExpressBanner(
+                    modal: express,
+                    onTapOpen: {
+                        GameFeel.shared.tap()
+                        if let pIdx = express.focusProvince { controller.fly(to: pIdx) }
+                        model.expressEventToast = nil
+                        model.controller.modalOpen = true
+                        model.pendingHistoricalModal = express
+                    },
+                    onDismiss: {
+                        GameFeel.shared.tap()
+                        model.expressEventToast = nil
+                    }
+                )
+                .padding(.leading, leadSafe)
+                .padding(.trailing, trailSafe)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         .animation(Motion.panel, value: panel?.id)
         .animation(GameView.hudSpring, value: model.remoteReconnecting)
         .animation(GameView.hudSpring, value: model.remoteOfflineManual)
         .animation(GameView.hudSpring, value: model.remoteAddress != nil)
+        .animation(GameView.hudSpring, value: model.expressEventToast?.id)
         .opacity(hiddenByMode ? 0 : 1)
         .allowsHitTesting(!hiddenByMode)
     }
@@ -1057,10 +1081,12 @@ private struct GameOnlineSignalPill: View {
                     .fixedSize()
             }
             .padding(.horizontal, 10)
-            .frame(height: 26)
+            .frame(height: 28)
             .background(Theme.paperLight.opacity(0.95), in: Capsule())
             .overlay(Capsule().strokeBorder(sig.color.opacity(0.38), lineWidth: 0.75))
             .overlay(Capsule().inset(by: 2).strokeBorder(Theme.hairline, lineWidth: 0.45))
+            .frame(minHeight: 40)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PressStyle())
         .sheet(isPresented: $routeSheetOpen) {
@@ -1081,9 +1107,11 @@ private struct ComputeRouteSheet: View {
     let onClose: () -> Void
     @State private var switchingId: String? = nil
 
-    private func rttStyle(_ ms: Int?) -> (text: String, color: Color, bars: Int) {
-        guard let ms else {
-            return (model.probingRoutes ? "测速中" : "超时", Theme.ink2, 0)
+    private func rttStyle(_ route: GameModel.ComputeRouteInfo) -> (text: String, color: Color, bars: Int) {
+        guard let ms = route.rttMs else {
+            if model.probingRoutes { return ("测速中", Theme.ink2, 0) }
+            if route.id == "lan-udp" { return ("未发现电脑端", Theme.ink2, 0) }
+            return ("超时", Theme.seal, 0)
         }
         if ms < 85 { return ("\(ms)ms", Theme.jade, 3) }
         if ms < 180 { return ("\(ms)ms", Theme.gold, 2) }
@@ -1092,7 +1120,7 @@ private struct ComputeRouteSheet: View {
 
     private var statusSubtitle: String {
         if model.remoteAddress != nil {
-            let transport = model.remoteTransport.isEmpty ? "九州云服" : model.remoteTransport
+            let transport = model.remoteTransport.isEmpty ? "九州云服 v16" : model.remoteTransport
             let rttPart = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
             return "当前云端推流：\(transport)\(rttPart)"
         }
@@ -1103,9 +1131,39 @@ private struct ComputeRouteSheet: View {
     }
 
     var body: some View {
+        let cloudRoutes = model.computeRoutes.filter { $0.id != "lan-udp" }
+        let lanRoutes = model.computeRoutes.filter { $0.id == "lan-udp" }
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 14) {
                 SheetHeader(title: "算力引擎与推流线路", subtitle: statusSubtitle, seal: "算")
+
+                // v12.0.0 内联清晰错误提示：切线失败时直接在面板内展示精确原因，不再被弹窗遮挡！
+                if let err = model.lastRouteSwitchError, !err.isEmpty {
+                    HStack(alignment: .top, spacing: 8) {
+                        PhosphorIcon(glyph: .warning, size: 15, weight: .fill)
+                            .foregroundStyle(Theme.seal)
+                            .padding(.top, 1)
+                        Text(err)
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.seal)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 4)
+                        Button {
+                            model.lastRouteSwitchError = nil
+                        } label: {
+                            InkIcon(glyph: .close, size: 11, weight: 1.8)
+                                .foregroundStyle(Theme.ink2)
+                                .frame(width: 28, height: 28)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 9)
+                    .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.seal.opacity(0.32), lineWidth: 0.75))
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
 
                 // v10.0.0 本机 Apple Silicon 0ms 推荐卡（置于所有公网线路之上）
                 Group2 {
@@ -1119,7 +1177,7 @@ private struct ComputeRouteSheet: View {
                                     .foregroundStyle(model.remoteAddress == nil ? Theme.jade : Theme.ink)
                                 PaperTag(text: "0ms 推荐", color: Theme.jade, size: 10)
                             }
-                            Text("纯本机零延迟 · 无 3Mbps 带宽瓶颈 · 滑屏推演最丝滑")
+                            Text("纯本机零延迟 · 无公网带宽瓶颈 · 滑屏与 64× 推演最丝滑")
                                 .font(Theme.sans(11.5))
                                 .foregroundStyle(Theme.ink2)
                                 .lineLimit(2)
@@ -1129,12 +1187,13 @@ private struct ComputeRouteSheet: View {
                             Text("当前引擎")
                                 .font(Theme.caption)
                                 .foregroundStyle(Theme.jade)
-                                .frame(width: 68, height: 28)
-                                .background(Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.7))
+                                .frame(width: 72, height: 34)
+                                .background(Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.7))
                         } else {
                             Button {
                                 GameFeel.shared.tap()
+                                model.lastRouteSwitchError = nil
                                 model.switchToOfflineLocal()
                                 say("已切回本机 Apple Silicon 0ms 原生演算")
                                 onClose()
@@ -1142,8 +1201,8 @@ private struct ComputeRouteSheet: View {
                                 Text("切回本机")
                                     .font(Theme.caption)
                                     .foregroundStyle(Theme.paperLight)
-                                    .frame(width: 68, height: 28)
-                                    .background(Theme.jade, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                    .frame(width: 72, height: 34)
+                                    .background(Theme.jade, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                             }
                             .buttonStyle(PressStyle())
                         }
@@ -1156,25 +1215,25 @@ private struct ComputeRouteSheet: View {
                 // 顶部快捷竞速与云服切换指令
                 HStack(spacing: 8) {
                     EditorialTactileButton(
-                        title: model.probingRoutes ? "正在全线测速…" : "可选：测速并连最快云服",
+                        title: model.probingRoutes ? "正在全线测速…" : "测速并连最快云服专线",
                         icon: .lightning,
                         accent: true,
                         solid: false,
-                        compact: true,
+                        compact: false,
                         fullWidth: true,
-                        disabled: model.probingRoutes
+                        disabled: model.probingRoutes || model.routeSwitchBusy
                     ) {
                         Task {
+                            model.lastRouteSwitchError = nil
                             await model.probeAllRoutes()
                             model.reconnectFastestRoute()
-                            say("已完成全线测速并尝试接入最优云服")
                         }
                     }
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
 
                 HStack {
-                    SectionLabel("全部推流专线（\(model.computeRoutes.count) 线）", inset: false)
+                    SectionLabel("九州一区广州云服（\(cloudRoutes.count) 条专线）", inset: false)
                         .monospacedDigit()
                     Spacer()
                     if model.probingRoutes {
@@ -1187,89 +1246,30 @@ private struct ComputeRouteSheet: View {
                 .padding(.horizontal, Theme.Layout.sectionInset)
 
                 Group2 {
-                    if model.computeRoutes.isEmpty {
+                    if cloudRoutes.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            InkBusy(text: "正在探测全部云服推流线路……")
+                            InkBusy(text: "正在探测广州云服 3 条直连专线……")
                         }
                         .padding(14)
                     } else {
-                        ForEach(Array(model.computeRoutes.enumerated()), id: \.element.id) { idx, route in
-                            let st = rttStyle(route.rttMs)
-                            let isCurrent = route.active && model.remoteAddress != nil
-                            let isBusy = switchingId == route.id
-                            HStack(alignment: .center, spacing: 10) {
-                                VStack(spacing: 3) {
-                                    OnlineSignalBars(bars: st.bars, activeColor: st.color)
-                                }
-                                .frame(width: Theme.Layout.iconGutter, alignment: .center)
-
-                                VStack(alignment: .leading, spacing: 3) {
-                                    HStack(spacing: 6) {
-                                        Text(route.name)
-                                            .font(Theme.serif(14.5))
-                                            .foregroundStyle(isCurrent ? Theme.seal : Theme.ink)
-                                            .lineLimit(1)
-                                            .minimumScaleFactor(0.8)
-                                        if !route.tag.isEmpty {
-                                            PaperTag(text: route.tag, color: isCurrent ? Theme.seal : Theme.ink2, size: 10)
-                                        }
-                                    }
-                                    Text(route.address)
-                                        .font(Theme.sans(11.5))
-                                        .foregroundStyle(Theme.ink2)
-                                        .monospacedDigit()
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.75)
-                                }
-
-                                Spacer(minLength: 6)
-
-                                Text(st.text)
-                                    .font(Theme.label)
-                                    .foregroundStyle(st.color)
-                                    .monospacedDigit()
-                                    .lineLimit(1)
-                                    .frame(minWidth: 46, alignment: .trailing)
-
-                                if isCurrent {
-                                    Text("当前线路")
-                                        .font(Theme.caption)
-                                        .foregroundStyle(Theme.jade)
-                                        .lineLimit(1)
-                                        .frame(width: 68, height: 28)
-                                        .background(Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.7))
-                                } else {
-                                    Button {
-                                        guard switchingId == nil else { return }
-                                        GameFeel.shared.tap()
-                                        switchingId = route.id
-                                        Task {
-                                            let ok = await model.switchComputeRoute(route.id)
-                                            switchingId = nil
-                                            if ok {
-                                                say("已切换至「\(route.name)」")
-                                            }
-                                        }
-                                    } label: {
-                                        Text(isBusy ? "连接中" : "切换此线")
-                                            .font(Theme.caption)
-                                            .foregroundStyle(Theme.paperLight)
-                                            .lineLimit(1)
-                                            .frame(width: 68, height: 28)
-                                            .background(Theme.seal.opacity(isBusy ? 0.6 : 1), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                    }
-                                    .buttonStyle(PressStyle())
-                                    .disabled(switchingId != nil)
-                                }
-                            }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 11)
-                            if idx < model.computeRoutes.count - 1 { Divider2() }
+                        ForEach(Array(cloudRoutes.enumerated()), id: \.element.id) { idx, route in
+                            routeRow(route)
+                            if idx < cloudRoutes.count - 1 { Divider2() }
                         }
                     }
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
+
+                if !lanRoutes.isEmpty {
+                    SectionLabel("局域网电脑端直连（可选）")
+                    Group2 {
+                        ForEach(Array(lanRoutes.enumerated()), id: \.element.id) { idx, route in
+                            routeRow(route)
+                            if idx < lanRoutes.count - 1 { Divider2() }
+                        }
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
 
                 HStack(spacing: 10) {
                     if model.remoteAddress != nil {
@@ -1292,6 +1292,85 @@ private struct ComputeRouteSheet: View {
                 await model.probeAllRoutes()
             }
         }
+    }
+
+    @ViewBuilder
+    private func routeRow(_ route: GameModel.ComputeRouteInfo) -> some View {
+        let st = rttStyle(route)
+        let isCurrent = route.active && model.remoteAddress != nil
+        let isBusy = switchingId == route.id || (model.routeSwitchBusy && switchingId == route.id)
+        HStack(alignment: .center, spacing: 10) {
+            VStack(spacing: 3) {
+                OnlineSignalBars(bars: st.bars, activeColor: st.color)
+            }
+            .frame(width: Theme.Layout.iconGutter, alignment: .center)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(route.name)
+                        .font(Theme.serif(14.5))
+                        .foregroundStyle(isCurrent ? Theme.seal : Theme.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    if !route.tag.isEmpty {
+                        PaperTag(text: route.tag, color: isCurrent ? Theme.seal : Theme.ink2, size: 10)
+                    }
+                }
+                Text(route.id == "lan-udp" && route.rttMs == nil ? "同 Wi-Fi 下运行电脑端服务器时自动发现" : route.address)
+                    .font(Theme.sans(11.5))
+                    .foregroundStyle(Theme.ink2)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+
+            Spacer(minLength: 6)
+
+            Text(st.text)
+                .font(Theme.caption)
+                .foregroundStyle(st.color)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(minWidth: 46, alignment: .trailing)
+
+            if isCurrent {
+                Text("当前线路")
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.jade)
+                    .lineLimit(1)
+                    .frame(width: 72, height: 34)
+                    .background(Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.7))
+            } else {
+                Button {
+                    guard switchingId == nil && !model.routeSwitchBusy else { return }
+                    GameFeel.shared.tap()
+                    switchingId = route.id
+                    Task {
+                        let ok = await model.switchComputeRoute(route.id)
+                        switchingId = nil
+                        if ok {
+                            say("已切换至「\(route.name)」")
+                        }
+                    }
+                } label: {
+                    Text(isBusy ? "连接中…" : "切换此线")
+                        .font(Theme.caption)
+                        .foregroundStyle((switchingId != nil && !isBusy) ? Theme.ink2 : Theme.paperLight)
+                        .lineLimit(1)
+                        .frame(width: 72, height: 34)
+                        .background(
+                            (switchingId != nil && !isBusy) ? Theme.wash : Theme.seal.opacity(isBusy ? 0.72 : 1),
+                            in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        )
+                }
+                .buttonStyle(PressStyle())
+                .disabled(switchingId != nil || model.routeSwitchBusy)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
     }
 }
 
@@ -1990,7 +2069,7 @@ private struct GameLegendOverlay: View {
                     open: openAlliance
                 )
                 .padding(.leading, leadSafe)
-                .padding(.bottom, landscape ? 40 : (model.state?.events.isEmpty == false ? 118 : 76))
+                .padding(.bottom, landscape ? 40 : 68)
                 .offset(x: hudVisible ? 0 : -140)
                 .opacity(hudVisible ? 1 : 0)
                 .allowsHitTesting(hudVisible)
@@ -2050,7 +2129,7 @@ private struct GameToastOverlay: View {
             .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
             .padding(.leading, landscape ? 64 : 20)
             .padding(.trailing, landscape && hasPanel ? (panelWidth + 18) : 20)
-            .padding(.bottom, landscape ? 48 : 114)
+            .padding(.bottom, landscape ? 48 : 72)
             .id(toastSerial)
             .transition(.asymmetric(
                 insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.94, anchor: .bottom)),

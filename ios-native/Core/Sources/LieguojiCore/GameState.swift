@@ -10,6 +10,13 @@ public struct GameState: Codable, Equatable, Sendable {
         public var capital: Int? = nil; public var culture: String? = nil; public var polity: String? = nil; public var religion: String? = nil
         public let provinces: Int; public let cities: Int; public let population: Int; public let grain: Double; public let troops: Int; public let gold: Double; public let destiny: Double
         public let enemies: [Int]; public let alive: Bool
+        /// v12.0.0 国家装备科技、工业产值、制空权、军事学说与综合国力（让代差在地图与面板处处可见）
+        public var milTech: Int? = nil
+        public var navTech: Int? = nil
+        public var ic: Int? = nil
+        public var airPower: Int? = nil
+        public var doctrine: String? = nil
+        public var compositePower: Double? = nil
     }
     public struct Army: Codable, Equatable, Identifiable, Sendable {
         public let id: String; public let name: String; public let nation: Int; public let troops: Int; public let unit: String; public let status: String; public let travel: String
@@ -52,6 +59,9 @@ public struct GameState: Codable, Equatable, Sendable {
         public var encircled: Bool? = nil
         /// v8.0.0 将领专属战术标签（如「闪电战·装甲穿插」「天炉战法」「大纵深·钳形合围」）。
         public var tacticTag: String? = nil
+        /// v12.0.0 军团装备代次（1…6 阶）与有效综合战力（兵力×装备代差×工业×空优×兵种系数，供地图交锋条与详情页直显）。
+        public var equipTier: Int? = nil
+        public var effectivePower: Double? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     public struct Fleet: Codable, Equatable, Identifiable, Sendable {

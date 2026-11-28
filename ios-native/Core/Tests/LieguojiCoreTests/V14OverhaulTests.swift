@@ -196,12 +196,13 @@ final class V14OverhaulTests: XCTestCase {
         guard let ger = r36.world.nations.asArray.first else { XCTFail("缺少国家"); return }
         let gid = ger.id.asString
         NuclearWarfare.ensureInitialized(r36)
+        let baselineBonus = r36.regimes.hoi4.nations[gid].eventICBonus.optionalNumber ?? 0
         NuclearWarfare.addEventIC(r36, nationId: gid, delta: 24)
         let bonusBefore = r36.regimes.hoi4.nations[gid].eventICBonus.optionalNumber ?? 0
-        XCTAssertEqual(bonusBefore, 24, accuracy: 0.01)
+        XCTAssertEqual(bonusBefore, baselineBonus + 24, accuracy: 0.01)
         NuclearWarfare.month(r36, key: 1)
         let bonusAfter = r36.regimes.hoi4.nations[gid].eventICBonus.optionalNumber ?? 0
-        XCTAssertEqual(bonusAfter, 24, accuracy: 0.01, "事件永久 IC 加成不得被月度平滑清零")
+        XCTAssertEqual(bonusAfter, bonusBefore, accuracy: 0.01, "事件永久 IC 加成不得被月度平滑清零")
 
         // 法案同步动员等级
         NuclearWarfare.syncMobilizationFromReform(r36, nationId: gid, reformId: "total_mobilization")

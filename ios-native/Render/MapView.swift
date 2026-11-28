@@ -1321,7 +1321,7 @@ struct MapView: UIViewRepresentable {
                 // v14.0.0：同步给 MetalLabelRenderer，由 GPU 同帧零延迟绘制兵力牌
                 renderer.troopBadgeTexts = controller.troopTexts
                 renderer.troopBadgeRatios = controller.troopRatios
-                renderer.troopBadgeColors = controller.troopBarColors.mapValues { RGB(hex: $0) }
+                renderer.troopBadgeColors = controller.troopBarColors
             }
             renderer.showTroopBadges = allow
             if renderer.metalLabels != nil {

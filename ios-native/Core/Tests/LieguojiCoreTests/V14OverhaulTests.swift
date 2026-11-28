@@ -125,8 +125,8 @@ final class V14OverhaulTests: XCTestCase {
         e2.enableAppRules()
         XCTAssertFalse(rawLookupCalled, "命中 RAM DecodedStatics 时不应再去磁盘解包 LGST 字节块")
         XCTAssertEqual(e2.run.world.day.asInt, e1.run.world.day.asInt)
-        let st1 = e1.gameState(slim: false)
-        let st2 = e2.gameState(slim: false)
+        let st1 = e1.gameState(includeLabels: true, slim: false)
+        let st2 = e2.gameState(includeLabels: true, slim: false)
         XCTAssertEqual(st1.owners.count, st2.owners.count)
         XCTAssertEqual(st1.labels?.count ?? 0, st2.labels?.count ?? 0)
     }
@@ -143,9 +143,8 @@ final class V14OverhaulTests: XCTestCase {
             guard let c0 = g.targetCell(province: p0) else { continue }
             for p1 in stride(from: provCount - 1, through: 0, by: -max(1, provCount / 8)) where p1 != p0 {
                 guard let c1 = g.targetCell(province: p1) else { continue }
-                guard g.landComponent[c0] >= 0, g.landComponent[c0] == g.landComponent[c1] else { continue }
-                let hpa = g.corridorPath(from: c0, to: c1, canEnterProvince: { _ in true }, terrainCost: true)
                 let full = g.path(from: c0, to: c1, allowSea: false, canEnterProvince: { _ in true }, aStar: true, terrainCost: true)
+                let hpa = g.corridorPath(from: c0, to: c1, canEnterProvince: { _ in true }, terrainCost: true)
                 XCTAssertEqual(hpa != nil, full != nil, "同陆块走廊 HPA* 连通性必须与全图 A* 一致")
                 if let hpa, let full {
                     XCTAssertEqual(hpa.nodes.first, c0)
@@ -200,7 +199,7 @@ final class V14OverhaulTests: XCTestCase {
         NuclearWarfare.addEventIC(r36, nationId: gid, delta: 24)
         let bonusBefore = r36.regimes.hoi4.nations[gid].eventICBonus.optionalNumber ?? 0
         XCTAssertEqual(bonusBefore, 24, accuracy: 0.01)
-        NuclearWarfare.monthlyTick(r36)
+        NuclearWarfare.month(r36, key: 1)
         let bonusAfter = r36.regimes.hoi4.nations[gid].eventICBonus.optionalNumber ?? 0
         XCTAssertEqual(bonusAfter, 24, accuracy: 0.01, "事件永久 IC 加成不得被月度平滑清零")
 

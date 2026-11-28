@@ -325,8 +325,8 @@ final class MetalLabelRenderer {
             let emW = measureTextEmWidth(c.name)
             let halfW = max(14, emW * fontSize * 0.5 + 5)
             let halfH: Float = isCap ? 9.5 : 8.0
-            let pop = provs.indices.contains(c.province) ? Double(provs[c.province].population) : 0
-            let prio = (isCap ? 1_000_000_000.0 : 0.0) + pop + (isSeat ? 500_000.0 : 0.0)
+            let orderRank = Double(max(0, map.meta.cities.count - i))
+            let prio = (isCap ? 1_000_000_000.0 : 0.0) + (isSeat ? 500_000.0 : 0.0) + orderRank
             cands.append(Candidate(text: c.name, x: c.x, y: c.y, isCapital: isCap, province: c.province, halfWPx: halfW, halfHPx: halfH, priority: prio))
         }
         cands.sort { $0.priority != $1.priority ? $0.priority > $1.priority : $0.text < $1.text }
@@ -728,12 +728,7 @@ final class MetalLabelRenderer {
 
     /// 返回当前活跃国名标签的稳定键与透明度（供 CI `ShotTour` 连续帧国名稳定性校验读取）。
     func nameFrame() -> [String: Float] {
-        var out: [String: Float] = [:]
-        out.reserveCapacity(nationItems.count)
-        for item in nationItems where item.alpha > 0.01 {
-            out["\(item.text)#\(item.id)"] = item.alpha * revealAlpha
-        }
-        return out
+        visibleNationSnapshot()
     }
 
     private func submit(pool: MapBufferPool, encoder: MTLRenderCommandEncoder, commandBuffer: MTLCommandBuffer, uniforms: inout MapRenderer.Uniforms) {

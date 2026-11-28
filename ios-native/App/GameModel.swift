@@ -236,7 +236,7 @@ import LieguojiCore
     }
 
     @Published var lastRouteSwitchError: String? = nil
-    private var routeSwitchBusy = false
+    @Published private(set) var routeSwitchBusy = false
 
     /// 手动或自动切换至指定 ID 的推流专线（`tencent-8765` / `tencent-8443` / `tencent-443` / `lan-udp`）。返回是否切换成功。
     @discardableResult
@@ -1568,7 +1568,7 @@ import LieguojiCore
         if remoteAddress == nil {
             save()
         } else {
-            Task { [weak self] in _ = await self?.native.park() }
+            Task { [weak self] in _ = await self?.native.parkForBackground() }
         }
         controller.activeHistoricalEra = ""
         GameFeel.shared.setHistoricalEra("")

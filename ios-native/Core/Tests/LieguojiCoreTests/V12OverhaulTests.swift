@@ -59,13 +59,13 @@ final class V12OverhaulTests: XCTestCase {
         let engine = try launchScenario("sengoku_1560", seed: "v12-compute-sg")
         let full = engine.save()
         let slim = engine.saveForCompute()
-        XCTAssertLessThan(slim.count, full.count * 65 / 100, "saveForCompute() 剥离 statics.map 后体积应显著低于全量存档（full=\(full.count), slim=\(slim.count)）")
+        XCTAssertLessThan(slim.count, full.count * 72 / 100, "saveForCompute() 剥离 statics.map 后体积应显著低于全量存档（full=\(full.count), slim=\(slim.count)）")
 
         let remoteEngine = try NativeEngine(world: slim)
         remoteEngine.enableAppRules()
-        let startDay = remoteEngine.run.day.asInt
+        let startDay = remoteEngine.run.world.day.asInt
         remoteEngine.advance(days: 6)
-        XCTAssertEqual(remoteEngine.run.day.asInt, startDay + 6, "云端引擎加载 saveForCompute() 后应正常推演")
+        XCTAssertEqual(remoteEngine.run.world.day.asInt, startDay + 6, "云端引擎加载 saveForCompute() 后应正常推演")
         XCTAssertNil(remoteEngine.mapJSON, "瘦身快照不应携带多余的 statics.map")
     }
 

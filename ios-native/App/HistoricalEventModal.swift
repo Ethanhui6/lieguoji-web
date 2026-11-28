@@ -50,8 +50,11 @@ enum EventScrollImageCache {
         }
 
         // 2) 联网自动从广州行宫 / CDN 按需下载并永久缓存到本地磁盘（~18KB JPG 秒出图）
-        if let fetchedURL = await HotPackManager.fetchOnDemand(path: "EventScrolls/\(key).jpg")
-            ?? (await HotPackManager.fetchOnDemand(path: "EventScrolls/\(key).png")) {
+        var fetchedURL = await HotPackManager.fetchOnDemand(path: "EventScrolls/\(key).jpg")
+        if fetchedURL == nil {
+            fetchedURL = await HotPackManager.fetchOnDemand(path: "EventScrolls/\(key).png")
+        }
+        if let fetchedURL {
             let decoded: UIImage? = await Task.detached(priority: .userInitiated) {
                 decodeDownsampled(url: fetchedURL)
             }.value

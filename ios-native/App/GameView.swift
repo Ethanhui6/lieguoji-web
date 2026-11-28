@@ -1107,7 +1107,7 @@ private struct ComputeRouteSheet: View {
     let onClose: () -> Void
     @State private var switchingId: String? = nil
 
-    private func rttStyle(_ route: GameModel.ComputeRouteInfo) -> (text: String, color: Color, bars: Int) {
+    private func rttStyle(_ route: ComputeRouteInfo) -> (text: String, color: Color, bars: Int) {
         guard let ms = route.rttMs else {
             if model.probingRoutes { return ("测速中", Theme.ink2, 0) }
             if route.id == "lan-udp" { return ("未发现电脑端", Theme.ink2, 0) }
@@ -1295,7 +1295,7 @@ private struct ComputeRouteSheet: View {
     }
 
     @ViewBuilder
-    private func routeRow(_ route: GameModel.ComputeRouteInfo) -> some View {
+    private func routeRow(_ route: ComputeRouteInfo) -> some View {
         let st = rttStyle(route)
         let isCurrent = route.active && model.remoteAddress != nil
         let isBusy = switchingId == route.id || (model.routeSwitchBusy && switchingId == route.id)

@@ -205,7 +205,7 @@ public enum BinaryStateWire {
         w.u16(w.clampU16(gs.nations.count))
         for n in gs.nations {
             let hasIdent = (n.id != nil || n.name != nil || n.color != nil)
-            let hasTech = (n.milTech != nil || n.ic != nil || n.airPower != nil)
+            let hasTech = (n.milTech != nil || n.ic != nil || n.airPower != nil || n.doctrine != nil)
             var nf: UInt8 = n.alive ? 1 : 0
             if hasIdent { nf |= 2 }
             if hasTech { nf |= 4 }
@@ -236,6 +236,7 @@ public enum BinaryStateWire {
                 w.u16(w.clampU16(n.ic ?? 0))
                 w.u8(UInt8(max(0, min(255, n.airPower ?? 0))))
                 w.f32(Float(n.compositePower ?? 0))
+                w.str8(n.doctrine ?? "")
             }
         }
 
@@ -514,13 +515,15 @@ public enum BinaryStateWire {
             }
             var milTech: Int? = nil, navTech: Int? = nil, icVal: Int? = nil, airVal: Int? = nil
             var compPow: Double? = nil
+            var doctrine: String? = nil
             if (nf & 4) != 0 {
-                guard let mt = r.u8(), let nt = r.u8(), let icU = r.u16(), let airU = r.u8(), let cpF = r.f32() else { return nil }
+                guard let mt = r.u8(), let nt = r.u8(), let icU = r.u16(), let airU = r.u8(), let cpF = r.f32(), let docS = r.str8() else { return nil }
                 milTech = Int(mt)
                 navTech = Int(nt)
                 icVal = Int(icU)
                 airVal = Int(airU)
                 compPow = Double(cpF)
+                doctrine = docS.isEmpty ? nil : docS
             }
             var nationRow = GameState.Nation(
                 id: id, name: name, color: color, line: line, capital: capital,
@@ -533,6 +536,7 @@ public enum BinaryStateWire {
             nationRow.navTech = navTech
             nationRow.ic = icVal
             nationRow.airPower = airVal
+            nationRow.doctrine = doctrine
             nationRow.compositePower = compPow
             nations.append(nationRow)
         }

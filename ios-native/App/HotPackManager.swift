@@ -91,6 +91,7 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
     /// 经广州实测验证的中国大陆高速镜像池（已剔除 HTTP 403 失效 Cloudflare 节点，最快节点优先）
     nonisolated static let cdnMirrors: [(name: String, baseURL: String)] = [
         ("国内极速 CDN", "https://cdn.gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
+        ("香港极速专线", "https://hk.gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
         ("腾讯云 EdgeOne 专线", "https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
         ("国内高速主线 A", "https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
         ("国内高速主线 B", "https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main"),
@@ -804,12 +805,12 @@ struct HotLoreEntry: Codable, Identifiable, Equatable, Sendable {
         return out + originDeferred
     }
 
-    /// 256 KB 吞吐测速（探测 Engine/engine.js Range: bytes=0-262143）：严格按实测 MB/s 降序排列，Top 3 组建高速多镜像池，绝不让 3 Mbps 源站挤占前排。
+    /// 轻量吞吐测速（探测 World/cultures.json 53 KB，避免 raw.githubusercontent.com 忽略 Range 全量回吐 2.9 MB engine.js 导致测速超时）：严格按实测 MB/s 降序排列，Top 3 组建高速多镜像池。
     nonisolated private static func raceHotCDNs(base: String) async -> (fast: [HotCDNNode], backups: [HotCDNNode]) {
         let all = defaultHotCDNs(base: base)
         let externalNodes = all.filter { $0.kind == .rawProxy }
         let originNode = all.first(where: { $0.kind == .origin })
-        let probePath = "Engine/engine.js"
+        let probePath = "World/cultures.json"
 
         let probeCfg = URLSessionConfiguration.ephemeral
         probeCfg.timeoutIntervalForRequest = 2.5

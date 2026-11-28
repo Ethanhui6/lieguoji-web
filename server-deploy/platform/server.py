@@ -1008,6 +1008,7 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
         gh_release_asset = f"https://github.com/Ethanhui6/lieguoji-web/releases/download/{HOTPACK_V7_RELEASE_TAG}/{flat_asset}"
         return [
             f"https://cdn.gh-proxy.org/{gh_release_asset}",
+            f"https://hk.gh-proxy.org/{gh_release_asset}",
             f"https://edgeone.gh-proxy.com/{gh_release_asset}",
             f"https://gh-proxy.com/{gh_release_asset}",
             f"https://gh-proxy.org/{gh_release_asset}",
@@ -1039,6 +1040,7 @@ def _cdn_urls_for_hotpack_rel(rel: str) -> list[str]:
     quoted = urllib.parse.quote(gh_path, safe="/")
     return [
         f"https://cdn.gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
+        f"https://hk.gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://edgeone.gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://gh-proxy.com/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
         f"https://gh-proxy.org/https://raw.githubusercontent.com/Ethanhui6/lieguoji-web/main/{quoted}",
@@ -1097,6 +1099,12 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
                     and "ghfast.top" not in u.lower()
                     and not (is_external_rel and "/api/v1/hotpack/" in u)
                 ]
+                # 注入香港极速节点 hk.gh-proxy.org（紧随 cdn.gh-proxy.org 后），双保险提速国内拉取
+                if is_external_rel and cdns and not any("hk.gh-proxy.org" in u for u in cdns):
+                    for u in list(cdns):
+                        if u.startswith("https://cdn.gh-proxy.org/"):
+                            cdns.insert(1, u.replace("https://cdn.gh-proxy.org/", "https://hk.gh-proxy.org/", 1))
+                            break
                 entry = {"path": rel, "module": mod_id, "size": sz, "sha256": sha}
                 if cdns:
                     entry["cdnUrls"] = cdns
@@ -1110,14 +1118,19 @@ def rebuild_hotpack_manifest(bump_version: bool = False, tag: Optional[str] = No
         except Exception:
             pass
 
-    # 2) 合并磁盘 /data/hotpack 中的本地增量自定义内容（如管理员热更的 Content/scenarios.json、hot-rules.json 等；跳过旧版未生效的 v5 原始 GeoJSON 目录）
+    # 2) 合并磁盘 /data/hotpack 中的本地增量自定义内容（如管理员热更的 Content/scenarios.json、hot-rules.json 等；
+    # 严禁将仅用于按需事件画卷直拉的 EventScrolls/*.jpg 等外部 Release 目录误扫入整包清单，避免生成不存在的 GitHub Release 404 链接导致热更卡死！）
     if HOTPACK_DIR.exists():
         for fp in sorted(HOTPACK_DIR.rglob("*")):
             if not fp.is_file() or fp.name.startswith(".") or fp.suffix.lower() == ".mp4":
                 continue
             rel = fp.relative_to(HOTPACK_DIR).as_posix()
             top_low = rel.split("/", 1)[0].lower() if "/" in rel else ""
-            if top_low in ("gis-basemaps-10m", "gis-historical-45eras", "gis-cities-encyclopedia"):
+            if top_low in (
+                "gis-basemaps-10m", "gis-historical-45eras", "gis-cities-encyclopedia",
+                "hdmeshes", "relieftiles", "encyclopedia", "eraunits",
+                "eventscrolls", "generalportraits", "audiohd", "eras45",
+            ):
                 continue
             if rel in seen_paths:
                 continue
